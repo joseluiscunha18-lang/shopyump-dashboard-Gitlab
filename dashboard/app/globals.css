@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+  Tokens ported from Marketplace-main/app/globals.css (see architecture
+  doc §9.1) so the Dashboard shares the exact same brand color and type
+  scale as the public site, instead of re-deriving its own palette.
+  --ink / --ink-soft are a Dashboard-only addition: the legacy dashboard's
+  navy (#0F172A) reads better for dense data screens than plain slate, so
+  it's kept as a named semantic token rather than a one-off hardcoded hex.
+*/
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --brand: oklch(0.68 0.2 35);
+  --brand-foreground: oklch(0.99 0 0);
+  --brand-soft: oklch(0.95 0.05 50);
+  --ink: #0f172a;
+  --ink-soft: #1e293b;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: #eef2f7;
+  }
+  .skeleton-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.65) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes skeleton-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+/* Bottom-sheet drag-to-dismiss (ported interaction from the legacy
+   modal-desc pattern — see architecture doc §9.2). Class-based hooks only;
+   the drag physics live in components/ui/Sheet.tsx. */
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-sheet-in {
+  animation: sheet-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toast-in {
+  from { transform: translateY(-150%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-toast-in {
+  animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
