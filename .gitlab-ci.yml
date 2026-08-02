@@ -1,10 +1,9 @@
 stages:
-    - unzip
+  - unzip
 
-    descompactar:
-      stage: unzip
-        image: alpine:latest
-          script:
-              - apk update && apk add unzip
-                  - unzip dashboard.zip -d .
-                  
+descompactar:
+  stage: unzip
+  image: alpine:latest
+  script:
+    - apk update && apk add unzip
+    - unzip dashboard.zip -d .
