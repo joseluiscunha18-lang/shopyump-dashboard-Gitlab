@@ -143,8 +143,8 @@ export function MobileSidebarDrawer({
         aria-modal="true"
         aria-label="Menu"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-1/2 min-w-[240px] max-w-[320px] flex-col bg-white',
-          'rounded-r-[28px] shadow-[0_24px_60px_rgba(15,23,42,0.25)]',
+          'fixed inset-y-0 left-0 z-50 flex w-[78%] max-w-[360px] flex-col bg-white',
+          'rounded-tr-[28px] shadow-[0_24px_60px_rgba(15,23,42,0.25)]',
           'transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
