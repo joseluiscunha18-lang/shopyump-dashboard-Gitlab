@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Menu, Bell } from 'lucide-react';
 import { MobileSidebarDrawer, type Plano } from './MobileSidebarDrawer';
+import { useMobileNav } from './MobileNavContext';
 
 export function TopBar({
   storeName,
@@ -15,14 +15,14 @@ export function TopBar({
   logoUrl?: string | null;
   plano?: Plano;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { menuOpen, openMenu, closeMenu } = useMobileNav();
 
   return (
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-100 bg-white px-3 sm:h-auto sm:border-none sm:bg-transparent sm:px-8 sm:py-6 relative">
         {/* Hamburger — mobile only, opens the sliding sidebar */}
         <button
-          onClick={() => setMenuOpen(true)}
+          onClick={openMenu}
           aria-label="Abrir menu"
           className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-ink transition-colors active:scale-95 hover:bg-slate-100 sm:hidden"
         >
@@ -54,7 +54,7 @@ export function TopBar({
 
       <MobileSidebarDrawer
         open={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={closeMenu}
         storeName={storeName}
         storeUrl={storeUrl}
         logoUrl={logoUrl}
