@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Package, Plus, ClipboardList, BarChart3, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useMobileNav } from './MobileNavContext';
 
 interface NavItem {
   href: string;
@@ -22,9 +23,16 @@ const items: NavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { menuOpen } = useMobileNav();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <nav
+      className={cn(
+        'fixed inset-x-0 bottom-0 z-40 sm:hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
+      )}
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       <div
         className="flex items-center justify-around rounded-t-[28px] border-t-[0.5px] border-slate-200/60 bg-white/95 px-2 pb-2 pt-2 backdrop-blur-xl"
         style={{ boxShadow: '0 -10px 30px -14px rgba(15,23,42,0.16), 0 -2px 8px -2px rgba(15,23,42,0.06)' }}
