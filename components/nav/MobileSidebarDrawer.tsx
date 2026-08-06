@@ -132,7 +132,7 @@ export function MobileSidebarDrawer({
         aria-hidden={!open}
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[2px] transition-opacity duration-300 ease-out sm:hidden',
+          'fixed inset-0 z-40 bg-slate-950/50 transition-opacity duration-200 ease-out sm:hidden',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
       />
@@ -143,9 +143,9 @@ export function MobileSidebarDrawer({
         aria-modal="true"
         aria-label="Menu"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[78%] max-w-[360px] flex-col bg-white',
+          'fixed inset-y-0 left-0 z-50 flex w-[85%] max-w-[400px] flex-col bg-white',
           'rounded-tr-[28px] shadow-[0_24px_60px_rgba(15,23,42,0.25)]',
-          'transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:hidden',
+          'transform-gpu will-change-transform transition-transform duration-[220ms] ease-out sm:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -158,7 +158,7 @@ export function MobileSidebarDrawer({
           <X size={16} strokeWidth={2.5} />
         </button>
 
-        <div className="flex flex-col overflow-y-auto no-scrollbar pb-6 pt-7">
+        <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-7">
           {/* Header */}
           <div className="flex flex-col items-start gap-3 px-5 pb-6">
             <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-ink text-[16px] font-black text-white shadow-lg shadow-ink/15">
