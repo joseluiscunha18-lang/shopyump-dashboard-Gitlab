@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   X,
+  Search,
+  Home,
   Eye,
   Palette,
   Ticket,
@@ -55,6 +57,7 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 
 function buildEntries(storeUrl: string | null): NavEntry[] {
   return [
+    { href: '/', label: 'Início', icon: Home },
     { href: storeUrl ?? '#', label: 'Ver loja', icon: Eye, external: true, disabled: !storeUrl },
     { href: '/loja', label: 'Personalizar loja', icon: Palette },
     { href: '/cupons', label: 'Cupons e descontos', icon: Ticket },
@@ -115,6 +118,7 @@ export function MobileSidebarDrawer({
   const router = useRouter();
   const pathname = usePathname();
   const entries = useMemo(() => buildEntries(storeUrl), [storeUrl]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Only one group open at a time — keeps the menu feeling short and calm.
   // Auto-expands whichever group contains the current route.
@@ -122,6 +126,26 @@ export function MobileSidebarDrawer({
     const active = entries.find((e) => isGroup(e) && e.children.some((c) => pathname.startsWith(c.href)));
     return active ? (active as NavGroup).key : null;
   });
+
+  const query = searchQuery.trim().toLowerCase();
+  const searching = query.length > 0;
+
+  // Filters both top-level items and group children by label; a group stays
+  // visible (with only its matching children) if either it or any child matches.
+  const visibleEntries = useMemo(() => {
+    if (!searching) return entries;
+    return entries.reduce<NavEntry[]>((acc, entry) => {
+      if (isGroup(entry)) {
+        const matchingChildren = entry.children.filter((c) => c.label.toLowerCase().includes(query));
+        if (entry.label.toLowerCase().includes(query) || matchingChildren.length > 0) {
+          acc.push({ ...entry, children: matchingChildren.length > 0 ? matchingChildren : entry.children });
+        }
+      } else if (entry.label.toLowerCase().includes(query)) {
+        acc.push(entry);
+      }
+      return acc;
+    }, []);
+  }, [entries, searching, query]);
 
   useEffect(() => {
     if (!open) return;
@@ -188,7 +212,7 @@ export function MobileSidebarDrawer({
 
         <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-8">
           {/* Header */}
-          <div className="flex items-center gap-3 px-6 pb-7">
+          <div className="flex items-center gap-3 px-6 pb-5">
             <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[16px] font-black text-white shadow-md shadow-brand/20">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -197,28 +221,50 @@ export function MobileSidebarDrawer({
                 <span>{initials(storeName)}</span>
               )}
             </div>
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <p className="truncate font-display text-[17px] font-black leading-tight tracking-tight text-ink">
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="truncate font-display text-[17px] font-bold leading-tight tracking-tight text-ink">
                 {storeName}
               </p>
-              <span
-                className={cn(
-                  'inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-[3px] text-[10px] font-black uppercase tracking-widest',
-                  plano === 'premium' ? 'bg-ink text-white' : 'bg-slate-100 text-slate-500'
-                )}
-              >
-                {plano === 'premium' ? 'Premium' : 'Grátis'}
-              </span>
+              <div className="flex items-center gap-1.5 text-[12.5px] text-slate-400">
+                <span className="font-medium">Loja</span>
+                <span className="text-slate-300">•</span>
+                <span
+                  className={cn(
+                    'rounded-full px-2 py-[2px] text-[10px] font-bold',
+                    plano === 'premium' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-500'
+                  )}
+                >
+                  {plano === 'premium' ? 'Premium' : 'Grátis'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6">
+            <div className="h-px bg-slate-100" />
+          </div>
+
+          {/* Search */}
+          <div className="px-6 pb-2 pt-5">
+            <div className="flex items-center gap-2.5 rounded-2xl bg-slate-50 px-4 py-3">
+              <Search size={16} strokeWidth={2} className="flex-shrink-0 text-slate-400" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Pesquisar no menu..."
+                className="w-full bg-transparent text-[13px] font-medium text-ink placeholder:font-normal placeholder:text-slate-400 focus:outline-none"
+              />
             </div>
           </div>
 
           {/* Nav */}
-          <nav className="flex flex-col gap-0.5 px-4">
-            {entries.map((entry) => {
+          <nav className="flex flex-col gap-0.5 px-4 pt-2">
+            {visibleEntries.map((entry) => {
               if (isGroup(entry)) {
                 const GroupIcon = entry.icon;
-                const groupOpen = expanded === entry.key;
+                const groupOpen = searching ? true : expanded === entry.key;
                 const groupHasActiveChild = entry.children.some((c) => isActive(c.href));
+                const groupHighlighted = groupOpen || groupHasActiveChild;
 
                 return (
                   <div key={entry.key} className="flex flex-col">
@@ -226,25 +272,36 @@ export function MobileSidebarDrawer({
                       onClick={() => setExpanded(groupOpen ? null : entry.key)}
                       aria-expanded={groupOpen}
                       className={cn(
-                        'flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors active:scale-[0.98]',
-                        groupHasActiveChild ? 'text-brand' : 'text-ink hover:bg-slate-50'
+                        'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors active:scale-[0.98]',
+                        groupHighlighted ? 'bg-slate-100' : 'hover:bg-slate-50'
                       )}
                     >
                       <span
                         className={cn(
-                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl',
-                          groupHasActiveChild ? 'bg-brand-soft text-brand' : 'bg-slate-50 text-slate-500'
+                          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                          groupHighlighted && 'bg-ink'
                         )}
                       >
-                        <GroupIcon size={16} strokeWidth={2.2} />
+                        <GroupIcon
+                          size={18}
+                          strokeWidth={groupHighlighted ? 2 : 1.75}
+                          className={groupHighlighted ? 'text-white' : 'text-slate-400'}
+                        />
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{entry.label}</span>
-                      <ChevronDown
-                        size={15}
-                        strokeWidth={2.4}
+                      <span
                         className={cn(
-                          'flex-shrink-0 text-slate-300 transition-transform duration-[250ms] ease-out',
-                          groupOpen && 'rotate-180 text-slate-400'
+                          'min-w-0 flex-1 truncate text-[14px]',
+                          groupHighlighted ? 'font-bold text-ink' : 'font-semibold text-slate-500'
+                        )}
+                      >
+                        {entry.label}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={2.2}
+                        className={cn(
+                          'flex-shrink-0 transition-transform duration-[250ms] ease-out',
+                          groupOpen ? 'rotate-180 text-slate-500' : 'text-slate-300'
                         )}
                       />
                     </button>
@@ -266,13 +323,17 @@ export function MobileSidebarDrawer({
                                 href={child.href}
                                 onClick={onClose}
                                 className={cn(
-                                  'flex items-center gap-3 rounded-xl border-l-2 py-2.5 pl-4 pr-3 text-[12.5px] font-bold transition-colors active:scale-[0.98]',
+                                  'flex items-center gap-3 rounded-xl border-l-2 py-2.5 pl-4 pr-3 text-[13px] transition-colors active:scale-[0.98]',
                                   active
-                                    ? 'border-brand text-brand'
-                                    : 'border-slate-100 text-slate-500 hover:border-slate-200 hover:text-ink'
+                                    ? 'border-ink font-bold text-ink'
+                                    : 'border-slate-100 font-semibold text-slate-400 hover:border-slate-200 hover:text-ink'
                                 )}
                               >
-                                <ChildIcon size={15} strokeWidth={2.2} className="flex-shrink-0" />
+                                <ChildIcon
+                                  size={16}
+                                  strokeWidth={active ? 2 : 1.75}
+                                  className="flex-shrink-0"
+                                />
                                 <span className="min-w-0 flex-1 truncate">{child.label}</span>
                               </Link>
                             );
@@ -290,22 +351,27 @@ export function MobileSidebarDrawer({
                 <>
                   <span
                     className={cn(
-                      'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl',
-                      active ? 'bg-brand-soft text-brand' : 'bg-slate-50 text-slate-500'
+                      'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                      active && 'bg-ink'
                     )}
                   >
-                    <Icon size={16} strokeWidth={2.2} />
+                    <Icon size={18} strokeWidth={active ? 2 : 1.75} className={active ? 'text-white' : 'text-slate-400'} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{entry.label}</span>
-                  {entry.external && !entry.disabled && (
-                    <ChevronRight size={14} className="flex-shrink-0 text-slate-300" />
-                  )}
+                  <span
+                    className={cn(
+                      'min-w-0 flex-1 truncate text-[14px]',
+                      active ? 'font-bold text-ink' : 'font-semibold text-slate-500'
+                    )}
+                  >
+                    {entry.label}
+                  </span>
+                  {active && <ChevronRight size={16} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />}
                 </>
               );
 
               const className = cn(
-                'flex items-center gap-3 rounded-2xl px-3 py-3 transition-colors active:scale-[0.98]',
-                active ? 'text-brand' : 'text-ink hover:bg-slate-50',
+                'flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors active:scale-[0.98]',
+                active ? 'bg-slate-100' : 'hover:bg-slate-50',
                 entry.disabled && 'pointer-events-none opacity-40'
               );
 
@@ -330,6 +396,12 @@ export function MobileSidebarDrawer({
                 </Link>
               );
             })}
+
+            {searching && visibleEntries.length === 0 && (
+              <p className="px-3 py-6 text-center text-[13px] font-medium text-slate-400">
+                Nada encontrado para &ldquo;{searchQuery}&rdquo;
+              </p>
+            )}
           </nav>
 
           <div className="mt-6 px-4">
@@ -340,10 +412,10 @@ export function MobileSidebarDrawer({
           <div className="px-4 pt-4">
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[13px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
             >
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-red-50">
-                <LogOut size={16} strokeWidth={2.2} />
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-red-50">
+                <LogOut size={18} strokeWidth={1.9} />
               </span>
               Sair
             </button>
