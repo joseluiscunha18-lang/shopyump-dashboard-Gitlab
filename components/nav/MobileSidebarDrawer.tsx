@@ -6,7 +6,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import {
   X,
   Search,
-  Home,
   Eye,
   Palette,
   Ticket,
@@ -57,7 +56,6 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 
 function buildEntries(storeUrl: string | null): NavEntry[] {
   return [
-    { href: '/', label: 'Início', icon: Home },
     { href: storeUrl ?? '#', label: 'Ver loja', icon: Eye, external: true, disabled: !storeUrl },
     { href: '/loja', label: 'Personalizar loja', icon: Palette },
     { href: '/cupons', label: 'Cupons e descontos', icon: Ticket },
@@ -278,12 +276,12 @@ export function MobileSidebarDrawer({
                     >
                       <span
                         className={cn(
-                          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full',
                           groupHighlighted && 'bg-ink'
                         )}
                       >
                         <GroupIcon
-                          size={18}
+                          size={16}
                           strokeWidth={groupHighlighted ? 2 : 1.75}
                           className={groupHighlighted ? 'text-white' : 'text-slate-400'}
                         />
@@ -291,13 +289,13 @@ export function MobileSidebarDrawer({
                       <span
                         className={cn(
                           'min-w-0 flex-1 truncate text-[14px]',
-                          groupHighlighted ? 'font-bold text-ink' : 'font-semibold text-slate-500'
+                          groupHighlighted ? 'font-bold text-ink' : 'font-semibold text-slate-700'
                         )}
                       >
                         {entry.label}
                       </span>
                       <ChevronDown
-                        size={16}
+                        size={15}
                         strokeWidth={2.2}
                         className={cn(
                           'flex-shrink-0 transition-transform duration-[250ms] ease-out',
@@ -326,11 +324,11 @@ export function MobileSidebarDrawer({
                                   'flex items-center gap-3 rounded-xl border-l-2 py-2.5 pl-4 pr-3 text-[13px] transition-colors active:scale-[0.98]',
                                   active
                                     ? 'border-ink font-bold text-ink'
-                                    : 'border-slate-100 font-semibold text-slate-400 hover:border-slate-200 hover:text-ink'
+                                    : 'border-slate-100 font-semibold text-slate-600 hover:border-slate-200 hover:text-ink'
                                 )}
                               >
                                 <ChildIcon
-                                  size={16}
+                                  size={14}
                                   strokeWidth={active ? 2 : 1.75}
                                   className="flex-shrink-0"
                                 />
@@ -351,21 +349,21 @@ export function MobileSidebarDrawer({
                 <>
                   <span
                     className={cn(
-                      'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                      'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full',
                       active && 'bg-ink'
                     )}
                   >
-                    <Icon size={18} strokeWidth={active ? 2 : 1.75} className={active ? 'text-white' : 'text-slate-400'} />
+                    <Icon size={16} strokeWidth={active ? 2 : 1.75} className={active ? 'text-white' : 'text-slate-400'} />
                   </span>
                   <span
                     className={cn(
                       'min-w-0 flex-1 truncate text-[14px]',
-                      active ? 'font-bold text-ink' : 'font-semibold text-slate-500'
+                      active ? 'font-bold text-ink' : 'font-semibold text-slate-700'
                     )}
                   >
                     {entry.label}
                   </span>
-                  {active && <ChevronRight size={16} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />}
+                  {active && <ChevronRight size={15} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />}
                 </>
               );
 
@@ -414,8 +412,8 @@ export function MobileSidebarDrawer({
               onClick={handleSignOut}
               className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
             >
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-red-50">
-                <LogOut size={18} strokeWidth={1.9} />
+              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-red-50">
+                <LogOut size={16} strokeWidth={1.9} />
               </span>
               Sair
             </button>
