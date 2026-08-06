@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -14,7 +14,17 @@ import {
   User,
   HelpCircle,
   LogOut,
+  ChevronDown,
   ChevronRight,
+  Info,
+  Truck,
+  RotateCcw,
+  Wallet,
+  FileText,
+  IdCard,
+  Shield,
+  Paintbrush,
+  Languages,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -30,37 +40,50 @@ interface NavLeaf {
   disabled?: boolean;
 }
 
-interface NavSection {
-  title: string;
-  items: NavLeaf[];
+interface NavGroup {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  children: NavLeaf[];
 }
 
-function buildSections(storeUrl: string | null): NavSection[] {
+type NavEntry = NavLeaf | NavGroup;
+
+function isGroup(entry: NavEntry): entry is NavGroup {
+  return 'children' in entry;
+}
+
+function buildEntries(storeUrl: string | null): NavEntry[] {
   return [
+    { href: storeUrl ?? '#', label: 'Ver loja', icon: Eye, external: true, disabled: !storeUrl },
+    { href: '/loja', label: 'Personalizar loja', icon: Palette },
+    { href: '/cupons', label: 'Cupons e descontos', icon: Ticket },
     {
-      title: 'Loja',
-      items: [
-        { href: storeUrl ?? '#', label: 'Ver loja', icon: Eye, external: true, disabled: !storeUrl },
-        { href: '/loja', label: 'Personalizar loja', icon: Palette },
+      key: 'loja',
+      label: 'Loja',
+      icon: Settings,
+      children: [
+        { href: '/configuracoes/informacoes', label: 'Informações da loja', icon: Info },
+        { href: '/configuracoes/entrega', label: 'Entrega', icon: Truck },
+        { href: '/configuracoes/devolucoes', label: 'Devoluções', icon: RotateCcw },
+        { href: '/configuracoes/pagamentos', label: 'Pagamentos', icon: Wallet },
+        { href: '/configuracoes/politicas', label: 'Políticas', icon: FileText },
       ],
     },
+    { href: '/dominio', label: 'Domínio', icon: Globe },
+    { href: '/plano', label: 'Plano e faturação', icon: CreditCard },
     {
-      title: 'Marketing',
-      items: [{ href: '/cupons', label: 'Cupons e descontos', icon: Ticket }],
-    },
-    {
-      title: 'Configurações',
-      items: [
-        { href: '/configuracoes', label: 'Configurações da loja', icon: Settings },
-        { href: '/dominio', label: 'Domínio', icon: Globe },
-        { href: '/plano', label: 'Plano e faturação', icon: CreditCard },
-        { href: '/perfil', label: 'Conta', icon: User },
+      key: 'conta',
+      label: 'Conta',
+      icon: User,
+      children: [
+        { href: '/perfil', label: 'Perfil', icon: IdCard },
+        { href: '/seguranca', label: 'Segurança', icon: Shield },
+        { href: '/aparencia', label: 'Aparência', icon: Paintbrush },
+        { href: '/idioma', label: 'Idioma', icon: Languages },
       ],
     },
-    {
-      title: 'Suporte',
-      items: [{ href: '/ajuda', label: 'Ajuda', icon: HelpCircle }],
-    },
+    { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
   ];
 }
 
@@ -91,9 +114,15 @@ export function MobileSidebarDrawer({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const sections = buildSections(storeUrl);
+  const entries = useMemo(() => buildEntries(storeUrl), [storeUrl]);
 
-  // Lock body scroll while the drawer is open.
+  // Only one group open at a time — keeps the menu feeling short and calm.
+  // Auto-expands whichever group contains the current route.
+  const [expanded, setExpanded] = useState<string | null>(() => {
+    const active = entries.find((e) => isGroup(e) && e.children.some((c) => pathname.startsWith(c.href)));
+    return active ? (active as NavGroup).key : null;
+  });
+
   useEffect(() => {
     if (!open) return;
     const original = document.body.style.overflow;
@@ -103,7 +132,6 @@ export function MobileSidebarDrawer({
     };
   }, [open]);
 
-  // Close on Escape.
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -143,7 +171,7 @@ export function MobileSidebarDrawer({
         aria-modal="true"
         aria-label="Menu"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[85%] max-w-[400px] flex-col bg-white',
+          'fixed inset-y-0 left-0 z-50 flex w-[80%] max-w-[400px] flex-col bg-white',
           'rounded-tr-[28px] shadow-[0_24px_60px_rgba(15,23,42,0.25)]',
           'transform-gpu will-change-transform transition-transform duration-[220ms] ease-out sm:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
@@ -158,10 +186,10 @@ export function MobileSidebarDrawer({
           <X size={16} strokeWidth={2.5} />
         </button>
 
-        <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-7">
+        <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-8">
           {/* Header */}
-          <div className="flex flex-col items-start gap-3 px-5 pb-6">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-ink text-[16px] font-black text-white shadow-lg shadow-ink/15">
+          <div className="flex items-center gap-3 px-6 pb-7">
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[16px] font-black text-white shadow-md shadow-brand/20">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={storeName} className="h-full w-full object-cover" />
@@ -170,13 +198,13 @@ export function MobileSidebarDrawer({
               )}
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
-              <p className="truncate font-display text-[16px] font-black leading-tight tracking-tight text-ink">
+              <p className="truncate font-display text-[17px] font-black leading-tight tracking-tight text-ink">
                 {storeName}
               </p>
               <span
                 className={cn(
-                  'inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest',
-                  plano === 'premium' ? 'bg-brand-soft text-brand' : 'bg-slate-100 text-slate-500'
+                  'inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-[3px] text-[10px] font-black uppercase tracking-widest',
+                  plano === 'premium' ? 'bg-ink text-white' : 'bg-slate-100 text-slate-500'
                 )}
               >
                 {plano === 'premium' ? 'Premium' : 'Grátis'}
@@ -184,73 +212,135 @@ export function MobileSidebarDrawer({
             </div>
           </div>
 
-          <div className="h-px bg-slate-100" />
+          {/* Nav */}
+          <nav className="flex flex-col gap-0.5 px-4">
+            {entries.map((entry) => {
+              if (isGroup(entry)) {
+                const GroupIcon = entry.icon;
+                const groupOpen = expanded === entry.key;
+                const groupHasActiveChild = entry.children.some((c) => isActive(c.href));
 
-          {/* Sections */}
-          <nav className="flex flex-col gap-5 px-3 pt-5">
-            {sections.map((section) => (
-              <div key={section.title} className="flex flex-col gap-1">
-                <p className="px-3 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {section.title}
-                </p>
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.href);
-                  const content = (
-                    <>
+                return (
+                  <div key={entry.key} className="flex flex-col">
+                    <button
+                      onClick={() => setExpanded(groupOpen ? null : entry.key)}
+                      aria-expanded={groupOpen}
+                      className={cn(
+                        'flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors active:scale-[0.98]',
+                        groupHasActiveChild ? 'text-brand' : 'text-ink hover:bg-slate-50'
+                      )}
+                    >
                       <span
                         className={cn(
                           'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl',
-                          active ? 'bg-white/15 text-white' : 'bg-slate-50 text-slate-500'
+                          groupHasActiveChild ? 'bg-brand-soft text-brand' : 'bg-slate-50 text-slate-500'
                         )}
                       >
-                        <Icon size={16} strokeWidth={2.2} />
+                        <GroupIcon size={16} strokeWidth={2.2} />
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{item.label}</span>
-                      {item.external && !item.disabled && (
-                        <ChevronRight size={14} className={active ? 'text-white/60' : 'text-slate-300'} />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{entry.label}</span>
+                      <ChevronDown
+                        size={15}
+                        strokeWidth={2.4}
+                        className={cn(
+                          'flex-shrink-0 text-slate-300 transition-transform duration-[250ms] ease-out',
+                          groupOpen && 'rotate-180 text-slate-400'
+                        )}
+                      />
+                    </button>
+
+                    <div
+                      className={cn(
+                        'grid transition-[grid-template-rows] duration-[250ms] ease-out',
+                        groupOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                       )}
-                    </>
-                  );
+                    >
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col gap-0.5 py-1 pl-[18px]">
+                          {entry.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            const active = isActive(child.href);
+                            return (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                onClick={onClose}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-xl border-l-2 py-2.5 pl-4 pr-3 text-[12.5px] font-bold transition-colors active:scale-[0.98]',
+                                  active
+                                    ? 'border-brand text-brand'
+                                    : 'border-slate-100 text-slate-500 hover:border-slate-200 hover:text-ink'
+                                )}
+                              >
+                                <ChildIcon size={15} strokeWidth={2.2} className="flex-shrink-0" />
+                                <span className="min-w-0 flex-1 truncate">{child.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
 
-                  const className = cn(
-                    'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-ink transition-colors active:scale-[0.98]',
-                    active ? 'bg-ink text-white shadow-lg shadow-ink/10' : 'hover:bg-slate-50',
-                    item.disabled && 'pointer-events-none opacity-40'
-                  );
+              const Icon = entry.icon;
+              const active = isActive(entry.href);
+              const content = (
+                <>
+                  <span
+                    className={cn(
+                      'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl',
+                      active ? 'bg-brand-soft text-brand' : 'bg-slate-50 text-slate-500'
+                    )}
+                  >
+                    <Icon size={16} strokeWidth={2.2} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{entry.label}</span>
+                  {entry.external && !entry.disabled && (
+                    <ChevronRight size={14} className="flex-shrink-0 text-slate-300" />
+                  )}
+                </>
+              );
 
-                  if (item.external) {
-                    return (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={onClose}
-                        className={className}
-                      >
-                        {content}
-                      </a>
-                    );
-                  }
+              const className = cn(
+                'flex items-center gap-3 rounded-2xl px-3 py-3 transition-colors active:scale-[0.98]',
+                active ? 'text-brand' : 'text-ink hover:bg-slate-50',
+                entry.disabled && 'pointer-events-none opacity-40'
+              );
 
-                  return (
-                    <Link key={item.label} href={item.href} onClick={onClose} className={className}>
-                      {content}
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
+              if (entry.external) {
+                return (
+                  <a
+                    key={entry.label}
+                    href={entry.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={onClose}
+                    className={className}
+                  >
+                    {content}
+                  </a>
+                );
+              }
+
+              return (
+                <Link key={entry.label} href={entry.href} onClick={onClose} className={className}>
+                  {content}
+                </Link>
+              );
+            })}
           </nav>
 
-          <div className="mt-6 h-px bg-slate-100" />
+          <div className="mt-6 px-4">
+            <div className="h-px bg-slate-100" />
+          </div>
 
           {/* Footer */}
-          <div className="px-3 pt-4">
+          <div className="px-4 pt-4">
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[13px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[13px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
             >
               <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-red-50">
                 <LogOut size={16} strokeWidth={2.2} />
