@@ -211,7 +211,7 @@ export function MobileSidebarDrawer({
         <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-8">
           {/* Header */}
           <div className="flex items-center gap-3 px-6 pb-5">
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[16px] font-black text-white shadow-md shadow-brand/20">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[14px] font-black text-white shadow-md shadow-brand/20">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={storeName} className="h-full w-full object-cover" />
@@ -244,13 +244,13 @@ export function MobileSidebarDrawer({
 
           {/* Search */}
           <div className="px-6 pb-2 pt-5">
-            <div className="flex items-center gap-2.5 rounded-2xl bg-slate-50 px-4 py-3">
-              <Search size={16} strokeWidth={2} className="flex-shrink-0 text-slate-400" />
+            <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
+              <Search size={16} strokeWidth={2.25} className="flex-shrink-0 text-slate-500" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Pesquisar no menu..."
-                className="w-full bg-transparent text-[13px] font-medium text-ink placeholder:font-normal placeholder:text-slate-400 focus:outline-none"
+                className="w-full bg-transparent text-[13px] font-medium text-ink placeholder:font-medium placeholder:text-slate-500 focus:outline-none"
               />
             </div>
           </div>
@@ -282,8 +282,8 @@ export function MobileSidebarDrawer({
                       >
                         <GroupIcon
                           size={16}
-                          strokeWidth={groupHighlighted ? 2 : 1.75}
-                          className={groupHighlighted ? 'text-white' : 'text-slate-400'}
+                          strokeWidth={groupHighlighted ? 2.25 : 2}
+                          className={groupHighlighted ? 'text-white' : 'text-slate-500'}
                         />
                       </span>
                       <span
@@ -329,7 +329,7 @@ export function MobileSidebarDrawer({
                               >
                                 <ChildIcon
                                   size={14}
-                                  strokeWidth={active ? 2 : 1.75}
+                                  strokeWidth={active ? 2.25 : 2}
                                   className="flex-shrink-0"
                                 />
                                 <span className="min-w-0 flex-1 truncate">{child.label}</span>
@@ -353,7 +353,7 @@ export function MobileSidebarDrawer({
                       active && 'bg-ink'
                     )}
                   >
-                    <Icon size={16} strokeWidth={active ? 2 : 1.75} className={active ? 'text-white' : 'text-slate-400'} />
+                    <Icon size={16} strokeWidth={active ? 2.25 : 2} className={active ? 'text-white' : 'text-slate-500'} />
                   </span>
                   <span
                     className={cn(
@@ -413,7 +413,7 @@ export function MobileSidebarDrawer({
               className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
             >
               <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-red-50">
-                <LogOut size={16} strokeWidth={1.9} />
+                <LogOut size={16} strokeWidth={2.1} />
               </span>
               Sair
             </button>
