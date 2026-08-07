@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -133,15 +133,35 @@ export function MobileSidebarDrawer({
 
   const [expanded, setExpanded] = useState<string | null>(defaultExpandedKey);
 
+  // Whether the accordion should skip its transition for one update. We need
+  // this because the DOM node never unmounts (the drawer only translates
+  // off-screen), so if a branch was left open, its grid-rows value is still
+  // "open" the moment we reopen — resetting it with the transition enabled
+  // would visibly animate the collapse right as the sidebar slides in. This
+  // flag lets that specific reset jump instantly, while manual toggles by
+  // the user keep animating normally.
+  const [instant, setInstant] = useState(false);
+
   // A branch opened manually only persists while the drawer stays open.
   // Every time the drawer opens, recompute fresh from the current route: it
   // starts collapsed, unless the user is on a page that belongs to a branch,
   // in which case that branch opens automatically to show where they are.
-  useEffect(() => {
+  // useLayoutEffect (rather than useEffect) so this resolves before the
+  // browser paints the reopened drawer — no stale frame to flash through.
+  useLayoutEffect(() => {
     if (!open) return;
+    setInstant(true);
     setExpanded(defaultExpandedKey());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Re-enable the transition right after that instant reset has painted,
+  // so any branch the user opens/closes by hand animates as usual.
+  useEffect(() => {
+    if (!instant) return;
+    const raf = requestAnimationFrame(() => setInstant(false));
+    return () => cancelAnimationFrame(raf);
+  }, [instant]);
 
   const query = searchQuery.trim().toLowerCase();
   const searching = query.length > 0;
@@ -311,7 +331,8 @@ export function MobileSidebarDrawer({
                         size={15}
                         strokeWidth={2.2}
                         className={cn(
-                          'flex-shrink-0 transition-transform duration-[250ms] ease-out',
+                          'flex-shrink-0 duration-[250ms] ease-out',
+                          instant ? 'transition-none' : 'transition-transform',
                           groupOpen ? 'rotate-180 text-zinc-500' : 'text-zinc-400'
                         )}
                       />
@@ -319,7 +340,8 @@ export function MobileSidebarDrawer({
 
                     <div
                       className={cn(
-                        'grid transition-[grid-template-rows] duration-[250ms] ease-out',
+                        'grid duration-[250ms] ease-out',
+                        instant ? 'transition-none' : 'transition-[grid-template-rows]',
                         groupOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                       )}
                     >
