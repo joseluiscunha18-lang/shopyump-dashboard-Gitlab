@@ -34,8 +34,6 @@ import { createClient } from '@/lib/supabase/client';
 
 export type Plano = 'gratis' | 'premium';
 
-// Single stroke weight for every icon in the sidebar — the only thing that
-// ever changes between states is color, never the drawing style.
 const ICON_STROKE = 2;
 
 interface NavLeaf {
@@ -107,9 +105,6 @@ export function MobileSidebarDrawer({
   storeName,
   storeUrl,
   logoUrl,
-  // NOTE: `Loja` has no `plano` column yet in types/database.ts — defaults
-  // to 'gratis' until billing lands. Wire this up to the real field once
-  // it exists (see architecture doc note in lib/storage.ts for precedent).
   plano = 'gratis',
 }: {
   open: boolean;
@@ -124,39 +119,20 @@ export function MobileSidebarDrawer({
   const entries = useMemo(() => buildEntries(storeUrl), [storeUrl]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Only one group open at a time — keeps the menu feeling short and calm.
-  // Auto-expands whichever group contains the current route.
   function defaultExpandedKey() {
     const active = entries.find((e) => isGroup(e) && e.children.some((c) => pathname.startsWith(c.href)));
     return active ? (active as NavGroup).key : null;
   }
 
   const [expanded, setExpanded] = useState<string | null>(defaultExpandedKey);
-
-  // Whether the accordion should skip its transition for one update. We need
-  // this because the DOM node never unmounts (the drawer only translates
-  // off-screen), so if a branch was left open, its grid-rows value is still
-  // "open" the moment we reopen — resetting it with the transition enabled
-  // would visibly animate the collapse right as the sidebar slides in. This
-  // flag lets that specific reset jump instantly, while manual toggles by
-  // the user keep animating normally.
   const [instant, setInstant] = useState(false);
 
-  // A branch opened manually only persists while the drawer stays open.
-  // Every time the drawer opens, recompute fresh from the current route: it
-  // starts collapsed, unless the user is on a page that belongs to a branch,
-  // in which case that branch opens automatically to show where they are.
-  // useLayoutEffect (rather than useEffect) so this resolves before the
-  // browser paints the reopened drawer — no stale frame to flash through.
   useLayoutEffect(() => {
     if (!open) return;
     setInstant(true);
     setExpanded(defaultExpandedKey());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Re-enable the transition right after that instant reset has painted,
-  // so any branch the user opens/closes by hand animates as usual.
   useEffect(() => {
     if (!instant) return;
     const raf = requestAnimationFrame(() => setInstant(false));
@@ -166,8 +142,6 @@ export function MobileSidebarDrawer({
   const query = searchQuery.trim().toLowerCase();
   const searching = query.length > 0;
 
-  // Filters both top-level items and group children by label; a group stays
-  // visible (with only its matching children) if either it or any child matches.
   const visibleEntries = useMemo(() => {
     if (!searching) return entries;
     return entries.reduce<NavEntry[]>((acc, entry) => {
@@ -215,41 +189,34 @@ export function MobileSidebarDrawer({
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay com transição de opacidade fluida e blur leve */}
       <div
         aria-hidden={!open}
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 bg-slate-950/50 transition-opacity duration-150 ease-out sm:hidden',
+          'fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] sm:hidden',
+          'transition-opacity duration-300 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
       />
 
-      {/* Panel */}
+      {/* Painel lateral Otimizado para GPU e 120Hz */}
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[80%] max-w-[400px] flex-col bg-white',
-          'rounded-tr-[28px] shadow-[0_24px_60px_rgba(15,23,42,0.25)]',
-          'transform-gpu will-change-transform transition-transform duration-[180ms] ease-out sm:hidden',
+          'fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-[360px] flex-col bg-white',
+          'border-r border-zinc-200/80 shadow-2xl',
+          'transform-gpu [backface-visibility:hidden] [will-change:transform]',
+          'transition-transform duration-300 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)] sm:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          aria-label="Fechar menu"
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition-colors active:scale-95 hover:bg-zinc-100 hover:text-zinc-900"
-        >
-          <X size={16} strokeWidth={2.5} />
-        </button>
-
-        <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-8">
-          {/* Header */}
-          <div className="flex items-center gap-3 px-6 pb-5">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[14px] font-black text-white shadow-md shadow-brand/20">
+        {/* Header Fixo de Navegação */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-900 text-[13px] font-extrabold text-white shadow-sm">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={storeName} className="h-full w-full object-cover" />
@@ -257,17 +224,17 @@ export function MobileSidebarDrawer({
                 <span>{initials(storeName)}</span>
               )}
             </div>
-            <div className="flex min-w-0 flex-col gap-1">
-              <p className="truncate font-display text-[17px] font-bold leading-tight tracking-tight text-zinc-900">
+            <div className="flex min-w-0 flex-col">
+              <p className="truncate text-[15px] font-semibold text-zinc-900 tracking-tight">
                 {storeName}
               </p>
-              <div className="flex items-center gap-1.5 text-[12.5px] text-zinc-500">
-                <span className="font-medium">Loja</span>
-                <span className="text-zinc-400">•</span>
+              <div className="flex items-center gap-1.5 text-[12px] text-zinc-500">
+                <span className="font-normal">Loja</span>
+                <span className="text-zinc-300">•</span>
                 <span
                   className={cn(
-                    'rounded-full px-2 py-[2px] text-[10px] font-bold',
-                    plano === 'premium' ? 'bg-zinc-800 text-white' : 'bg-zinc-100 text-zinc-600'
+                    'rounded-md px-1.5 py-[1px] text-[10px] font-semibold uppercase tracking-wider',
+                    plano === 'premium' ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'
                   )}
                 >
                   {plano === 'premium' ? 'Premium' : 'Grátis'}
@@ -276,25 +243,31 @@ export function MobileSidebarDrawer({
             </div>
           </div>
 
-          <div className="px-6">
-            <div className="h-px bg-zinc-100" />
-          </div>
+          <button
+            onClick={onClose}
+            aria-label="Fechar menu"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors active:bg-zinc-100 hover:text-zinc-700"
+          >
+            <X size={18} strokeWidth={2} />
+          </button>
+        </div>
 
-          {/* Search */}
-          <div className="px-6 pb-2 pt-5">
-            <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 shadow-sm">
-              <Search size={16} strokeWidth={2.25} className="flex-shrink-0 text-zinc-500" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar no menu..."
-                className="w-full bg-transparent text-[13px] font-medium text-zinc-900 placeholder:font-medium placeholder:text-zinc-500 focus:outline-none"
-              />
-            </div>
+        {/* Pesquisa Estilo Shopify */}
+        <div className="px-5 py-2">
+          <div className="flex items-center gap-2 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 transition-all focus-within:border-zinc-400 focus-within:bg-white focus-within:ring-1 focus-within:ring-zinc-400">
+            <Search size={15} strokeWidth={2} className="flex-shrink-0 text-zinc-400" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Pesquisar..."
+              className="w-full bg-transparent text-[13px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+            />
           </div>
+        </div>
 
-          {/* Nav */}
-          <nav className="flex flex-col gap-0.5 px-4 pt-2">
+        {/* Lista de Navegação com Scroll Rápido */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 no-scrollbar">
+          <nav className="flex flex-col gap-0.5">
             {visibleEntries.map((entry) => {
               if (isGroup(entry)) {
                 const GroupIcon = entry.icon;
@@ -308,45 +281,38 @@ export function MobileSidebarDrawer({
                       onClick={() => setExpanded(groupOpen ? null : entry.key)}
                       aria-expanded={groupOpen}
                       className={cn(
-                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors active:scale-[0.98]',
-                        groupHighlighted ? 'bg-zinc-100' : 'hover:bg-zinc-50'
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors active:bg-zinc-100/80',
+                        groupHighlighted ? 'text-zinc-900 font-semibold' : 'text-zinc-600 hover:bg-zinc-50'
                       )}
                     >
-                      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                        <GroupIcon
-                          size={17}
-                          strokeWidth={ICON_STROKE}
-                          className={groupHighlighted ? 'text-brand' : 'text-zinc-500'}
-                        />
-                      </span>
-                      <span
-                        className={cn(
-                          'min-w-0 flex-1 truncate text-[14px] text-zinc-900',
-                          groupHighlighted ? 'font-bold' : 'font-medium'
-                        )}
-                      >
+                      <GroupIcon
+                        size={18}
+                        strokeWidth={ICON_STROKE}
+                        className={cn('flex-shrink-0', groupHighlighted ? 'text-zinc-900' : 'text-zinc-400')}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[13.5px]">
                         {entry.label}
                       </span>
                       <ChevronDown
                         size={15}
-                        strokeWidth={2.2}
+                        strokeWidth={2}
                         className={cn(
-                          'flex-shrink-0 duration-[180ms] ease-out',
+                          'flex-shrink-0 text-zinc-400 duration-200 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]',
                           instant ? 'transition-none' : 'transition-transform',
-                          groupOpen ? 'rotate-180 text-zinc-500' : 'text-zinc-400'
+                          groupOpen && 'rotate-180'
                         )}
                       />
                     </button>
 
                     <div
                       className={cn(
-                        'grid duration-[180ms] ease-out [contain:layout] will-change-[grid-template-rows]',
+                        'grid duration-200 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)] transform-gpu',
                         instant ? 'transition-none' : 'transition-[grid-template-rows]',
                         groupOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                       )}
                     >
                       <div className="overflow-hidden">
-                        <div className="flex flex-col gap-0.5 py-1 pl-[18px]">
+                        <div className="flex flex-col gap-0.5 py-1 pl-7 pr-1">
                           {entry.children.map((child) => {
                             const ChildIcon = child.icon;
                             const active = isActive(child.href);
@@ -356,16 +322,16 @@ export function MobileSidebarDrawer({
                                 href={child.href}
                                 onClick={onClose}
                                 className={cn(
-                                  'flex items-center gap-3 rounded-lg border-l-2 py-2.5 pl-4 pr-3 text-[13px] transition-colors active:scale-[0.98]',
+                                  'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors active:bg-zinc-100',
                                   active
-                                    ? 'border-brand font-bold text-zinc-900'
-                                    : 'border-zinc-200 font-medium text-zinc-700 hover:border-zinc-300 hover:text-zinc-900'
+                                    ? 'bg-zinc-100 font-semibold text-zinc-900'
+                                    : 'font-normal text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
                                 )}
                               >
                                 <ChildIcon
                                   size={15}
                                   strokeWidth={ICON_STROKE}
-                                  className={cn('flex-shrink-0', active ? 'text-brand' : 'text-zinc-500')}
+                                  className={cn('flex-shrink-0', active ? 'text-zinc-900' : 'text-zinc-400')}
                                 />
                                 <span className="min-w-0 flex-1 truncate">{child.label}</span>
                               </Link>
@@ -380,39 +346,30 @@ export function MobileSidebarDrawer({
 
               const Icon = entry.icon;
               const active = isActive(entry.href);
-              const content = (
-                <>
-                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                    <Icon size={17} strokeWidth={ICON_STROKE} className={active ? 'text-brand' : 'text-zinc-500'} />
-                  </span>
-                  <span
-                    className={cn(
-                      'min-w-0 flex-1 truncate text-[14px] text-zinc-900',
-                      active ? 'font-bold' : 'font-medium'
-                    )}
-                  >
-                    {entry.label}
-                  </span>
-                  {active && <ChevronRight size={15} strokeWidth={2.2} className="flex-shrink-0 text-zinc-400" />}
-                </>
-              );
 
               const className = cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors active:scale-[0.98]',
-                active ? 'bg-zinc-100' : 'hover:bg-zinc-50',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] transition-colors active:bg-zinc-100',
+                active
+                  ? 'bg-zinc-100 font-semibold text-zinc-900'
+                  : 'font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900',
                 entry.disabled && 'pointer-events-none opacity-40'
+              );
+
+              const content = (
+                <>
+                  <Icon
+                    size={18}
+                    strokeWidth={ICON_STROKE}
+                    className={cn('flex-shrink-0', active ? 'text-zinc-900' : 'text-zinc-400')}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+                  {active && <ChevronRight size={14} strokeWidth={2} className="flex-shrink-0 text-zinc-400" />}
+                </>
               );
 
               if (entry.external) {
                 return (
-                  <a
-                    key={entry.label}
-                    href={entry.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={onClose}
-                    className={className}
-                  >
+                  <a key={entry.label} href={entry.href} target="_blank" rel="noreferrer" onClick={onClose} className={className}>
                     {content}
                   </a>
                 );
@@ -426,28 +383,22 @@ export function MobileSidebarDrawer({
             })}
 
             {searching && visibleEntries.length === 0 && (
-              <p className="px-3 py-6 text-center text-[13px] font-medium text-zinc-500">
-                Nada encontrado para &ldquo;{searchQuery}&rdquo;
+              <p className="px-3 py-6 text-center text-[13px] text-zinc-400">
+                Sem resultados para &ldquo;{searchQuery}&rdquo;
               </p>
             )}
           </nav>
+        </div>
 
-          <div className="mt-6 px-4">
-            <div className="h-px bg-zinc-100" />
-          </div>
-
-          {/* Footer */}
-          <div className="px-4 pt-4">
-            <button
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold text-red-600 transition-colors active:scale-[0.98] hover:bg-red-50"
-            >
-              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                <LogOut size={17} strokeWidth={ICON_STROKE} />
-              </span>
-              Sair
-            </button>
-          </div>
+        {/* Footer Fixo */}
+        <div className="border-t border-zinc-100 p-3">
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-red-600 transition-colors active:bg-red-50 hover:bg-red-50/50"
+          >
+            <LogOut size={18} strokeWidth={ICON_STROKE} className="flex-shrink-0" />
+            Terminar Sessão
+          </button>
         </div>
       </aside>
     </>
