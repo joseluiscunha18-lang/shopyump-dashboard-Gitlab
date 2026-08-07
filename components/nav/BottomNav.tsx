@@ -33,10 +33,7 @@ export function BottomNav() {
       )}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
     >
-      <div
-        className="grid grid-cols-5 items-stretch border-t border-slate-200 bg-white px-1 pb-1.5 pt-1.5"
-        style={{ boxShadow: '0 -8px 24px -12px rgba(15,23,42,0.18)' }}
-      >
+      <div className="grid grid-cols-5 items-stretch border-t border-slate-200 bg-white px-1 pb-1.5 pt-1.5">
         {items.map(({ href, label, icon: Icon, isAction }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
           const emphasized = active || isAction;
@@ -50,8 +47,8 @@ export function BottomNav() {
             >
               <span
                 className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-2xl transition-colors',
-                  emphasized ? 'bg-ink text-white shadow-lg shadow-ink/15' : 'text-slate-600'
+                  'flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+                  emphasized ? 'bg-ink/[0.07] text-ink' : 'text-slate-500'
                 )}
               >
                 <Icon size={19} strokeWidth={2} />
@@ -59,7 +56,7 @@ export function BottomNav() {
               <span
                 className={cn(
                   'text-[10px] font-bold uppercase tracking-wide leading-none',
-                  emphasized ? 'text-ink' : 'text-slate-600'
+                  emphasized ? 'text-ink' : 'text-slate-500'
                 )}
               >
                 {label}
