@@ -220,7 +220,7 @@ export function MobileSidebarDrawer({
         aria-hidden={!open}
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 bg-slate-950/50 transition-opacity duration-200 ease-out sm:hidden',
+          'fixed inset-0 z-40 bg-slate-950/50 transition-opacity duration-150 ease-out sm:hidden',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
       />
@@ -233,7 +233,7 @@ export function MobileSidebarDrawer({
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-[80%] max-w-[400px] flex-col bg-white',
           'rounded-tr-[28px] shadow-[0_24px_60px_rgba(15,23,42,0.25)]',
-          'transform-gpu will-change-transform transition-transform duration-[220ms] ease-out sm:hidden',
+          'transform-gpu will-change-transform transition-transform duration-[180ms] ease-out sm:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -331,7 +331,7 @@ export function MobileSidebarDrawer({
                         size={15}
                         strokeWidth={2.2}
                         className={cn(
-                          'flex-shrink-0 duration-[250ms] ease-out',
+                          'flex-shrink-0 duration-[180ms] ease-out',
                           instant ? 'transition-none' : 'transition-transform',
                           groupOpen ? 'rotate-180 text-zinc-500' : 'text-zinc-400'
                         )}
@@ -340,7 +340,7 @@ export function MobileSidebarDrawer({
 
                     <div
                       className={cn(
-                        'grid duration-[250ms] ease-out',
+                        'grid duration-[180ms] ease-out [contain:layout] will-change-[grid-template-rows]',
                         instant ? 'transition-none' : 'transition-[grid-template-rows]',
                         groupOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                       )}
