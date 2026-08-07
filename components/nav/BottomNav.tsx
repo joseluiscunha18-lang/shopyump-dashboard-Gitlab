@@ -43,20 +43,13 @@ export function BottomNav() {
               key={href}
               href={href}
               aria-label={isAction ? label : undefined}
-              className="flex flex-col items-center justify-center gap-1"
+              className="flex flex-col items-center justify-center gap-1 py-1 active:opacity-70"
             >
+              <Icon size={20} strokeWidth={emphasized ? 2.2 : 1.8} className={emphasized ? 'text-ink' : 'text-slate-500'} />
               <span
                 className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
-                  emphasized ? 'bg-ink/[0.07] text-ink' : 'text-slate-500'
-                )}
-              >
-                <Icon size={19} strokeWidth={2} />
-              </span>
-              <span
-                className={cn(
-                  'text-[10px] font-bold uppercase tracking-wide leading-none',
-                  emphasized ? 'text-ink' : 'text-slate-500'
+                  'text-[10px] tracking-wide leading-none',
+                  emphasized ? 'font-semibold text-ink' : 'font-normal text-slate-500'
                 )}
               >
                 {label}
