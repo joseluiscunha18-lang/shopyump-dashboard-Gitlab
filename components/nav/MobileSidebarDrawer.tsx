@@ -12,7 +12,7 @@ import {
   Settings,
   Globe,
   CreditCard,
-  Bell,
+  Users,
   Moon,
   Languages,
   User,
@@ -63,10 +63,9 @@ function buildEntries(storeUrl: string | null): NavEntry[] {
   return [
     { href: storeUrl ?? '#', label: 'Ver loja', icon: Eye, external: true, disabled: !storeUrl },
     { href: '/loja', label: 'Personalizar loja', icon: Palette },
-    { href: '/cupons', label: 'Cupons e descontos', icon: Ticket },
     {
       key: 'loja',
-      label: 'Loja',
+      label: 'Configurações da loja',
       icon: Settings,
       children: [
         { href: '/configuracoes/informacoes', label: 'Informações da loja', icon: Info },
@@ -76,9 +75,10 @@ function buildEntries(storeUrl: string | null): NavEntry[] {
         { href: '/configuracoes/politicas', label: 'Políticas', icon: FileText },
       ],
     },
+    { href: '/clientes', label: 'Clientes', icon: Users },
+    { href: '/cupons', label: 'Cupons e descontos', icon: Ticket },
     { href: '/dominio', label: 'Domínio', icon: Globe },
     { href: '/plano', label: 'Plano e faturação', icon: CreditCard },
-    { href: '/notificacoes', label: 'Notificações', icon: Bell },
     { href: '/aparencia', label: 'Aparência', icon: Moon },
     { href: '/idioma', label: 'Idioma', icon: Languages },
     {
