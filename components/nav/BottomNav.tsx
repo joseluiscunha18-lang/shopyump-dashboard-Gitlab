@@ -34,35 +34,32 @@ export function BottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
     >
       <div
-        className="grid grid-cols-5 items-stretch rounded-t-[28px] border-t-[0.5px] border-slate-200/60 bg-white/95 px-1.5 pb-1.5 pt-2 backdrop-blur-sm"
-        style={{ boxShadow: '0 -10px 30px -14px rgba(15,23,42,0.16), 0 -2px 8px -2px rgba(15,23,42,0.06)' }}
+        className="grid grid-cols-5 items-stretch border-t border-slate-200 bg-white px-1 pb-1.5 pt-1.5"
+        style={{ boxShadow: '0 -8px 24px -12px rgba(15,23,42,0.18)' }}
       >
         {items.map(({ href, label, icon: Icon, isAction }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const emphasized = active || isAction;
 
           return (
             <Link
               key={href}
               href={href}
               aria-label={isAction ? label : undefined}
-              className="flex flex-col items-center justify-center gap-1.5 py-1 transition-transform active:scale-95"
+              className="flex flex-col items-center justify-center gap-1"
             >
               <span
                 className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
-                  isAction
-                    ? 'bg-ink text-white shadow-md shadow-ink/20'
-                    : active
-                      ? 'bg-ink/[0.06] text-ink'
-                      : 'text-slate-400'
+                  'flex h-9 w-9 items-center justify-center rounded-2xl transition-colors',
+                  emphasized ? 'bg-ink text-white shadow-lg shadow-ink/15' : 'text-slate-600'
                 )}
               >
-                <Icon size={19} strokeWidth={isAction || active ? 2.4 : 2} />
+                <Icon size={19} strokeWidth={2} />
               </span>
               <span
                 className={cn(
-                  'text-[9.5px] font-bold uppercase tracking-wide leading-none',
-                  isAction || active ? 'text-ink' : 'text-slate-400'
+                  'text-[10px] font-bold uppercase tracking-wide leading-none',
+                  emphasized ? 'text-ink' : 'text-slate-600'
                 )}
               >
                 {label}
