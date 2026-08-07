@@ -28,13 +28,13 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-[180ms] ease-out',
+        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-[240ms] ease-out',
         menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
       )}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div
-        className="flex items-center justify-around rounded-t-[28px] border-t-[0.5px] border-slate-200/60 bg-white/95 px-2 pb-2 pt-2 backdrop-blur-xl"
+        className="flex items-center justify-around rounded-t-[28px] border-t-[0.5px] border-slate-200/60 bg-white/95 px-2 pb-2 pt-2 backdrop-blur-sm"
         style={{ boxShadow: '0 -10px 30px -14px rgba(15,23,42,0.16), 0 -2px 8px -2px rgba(15,23,42,0.06)' }}
       >
         {items.map(({ href, label, icon: Icon, isAction }) => {
