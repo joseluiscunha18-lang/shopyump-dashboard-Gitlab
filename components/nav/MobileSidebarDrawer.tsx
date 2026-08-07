@@ -12,6 +12,9 @@ import {
   Settings,
   Globe,
   CreditCard,
+  Bell,
+  Moon,
+  Languages,
   User,
   HelpCircle,
   LogOut,
@@ -24,14 +27,16 @@ import {
   FileText,
   IdCard,
   Shield,
-  Paintbrush,
-  Languages,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { createClient } from '@/lib/supabase/client';
 
 export type Plano = 'gratis' | 'premium';
+
+// Single stroke weight for every icon in the sidebar — the only thing that
+// ever changes between states is color, never the drawing style.
+const ICON_STROKE = 2;
 
 interface NavLeaf {
   href: string;
@@ -73,6 +78,9 @@ function buildEntries(storeUrl: string | null): NavEntry[] {
     },
     { href: '/dominio', label: 'Domínio', icon: Globe },
     { href: '/plano', label: 'Plano e faturação', icon: CreditCard },
+    { href: '/notificacoes', label: 'Notificações', icon: Bell },
+    { href: '/aparencia', label: 'Aparência', icon: Moon },
+    { href: '/idioma', label: 'Idioma', icon: Languages },
     {
       key: 'conta',
       label: 'Conta',
@@ -80,8 +88,6 @@ function buildEntries(storeUrl: string | null): NavEntry[] {
       children: [
         { href: '/perfil', label: 'Perfil', icon: IdCard },
         { href: '/seguranca', label: 'Segurança', icon: Shield },
-        { href: '/aparencia', label: 'Aparência', icon: Paintbrush },
-        { href: '/idioma', label: 'Idioma', icon: Languages },
       ],
     },
     { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
@@ -203,7 +209,7 @@ export function MobileSidebarDrawer({
         <button
           onClick={onClose}
           aria-label="Fechar menu"
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors active:scale-95 hover:bg-slate-100 hover:text-ink"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition-colors active:scale-95 hover:bg-zinc-100 hover:text-zinc-900"
         >
           <X size={16} strokeWidth={2.5} />
         </button>
@@ -220,16 +226,16 @@ export function MobileSidebarDrawer({
               )}
             </div>
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="truncate font-display text-[17px] font-bold leading-tight tracking-tight text-ink">
+              <p className="truncate font-display text-[17px] font-bold leading-tight tracking-tight text-zinc-900">
                 {storeName}
               </p>
-              <div className="flex items-center gap-1.5 text-[12.5px] text-slate-400">
+              <div className="flex items-center gap-1.5 text-[12.5px] text-zinc-500">
                 <span className="font-medium">Loja</span>
-                <span className="text-slate-300">•</span>
+                <span className="text-zinc-400">•</span>
                 <span
                   className={cn(
                     'rounded-full px-2 py-[2px] text-[10px] font-bold',
-                    plano === 'premium' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-500'
+                    plano === 'premium' ? 'bg-zinc-800 text-white' : 'bg-zinc-100 text-zinc-600'
                   )}
                 >
                   {plano === 'premium' ? 'Premium' : 'Grátis'}
@@ -239,18 +245,18 @@ export function MobileSidebarDrawer({
           </div>
 
           <div className="px-6">
-            <div className="h-px bg-slate-100" />
+            <div className="h-px bg-zinc-100" />
           </div>
 
           {/* Search */}
           <div className="px-6 pb-2 pt-5">
-            <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
-              <Search size={16} strokeWidth={2.25} className="flex-shrink-0 text-slate-500" />
+            <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 shadow-sm">
+              <Search size={16} strokeWidth={2.25} className="flex-shrink-0 text-zinc-500" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Pesquisar no menu..."
-                className="w-full bg-transparent text-[13px] font-medium text-ink placeholder:font-medium placeholder:text-slate-500 focus:outline-none"
+                className="w-full bg-transparent text-[13px] font-medium text-zinc-900 placeholder:font-medium placeholder:text-zinc-500 focus:outline-none"
               />
             </div>
           </div>
@@ -270,26 +276,21 @@ export function MobileSidebarDrawer({
                       onClick={() => setExpanded(groupOpen ? null : entry.key)}
                       aria-expanded={groupOpen}
                       className={cn(
-                        'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors active:scale-[0.98]',
-                        groupHighlighted ? 'bg-slate-100' : 'hover:bg-slate-50'
+                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors active:scale-[0.98]',
+                        groupHighlighted ? 'bg-zinc-100' : 'hover:bg-zinc-50'
                       )}
                     >
-                      <span
-                        className={cn(
-                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full',
-                          groupHighlighted && 'bg-ink'
-                        )}
-                      >
+                      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
                         <GroupIcon
-                          size={16}
-                          strokeWidth={groupHighlighted ? 2.25 : 2}
-                          className={groupHighlighted ? 'text-white' : 'text-slate-500'}
+                          size={17}
+                          strokeWidth={ICON_STROKE}
+                          className={groupHighlighted ? 'text-brand' : 'text-zinc-500'}
                         />
                       </span>
                       <span
                         className={cn(
-                          'min-w-0 flex-1 truncate text-[14px]',
-                          groupHighlighted ? 'font-bold text-ink' : 'font-semibold text-slate-700'
+                          'min-w-0 flex-1 truncate text-[14px] text-zinc-900',
+                          groupHighlighted ? 'font-bold' : 'font-medium'
                         )}
                       >
                         {entry.label}
@@ -299,7 +300,7 @@ export function MobileSidebarDrawer({
                         strokeWidth={2.2}
                         className={cn(
                           'flex-shrink-0 transition-transform duration-[250ms] ease-out',
-                          groupOpen ? 'rotate-180 text-slate-500' : 'text-slate-300'
+                          groupOpen ? 'rotate-180 text-zinc-500' : 'text-zinc-400'
                         )}
                       />
                     </button>
@@ -321,16 +322,16 @@ export function MobileSidebarDrawer({
                                 href={child.href}
                                 onClick={onClose}
                                 className={cn(
-                                  'flex items-center gap-3 rounded-xl border-l-2 py-2.5 pl-4 pr-3 text-[13px] transition-colors active:scale-[0.98]',
+                                  'flex items-center gap-3 rounded-lg border-l-2 py-2.5 pl-4 pr-3 text-[13px] transition-colors active:scale-[0.98]',
                                   active
-                                    ? 'border-ink font-bold text-ink'
-                                    : 'border-slate-100 font-semibold text-slate-600 hover:border-slate-200 hover:text-ink'
+                                    ? 'border-brand font-bold text-zinc-900'
+                                    : 'border-zinc-200 font-medium text-zinc-700 hover:border-zinc-300 hover:text-zinc-900'
                                 )}
                               >
                                 <ChildIcon
-                                  size={14}
-                                  strokeWidth={active ? 2.25 : 2}
-                                  className="flex-shrink-0"
+                                  size={15}
+                                  strokeWidth={ICON_STROKE}
+                                  className={cn('flex-shrink-0', active ? 'text-brand' : 'text-zinc-500')}
                                 />
                                 <span className="min-w-0 flex-1 truncate">{child.label}</span>
                               </Link>
@@ -347,29 +348,24 @@ export function MobileSidebarDrawer({
               const active = isActive(entry.href);
               const content = (
                 <>
-                  <span
-                    className={cn(
-                      'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full',
-                      active && 'bg-ink'
-                    )}
-                  >
-                    <Icon size={16} strokeWidth={active ? 2.25 : 2} className={active ? 'text-white' : 'text-slate-500'} />
+                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
+                    <Icon size={17} strokeWidth={ICON_STROKE} className={active ? 'text-brand' : 'text-zinc-500'} />
                   </span>
                   <span
                     className={cn(
-                      'min-w-0 flex-1 truncate text-[14px]',
-                      active ? 'font-bold text-ink' : 'font-semibold text-slate-700'
+                      'min-w-0 flex-1 truncate text-[14px] text-zinc-900',
+                      active ? 'font-bold' : 'font-medium'
                     )}
                   >
                     {entry.label}
                   </span>
-                  {active && <ChevronRight size={15} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />}
+                  {active && <ChevronRight size={15} strokeWidth={2.2} className="flex-shrink-0 text-zinc-400" />}
                 </>
               );
 
               const className = cn(
-                'flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors active:scale-[0.98]',
-                active ? 'bg-slate-100' : 'hover:bg-slate-50',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors active:scale-[0.98]',
+                active ? 'bg-zinc-100' : 'hover:bg-zinc-50',
                 entry.disabled && 'pointer-events-none opacity-40'
               );
 
@@ -396,24 +392,24 @@ export function MobileSidebarDrawer({
             })}
 
             {searching && visibleEntries.length === 0 && (
-              <p className="px-3 py-6 text-center text-[13px] font-medium text-slate-400">
+              <p className="px-3 py-6 text-center text-[13px] font-medium text-zinc-500">
                 Nada encontrado para &ldquo;{searchQuery}&rdquo;
               </p>
             )}
           </nav>
 
           <div className="mt-6 px-4">
-            <div className="h-px bg-slate-100" />
+            <div className="h-px bg-zinc-100" />
           </div>
 
           {/* Footer */}
           <div className="px-4 pt-4">
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-bold text-red-500 transition-colors active:scale-[0.98] hover:bg-red-50"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold text-red-600 transition-colors active:scale-[0.98] hover:bg-red-50"
             >
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-red-50">
-                <LogOut size={16} strokeWidth={2.1} />
+              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
+                <LogOut size={17} strokeWidth={ICON_STROKE} />
               </span>
               Sair
             </button>
