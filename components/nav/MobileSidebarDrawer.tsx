@@ -215,7 +215,7 @@ export function MobileSidebarDrawer({
         aria-hidden={!open}
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 bg-zinc-950/45 transition-opacity duration-[120ms] ease-out sm:hidden',
+          'fixed inset-0 z-40 bg-zinc-950/45 sm:hidden',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
       />
@@ -227,8 +227,7 @@ export function MobileSidebarDrawer({
         aria-label="Menu"
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-[70%] max-w-[400px] flex-col bg-white',
-          'rounded-tr-[28px] shadow-[0_24px_60px_rgba(24,24,27,0.25)]',
-          'transform-gpu will-change-transform transition-transform duration-[120ms] ease-out sm:hidden',
+          'rounded-tr-[28px] shadow-[0_24px_60px_rgba(24,24,27,0.25)] sm:hidden',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
