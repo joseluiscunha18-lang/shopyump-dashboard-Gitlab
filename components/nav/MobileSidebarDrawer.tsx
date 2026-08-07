@@ -126,10 +126,22 @@ export function MobileSidebarDrawer({
 
   // Only one group open at a time — keeps the menu feeling short and calm.
   // Auto-expands whichever group contains the current route.
-  const [expanded, setExpanded] = useState<string | null>(() => {
+  function defaultExpandedKey() {
     const active = entries.find((e) => isGroup(e) && e.children.some((c) => pathname.startsWith(c.href)));
     return active ? (active as NavGroup).key : null;
-  });
+  }
+
+  const [expanded, setExpanded] = useState<string | null>(defaultExpandedKey);
+
+  // A branch opened manually only persists while the drawer stays open.
+  // Every time the drawer opens, recompute fresh from the current route: it
+  // starts collapsed, unless the user is on a page that belongs to a branch,
+  // in which case that branch opens automatically to show where they are.
+  useEffect(() => {
+    if (!open) return;
+    setExpanded(defaultExpandedKey());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const query = searchQuery.trim().toLowerCase();
   const searching = query.length > 0;
