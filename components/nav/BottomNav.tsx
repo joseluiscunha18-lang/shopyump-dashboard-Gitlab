@@ -36,20 +36,34 @@ export function BottomNav() {
       <div className="grid grid-cols-5 items-stretch border-t border-slate-200 bg-white px-1 pb-1.5 pt-1.5">
         {items.map(({ href, label, icon: Icon, isAction }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
-          const emphasized = active || isAction;
+
+          if (isAction) {
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-label={label}
+                className="flex flex-col items-center justify-center gap-1 py-1 active:opacity-80"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-sm shadow-brand/30">
+                  <Icon size={19} strokeWidth={2.3} />
+                </span>
+                <span className="text-[10px] font-semibold tracking-wide leading-none text-brand">{label}</span>
+              </Link>
+            );
+          }
 
           return (
             <Link
               key={href}
               href={href}
-              aria-label={isAction ? label : undefined}
               className="flex flex-col items-center justify-center gap-1 py-1 active:opacity-70"
             >
-              <Icon size={20} strokeWidth={emphasized ? 2.2 : 1.8} className={emphasized ? 'text-ink' : 'text-slate-500'} />
+              <Icon size={20} strokeWidth={active ? 2.2 : 1.8} className={active ? 'text-brand' : 'text-slate-500'} />
               <span
                 className={cn(
                   'text-[10px] tracking-wide leading-none',
-                  emphasized ? 'font-semibold text-ink' : 'font-normal text-slate-500'
+                  active ? 'font-semibold text-brand' : 'font-normal text-slate-500'
                 )}
               >
                 {label}
