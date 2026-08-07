@@ -37,11 +37,6 @@ export function TopBar({
           <h1 className="max-w-none truncate text-2xl font-black tracking-tight text-ink">{storeName}</h1>
         </div>
 
-        {/* Centered store name — mobile only */}
-        <h1 className="pointer-events-none absolute left-1/2 top-1/2 max-w-[55%] -translate-x-1/2 -translate-y-1/2 truncate text-center font-display text-[15px] font-black tracking-tight text-ink sm:hidden">
-          {storeName}
-        </h1>
-
         {/* Notifications */}
         <button
           aria-label="Notificações"
