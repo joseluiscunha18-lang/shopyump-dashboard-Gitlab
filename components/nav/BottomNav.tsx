@@ -31,9 +31,9 @@ export function BottomNav() {
         'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-200',
         menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
       )}
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
     >
-      <div className="grid grid-cols-5 items-stretch border-t border-slate-200 bg-white px-1 pb-1.5 pt-1.5">
+      <div className="mx-3 grid grid-cols-5 items-stretch rounded-[28px] border border-zinc-200/70 bg-white px-1.5 py-2 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.18)]">
         {items.map(({ href, label, icon: Icon, isAction }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -43,12 +43,12 @@ export function BottomNav() {
                 key={href}
                 href={href}
                 aria-label={label}
-                className="flex flex-col items-center justify-center gap-1 py-1 active:opacity-80"
+                className="flex flex-col items-center justify-center gap-1 active:opacity-80"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-sm shadow-brand/30">
-                  <Icon size={19} strokeWidth={2.3} />
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 text-white">
+                  <Icon size={19} strokeWidth={2.2} />
                 </span>
-                <span className="text-[10px] font-semibold tracking-wide leading-none text-brand">{label}</span>
+                <span className="text-[10px] font-semibold tracking-wide leading-none text-zinc-900">{label}</span>
               </Link>
             );
           }
@@ -57,13 +57,13 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center justify-center gap-1 py-1 active:opacity-70"
+              className="flex flex-col items-center justify-center gap-1 active:opacity-70"
             >
-              <Icon size={20} strokeWidth={active ? 2.2 : 1.8} className={active ? 'text-brand' : 'text-slate-500'} />
+              <Icon size={21} strokeWidth={active ? 2 : 1.8} className={active ? 'text-zinc-900' : 'text-zinc-400'} />
               <span
                 className={cn(
                   'text-[10px] tracking-wide leading-none',
-                  active ? 'font-semibold text-brand' : 'font-normal text-slate-500'
+                  active ? 'font-semibold text-zinc-900' : 'font-normal text-zinc-400'
                 )}
               >
                 {label}
