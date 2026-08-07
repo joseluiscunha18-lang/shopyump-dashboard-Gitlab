@@ -28,7 +28,7 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-[220ms] ease-out',
+        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-[180ms] ease-out',
         menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
       )}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
