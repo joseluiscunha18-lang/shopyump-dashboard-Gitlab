@@ -28,13 +28,15 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu [backface-visibility:hidden]',
-        'transition-transform duration-300 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]',
+        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-[180ms] ease-out',
         menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
       )}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex items-center justify-around border-t border-zinc-200/60 bg-white/90 px-2 py-1.5 backdrop-blur-lg shadow-lg">
+      <div
+        className="flex items-center justify-around rounded-t-[28px] border-t-[0.5px] border-slate-200/60 bg-white/95 px-2 pb-2 pt-2 backdrop-blur-xl"
+        style={{ boxShadow: '0 -10px 30px -14px rgba(15,23,42,0.16), 0 -2px 8px -2px rgba(15,23,42,0.06)' }}
+      >
         {items.map(({ href, label, icon: Icon, isAction }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -44,12 +46,12 @@ export function BottomNav() {
                 key={href}
                 href={href}
                 aria-label={label}
-                className="relative -mt-6 flex flex-col items-center gap-1 active:opacity-80"
+                className="relative -mt-7 flex flex-col items-center gap-1 px-3 transition-transform active:scale-95"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white shadow-md ring-4 ring-white">
-                  <Icon size={20} strokeWidth={2.2} />
+                <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-ink text-white shadow-lg shadow-ink/25 ring-4 ring-white">
+                  <Icon size={22} strokeWidth={2.4} />
                 </span>
-                <span className="text-[10px] font-medium text-zinc-500">{label}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">{label}</span>
               </Link>
             );
           }
@@ -59,12 +61,12 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center gap-1 rounded-lg px-3 py-1 transition-colors active:opacity-70',
-                active ? 'text-zinc-900' : 'text-zinc-400'
+                'flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-colors',
+                active ? 'text-ink' : 'text-slate-400'
               )}
             >
-              <Icon size={19} strokeWidth={active ? 2.2 : 1.8} />
-              <span className={cn('text-[10px]', active ? 'font-semibold' : 'font-normal')}>{label}</span>
+              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+              <span className="text-[9px] font-bold uppercase tracking-wide">{label}</span>
             </Link>
           );
         })}
