@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -37,6 +37,12 @@ export type Plano = 'gratis' | 'premium';
 // Single stroke weight for every icon in the sidebar — the only thing that
 // ever changes between states is color, never the drawing style.
 const ICON_STROKE = 2;
+
+// useLayoutEffect warns on the server (no DOM to lay out yet, and this is a
+// 'use client' component that still gets SSR'd by default) — fall back to
+// useEffect there, since the pre-paint timing only matters once we're in
+// the browser anyway.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface NavLeaf {
   href: string;
@@ -168,16 +174,15 @@ export function MobileSidebarDrawer({
     }, []);
   }, [entries, searching, query]);
 
-  // Deferred one frame so the scroll-lock reflow doesn't land on top of the
-  // slide's first frame.
-  useEffect(() => {
+  // Runs before the browser paints, so the scroll-lock's reflow resolves in
+  // the very same pass as the drawer's starting transform — not a separate
+  // reflow landing on some frame after the slide has already started. Fixes
+  // both directions: the cleanup on close gets the same pre-paint timing.
+  useIsomorphicLayoutEffect(() => {
     if (!open) return;
     const original = document.body.style.overflow;
-    const raf = requestAnimationFrame(() => {
-      document.body.style.overflow = 'hidden';
-    });
+    document.body.style.overflow = 'hidden';
     return () => {
-      cancelAnimationFrame(raf);
       document.body.style.overflow = original;
     };
   }, [open]);
