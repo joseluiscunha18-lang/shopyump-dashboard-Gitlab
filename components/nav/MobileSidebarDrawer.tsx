@@ -1,76 +1,443 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Package, Plus, ClipboardList, BarChart3, type LucideIcon } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import {
+  X,
+  Search,
+  Eye,
+  Palette,
+  Ticket,
+  Settings,
+  Globe,
+  CreditCard,
+  Users,
+  Moon,
+  Languages,
+  User,
+  HelpCircle,
+  LogOut,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  Truck,
+  RotateCcw,
+  Wallet,
+  FileText,
+  IdCard,
+  Shield,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { useMobileNav } from './MobileNavContext';
+import { createClient } from '@/lib/supabase/client';
 
-interface NavItem {
+export type Plano = 'gratis' | 'premium';
+
+// Single stroke weight for every icon in the sidebar — the only thing that
+// ever changes between states is color, never the drawing style.
+const ICON_STROKE = 2;
+
+interface NavLeaf {
   href: string;
   label: string;
   icon: LucideIcon;
-  isAction?: boolean;
+  external?: boolean;
+  disabled?: boolean;
 }
 
-const items: NavItem[] = [
-  { href: '/', label: 'Início', icon: Home },
-  { href: '/produtos', label: 'Produtos', icon: Package },
-  { href: '/produtos/novo', label: 'Adicionar', icon: Plus, isAction: true },
-  { href: '/pedidos', label: 'Pedidos', icon: ClipboardList },
-  { href: '/analises', label: 'Análises', icon: BarChart3 },
-];
+interface NavGroup {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  children: NavLeaf[];
+}
 
-export function BottomNav() {
+type NavEntry = NavLeaf | NavGroup;
+
+function isGroup(entry: NavEntry): entry is NavGroup {
+  return 'children' in entry;
+}
+
+function buildEntries(storeUrl: string | null): NavEntry[] {
+  return [
+    { href: storeUrl ?? '#', label: 'Ver loja', icon: Eye, external: true, disabled: !storeUrl },
+    { href: '/loja', label: 'Personalizar loja', icon: Palette },
+    {
+      key: 'loja',
+      label: 'Configurações da loja',
+      icon: Settings,
+      children: [
+        { href: '/configuracoes/informacoes', label: 'Informações da loja', icon: Info },
+        { href: '/configuracoes/entrega', label: 'Entrega', icon: Truck },
+        { href: '/configuracoes/devolucoes', label: 'Devoluções', icon: RotateCcw },
+        { href: '/configuracoes/pagamentos', label: 'Pagamentos', icon: Wallet },
+        { href: '/configuracoes/politicas', label: 'Políticas', icon: FileText },
+      ],
+    },
+    { href: '/clientes', label: 'Clientes', icon: Users },
+    { href: '/cupons', label: 'Cupons e descontos', icon: Ticket },
+    { href: '/dominio', label: 'Domínio', icon: Globe },
+    { href: '/plano', label: 'Plano e faturação', icon: CreditCard },
+    { href: '/aparencia', label: 'Aparência', icon: Moon },
+    { href: '/idioma', label: 'Idioma', icon: Languages },
+    {
+      key: 'conta',
+      label: 'Conta',
+      icon: User,
+      children: [
+        { href: '/perfil', label: 'Perfil', icon: IdCard },
+        { href: '/seguranca', label: 'Segurança', icon: Shield },
+      ],
+    },
+    { href: '/ajuda', label: 'Ajuda', icon: HelpCircle },
+  ];
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'S';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+export function MobileSidebarDrawer({
+  open,
+  onClose,
+  storeName,
+  storeUrl,
+  logoUrl,
+  // NOTE: `Loja` has no `plano` column yet in types/database.ts — defaults
+  // to 'gratis' until billing lands. Wire this up to the real field once
+  // it exists (see architecture doc note in lib/storage.ts for precedent).
+  plano = 'gratis',
+}: {
+  open: boolean;
+  onClose: () => void;
+  storeName: string;
+  storeUrl: string | null;
+  logoUrl?: string | null;
+  plano?: Plano;
+}) {
+  const router = useRouter();
   const pathname = usePathname();
-  const { menuOpen } = useMobileNav();
+  const entries = useMemo(() => buildEntries(storeUrl), [storeUrl]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Only one group open at a time — keeps the menu feeling short and calm.
+  // Auto-expands whichever group contains the current route.
+  function defaultExpandedKey() {
+    const active = entries.find((e) => isGroup(e) && e.children.some((c) => pathname.startsWith(c.href)));
+    return active ? (active as NavGroup).key : null;
+  }
+
+  const [expanded, setExpanded] = useState<string | null>(defaultExpandedKey);
+
+  // A branch opened manually only persists while the drawer stays open. The
+  // reset back to default happens on CLOSE, not on open — that way, opening
+  // the drawer is nothing but a CSS transform (no state/JS work competing
+  // with the main thread for those first frames, which is what was causing
+  // the slide to stutter). The reset itself is delayed a beat past the close
+  // animation so, if the close was triggered by tapping a link, the route
+  // (and therefore `pathname`) has already updated — otherwise a branch the
+  // user just navigated into could wrongly collapse instead of staying open.
+  useEffect(() => {
+    if (open) return;
+    const id = setTimeout(() => setExpanded(defaultExpandedKey()), 260);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const query = searchQuery.trim().toLowerCase();
+  const searching = query.length > 0;
+
+  // Filters both top-level items and group children by label; a group stays
+  // visible (with only its matching children) if either it or any child matches.
+  const visibleEntries = useMemo(() => {
+    if (!searching) return entries;
+    return entries.reduce<NavEntry[]>((acc, entry) => {
+      if (isGroup(entry)) {
+        const matchingChildren = entry.children.filter((c) => c.label.toLowerCase().includes(query));
+        if (entry.label.toLowerCase().includes(query) || matchingChildren.length > 0) {
+          acc.push({ ...entry, children: matchingChildren.length > 0 ? matchingChildren : entry.children });
+        }
+      } else if (entry.label.toLowerCase().includes(query)) {
+        acc.push(entry);
+      }
+      return acc;
+    }, []);
+  }, [entries, searching, query]);
+
+  // Deferred one frame so the scroll-lock reflow doesn't land on top of the
+  // slide's first frame.
+  useEffect(() => {
+    if (!open) return;
+    const original = document.body.style.overflow;
+    const raf = requestAnimationFrame(() => {
+      document.body.style.overflow = 'hidden';
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      document.body.style.overflow = original;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    onClose();
+    router.push('/login');
+    router.refresh();
+  }
+
+  function isActive(href: string) {
+    return href !== '#' && pathname.startsWith(href);
+  }
 
   return (
-    <nav
-      className={cn(
-        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-[160ms] ease-out',
-        menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
-      )}
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
+    <>
+      {/* Overlay */}
       <div
-        className="flex items-center justify-around rounded-t-[28px] border-t-[0.5px] border-slate-200/60 bg-white/95 px-2 pb-2 pt-2 backdrop-blur-sm"
-        style={{ boxShadow: '0 -10px 30px -14px rgba(15,23,42,0.16), 0 -2px 8px -2px rgba(15,23,42,0.06)' }}
+        aria-hidden={!open}
+        onClick={onClose}
+        className={cn(
+          'fixed inset-0 z-40 bg-zinc-950/45 transition-opacity duration-[160ms] ease-out sm:hidden',
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        )}
+      />
+
+      {/* Panel */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 flex w-[70%] max-w-[400px] flex-col bg-white',
+          'rounded-tr-[28px] shadow-[0_24px_60px_rgba(24,24,27,0.25)]',
+          'transform-gpu will-change-transform transition-transform duration-[160ms] ease-out sm:hidden',
+          open ? 'translate-x-0' : '-translate-x-full'
+        )}
       >
-        {items.map(({ href, label, icon: Icon, isAction }) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          aria-label="Fechar menu"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition-colors active:scale-95 hover:bg-zinc-100 hover:text-zinc-900"
+        >
+          <X size={16} strokeWidth={2.5} />
+        </button>
 
-          if (isAction) {
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-label={label}
-                className="relative -mt-7 flex flex-col items-center gap-1 px-3 transition-transform active:scale-95"
-              >
-                <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-ink text-white shadow-lg shadow-ink/25 ring-4 ring-white">
-                  <Icon size={22} strokeWidth={2.4} />
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">{label}</span>
-              </Link>
-            );
-          }
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-colors',
-                active ? 'text-ink' : 'text-slate-400'
+        <div className="flex flex-col overflow-y-auto overscroll-contain no-scrollbar pb-6 pt-8">
+          {/* Header */}
+          <div className="flex items-center gap-3 px-6 pb-5">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[14px] font-black text-white shadow-md shadow-brand/20">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={storeName} className="h-full w-full object-cover" />
+              ) : (
+                <span>{initials(storeName)}</span>
               )}
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="truncate font-display text-[17px] font-bold leading-tight tracking-tight text-zinc-900">
+                {storeName}
+              </p>
+              <div className="flex items-center gap-1.5 text-[12.5px] text-zinc-500">
+                <span className="font-medium">Loja</span>
+                <span className="text-zinc-400">•</span>
+                <span
+                  className={cn(
+                    'rounded-full px-2 py-[2px] text-[10px] font-bold',
+                    plano === 'premium' ? 'bg-zinc-800 text-white' : 'bg-zinc-100 text-zinc-600'
+                  )}
+                >
+                  {plano === 'premium' ? 'Premium' : 'Grátis'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6">
+            <div className="h-px bg-zinc-100" />
+          </div>
+
+          {/* Search */}
+          <div className="px-6 pb-2 pt-5">
+            <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 shadow-sm">
+              <Search size={16} strokeWidth={2.25} className="flex-shrink-0 text-zinc-500" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Pesquisar no menu..."
+                className="w-full bg-transparent text-[13px] font-medium text-zinc-900 placeholder:font-medium placeholder:text-zinc-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Nav */}
+          <nav className="flex flex-col gap-0.5 px-4 pt-2">
+            {visibleEntries.map((entry) => {
+              if (isGroup(entry)) {
+                const GroupIcon = entry.icon;
+                const groupOpen = searching ? true : expanded === entry.key;
+                const groupHasActiveChild = entry.children.some((c) => isActive(c.href));
+                const groupHighlighted = groupOpen || groupHasActiveChild;
+
+                return (
+                  <div key={entry.key} className="flex flex-col">
+                    <button
+                      onClick={() => setExpanded(groupOpen ? null : entry.key)}
+                      aria-expanded={groupOpen}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors active:scale-[0.98]',
+                        groupHighlighted ? 'bg-zinc-100' : 'hover:bg-zinc-50'
+                      )}
+                    >
+                      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
+                        <GroupIcon
+                          size={17}
+                          strokeWidth={ICON_STROKE}
+                          className={groupHighlighted ? 'text-brand' : 'text-zinc-500'}
+                        />
+                      </span>
+                      <span
+                        className={cn(
+                          'min-w-0 flex-1 truncate text-[14px] text-zinc-900',
+                          groupHighlighted ? 'font-bold' : 'font-medium'
+                        )}
+                      >
+                        {entry.label}
+                      </span>
+                      <ChevronDown
+                        size={15}
+                        strokeWidth={2.2}
+                        className={cn(
+                          'flex-shrink-0 transition-transform duration-[180ms] ease-out',
+                          groupOpen ? 'rotate-180 text-zinc-500' : 'text-zinc-400'
+                        )}
+                      />
+                    </button>
+
+                    <div
+                      className={cn(
+                        'grid transition-[grid-template-rows] duration-[180ms] ease-out [contain:layout] will-change-[grid-template-rows]',
+                        groupOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                      )}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col gap-0.5 py-1 pl-[18px]">
+                          {entry.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            const active = isActive(child.href);
+                            return (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                onClick={onClose}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-lg border-l-2 py-2.5 pl-4 pr-3 text-[13px] transition-colors active:scale-[0.98]',
+                                  active
+                                    ? 'border-brand font-bold text-zinc-900'
+                                    : 'border-zinc-200 font-medium text-zinc-700 hover:border-zinc-300 hover:text-zinc-900'
+                                )}
+                              >
+                                <ChildIcon
+                                  size={15}
+                                  strokeWidth={ICON_STROKE}
+                                  className={cn('flex-shrink-0', active ? 'text-brand' : 'text-zinc-500')}
+                                />
+                                <span className="min-w-0 flex-1 truncate">{child.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              const Icon = entry.icon;
+              const active = isActive(entry.href);
+              const content = (
+                <>
+                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
+                    <Icon size={17} strokeWidth={ICON_STROKE} className={active ? 'text-brand' : 'text-zinc-500'} />
+                  </span>
+                  <span
+                    className={cn(
+                      'min-w-0 flex-1 truncate text-[14px] text-zinc-900',
+                      active ? 'font-bold' : 'font-medium'
+                    )}
+                  >
+                    {entry.label}
+                  </span>
+                  {active && <ChevronRight size={15} strokeWidth={2.2} className="flex-shrink-0 text-zinc-400" />}
+                </>
+              );
+
+              const className = cn(
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors active:scale-[0.98]',
+                active ? 'bg-zinc-100' : 'hover:bg-zinc-50',
+                entry.disabled && 'pointer-events-none opacity-40'
+              );
+
+              if (entry.external) {
+                return (
+                  <a
+                    key={entry.label}
+                    href={entry.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={onClose}
+                    className={className}
+                  >
+                    {content}
+                  </a>
+                );
+              }
+
+              return (
+                <Link key={entry.label} href={entry.href} onClick={onClose} className={className}>
+                  {content}
+                </Link>
+              );
+            })}
+
+            {searching && visibleEntries.length === 0 && (
+              <p className="px-3 py-6 text-center text-[13px] font-medium text-zinc-500">
+                Nada encontrado para &ldquo;{searchQuery}&rdquo;
+              </p>
+            )}
+          </nav>
+
+          <div className="mt-6 px-4">
+            <div className="h-px bg-zinc-100" />
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 pt-4">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold text-red-600 transition-colors active:scale-[0.98] hover:bg-red-50"
             >
-              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
-              <span className="text-[9px] font-bold uppercase tracking-wide">{label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
+                <LogOut size={17} strokeWidth={ICON_STROKE} />
+              </span>
+              Sair
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
