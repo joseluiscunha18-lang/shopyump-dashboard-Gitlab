@@ -25,9 +25,9 @@ const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink text-white text-[12px] font-semibold tracking-tight shadow-[0_2px_10px_rgba(15,23,42,0.10)] transition-all hover:bg-ink-soft active:scale-[0.97] self-start whitespace-nowrap';
 
 const visualTone: Record<Tone, string> = {
-  next: 'bg-[#F4F1EC]',
-  default: 'bg-[#F7F6F3]',
-  done: 'bg-[#F2F7F3]',
+  next: 'bg-[#EEF1F4]',
+  default: 'bg-[#F7F8FA]',
+  done: 'bg-[#EFFAF3]',
 };
 
 function dismissedKey(lojaId: string) {
@@ -162,17 +162,17 @@ export function StoreExplorationGuide({
   return (
     <section
       className={cn(
-        'flex flex-col gap-4 transition-all duration-200 ease-out',
+        'flex flex-col gap-6 pt-4 sm:pt-6 transition-all duration-200 ease-out',
         closing ? 'opacity-0 -translate-y-1' : 'opacity-100'
       )}
     >
       <div className="flex items-start justify-between gap-4 px-1">
-        <div>
-          <h2 className="font-display text-lg sm:text-xl font-black text-ink tracking-tight">
-            Comece a explorar sua loja
+        <div className="pt-1">
+          <h2 className="font-display text-xl sm:text-2xl font-black text-ink tracking-tight">
+            Sua loja está pronta para tomar forma
           </h2>
-          <p className="mt-1 text-[12px] font-medium text-slate-400">
-            Explore no seu ritmo — não existe ordem certa.
+          <p className="mt-2 text-[12.5px] font-medium text-slate-400">
+            Dê o primeiro passo por onde quiser — o ritmo é todo seu.
           </p>
         </div>
         <button
