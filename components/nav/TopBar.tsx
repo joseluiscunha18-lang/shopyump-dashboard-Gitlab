@@ -35,7 +35,7 @@ export function TopBar({
 
       <button
         aria-label="Notificações"
-        className={cn('fixed right-4 top-4 z-30 relative', floatingSurface)}
+        className={cn('fixed right-4 top-4 z-30', floatingSurface)}
       >
         <Bell size={18} strokeWidth={2.2} />
         <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-brand ring-2 ring-white" />
