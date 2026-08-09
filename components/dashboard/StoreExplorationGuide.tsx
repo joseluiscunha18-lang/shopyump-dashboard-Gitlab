@@ -11,7 +11,6 @@ type Tone = 'next' | 'default' | 'done';
 
 interface GuideItem {
   id: string;
-  tag: string;
   title: string;
   subtitle: string;
   icon: React.ElementType;
@@ -21,6 +20,15 @@ interface GuideItem {
   href?: string;
   onAction?: () => void;
 }
+
+const cta =
+  'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink text-white text-[12px] font-semibold tracking-tight shadow-[0_2px_10px_rgba(15,23,42,0.10)] transition-all hover:bg-ink-soft active:scale-[0.97] self-start whitespace-nowrap';
+
+const visualTone: Record<Tone, string> = {
+  next: 'bg-[#F4F1EC]',
+  default: 'bg-[#F7F6F3]',
+  done: 'bg-[#F2F7F3]',
+};
 
 function dismissedKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:dismissed`;
@@ -108,9 +116,8 @@ export function StoreExplorationGuide({
   const items: GuideItem[] = [
     {
       id: 'produto',
-      tag: 'Passo 01 • Catálogo',
-      title: 'Adicione o seu primeiro produto',
-      subtitle: 'Comece a construir o catálogo e os itens da sua loja.',
+      title: 'Adicione seu primeiro produto',
+      subtitle: 'Comece a construir seu catálogo.',
       icon: Package,
       completed: hasProduct,
       ctaLabel: 'Criar produto',
@@ -119,9 +126,8 @@ export function StoreExplorationGuide({
     },
     {
       id: 'personalizar',
-      tag: 'Passo 02 • Identidade',
-      title: 'Personalize a sua loja',
-      subtitle: 'Ajuste a aparência e defina a identidade da sua marca.',
+      title: 'Personalize sua loja',
+      subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
       icon: Store,
       completed: hasCustomized,
       ctaLabel: 'Personalizar',
@@ -130,9 +136,8 @@ export function StoreExplorationGuide({
     },
     {
       id: 'tema',
-      tag: 'Passo 03 • Visual',
       title: 'Escolha um tema',
-      subtitle: 'Encontre o estilo visual perfeito para encantar os clientes.',
+      subtitle: 'Encontre um estilo que combine com a sua marca.',
       icon: Palette,
       completed: temaVisitado,
       ctaLabel: 'Escolher tema',
@@ -142,9 +147,8 @@ export function StoreExplorationGuide({
     },
     {
       id: 'compartilhar',
-      tag: 'Passo 04 • Alcance',
-      title: 'Partilhe a sua loja',
-      subtitle: 'Divulgue o seu link e facilite o acesso aos seus clientes.',
+      title: 'Compartilhe sua loja',
+      subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
       icon: Share2,
       completed: partilhado,
       ctaLabel: 'Copiar link',
@@ -165,7 +169,7 @@ export function StoreExplorationGuide({
       <div className="flex items-start justify-between gap-4 px-1">
         <div>
           <h2 className="font-display text-lg sm:text-xl font-black text-ink tracking-tight">
-            Comece a explorar a sua loja
+            Comece a explorar sua loja
           </h2>
           <p className="mt-1 text-[12px] font-medium text-slate-400">
             Explore no seu ritmo — não existe ordem certa.
@@ -181,110 +185,81 @@ export function StoreExplorationGuide({
         </button>
       </div>
 
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-4">
         {items.map((item) => {
           const tone: Tone = item.completed ? 'done' : item.id === nextId ? 'next' : 'default';
           const Icon = item.icon;
 
           const content = (
-            <Card className="flex items-center justify-between gap-4 sm:gap-6 p-5 sm:p-6 rounded-[28px] bg-[#F7F7F6] border border-slate-200/60 shadow-none hover:border-slate-300 transition-all">
-              {/* Bloco de Texto (Esquerda) */}
-              <div className="flex-1 flex flex-col items-start min-w-0">
-                <span className="text-[11px] sm:text-[12px] font-medium text-slate-400 tracking-tight leading-none mb-1">
-                  {item.tag}
-                </span>
-
-                <h3 className="text-[15px] sm:text-[17px] font-black text-ink tracking-tight leading-snug">
-                  {item.title}
-                </h3>
-
-                <p className="text-[12px] sm:text-[12.5px] font-medium text-slate-400 leading-snug mt-1.5 mb-4 max-w-[300px]">
-                  {item.subtitle}
+            <div className="relative min-h-[196px] w-full overflow-hidden rounded-[28px] bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
+              {/* Conteúdo: eyebrow → título → descrição → CTA */}
+              <div className="relative z-10 flex h-full min-h-[156px] w-[62%] flex-col items-start">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : item.id === 'tema' ? 'Estilo da loja' : 'Divulgação'}
                 </p>
 
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1.5 h-9 px-5 rounded-full text-[12.5px] font-bold tracking-wide transition-all active:scale-[0.97]',
-                    item.completed
-                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
-                      : tone === 'next'
-                      ? 'bg-ink text-white hover:bg-ink-soft shadow-sm'
-                      : 'bg-white text-ink border border-slate-200 hover:bg-slate-50'
-                  )}
-                >
+                <div className="mt-2">
+                  <p className="text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
+                    {item.title}
+                  </p>
+                  <p className="mt-2 max-w-[230px] text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400">
+                    {item.subtitle}
+                  </p>
+                </div>
+
+                <span className={cn(cta, 'mt-auto')}>
                   {item.completed ? item.ctaLabelDone : item.ctaLabel}
-                  {item.completed ? <Check size={14} strokeWidth={2.5} /> : <ChevronRight size={14} strokeWidth={2.5} />}
+                  <ChevronRight size={14} strokeWidth={2.2} />
                 </span>
               </div>
 
-              {/* Bloco de Imagem/Ícone com Arco Circular (Direita) */}
-              <div className="relative flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white flex items-center justify-center p-3 shadow-sm border border-slate-100">
-                {/* Arco de Progresso em SVG */}
-                <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full -rotate-90">
-                  {/* Círculo Base */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="44"
-                    fill="none"
-                    stroke="#E2E8F0"
-                    strokeWidth="2.5"
+              {/* Área visual à direita: mesma posição e proporção em todos os cards */}
+              <div
+                className={cn(
+                  'absolute right-3 top-3 bottom-3 flex w-[34%] max-w-[142px] items-center justify-center overflow-hidden rounded-[22px] transition-colors',
+                  visualTone[tone]
+                )}
+              >
+                <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-white/60" />
+                <div className="absolute -bottom-8 -left-5 h-20 w-20 rounded-full bg-white/40" />
+                <div className="relative flex h-[86px] w-[86px] items-center justify-center rounded-[26px] bg-white/75 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.025]">
+                  <Icon
+                    size={42}
+                    strokeWidth={1.45}
+                    className={cn(
+                      tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
+                    )}
                   />
-                  {/* Arco Ativo */}
-                  {item.completed ? (
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="44"
-                      fill="none"
-                      stroke="#10B981"
-                      strokeWidth="3.5"
-                      strokeDasharray="276.46"
-                      strokeDashoffset="0"
-                      strokeLinecap="round"
-                    />
-                  ) : tone === 'next' ? (
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="44"
-                      fill="none"
-                      stroke="#0F172A"
-                      strokeWidth="3.5"
-                      strokeDasharray="276.46"
-                      strokeDashoffset="190"
-                      strokeLinecap="round"
-                    />
-                  ) : null}
-                </svg>
-
-                {/* Ícone Centralizado */}
-                <div
-                  className={cn(
-                    'w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors',
-                    item.completed
-                      ? 'bg-emerald-50 text-emerald-600'
-                      : tone === 'next'
-                      ? 'bg-slate-100 text-ink'
-                      : 'bg-slate-50 text-slate-400'
+                  {item.completed && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
+                      <Check size={12} strokeWidth={3} />
+                    </span>
                   )}
-                >
-                  <Icon size={26} strokeWidth={1.75} />
                 </div>
               </div>
-            </Card>
+            </div>
           );
 
           if (item.href) {
             return (
-              <Link key={item.id} href={item.href} onClick={item.onAction} className="block group">
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={item.onAction}
+                className="block transition-transform active:scale-[0.99]"
+              >
                 {content}
               </Link>
             );
           }
 
           return (
-            <button key={item.id} type="button" onClick={item.onAction} className="w-full text-left group">
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onAction}
+              className="block w-full text-left transition-transform active:scale-[0.99]"
+            >
               {content}
             </button>
           );
