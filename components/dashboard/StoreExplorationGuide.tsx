@@ -22,21 +22,12 @@ interface GuideItem {
 }
 
 const cta =
-  'inline-flex items-center gap-1.5 h-10 pl-5 pr-4 rounded-full text-[13px] font-bold tracking-wide transition-all active:scale-[0.97] self-start';
-const ctaTone: Record<'primary' | 'secondary', string> = {
-  primary: 'bg-ink text-white hover:bg-ink-soft',
-  secondary: 'bg-white text-ink border border-slate-200 hover:bg-slate-50',
-};
+  'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink text-white text-[12px] font-semibold tracking-tight shadow-[0_2px_10px_rgba(15,23,42,0.10)] transition-all hover:bg-ink-soft active:scale-[0.97] self-start whitespace-nowrap';
 
-const badgeTone: Record<Tone, string> = {
-  next: 'bg-brand-soft text-brand',
-  default: 'bg-[#F4F1EC] text-slate-400',
-  done: 'bg-emerald-50 text-emerald-500',
-};
-const ringTone: Record<Tone, string> = {
-  next: 'border-brand/25',
-  default: 'border-slate-200',
-  done: 'border-emerald-200',
+const visualTone: Record<Tone, string> = {
+  next: 'bg-[#F4F1EC]',
+  default: 'bg-[#F7F6F3]',
+  done: 'bg-[#F2F7F3]',
 };
 
 function dismissedKey(lojaId: string) {
@@ -194,60 +185,82 @@ export function StoreExplorationGuide({
         </button>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {items.map((item) => {
           const tone: Tone = item.completed ? 'done' : item.id === nextId ? 'next' : 'default';
           const Icon = item.icon;
 
           const content = (
-            <>
-              <div className="min-w-0 flex-1 flex flex-col justify-center gap-3 py-1">
-                <div>
-                  <p className="text-[16px] sm:text-[17px] font-black text-ink tracking-tight leading-snug">
+            <div className="relative min-h-[196px] w-full overflow-hidden rounded-[28px] bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
+              {/* Conteúdo: eyebrow → título → descrição → CTA */}
+              <div className="relative z-10 flex h-full min-h-[156px] w-[62%] flex-col items-start">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : item.id === 'tema' ? 'Estilo da loja' : 'Divulgação'}
+                </p>
+
+                <div className="mt-2">
+                  <p className="text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
                     {item.title}
                   </p>
-                  <p className="text-[12.5px] font-medium text-slate-400 leading-relaxed mt-1.5 max-w-[220px]">
+                  <p className="mt-2 max-w-[230px] text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400">
                     {item.subtitle}
                   </p>
                 </div>
-                <span className={cn(cta, tone === 'next' ? ctaTone.primary : ctaTone.secondary)}>
+
+                <span className={cn(cta, 'mt-auto')}>
                   {item.completed ? item.ctaLabelDone : item.ctaLabel}
-                  <ChevronRight size={14} />
+                  <ChevronRight size={14} strokeWidth={2.2} />
                 </span>
               </div>
 
-              <div className="relative flex-shrink-0 w-[100px] h-[100px] sm:w-[112px] sm:h-[112px]">
-                <div className={cn('absolute inset-0 rounded-full border transition-colors', ringTone[tone])} />
-                <div
-                  className={cn(
-                    'absolute inset-[10px] rounded-full flex items-center justify-center transition-colors',
-                    badgeTone[tone]
-                  )}
-                >
-                  <Icon size={30} strokeWidth={1.6} />
-                </div>
-                {item.completed && (
-                  <span className="absolute top-1 right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-white">
-                    <Check size={12} strokeWidth={3} />
-                  </span>
+              {/* Área visual à direita: mesma posição e proporção em todos os cards */}
+              <div
+                className={cn(
+                  'absolute right-3 top-3 bottom-3 flex w-[34%] max-w-[142px] items-center justify-center overflow-hidden rounded-[22px] transition-colors',
+                  visualTone[tone]
                 )}
+              >
+                <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-white/60" />
+                <div className="absolute -bottom-8 -left-5 h-20 w-20 rounded-full bg-white/40" />
+                <div className="relative flex h-[86px] w-[86px] items-center justify-center rounded-[26px] bg-white/75 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.025]">
+                  <Icon
+                    size={42}
+                    strokeWidth={1.45}
+                    className={cn(
+                      tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
+                    )}
+                  />
+                  {item.completed && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
+                      <Check size={12} strokeWidth={3} />
+                    </span>
+                  )}
+                </div>
               </div>
-            </>
+            </div>
           );
-
-          const cardClass = 'flex items-center justify-between gap-4 p-5 sm:p-6 min-h-[152px] sm:min-h-[164px]';
 
           if (item.href) {
             return (
-              <Link key={item.id} href={item.href} onClick={item.onAction} className="block">
-                <Card className={cn(cardClass, 'transition-transform active:scale-[0.99]')}>{content}</Card>
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={item.onAction}
+                className="block transition-transform active:scale-[0.99]"
+              >
+                {content}
               </Link>
             );
           }
 
           return (
-            <button key={item.id} type="button" onClick={item.onAction} className="text-left">
-              <Card className={cn(cardClass, 'w-full transition-transform active:scale-[0.99]')}>{content}</Card>
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onAction}
+              className="block w-full text-left transition-transform active:scale-[0.99]"
+            >
+              {content}
             </button>
           );
         })}
