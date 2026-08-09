@@ -221,7 +221,7 @@ export function StoreExplorationGuide({
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
                   item.id === 'produto'
-                    ? 'right-0 top-0 bottom-0 w-[64%] max-w-[260px]'
+                    ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
                     : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && visualTone[tone]
                 )}
