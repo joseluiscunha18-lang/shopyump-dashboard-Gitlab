@@ -1,21 +1,38 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Package, Store, Palette, Share2, Check, ChevronRight, X } from 'lucide-react';
 import { Card } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
 
+type Tone = 'next' | 'default' | 'done';
+
 interface GuideItem {
   id: string;
   title: string;
   subtitle: string;
-  icon: ReactNode;
+  icon: React.ElementType;
   completed: boolean;
+  ctaLabel: string;
+  ctaLabelDone: string;
   href?: string;
   onAction?: () => void;
 }
+
+const cta =
+  'inline-flex items-center gap-1.5 h-9 pl-4 pr-3.5 rounded-full text-[12.5px] font-bold tracking-wide transition-all active:scale-[0.97] self-start';
+const ctaTone: Record<'primary' | 'secondary', string> = {
+  primary: 'bg-ink text-white hover:bg-ink-soft shadow-sm',
+  secondary: 'bg-white text-ink border border-slate-200 hover:bg-slate-50 shadow-sm',
+};
+
+const badgeTone: Record<Tone, string> = {
+  next: 'bg-brand-soft text-brand',
+  default: 'bg-[#F4F1EC] text-slate-400',
+  done: 'bg-emerald-50 text-emerald-500',
+};
 
 function dismissedKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:dismissed`;
@@ -53,7 +70,7 @@ export function StoreExplorationGuide({
       setTemaVisitado(localStorage.getItem(temaKey(lojaId)) === '1');
       setPartilhado(localStorage.getItem(shareKey(lojaId)) === '1');
     } catch {
-      // localStorage indisponível (modo privado, etc.) — segue sem persistência
+      // localStorage indisponível — segue sem persistência
     } finally {
       setReady(true);
     }
@@ -66,7 +83,7 @@ export function StoreExplorationGuide({
     } catch {
       // ignore
     }
-    setTimeout(() => setDismissed(true), 220);
+    setTimeout(() => setDismissed(true), 200);
   }
 
   function markTemaVisitado() {
@@ -105,24 +122,30 @@ export function StoreExplorationGuide({
       id: 'produto',
       title: 'Adicione seu primeiro produto',
       subtitle: 'Comece a construir seu catálogo.',
-      icon: <Package size={18} strokeWidth={2} />,
+      icon: Package,
       completed: hasProduct,
-      href: '/produtos/novo',
+      ctaLabel: 'Criar produto',
+      ctaLabelDone: 'Ver produtos',
+      href: hasProduct ? '/produtos' : '/produtos/novo',
     },
     {
       id: 'personalizar',
       title: 'Personalize sua loja',
       subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
-      icon: <Store size={18} strokeWidth={2} />,
+      icon: Store,
       completed: hasCustomized,
+      ctaLabel: 'Personalizar',
+      ctaLabelDone: 'Editar loja',
       href: '/loja',
     },
     {
       id: 'tema',
       title: 'Escolha um tema',
       subtitle: 'Encontre um estilo que combine com a sua marca.',
-      icon: <Palette size={18} strokeWidth={2} />,
+      icon: Palette,
       completed: temaVisitado,
+      ctaLabel: 'Escolher tema',
+      ctaLabelDone: 'Alterar tema',
       href: '/loja?secao=tema',
       onAction: markTemaVisitado,
     },
@@ -130,8 +153,10 @@ export function StoreExplorationGuide({
       id: 'compartilhar',
       title: 'Compartilhe sua loja',
       subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
-      icon: <Share2 size={18} strokeWidth={2} />,
+      icon: Share2,
       completed: partilhado,
+      ctaLabel: 'Copiar link',
+      ctaLabelDone: 'Partilhar de novo',
       onAction: handleShare,
     },
   ];
@@ -139,20 +164,13 @@ export function StoreExplorationGuide({
   const nextId = items.find((i) => !i.completed)?.id;
 
   return (
-    <Card
+    <section
       className={cn(
-        'relative overflow-hidden p-5 sm:p-7 transition-all duration-200 ease-out',
+        'flex flex-col gap-4 transition-all duration-200 ease-out',
         closing ? 'opacity-0 -translate-y-1' : 'opacity-100'
       )}
     >
-      {/* Ambient wash — a quiet signature touch, not a loud gradient */}
-      <div
-        className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full opacity-[0.35] blur-3xl"
-        style={{ background: 'var(--brand-soft)' }}
-        aria-hidden
-      />
-
-      <div className="relative flex items-start justify-between gap-4 mb-5">
+      <div className="flex items-start justify-between gap-4 px-1">
         <div>
           <h2 className="font-display text-lg sm:text-xl font-black text-ink tracking-tight">
             Comece a explorar sua loja
@@ -171,55 +189,61 @@ export function StoreExplorationGuide({
         </button>
       </div>
 
-      <div className="relative flex flex-col divide-y divide-slate-100">
+      <div className="flex flex-col gap-3">
         {items.map((item) => {
-          const isNext = item.id === nextId;
-          const body = (
+          const tone: Tone = item.completed ? 'done' : item.id === nextId ? 'next' : 'default';
+          const Icon = item.icon;
+
+          const content = (
             <>
               <div
                 className={cn(
-                  'flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center transition-colors',
-                  item.completed
-                    ? 'bg-emerald-50 text-emerald-500'
-                    : isNext
-                      ? 'bg-ink text-white'
-                      : 'bg-slate-50 text-slate-400'
+                  'relative flex-shrink-0 w-[76px] h-[76px] sm:w-[86px] sm:h-[86px] rounded-[22px] flex items-center justify-center transition-colors',
+                  badgeTone[tone]
                 )}
               >
-                {item.completed ? <Check size={18} strokeWidth={2.5} /> : item.icon}
+                <Icon size={28} strokeWidth={1.6} />
+                {item.completed && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-white">
+                    <Check size={11} strokeWidth={3} />
+                  </span>
+                )}
               </div>
-              <div className="min-w-0 flex-1">
-                <p
-                  className={cn(
-                    'text-[13px] tracking-tight',
-                    item.completed ? 'font-semibold text-slate-400' : isNext ? 'font-black text-ink' : 'font-bold text-ink'
-                  )}
-                >
-                  {item.title}
-                </p>
-                <p className="text-[11px] font-medium text-slate-400 mt-0.5">{item.subtitle}</p>
+
+              <div className="min-w-0 flex-1 flex flex-col gap-2.5 py-0.5">
+                <div>
+                  <p className="text-[14px] sm:text-[15px] font-black text-ink tracking-tight leading-snug">
+                    {item.title}
+                  </p>
+                  <p className="text-[12px] sm:text-[12.5px] font-medium text-slate-400 leading-snug mt-1">
+                    {item.subtitle}
+                  </p>
+                </div>
+                <span className={cn(cta, tone === 'next' ? ctaTone.primary : ctaTone.secondary)}>
+                  {item.completed ? item.ctaLabelDone : item.ctaLabel}
+                  <ChevronRight size={14} />
+                </span>
               </div>
-              <ChevronRight size={16} className="flex-shrink-0 text-slate-300" />
             </>
           );
 
-          const rowClass = 'flex items-center gap-4 py-4 first:pt-0 last:pb-0 -mx-2 px-2 rounded-2xl transition-colors hover:bg-slate-50/70 active:scale-[0.99]';
+          const cardClass = 'flex items-center gap-4 sm:gap-5 p-4 sm:p-5';
 
           if (item.href) {
             return (
-              <Link key={item.id} href={item.href} onClick={item.onAction} className={rowClass}>
-                {body}
+              <Link key={item.id} href={item.href} onClick={item.onAction} className="block">
+                <Card className={cn(cardClass, 'transition-transform active:scale-[0.99]')}>{content}</Card>
               </Link>
             );
           }
 
           return (
-            <button key={item.id} type="button" onClick={item.onAction} className={cn(rowClass, 'text-left')}>
-              {body}
+            <button key={item.id} type="button" onClick={item.onAction} className="text-left">
+              <Card className={cn(cardClass, 'w-full transition-transform active:scale-[0.99]')}>{content}</Card>
             </button>
           );
         })}
       </div>
-    </Card>
+    </section>
   );
 }
