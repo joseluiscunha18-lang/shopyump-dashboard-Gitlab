@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PackageOpen, ChevronRight } from 'lucide-react';
-import { Card, Badge, EmptyState } from '@/components/ui/Surfaces';
+import { PackageSearch, ChevronRight } from 'lucide-react';
+import { Card, Badge } from '@/components/ui/Surfaces';
 import { usePedidosRealtime } from '@/lib/realtime/usePedidosRealtime';
 import type { Pedido } from '@/types/database';
 
@@ -26,12 +26,20 @@ export function PendingOrdersList({ lojaId, initialPedidos }: { lojaId: string; 
 
   if (pedidos.length === 0) {
     return (
-      <Card>
-        <EmptyState
-          icon={<PackageOpen size={22} />}
-          title="Sem pedidos pendentes"
-          subtitle="Assim que um cliente finalizar uma compra, o pedido aparece aqui em tempo real."
-        />
+      <Card className="flex flex-col items-center text-center py-14 px-6 gap-4">
+        <div className="relative w-[72px] h-[72px]">
+          <div className="absolute inset-0 rounded-full bg-brand-soft" aria-hidden />
+          <div className="absolute inset-[3px] rounded-full border border-dashed border-brand/25" aria-hidden />
+          <div className="absolute inset-0 flex items-center justify-center text-brand">
+            <PackageSearch size={26} strokeWidth={1.75} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-sm font-bold text-ink">Os seus pedidos vão aparecer aqui</p>
+          <p className="text-[12px] font-medium text-slate-400 max-w-[280px] mx-auto leading-relaxed">
+            Assim que um cliente finalizar uma compra na sua loja, o pedido surge aqui em tempo real.
+          </p>
+        </div>
       </Card>
     );
   }
