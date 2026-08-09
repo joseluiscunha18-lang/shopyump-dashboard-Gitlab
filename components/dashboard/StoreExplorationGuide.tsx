@@ -197,7 +197,7 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' ? 'w-[52%]' : 'w-[62%]')}>
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' ? 'w-[42%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : item.id === 'tema' ? 'Estilo da loja' : 'Divulgação'}
                 </p>
@@ -221,7 +221,7 @@ export function StoreExplorationGuide({
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
                   item.id === 'produto'
-                    ? 'right-0 top-0 bottom-0 w-[54%] max-w-[220px]'
+                    ? 'right-0 top-0 bottom-0 w-[64%] max-w-[260px]'
                     : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && visualTone[tone]
                 )}
