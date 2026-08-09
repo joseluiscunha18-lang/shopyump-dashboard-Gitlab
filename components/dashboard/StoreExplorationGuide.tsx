@@ -22,7 +22,7 @@ interface GuideItem {
 }
 
 const cta =
-  'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink text-white text-[12px] font-semibold tracking-tight shadow-[0_2px_10px_rgba(15,23,42,0.10)] transition-all hover:bg-ink-soft active:scale-[0.97] self-start whitespace-nowrap';
+  'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
 const visualTone: Record<Tone, string> = {
   next: 'bg-[#EEF1F4]',
