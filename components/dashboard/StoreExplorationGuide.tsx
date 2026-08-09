@@ -191,7 +191,7 @@ export function StoreExplorationGuide({
                   handleDismiss();
                 }}
                 aria-label="Dispensar orientação"
-                className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white text-slate-500 shadow-[0_2px_10px_rgba(15,23,42,0.14)] transition-colors hover:bg-slate-50 hover:text-ink active:scale-95"
+                className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center text-slate-500 transition-colors hover:text-ink active:scale-95"
               >
                 <X size={13} strokeWidth={2.5} />
               </button>
