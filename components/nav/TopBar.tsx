@@ -48,14 +48,14 @@ export function TopBar({
 
         {/* Compact, centered search with room to breathe around the icon */}
         <div className="relative flex flex-1 justify-center">
-          <label className="flex h-9 w-full max-w-[200px] items-center gap-2.5 rounded-full border border-slate-200 bg-white pl-4 pr-3.5 text-slate-400 transition-colors focus-within:border-ink/25 focus-within:ring-2 focus-within:ring-ink/[0.06]">
-            <Search size={15} strokeWidth={2.2} className="flex-shrink-0" />
+          <label className="flex h-9 w-full max-w-[200px] items-center gap-2.5 rounded-full border-[1.5px] border-slate-300 bg-white pl-4 pr-3.5 text-slate-500 transition-colors focus-within:border-ink/35 focus-within:ring-2 focus-within:ring-ink/[0.06]">
+            <Search size={15} strokeWidth={2.3} className="flex-shrink-0" />
             <input
               type="text"
               placeholder="Pesquisar"
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
-              className="h-full w-full min-w-0 bg-transparent text-[13px] font-medium text-ink placeholder:text-slate-400 focus:outline-none"
+              className="h-full w-full min-w-0 bg-transparent text-[13px] font-semibold text-ink placeholder:text-slate-500 focus:outline-none"
             />
           </label>
 
@@ -79,7 +79,7 @@ export function TopBar({
           )}
         </div>
 
-        <div className="ml-auto flex flex-shrink-0 items-center gap-1 sm:gap-1.5">
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2.5 sm:gap-3">
           {/* Notifications */}
           <button
             aria-label="Notificações"
