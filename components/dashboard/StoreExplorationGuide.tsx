@@ -219,7 +219,10 @@ export function StoreExplorationGuide({
               {/* Área visual à direita: mesma posição e proporção em todos os cards */}
               <div
                 className={cn(
-                  'absolute right-3 top-3 bottom-3 flex w-[34%] max-w-[142px] items-center justify-center overflow-hidden rounded-[22px] transition-colors',
+                  'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
+                  item.id === 'produto'
+                    ? 'right-0 top-0 bottom-0 w-[46%] max-w-[190px]'
+                    : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && visualTone[tone]
                 )}
               >
