@@ -11,6 +11,7 @@ type Tone = 'next' | 'default' | 'done';
 
 interface GuideItem {
   id: string;
+  tag: string;
   title: string;
   subtitle: string;
   icon: React.ElementType;
@@ -20,19 +21,6 @@ interface GuideItem {
   href?: string;
   onAction?: () => void;
 }
-
-const cta =
-  'inline-flex items-center gap-1.5 h-9 pl-4 pr-3.5 rounded-full text-[12.5px] font-bold tracking-wide transition-all active:scale-[0.97] self-start';
-const ctaTone: Record<'primary' | 'secondary', string> = {
-  primary: 'bg-ink text-white hover:bg-ink-soft shadow-sm',
-  secondary: 'bg-white text-ink border border-slate-200 hover:bg-slate-50 shadow-sm',
-};
-
-const badgeTone: Record<Tone, string> = {
-  next: 'bg-brand-soft text-brand',
-  default: 'bg-[#F4F1EC] text-slate-400',
-  done: 'bg-emerald-50 text-emerald-500',
-};
 
 function dismissedKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:dismissed`;
@@ -120,8 +108,9 @@ export function StoreExplorationGuide({
   const items: GuideItem[] = [
     {
       id: 'produto',
-      title: 'Adicione seu primeiro produto',
-      subtitle: 'Comece a construir seu catálogo.',
+      tag: 'Passo 01 • Catálogo',
+      title: 'Adicione o seu primeiro produto',
+      subtitle: 'Comece a construir o catálogo e os itens da sua loja.',
       icon: Package,
       completed: hasProduct,
       ctaLabel: 'Criar produto',
@@ -130,8 +119,9 @@ export function StoreExplorationGuide({
     },
     {
       id: 'personalizar',
-      title: 'Personalize sua loja',
-      subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
+      tag: 'Passo 02 • Identidade',
+      title: 'Personalize a sua loja',
+      subtitle: 'Ajuste a aparência e defina a identidade da sua marca.',
       icon: Store,
       completed: hasCustomized,
       ctaLabel: 'Personalizar',
@@ -140,8 +130,9 @@ export function StoreExplorationGuide({
     },
     {
       id: 'tema',
+      tag: 'Passo 03 • Visual',
       title: 'Escolha um tema',
-      subtitle: 'Encontre um estilo que combine com a sua marca.',
+      subtitle: 'Encontre o estilo visual perfeito para encantar os clientes.',
       icon: Palette,
       completed: temaVisitado,
       ctaLabel: 'Escolher tema',
@@ -151,8 +142,9 @@ export function StoreExplorationGuide({
     },
     {
       id: 'compartilhar',
-      title: 'Compartilhe sua loja',
-      subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
+      tag: 'Passo 04 • Alcance',
+      title: 'Partilhe a sua loja',
+      subtitle: 'Divulgue o seu link e facilite o acesso aos seus clientes.',
       icon: Share2,
       completed: partilhado,
       ctaLabel: 'Copiar link',
@@ -173,7 +165,7 @@ export function StoreExplorationGuide({
       <div className="flex items-start justify-between gap-4 px-1">
         <div>
           <h2 className="font-display text-lg sm:text-xl font-black text-ink tracking-tight">
-            Comece a explorar sua loja
+            Comece a explorar a sua loja
           </h2>
           <p className="mt-1 text-[12px] font-medium text-slate-400">
             Explore no seu ritmo — não existe ordem certa.
@@ -189,57 +181,111 @@ export function StoreExplorationGuide({
         </button>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3.5">
         {items.map((item) => {
           const tone: Tone = item.completed ? 'done' : item.id === nextId ? 'next' : 'default';
           const Icon = item.icon;
 
           const content = (
-            <>
-              <div
-                className={cn(
-                  'relative flex-shrink-0 w-[76px] h-[76px] sm:w-[86px] sm:h-[86px] rounded-[22px] flex items-center justify-center transition-colors',
-                  badgeTone[tone]
-                )}
-              >
-                <Icon size={28} strokeWidth={1.6} />
-                {item.completed && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-white">
-                    <Check size={11} strokeWidth={3} />
-                  </span>
-                )}
-              </div>
+            <Card className="flex items-center justify-between gap-4 sm:gap-6 p-5 sm:p-6 rounded-[28px] bg-[#F7F7F6] border border-slate-200/60 shadow-none hover:border-slate-300 transition-all">
+              {/* Bloco de Texto (Esquerda) */}
+              <div className="flex-1 flex flex-col items-start min-w-0">
+                <span className="text-[11px] sm:text-[12px] font-medium text-slate-400 tracking-tight leading-none mb-1">
+                  {item.tag}
+                </span>
 
-              <div className="min-w-0 flex-1 flex flex-col gap-2.5 py-0.5">
-                <div>
-                  <p className="text-[14px] sm:text-[15px] font-black text-ink tracking-tight leading-snug">
-                    {item.title}
-                  </p>
-                  <p className="text-[12px] sm:text-[12.5px] font-medium text-slate-400 leading-snug mt-1">
-                    {item.subtitle}
-                  </p>
-                </div>
-                <span className={cn(cta, tone === 'next' ? ctaTone.primary : ctaTone.secondary)}>
+                <h3 className="text-[15px] sm:text-[17px] font-black text-ink tracking-tight leading-snug">
+                  {item.title}
+                </h3>
+
+                <p className="text-[12px] sm:text-[12.5px] font-medium text-slate-400 leading-snug mt-1.5 mb-4 max-w-[300px]">
+                  {item.subtitle}
+                </p>
+
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1.5 h-9 px-5 rounded-full text-[12.5px] font-bold tracking-wide transition-all active:scale-[0.97]',
+                    item.completed
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
+                      : tone === 'next'
+                      ? 'bg-ink text-white hover:bg-ink-soft shadow-sm'
+                      : 'bg-white text-ink border border-slate-200 hover:bg-slate-50'
+                  )}
+                >
                   {item.completed ? item.ctaLabelDone : item.ctaLabel}
-                  <ChevronRight size={14} />
+                  {item.completed ? <Check size={14} strokeWidth={2.5} /> : <ChevronRight size={14} strokeWidth={2.5} />}
                 </span>
               </div>
-            </>
-          );
 
-          const cardClass = 'flex items-center gap-4 sm:gap-5 p-4 sm:p-5';
+              {/* Bloco de Imagem/Ícone com Arco Circular (Direita) */}
+              <div className="relative flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white flex items-center justify-center p-3 shadow-sm border border-slate-100">
+                {/* Arco de Progresso em SVG */}
+                <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full -rotate-90">
+                  {/* Círculo Base */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    fill="none"
+                    stroke="#E2E8F0"
+                    strokeWidth="2.5"
+                  />
+                  {/* Arco Ativo */}
+                  {item.completed ? (
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="44"
+                      fill="none"
+                      stroke="#10B981"
+                      strokeWidth="3.5"
+                      strokeDasharray="276.46"
+                      strokeDashoffset="0"
+                      strokeLinecap="round"
+                    />
+                  ) : tone === 'next' ? (
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="44"
+                      fill="none"
+                      stroke="#0F172A"
+                      strokeWidth="3.5"
+                      strokeDasharray="276.46"
+                      strokeDashoffset="190"
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+                </svg>
+
+                {/* Ícone Centralizado */}
+                <div
+                  className={cn(
+                    'w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors',
+                    item.completed
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : tone === 'next'
+                      ? 'bg-slate-100 text-ink'
+                      : 'bg-slate-50 text-slate-400'
+                  )}
+                >
+                  <Icon size={26} strokeWidth={1.75} />
+                </div>
+              </div>
+            </Card>
+          );
 
           if (item.href) {
             return (
-              <Link key={item.id} href={item.href} onClick={item.onAction} className="block">
-                <Card className={cn(cardClass, 'transition-transform active:scale-[0.99]')}>{content}</Card>
+              <Link key={item.id} href={item.href} onClick={item.onAction} className="block group">
+                {content}
               </Link>
             );
           }
 
           return (
-            <button key={item.id} type="button" onClick={item.onAction} className="text-left">
-              <Card className={cn(cardClass, 'w-full transition-transform active:scale-[0.99]')}>{content}</Card>
+            <button key={item.id} type="button" onClick={item.onAction} className="w-full text-left group">
+              {content}
             </button>
           );
         })}
