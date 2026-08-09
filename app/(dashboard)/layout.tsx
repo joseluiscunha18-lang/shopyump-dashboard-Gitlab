@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Sidebar storeUrl={storeUrl} />
         <div className="flex-1 flex flex-col pb-28 sm:pb-0 min-w-0">
           <TopBar storeName={ctx.loja?.nome ?? 'Painel Admin'} storeUrl={storeUrl} />
-          <main className="flex-1 px-6 sm:px-8 pt-6 pb-10">{children}</main>
+          <main className="flex-1 px-4 sm:px-6 pt-6 pb-10">{children}</main>
         </div>
         <BottomNav />
       </div>
