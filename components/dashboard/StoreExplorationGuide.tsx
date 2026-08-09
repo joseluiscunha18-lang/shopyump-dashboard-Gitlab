@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Store, Palette, Share2, Check, ChevronRight, X } from 'lucide-react';
+import { Package, Store, Palette, Share2, Check, X } from 'lucide-react';
 import { Card } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
@@ -213,7 +213,6 @@ export function StoreExplorationGuide({
 
                 <span className={cn(cta, 'mt-auto')}>
                   {item.completed ? item.ctaLabelDone : item.ctaLabel}
-                  <ChevronRight size={14} strokeWidth={2.2} />
                 </span>
               </div>
 
