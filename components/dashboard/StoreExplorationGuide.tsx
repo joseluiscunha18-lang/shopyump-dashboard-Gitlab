@@ -226,9 +226,9 @@ export function StoreExplorationGuide({
                 {item.id === 'produto' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src="https://i.ibb.co/KxqHwDx3/ff007bbfe5594a00a0e5d557adf91775.png"
+                    src="https://i.ibb.co/d0SxFKzD/d663389d9a9348cf90f412ea517c70fc.jpg"
                     alt=""
-                    className="h-full w-full object-cover"
+                    className="h-full w-full scale-110 object-cover"
                   />
                 ) : (
                   <>
