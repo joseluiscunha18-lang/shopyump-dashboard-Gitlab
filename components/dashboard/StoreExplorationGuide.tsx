@@ -168,11 +168,11 @@ export function StoreExplorationGuide({
     >
       <div className="flex items-start justify-between gap-4 px-1">
         <div className="pt-1">
-          <h2 className="font-display text-xl sm:text-2xl font-black text-ink tracking-tight">
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
             Bem-vindo à sua loja
           </h2>
-          <p className="mt-2 text-[12.5px] font-medium text-slate-400">
-            Por onde você quer começar?
+          <p className="mt-1.5 text-2xl sm:text-3xl font-medium text-slate-500 tracking-tight">
+            Escolha por onde começar.
           </p>
         </div>
         <button
