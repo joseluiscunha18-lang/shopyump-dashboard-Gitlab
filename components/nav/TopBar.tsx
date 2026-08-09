@@ -3,6 +3,7 @@
 import { Menu, Bell } from 'lucide-react';
 import { MobileSidebarDrawer, type Plano } from './MobileSidebarDrawer';
 import { useMobileNav } from './MobileNavContext';
+import { cn } from '@/lib/cn';
 
 export function TopBar({
   storeName,
@@ -17,35 +18,28 @@ export function TopBar({
 }) {
   const { menuOpen, openMenu, closeMenu } = useMobileNav();
 
+  const floatingSurface =
+    'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-white/80 backdrop-blur-xl ring-1 ring-black/[0.045] shadow-[0_4px_16px_rgba(15,23,42,0.05)] text-ink transition-colors active:scale-95 hover:bg-white';
+
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-100 bg-white px-3 sm:h-auto sm:border-none sm:bg-transparent sm:px-8 sm:py-6 relative">
-        {/* Hamburger — mobile only, opens the sliding sidebar */}
-        <button
-          onClick={openMenu}
-          aria-label="Abrir menu"
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-ink transition-colors active:scale-95 hover:bg-slate-100 sm:hidden"
-        >
-          <Menu size={21} strokeWidth={2.3} />
-        </button>
+      {/* No fixed bar — the hamburger and notifications float independently and stay
+          put while the page scrolls, so nothing draws a hard line across the top. */}
+      <button
+        onClick={openMenu}
+        aria-label="Abrir menu"
+        className={cn('fixed left-4 top-4 z-30 sm:hidden', floatingSurface)}
+      >
+        <Menu size={19} strokeWidth={2.2} />
+      </button>
 
-        {/* Desktop greeting (hidden on mobile, where the name sits centered instead) */}
-        <div className="hidden sm:block">
-          <p className="mb-0.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Bem-vindo de volta
-          </p>
-          <h1 className="max-w-none truncate text-2xl font-black tracking-tight text-ink">{storeName}</h1>
-        </div>
-
-        {/* Notifications */}
-        <button
-          aria-label="Notificações"
-          className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-ink transition-colors active:scale-95 hover:bg-slate-100"
-        >
-          <Bell size={19} strokeWidth={2.2} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand ring-2 ring-white" />
-        </button>
-      </header>
+      <button
+        aria-label="Notificações"
+        className={cn('fixed right-4 top-4 z-30 relative', floatingSurface)}
+      >
+        <Bell size={18} strokeWidth={2.2} />
+        <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-brand ring-2 ring-white" />
+      </button>
 
       <MobileSidebarDrawer
         open={menuOpen}
