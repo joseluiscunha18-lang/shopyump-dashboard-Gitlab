@@ -181,7 +181,7 @@ export function StoreExplorationGuide({
           const Icon = item.icon;
 
           const content = (
-            <div className="relative min-h-[196px] w-full overflow-hidden rounded-[28px] bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
+            <div className="relative min-h-[224px] w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
               {/* Dispensar toda a orientação — acessível a partir de qualquer cartão */}
               <button
                 type="button"
@@ -197,7 +197,7 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className="relative z-10 flex h-full min-h-[156px] w-[62%] flex-col items-start">
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' ? 'w-[52%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : item.id === 'tema' ? 'Estilo da loja' : 'Divulgação'}
                 </p>
@@ -221,7 +221,7 @@ export function StoreExplorationGuide({
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
                   item.id === 'produto'
-                    ? 'right-0 top-0 bottom-0 w-[46%] max-w-[190px]'
+                    ? 'right-0 top-0 bottom-0 w-[54%] max-w-[220px]'
                     : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && visualTone[tone]
                 )}
