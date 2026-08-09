@@ -162,17 +162,17 @@ export function StoreExplorationGuide({
   return (
     <section
       className={cn(
-        'flex flex-col gap-6 pt-4 sm:pt-6 transition-all duration-200 ease-out',
+        'flex flex-col gap-6 transition-all duration-200 ease-out',
         closing ? 'opacity-0 -translate-y-1' : 'opacity-100'
       )}
     >
       <div className="flex items-start justify-between gap-4 px-1">
         <div className="pt-1">
           <h2 className="font-display text-xl sm:text-2xl font-black text-ink tracking-tight">
-            Sua loja está pronta para tomar forma
+            Bem-vindo à sua loja
           </h2>
           <p className="mt-2 text-[12.5px] font-medium text-slate-400">
-            Dê o primeiro passo por onde quiser — o ritmo é todo seu.
+            Por onde você quer começar?
           </p>
         </div>
         <button
