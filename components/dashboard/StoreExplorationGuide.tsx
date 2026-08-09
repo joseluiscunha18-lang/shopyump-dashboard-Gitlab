@@ -162,27 +162,17 @@ export function StoreExplorationGuide({
   return (
     <section
       className={cn(
-        'flex flex-col gap-6 transition-all duration-200 ease-out',
+        'flex flex-col gap-8 pt-2 sm:pt-3 transition-all duration-200 ease-out',
         closing ? 'opacity-0 -translate-y-1' : 'opacity-100'
       )}
     >
-      <div className="flex items-start justify-between gap-4 px-1">
-        <div className="pt-1">
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
-            Bem-vindo à sua loja
-          </h2>
-          <p className="mt-1.5 text-2xl sm:text-3xl font-medium text-slate-500 tracking-tight">
-            Escolha por onde começar.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleDismiss}
-          aria-label="Dispensar orientação"
-          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors"
-        >
-          <X size={16} />
-        </button>
+      <div className="px-1 pt-1">
+        <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+          Bem-vindo à sua loja
+        </h2>
+        <p className="mt-1.5 text-2xl sm:text-3xl font-medium text-slate-500 tracking-tight">
+          Escolha por onde começar.
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -192,6 +182,20 @@ export function StoreExplorationGuide({
 
           const content = (
             <div className="relative min-h-[196px] w-full overflow-hidden rounded-[28px] bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
+              {/* Dispensar toda a orientação — acessível a partir de qualquer cartão */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDismiss();
+                }}
+                aria-label="Dispensar orientação"
+                className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white text-slate-500 shadow-[0_2px_10px_rgba(15,23,42,0.14)] ring-1 ring-black/[0.06] transition-colors hover:bg-slate-50 hover:text-ink active:scale-95"
+              >
+                <X size={13} strokeWidth={2.5} />
+              </button>
+
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
               <div className="relative z-10 flex h-full min-h-[156px] w-[62%] flex-col items-start">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
