@@ -226,13 +226,22 @@ export function StoreExplorationGuide({
                 <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-white/60" />
                 <div className="absolute -bottom-8 -left-5 h-20 w-20 rounded-full bg-white/40" />
                 <div className="relative flex h-[86px] w-[86px] items-center justify-center rounded-[26px] bg-white/75 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.025]">
-                  <Icon
-                    size={42}
-                    strokeWidth={1.45}
-                    className={cn(
-                      tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
-                    )}
-                  />
+                  {item.id === 'produto' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src="https://i.ibb.co/mrqX7kmG/1da559ff2c1542c2a7c1732dee8ea771.png"
+                      alt=""
+                      className="h-full w-full rounded-[26px] object-cover"
+                    />
+                  ) : (
+                    <Icon
+                      size={42}
+                      strokeWidth={1.45}
+                      className={cn(
+                        tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
+                      )}
+                    />
+                  )}
                   {item.completed && (
                     <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
                       <Check size={12} strokeWidth={3} />
