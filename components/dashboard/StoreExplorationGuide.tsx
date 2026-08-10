@@ -195,9 +195,11 @@ export function StoreExplorationGuide({
               <div
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
-                  item.id === 'produto' || item.id === 'personalizar'
+                  item.id === 'produto'
                     ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
-                    : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
+                    : item.id === 'personalizar'
+                      ? 'right-3 top-0 bottom-0 w-[59%] max-w-[238px]'
+                      : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && item.id !== 'personalizar' && visualTone[tone]
                 )}
               >
@@ -213,7 +215,7 @@ export function StoreExplorationGuide({
                   <img
                     src="https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png"
                     alt=""
-                    className="h-full w-full -translate-x-3 translate-y-3 scale-[1.12] object-contain object-right"
+                    className="h-full w-full translate-y-3 scale-[1.12] object-contain object-right"
                   />
                 ) : (
                   <>
