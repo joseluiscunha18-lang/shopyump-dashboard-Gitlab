@@ -172,7 +172,7 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' ? 'w-[42%]' : 'w-[62%]')}>
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' ? 'w-[42%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
                 </p>
@@ -195,23 +195,16 @@ export function StoreExplorationGuide({
               <div
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
-                  item.id === 'produto' || item.id === 'personalizar'
+                  item.id === 'produto'
                     ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
                     : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
-                  item.id !== 'produto' && item.id !== 'personalizar' && visualTone[tone]
+                  item.id !== 'produto' && visualTone[tone]
                 )}
               >
                 {item.id === 'produto' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src="https://i.ibb.co/kg0TN94W/1-4.png"
-                    alt=""
-                    className="h-full w-full object-contain object-right"
-                  />
-                ) : item.id === 'personalizar' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="https://i.ibb.co/zHfByykC/a5c9b41d81fe43619c32e378e56f2527.png"
                     alt=""
                     className="h-full w-full object-contain object-right"
                   />
