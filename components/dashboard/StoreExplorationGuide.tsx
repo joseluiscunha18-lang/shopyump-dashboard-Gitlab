@@ -156,7 +156,7 @@ export function StoreExplorationGuide({
           const Icon = item.icon;
 
           const content = (
-            <div className="relative min-h-[224px] w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(15,23,42,0.055)]">
+            <div className="relative min-h-[224px] w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
               {/* Dispensar toda a orientação — acessível a partir de qualquer cartão */}
               <button
                 type="button"
@@ -211,7 +211,7 @@ export function StoreExplorationGuide({
                 ) : item.id === 'personalizar' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src="https://i.ibb.co/zHfByykC/a5c9b41d81fe43619c32e378e56f2527.png"
+                    src="https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png"
                     alt=""
                     className="h-full w-full object-contain object-right"
                   />
