@@ -213,7 +213,7 @@ export function StoreExplorationGuide({
                   <img
                     src="https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png"
                     alt=""
-                    className="h-full w-full object-contain object-right"
+                    className="h-full w-full translate-y-3 scale-[1.12] object-contain object-right"
                   />
                 ) : (
                   <>
