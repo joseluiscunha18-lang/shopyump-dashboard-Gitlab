@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Store, Palette, Share2, Check, X } from 'lucide-react';
+import { Package, Store, Share2, Check, X } from 'lucide-react';
 import { Card } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
@@ -33,9 +33,6 @@ const visualTone: Record<Tone, string> = {
 function dismissedKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:dismissed`;
 }
-function temaKey(lojaId: string) {
-  return `shopyump:guide:${lojaId}:tema-visitado`;
-}
 function shareKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:partilhado`;
 }
@@ -57,13 +54,11 @@ export function StoreExplorationGuide({
   const [ready, setReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [temaVisitado, setTemaVisitado] = useState(false);
   const [partilhado, setPartilhado] = useState(false);
 
   useEffect(() => {
     try {
       setDismissed(localStorage.getItem(dismissedKey(lojaId)) === '1');
-      setTemaVisitado(localStorage.getItem(temaKey(lojaId)) === '1');
       setPartilhado(localStorage.getItem(shareKey(lojaId)) === '1');
     } catch {
       // localStorage indisponível — segue sem persistência
@@ -80,15 +75,6 @@ export function StoreExplorationGuide({
       // ignore
     }
     setTimeout(() => setDismissed(true), 200);
-  }
-
-  function markTemaVisitado() {
-    try {
-      localStorage.setItem(temaKey(lojaId), '1');
-    } catch {
-      // ignore
-    }
-    setTemaVisitado(true);
   }
 
   async function handleShare() {
@@ -133,17 +119,6 @@ export function StoreExplorationGuide({
       ctaLabel: 'Personalizar',
       ctaLabelDone: 'Editar loja',
       href: '/loja',
-    },
-    {
-      id: 'tema',
-      title: 'Escolha um tema',
-      subtitle: 'Encontre um estilo que combine com a sua marca.',
-      icon: Palette,
-      completed: temaVisitado,
-      ctaLabel: 'Escolher tema',
-      ctaLabelDone: 'Alterar tema',
-      href: '/loja?secao=tema',
-      onAction: markTemaVisitado,
     },
     {
       id: 'compartilhar',
@@ -199,7 +174,7 @@ export function StoreExplorationGuide({
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
               <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' ? 'w-[42%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : item.id === 'tema' ? 'Estilo da loja' : 'Divulgação'}
+                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
                 </p>
 
                 <div className="mt-2">
