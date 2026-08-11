@@ -222,7 +222,7 @@ export function StoreExplorationGuide({
                 ) : item.id === 'compartilhar' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src="https://i.ibb.co/nqQhLD63/file-000000004d2c81f4bc3b27e3a5ae2801.png"
+                    src="https://i.ibb.co/93hnfFgh/file-000000005f74824384763d14d7b6d051.png"
                     alt=""
                     className="h-full w-full object-contain object-right"
                   />
