@@ -200,7 +200,7 @@ export function StoreExplorationGuide({
                     : item.id === 'personalizar'
                       ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
                       : item.id === 'compartilhar'
-                        ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
+                        ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
                         : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && item.id !== 'personalizar' && item.id !== 'compartilhar' && visualTone[tone]
                 )}
