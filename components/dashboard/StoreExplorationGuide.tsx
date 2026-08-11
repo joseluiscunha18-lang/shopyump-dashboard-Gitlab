@@ -172,7 +172,7 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' ? 'w-[42%]' : 'w-[62%]')}>
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' || item.id === 'compartilhar' ? 'w-[42%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
                 </p>
@@ -199,8 +199,10 @@ export function StoreExplorationGuide({
                     ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
                     : item.id === 'personalizar'
                       ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
-                      : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
-                  item.id !== 'produto' && item.id !== 'personalizar' && visualTone[tone]
+                      : item.id === 'compartilhar'
+                        ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
+                        : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
+                  item.id !== 'produto' && item.id !== 'personalizar' && item.id !== 'compartilhar' && visualTone[tone]
                 )}
               >
                 {item.id === 'produto' ? (
@@ -216,6 +218,13 @@ export function StoreExplorationGuide({
                     src="https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png"
                     alt=""
                     className="h-full w-full translate-y-2 object-contain object-right"
+                  />
+                ) : item.id === 'compartilhar' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="https://i.ibb.co/nqQhLD63/file-000000004d2c81f4bc3b27e3a5ae2801.png"
+                    alt=""
+                    className="h-full w-full object-contain object-right"
                   />
                 ) : (
                   <>
