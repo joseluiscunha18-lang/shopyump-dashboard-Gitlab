@@ -200,7 +200,7 @@ export function StoreExplorationGuide({
                     : item.id === 'personalizar'
                       ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
                       : item.id === 'compartilhar'
-                        ? 'right-0 top-0 bottom-0 w-[70%] max-w-[282px]'
+                        ? 'right-0 top-0 bottom-0 w-[78%] max-w-[314px]'
                         : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && item.id !== 'personalizar' && item.id !== 'compartilhar' && visualTone[tone]
                 )}
@@ -224,7 +224,7 @@ export function StoreExplorationGuide({
                   <img
                     src="https://i.ibb.co/93hnfFgh/file-000000005f74824384763d14d7b6d051.png"
                     alt=""
-                    className="h-full w-full object-contain object-right"
+                    className="h-full w-full translate-y-2 object-contain object-right"
                   />
                 ) : (
                   <>
