@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Store, Palette, Share2, Check, ChevronRight, X } from 'lucide-react';
+import { Package, Store, Share2, Check, X } from 'lucide-react';
 import { Card } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
@@ -22,7 +22,7 @@ interface GuideItem {
 }
 
 const cta =
-  'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-ink text-white text-[12px] font-semibold tracking-tight shadow-[0_2px_10px_rgba(15,23,42,0.10)] transition-all hover:bg-ink-soft active:scale-[0.97] self-start whitespace-nowrap';
+  'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
 const visualTone: Record<Tone, string> = {
   next: 'bg-[#EEF1F4]',
@@ -32,9 +32,6 @@ const visualTone: Record<Tone, string> = {
 
 function dismissedKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:dismissed`;
-}
-function temaKey(lojaId: string) {
-  return `shopyump:guide:${lojaId}:tema-visitado`;
 }
 function shareKey(lojaId: string) {
   return `shopyump:guide:${lojaId}:partilhado`;
@@ -57,13 +54,11 @@ export function StoreExplorationGuide({
   const [ready, setReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [temaVisitado, setTemaVisitado] = useState(false);
   const [partilhado, setPartilhado] = useState(false);
 
   useEffect(() => {
     try {
       setDismissed(localStorage.getItem(dismissedKey(lojaId)) === '1');
-      setTemaVisitado(localStorage.getItem(temaKey(lojaId)) === '1');
       setPartilhado(localStorage.getItem(shareKey(lojaId)) === '1');
     } catch {
       // localStorage indisponível — segue sem persistência
@@ -80,15 +75,6 @@ export function StoreExplorationGuide({
       // ignore
     }
     setTimeout(() => setDismissed(true), 200);
-  }
-
-  function markTemaVisitado() {
-    try {
-      localStorage.setItem(temaKey(lojaId), '1');
-    } catch {
-      // ignore
-    }
-    setTemaVisitado(true);
   }
 
   async function handleShare() {
@@ -135,17 +121,6 @@ export function StoreExplorationGuide({
       href: '/loja',
     },
     {
-      id: 'tema',
-      title: 'Escolha um tema',
-      subtitle: 'Encontre um estilo que combine com a sua marca.',
-      icon: Palette,
-      completed: temaVisitado,
-      ctaLabel: 'Escolher tema',
-      ctaLabelDone: 'Alterar tema',
-      href: '/loja?secao=tema',
-      onAction: markTemaVisitado,
-    },
-    {
       id: 'compartilhar',
       title: 'Compartilhe sua loja',
       subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
@@ -181,7 +156,7 @@ export function StoreExplorationGuide({
           const Icon = item.icon;
 
           const content = (
-            <div className="relative min-h-[196px] w-full overflow-hidden rounded-[28px] bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
+            <div className="relative min-h-[224px] w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
               {/* Dispensar toda a orientação — acessível a partir de qualquer cartão */}
               <button
                 type="button"
@@ -197,9 +172,9 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className="relative z-10 flex h-full min-h-[156px] w-[62%] flex-col items-start">
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' || item.id === 'compartilhar' ? 'w-[42%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : item.id === 'tema' ? 'Estilo da loja' : 'Divulgação'}
+                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
                 </p>
 
                 <div className="mt-2">
@@ -213,33 +188,64 @@ export function StoreExplorationGuide({
 
                 <span className={cn(cta, 'mt-auto')}>
                   {item.completed ? item.ctaLabelDone : item.ctaLabel}
-                  <ChevronRight size={14} strokeWidth={2.2} />
                 </span>
               </div>
 
               {/* Área visual à direita: mesma posição e proporção em todos os cards */}
               <div
                 className={cn(
-                  'absolute right-3 top-3 bottom-3 flex w-[34%] max-w-[142px] items-center justify-center overflow-hidden rounded-[22px] transition-colors',
-                  visualTone[tone]
+                  'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
+                  item.id === 'produto'
+                    ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
+                    : item.id === 'personalizar'
+                      ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
+                      : item.id === 'compartilhar'
+                        ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
+                        : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
+                  item.id !== 'produto' && item.id !== 'personalizar' && item.id !== 'compartilhar' && visualTone[tone]
                 )}
               >
-                <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-white/60" />
-                <div className="absolute -bottom-8 -left-5 h-20 w-20 rounded-full bg-white/40" />
-                <div className="relative flex h-[86px] w-[86px] items-center justify-center rounded-[26px] bg-white/75 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.025]">
-                  <Icon
-                    size={42}
-                    strokeWidth={1.45}
-                    className={cn(
-                      tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
-                    )}
+                {item.id === 'produto' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="https://i.ibb.co/kg0TN94W/1-4.png"
+                    alt=""
+                    className="h-full w-full object-contain object-right"
                   />
-                  {item.completed && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
-                      <Check size={12} strokeWidth={3} />
-                    </span>
-                  )}
-                </div>
+                ) : item.id === 'personalizar' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png"
+                    alt=""
+                    className="h-full w-full translate-y-2 object-contain object-right"
+                  />
+                ) : item.id === 'compartilhar' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="https://i.ibb.co/nqQhLD63/file-000000004d2c81f4bc3b27e3a5ae2801.png"
+                    alt=""
+                    className="h-full w-full object-contain object-right"
+                  />
+                ) : (
+                  <>
+                    <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-white/60" />
+                    <div className="absolute -bottom-8 -left-5 h-20 w-20 rounded-full bg-white/40" />
+                    <div className="relative flex h-[86px] w-[86px] items-center justify-center rounded-[26px] bg-white/75 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.025]">
+                      <Icon
+                        size={42}
+                        strokeWidth={1.45}
+                        className={cn(
+                          tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
+                        )}
+                      />
+                      {item.completed && (
+                        <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
+                          <Check size={12} strokeWidth={3} />
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           );
