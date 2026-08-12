@@ -156,12 +156,7 @@ export function StoreExplorationGuide({
           const Icon = item.icon;
 
           const content = (
-            <div
-              className={cn(
-                'relative w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]',
-                item.id === 'compartilhar' ? 'min-h-[268px]' : 'min-h-[224px]'
-              )}
-            >
+            <div className="relative min-h-[224px] w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035]">
               {/* Dispensar toda a orientação — acessível a partir de qualquer cartão */}
               <button
                 type="button"
@@ -177,13 +172,13 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' || item.id === 'compartilhar' ? 'w-[42%]' : 'w-[62%]')}>
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' ? 'w-[42%]' : item.id === 'compartilhar' ? 'w-[58%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
                 </p>
 
                 <div className="mt-2">
-                  <p className="text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
+                  <p className="whitespace-nowrap text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
                     {item.title}
                   </p>
                   <p className="mt-2 max-w-[230px] text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400">
@@ -205,7 +200,7 @@ export function StoreExplorationGuide({
                     : item.id === 'personalizar'
                       ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
                       : item.id === 'compartilhar'
-                        ? 'right-0 top-0 bottom-0 w-[86%] max-w-[346px]'
+                        ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
                         : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
                   item.id !== 'produto' && item.id !== 'personalizar' && item.id !== 'compartilhar' && visualTone[tone]
                 )}
@@ -229,7 +224,7 @@ export function StoreExplorationGuide({
                   <img
                     src="https://i.ibb.co/93hnfFgh/file-000000005f74824384763d14d7b6d051.png"
                     alt=""
-                    className="h-full w-full translate-y-4 object-contain object-right"
+                    className="h-full w-full scale-125 object-cover object-right"
                   />
                 ) : (
                   <>
