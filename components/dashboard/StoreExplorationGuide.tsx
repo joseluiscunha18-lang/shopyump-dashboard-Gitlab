@@ -181,7 +181,8 @@ export function StoreExplorationGuide({
                   <p
                     className={cn(
                       'text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink',
-                      item.id === 'compartilhar' && 'whitespace-nowrap'
+                      item.id === 'compartilhar' && 'whitespace-nowrap',
+                      item.id === 'produto' && 'max-w-[165px]'
                     )}
                   >
                     {item.title}
@@ -189,7 +190,7 @@ export function StoreExplorationGuide({
                   <p
                     className={cn(
                       'mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400',
-                      item.id === 'compartilhar' ? 'max-w-[150px]' : 'max-w-[230px]'
+                      item.id === 'compartilhar' ? 'max-w-[150px]' : item.id === 'produto' ? 'max-w-[175px]' : 'max-w-[230px]'
                     )}
                   >
                     {item.subtitle}
@@ -234,7 +235,7 @@ export function StoreExplorationGuide({
                   <img
                     src="https://i.ibb.co/PvnDBBfD/file-00000000239081f4b3e0b1cf5045d1f7.png"
                     alt=""
-                    className="h-full w-full scale-110 object-cover object-right"
+                    className="h-full w-full translate-y-3 scale-110 object-cover object-right"
                   />
                 ) : (
                   <>
