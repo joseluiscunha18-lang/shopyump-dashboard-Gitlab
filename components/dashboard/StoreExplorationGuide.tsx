@@ -181,7 +181,12 @@ export function StoreExplorationGuide({
                   <p className="whitespace-nowrap text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
                     {item.title}
                   </p>
-                  <p className="mt-2 max-w-[230px] text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400">
+                  <p
+                    className={cn(
+                      'mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400',
+                      item.id === 'compartilhar' ? 'max-w-[150px]' : 'max-w-[230px]'
+                    )}
+                  >
                     {item.subtitle}
                   </p>
                 </div>
@@ -224,7 +229,7 @@ export function StoreExplorationGuide({
                   <img
                     src="https://i.ibb.co/93hnfFgh/file-000000005f74824384763d14d7b6d051.png"
                     alt=""
-                    className="h-full w-full scale-125 object-cover object-right"
+                    className="h-full w-full scale-110 object-cover object-right"
                   />
                 ) : (
                   <>
