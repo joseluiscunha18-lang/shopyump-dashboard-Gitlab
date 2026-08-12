@@ -172,13 +172,18 @@ export function StoreExplorationGuide({
               </button>
 
               {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'produto' || item.id === 'personalizar' ? 'w-[42%]' : item.id === 'compartilhar' ? 'w-[58%]' : 'w-[62%]')}>
+              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'personalizar' ? 'w-[42%]' : item.id === 'compartilhar' ? 'w-[58%]' : 'w-[62%]')}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
                 </p>
 
                 <div className="mt-2">
-                  <p className="whitespace-nowrap text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
+                  <p
+                    className={cn(
+                      'text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink',
+                      item.id === 'compartilhar' && 'whitespace-nowrap'
+                    )}
+                  >
                     {item.title}
                   </p>
                   <p
@@ -227,7 +232,7 @@ export function StoreExplorationGuide({
                 ) : item.id === 'compartilhar' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src="https://i.ibb.co/93hnfFgh/file-000000005f74824384763d14d7b6d051.png"
+                    src="https://i.ibb.co/PvnDBBfD/file-00000000239081f4b3e0b1cf5045d1f7.png"
                     alt=""
                     className="h-full w-full scale-110 object-cover object-right"
                   />
