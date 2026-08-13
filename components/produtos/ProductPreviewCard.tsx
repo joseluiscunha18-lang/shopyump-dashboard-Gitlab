@@ -37,8 +37,7 @@ const ITEMS: PreviewItem[] = [
   },
   {
     id: 'sobremesa',
-    image:
-      'https://images.unsplash.com/photo-1630384057168-b537be58939c?auto=format&fit=crop&w=400&q=80',
+    image: 'https://i.ibb.co/0y1j5TZJ/a438689f26504d23aa559eeb1123f70f.png',
     bg: 'from-[#F0E2DA] to-[#E3CDC3]',
     badge: 'NOVO',
     name: 'Torta de Chocolate',
@@ -54,12 +53,12 @@ function ProductFace({ item }: { item: PreviewItem }) {
     <>
       <div
         className={cn(
-          'relative flex-1 min-h-0 overflow-hidden bg-gradient-to-br',
+          'relative aspect-square w-full overflow-hidden bg-gradient-to-br',
           item.bg,
         )}
       >
         {item.badge && (
-          <span className="absolute left-3 top-3 z-10 rounded-full bg-white/95 px-2 py-[3px] text-[8.5px] font-black uppercase tracking-widest text-ink shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-white/95 px-2 py-[3px] text-[8px] font-black uppercase tracking-widest text-ink shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
             {item.badge}
           </span>
         )}
@@ -70,11 +69,11 @@ function ProductFace({ item }: { item: PreviewItem }) {
         />
       </div>
 
-      <div className="px-4 pb-4 pt-3.5">
-        <p className="truncate font-display text-[13.5px] font-bold tracking-tight text-ink">
+      <div className="px-3.5 pb-3.5 pt-3">
+        <p className="truncate font-display text-[12.5px] font-bold tracking-tight text-ink">
           {item.name}
         </p>
-        <p className="mt-1 text-[12px] font-semibold text-slate-400">{item.price}</p>
+        <p className="mt-1 text-[11.5px] font-semibold text-slate-400">{item.price}</p>
       </div>
     </>
   );
@@ -119,10 +118,10 @@ export function ProductPreviewCard() {
   const outgoing = prevIndex !== null ? ITEMS[prevIndex] : null;
 
   return (
-    <div className="relative h-[264px] w-[192px] overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_36px_-20px_rgba(15,23,42,0.20)]">
+    <div className="relative w-[168px] overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-18px_rgba(15,23,42,0.20)]">
       <div
         key={current.id}
-        className={cn('flex h-full flex-col', outgoing && 'animate-product-enter')}
+        className={cn('flex flex-col', outgoing && 'animate-product-enter')}
       >
         <ProductFace item={current} />
       </div>
