@@ -18,6 +18,8 @@ export default async function ProdutosPage() {
   if (produtos.length === 0) {
     return (
       <div className="flex flex-col gap-6 pt-2">
+        <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
+
         <div className="relative min-h-[420px] w-full overflow-hidden rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]">
           <div className="flex h-full flex-col items-center px-6 pt-10 pb-8 sm:pt-12 sm:pb-10">
             <div className="flex h-[168px] w-full max-w-[220px] items-center justify-center sm:h-[196px]">
