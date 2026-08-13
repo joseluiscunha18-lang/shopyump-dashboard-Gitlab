@@ -6,6 +6,7 @@ import { getProdutosByLoja } from '@/lib/queries/produtos';
 import { Card } from '@/components/ui/Surfaces';
 import { Button } from '@/components/ui/Button';
 import { ProductRow } from '@/components/produtos/ProductRow';
+import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
 
 export const metadata: Metadata = { title: 'Produtos | Shopyump' };
 
@@ -20,18 +21,11 @@ export default async function ProdutosPage() {
       <div className="flex flex-col gap-6 pt-2">
         <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
-        <div className="relative min-h-[420px] w-full overflow-hidden rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]">
-          <div className="flex h-full flex-col items-center px-6 pt-10 pb-8 sm:pt-12 sm:pb-10">
-            <div className="flex h-[168px] w-full max-w-[220px] items-center justify-center sm:h-[196px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://i.ibb.co/kg0TN94W/1-4.png"
-                alt=""
-                className="h-full w-full object-contain"
-              />
-            </div>
+        <div className="relative w-full overflow-hidden rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]">
+          <div className="flex flex-col items-center px-6 pt-10 pb-10 sm:pt-12 sm:pb-12">
+            <ProductPreviewCard />
 
-            <div className="mt-6 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-8">
+            <div className="mt-7 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-8">
               <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
                 Adicione seu primeiro produto
               </h2>
