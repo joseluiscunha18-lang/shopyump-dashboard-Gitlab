@@ -125,12 +125,13 @@ export function ProductPreviewCard() {
       <div
         key={item.id}
         className={cn(
-          'w-full overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_14px_26px_-16px_rgba(15,23,42,0.20)]',
+          'relative w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_14px_26px_-16px_rgba(15,23,42,0.20)]',
           phase === 'exiting' && 'animate-product-exit',
           phase === 'entering' && 'animate-product-enter',
         )}
       >
         <ProductFace item={item} />
+        <div className="pointer-events-none absolute inset-0 z-20 rounded-[18px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
       </div>
     </div>
   );
