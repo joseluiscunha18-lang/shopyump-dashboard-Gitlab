@@ -46,7 +46,7 @@ const ITEMS: PreviewItem[] = [
 ];
 
 const STABLE_MS = 2400;
-const TRANSITION_MS = 600;
+const PHASE_MS = 300;
 
 function ProductFace({ item }: { item: PreviewItem }) {
   return (
@@ -80,29 +80,34 @@ function ProductFace({ item }: { item: PreviewItem }) {
 }
 
 export function ProductPreviewCard() {
-  const [index, setIndex] = useState(0);
-  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const [item, setItem] = useState<PreviewItem>(ITEMS[0]);
+  const [phase, setPhase] = useState<'idle' | 'exiting' | 'entering'>('idle');
   const indexRef = useRef(0);
 
   useEffect(() => {
     let stableTimer: ReturnType<typeof setTimeout>;
-    let clearTimer: ReturnType<typeof setTimeout>;
+    let exitTimer: ReturnType<typeof setTimeout>;
+    let enterTimer: ReturnType<typeof setTimeout>;
     let cancelled = false;
 
     const runCycle = () => {
       stableTimer = setTimeout(() => {
         if (cancelled) return;
-        const current = indexRef.current;
-        const next = (current + 1) % ITEMS.length;
-        indexRef.current = next;
-        setPrevIndex(current);
-        setIndex(next);
+        setPhase('exiting');
 
-        clearTimer = setTimeout(() => {
+        exitTimer = setTimeout(() => {
           if (cancelled) return;
-          setPrevIndex(null);
-          runCycle();
-        }, TRANSITION_MS);
+          const next = (indexRef.current + 1) % ITEMS.length;
+          indexRef.current = next;
+          setItem(ITEMS[next]);
+          setPhase('entering');
+
+          enterTimer = setTimeout(() => {
+            if (cancelled) return;
+            setPhase('idle');
+            runCycle();
+          }, PHASE_MS);
+        }, PHASE_MS);
       }, STABLE_MS);
     };
 
@@ -110,30 +115,23 @@ export function ProductPreviewCard() {
     return () => {
       cancelled = true;
       clearTimeout(stableTimer);
-      clearTimeout(clearTimer);
+      clearTimeout(exitTimer);
+      clearTimeout(enterTimer);
     };
   }, []);
-
-  const current = ITEMS[index];
-  const outgoing = prevIndex !== null ? ITEMS[prevIndex] : null;
 
   return (
     <div className="relative w-[168px] overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-18px_rgba(15,23,42,0.20)]">
       <div
-        key={current.id}
-        className={cn('flex flex-col', outgoing && 'animate-product-enter')}
+        key={item.id}
+        className={cn(
+          'flex flex-col',
+          phase === 'exiting' && 'animate-product-exit',
+          phase === 'entering' && 'animate-product-enter',
+        )}
       >
-        <ProductFace item={current} />
+        <ProductFace item={item} />
       </div>
-
-      {outgoing && (
-        <div
-          key={`${outgoing.id}-out`}
-          className="animate-product-exit absolute inset-0 flex flex-col bg-white"
-        >
-          <ProductFace item={outgoing} />
-        </div>
-      )}
     </div>
   );
 }
