@@ -58,7 +58,7 @@ function ProductFace({ item }: { item: PreviewItem }) {
         )}
       >
         {item.badge && (
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-white/95 px-2 py-[3px] text-[8px] font-black uppercase tracking-widest text-ink shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+          <span className="absolute left-2 top-2 z-10 rounded-full bg-white/95 px-1.5 py-[2px] text-[7px] font-black uppercase tracking-widest text-ink shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
             {item.badge}
           </span>
         )}
@@ -69,11 +69,11 @@ function ProductFace({ item }: { item: PreviewItem }) {
         />
       </div>
 
-      <div className="px-3.5 pb-3.5 pt-3">
-        <p className="truncate font-display text-[12.5px] font-bold tracking-tight text-ink">
+      <div className="px-3 pb-3 pt-2.5">
+        <p className="truncate font-display text-[11.5px] font-bold tracking-tight text-ink">
           {item.name}
         </p>
-        <p className="mt-1 text-[11.5px] font-semibold text-slate-400">{item.price}</p>
+        <p className="mt-0.5 text-[10.5px] font-semibold text-slate-400">{item.price}</p>
       </div>
     </>
   );
@@ -121,11 +121,11 @@ export function ProductPreviewCard() {
   }, []);
 
   return (
-    <div className="relative w-[168px] overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-18px_rgba(15,23,42,0.20)]">
+    <div className="relative w-[142px]">
       <div
         key={item.id}
         className={cn(
-          'flex flex-col',
+          'w-full overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_14px_26px_-16px_rgba(15,23,42,0.20)]',
           phase === 'exiting' && 'animate-product-exit',
           phase === 'entering' && 'animate-product-enter',
         )}
