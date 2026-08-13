@@ -67,6 +67,7 @@ function ProductFace({ item }: { item: PreviewItem }) {
           alt={item.name}
           className="absolute inset-0 h-full w-full object-cover"
         />
+        <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
       </div>
 
       <div className="px-3 pb-3 pt-2.5">
