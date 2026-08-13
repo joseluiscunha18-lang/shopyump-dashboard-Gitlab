@@ -30,7 +30,7 @@ export default async function ProdutosPage() {
                 Adicione seu primeiro produto
               </h2>
               <p className="text-[13px] font-medium leading-relaxed text-slate-400">
-                Comece a construir seu catálogo e coloque seus produtos à venda na sua loja.
+                Comece a construir seu catálogo e coloque seus produtos à venda.
               </p>
             </div>
 
