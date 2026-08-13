@@ -1,83 +1,64 @@
 import type { Metadata } from 'next';
-import { ClipboardList, Eye, Wallet, PackageCheck } from 'lucide-react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { getUserContext } from '@/lib/auth/getUserContext';
-import { getDashboardStats } from '@/lib/queries/stats';
-import { getPedidosByLoja } from '@/lib/queries/pedidos';
-import { getProdutosCount } from '@/lib/queries/produtos';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { PendingOrdersList } from '@/components/dashboard/PendingOrdersList';
-import { StoreExplorationGuide } from '@/components/dashboard/StoreExplorationGuide';
+import { getProdutosByLoja } from '@/lib/queries/produtos';
+import { Card } from '@/components/ui/Surfaces';
+import { Button } from '@/components/ui/Button';
+import { ProductRow } from '@/components/produtos/ProductRow';
+import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
 
-export const metadata: Metadata = { title: 'Painel | Shopyump' };
+export const metadata: Metadata = { title: 'Produtos | Shopyump' };
 
-export default async function DashboardHomePage() {
+export default async function ProdutosPage() {
   const ctx = await getUserContext();
-  if (!ctx.loja) {
-    // Platform admin with no store of their own — nothing to show here in Phase 1.
-    return <p className="pt-10 text-sm font-medium text-slate-500">Sem loja associada a esta conta.</p>;
-  }
+  if (!ctx.loja) return null;
 
-  const [stats, pedidosPendentes, produtosCount] = await Promise.all([
-    getDashboardStats(ctx.loja.id),
-    getPedidosByLoja(ctx.loja.id, 'pendente'),
-    getProdutosCount(ctx.loja.id),
-  ]);
+  const produtos = await getProdutosByLoja(ctx.loja.id);
 
-  // "Activity" is defined by real orders having happened — not by daily
-  // visit counts (which reset every day) — so a store with history but a
-  // quiet day never gets mistaken for a brand-new one. See redesign notes
-  // for the Início empty state.
-  const hasActivity = stats.pedidosTotal > 0;
-
-  if (!hasActivity) {
-    const storeUrl = ctx.loja.slug ? `${process.env.NEXT_PUBLIC_WEB_URL ?? ''}/loja/${ctx.loja.slug}` : null;
-    const hasCustomized = Boolean(
-      ctx.loja.descricao?.trim() || ctx.loja.banner_url || ctx.loja.instagram || ctx.loja.facebook || ctx.loja.email
-    );
-
+  if (produtos.length === 0) {
     return (
-      <div className="flex flex-col gap-8 pt-2">
-        <StoreExplorationGuide
-          lojaId={ctx.loja.id}
-          storeUrl={storeUrl}
-          storeName={ctx.loja.nome}
-          hasProduct={produtosCount > 0}
-          hasCustomized={hasCustomized}
-        />
+      <div className="flex flex-col gap-6 pt-2">
+        <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
-        <div>
-          <h2 className="text-lg font-black text-ink tracking-tight mb-4">Pedidos</h2>
-          <PendingOrdersList lojaId={ctx.loja.id} initialPedidos={pedidosPendentes} />
+        <div className="relative w-full overflow-hidden rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]">
+          <div className="flex flex-col items-center px-6 pt-10 pb-10 sm:pt-12 sm:pb-12">
+            <ProductPreviewCard />
+
+            <div className="mt-7 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-8">
+              <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+                Adicione seu primeiro produto
+              </h2>
+              <p className="text-[13px] font-medium leading-relaxed text-slate-400">
+                Comece a construir seu catálogo e coloque seus produtos à venda na sua loja.
+              </p>
+            </div>
+
+            <Link href="/produtos/novo" className="mt-7 sm:mt-8">
+              <Button>Criar produto</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-8 pt-2">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={<ClipboardList size={22} />}
-          label="Pedidos pendentes"
-          value={String(stats.pedidosPendentes)}
-          emphasis
-        />
-        <StatCard icon={<PackageCheck size={20} />} label="Pedidos no total" value={String(stats.pedidosTotal)} />
-        <StatCard icon={<Eye size={20} />} label="Visitas hoje" value={String(stats.visitasHoje)} />
-        <StatCard
-          icon={<Wallet size={20} />}
-          label="Receita total"
-          value={stats.receitaTotal.toLocaleString('pt-MZ')}
-          sub="MT"
-        />
+    <div className="flex flex-col gap-6 pt-2">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
+        <Link href="/produtos/novo">
+          <Button size="sm">
+            <Plus size={15} /> Novo produto
+          </Button>
+        </Link>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black text-ink tracking-tight">Pedidos pendentes</h2>
-        </div>
-        <PendingOrdersList lojaId={ctx.loja.id} initialPedidos={pedidosPendentes} />
-      </div>
+      <Card className="divide-y divide-slate-100">
+        {produtos.map((p) => (
+          <ProductRow key={p.id} produto={p} />
+        ))}
+      </Card>
     </div>
   );
 }
