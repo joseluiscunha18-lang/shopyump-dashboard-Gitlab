@@ -45,7 +45,7 @@ const ITEMS: PreviewItem[] = [
   },
 ];
 
-const INTERVAL_MS = 3000;
+const INTERVAL_MS = 2500;
 
 export function ProductPreviewCard() {
   const [index, setIndex] = useState(0);
@@ -62,16 +62,16 @@ export function ProductPreviewCard() {
   return (
     <div className="relative h-[248px] w-[188px] overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.045]">
       <div key={item.id} className="animate-product-fade flex h-full flex-col">
-        <div className={cn('relative flex flex-1 items-center justify-center bg-gradient-to-br', item.bg)}>
+        <div className={cn('relative flex flex-1 min-h-0 items-center justify-center overflow-hidden bg-gradient-to-br', item.bg)}>
           {item.badge && (
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/85 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-ink shadow-sm">
+            <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-white/85 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-ink shadow-sm">
               {item.badge}
             </span>
           )}
           <img
             src={item.image}
             alt={item.name}
-            className="h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
 
