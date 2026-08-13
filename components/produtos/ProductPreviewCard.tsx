@@ -14,34 +14,34 @@ interface PreviewItem {
 
 const ITEMS: PreviewItem[] = [
   {
-    id: 'bolsa',
-    image: 'https://i.ibb.co/gZM7Dcyp/ddea06acf5dd43d4a25acc94ece323a6.png',
-    bg: 'from-[#F3E4D6] to-[#E8D2BC]',
-    badge: 'NOVO',
-    name: 'Bolsa Couro Caramelo',
-    price: '3.200 MT',
-  },
-  {
-    id: 'tenis',
-    image: 'https://i.ibb.co/tMmLryHM/75943c0a89f2450a9a49da57c81ee7ba.png',
-    bg: 'from-[#F2EDE6] to-[#E4D9CB]',
-    name: 'Tênis Off-White',
-    price: '2.850 MT',
-  },
-  {
-    id: 'perfume',
-    image: 'https://i.ibb.co/FbC8CZS8/jr-r-90-Hd-Ol-Gbjck-unsplash.jpg',
-    bg: 'from-[#F6EAD2] to-[#EDDBB2]',
-    name: 'Perfume Ambré',
-    price: '4.800 MT',
-  },
-  {
-    id: 'sobremesa',
+    id: 'bolsa-feminina',
     image: 'https://i.ibb.co/0y1j5TZJ/a438689f26504d23aa559eeb1123f70f.png',
     bg: 'from-[#F0E2DA] to-[#E3CDC3]',
     badge: 'NOVO',
-    name: 'Torta de Chocolate',
-    price: '950 MT',
+    name: 'Bolsa Feminina',
+    price: '3.200 MT',
+  },
+  {
+    id: 'cupcake-chocolate',
+    image: 'https://i.ibb.co/FbC8CZS8/jr-r-90-Hd-Ol-Gbjck-unsplash.jpg',
+    bg: 'from-[#F6EAD2] to-[#EDDBB2]',
+    name: 'Cupcake de Chocolate',
+    price: '450 MT',
+  },
+  {
+    id: 'tenis-casual',
+    image: 'https://i.ibb.co/tMmLryHM/75943c0a89f2450a9a49da57c81ee7ba.png',
+    bg: 'from-[#F2EDE6] to-[#E4D9CB]',
+    name: 'Tênis Casual',
+    price: '2.850 MT',
+  },
+  {
+    id: 'perfume-parfum',
+    image: 'https://i.ibb.co/gZM7Dcyp/ddea06acf5dd43d4a25acc94ece323a6.png',
+    bg: 'from-[#F3E4D6] to-[#E8D2BC]',
+    badge: 'NOVO',
+    name: 'Perfume Eau de Parfum',
+    price: '3.500 MT',
   },
 ];
 
