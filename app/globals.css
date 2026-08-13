@@ -91,9 +91,11 @@
   animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Product preview card — editorial crossfade between rotating products.
-   Outgoing content eases up and out while incoming content eases up and
-   in from just below, fully overlapping so the swap never hard-cuts. */
+/* Product preview card — editorial swap between rotating products.
+   The two phases run back-to-back (never overlapping), so only one
+   product is ever on screen: it eases up and out, then the next one
+   eases up into place from just below. Reads as deliberate motion
+   instead of a cross-fade flicker between two busy product photos. */
 @keyframes product-card-exit {
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-12px); }
@@ -103,8 +105,8 @@
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-product-exit {
-  animation: product-card-exit 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: product-card-exit 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .animate-product-enter {
-  animation: product-card-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: product-card-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
