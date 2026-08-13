@@ -207,7 +207,7 @@ export function StoreExplorationGuide({
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
                   item.id === 'produto'
-                    ? 'right-0 top-0 bottom-0 w-[57%] max-w-[231px]'
+                    ? 'right-3 top-3 bottom-3 w-[46%] max-w-[190px]'
                     : item.id === 'personalizar'
                       ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
                       : item.id === 'compartilhar'
