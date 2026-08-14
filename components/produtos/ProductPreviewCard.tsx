@@ -10,6 +10,8 @@ interface PreviewItem {
   badge?: string;
   name: string;
   price: string;
+  /** Ajuste fino opcional do enquadramento da foto dentro do card. */
+  imageClassName?: string;
 }
 
 const ITEMS: PreviewItem[] = [
@@ -33,12 +35,13 @@ const ITEMS: PreviewItem[] = [
     bg: 'from-[#F2EDE6] to-[#E4D9CB]',
     name: 'Nike Air Force 1',
     price: '2.850 MT',
+    imageClassName: 'object-[78%_center] scale-[1.16]',
   },
   {
-    id: 'perfume-parfum',
-    image: 'https://i.ibb.co/gZM7Dcyp/ddea06acf5dd43d4a25acc94ece323a6.png',
+    id: 'creme-antirrugas',
+    image: 'https://i.ibb.co/qF2G1zYm/natallia-photo-26nn-S5-I05-U-unsplash.jpg',
     bg: 'from-[#F3E4D6] to-[#E8D2BC]',
-    name: 'Perfume Eau de Parfum',
+    name: 'Creme Antirrugas',
     price: '3.500 MT',
   },
 ];
@@ -63,7 +66,7 @@ function ProductFace({ item }: { item: PreviewItem }) {
         <img
           src={item.image}
           alt={item.name}
-          className="absolute inset-0 h-full w-full object-cover"
+          className={cn('absolute inset-0 h-full w-full object-cover', item.imageClassName)}
         />
         <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
       </div>
