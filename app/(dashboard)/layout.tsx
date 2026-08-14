@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <MobileNavProvider>
-      <div className="min-h-screen bg-[#FAFAFA] flex">
+      <div className="min-h-screen bg-[#F6F7F9] flex">
         <Sidebar storeUrl={storeUrl} />
         <div className="flex-1 flex flex-col pb-28 sm:pb-0 min-w-0">
           <TopBar storeName={ctx.loja?.nome ?? 'Painel Admin'} storeUrl={storeUrl} />
