@@ -25,12 +25,14 @@ export default async function ProdutosPage() {
           <div className="flex flex-col items-center px-6 pt-6 pb-6 sm:pt-8 sm:pb-8">
             <ProductPreviewCard />
 
-            <div className="mt-4 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-5">
+            <div className="mt-3 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-4">
               <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
                 Adicione seu primeiro produto
               </h2>
               <p className="text-[13px] font-medium leading-relaxed text-slate-400">
-                Comece a construir seu catálogo e coloque seus produtos à venda.
+                Comece a construir seu catálogo e
+                <br />
+                coloque seus produtos à venda.
               </p>
             </div>
 
