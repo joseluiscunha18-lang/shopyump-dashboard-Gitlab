@@ -21,6 +21,7 @@ const ITEMS: PreviewItem[] = [
     bg: 'from-[#F0E2DA] to-[#E3CDC3]',
     name: 'Bolsa Feminina',
     price: '3.200 MT',
+    imageClassName: 'scale-[1.18]',
   },
   {
     id: 'cupcake-chocolate',
@@ -35,7 +36,7 @@ const ITEMS: PreviewItem[] = [
     bg: 'from-[#F2EDE6] to-[#E4D9CB]',
     name: 'Nike Air Force 1',
     price: '2.850 MT',
-    imageClassName: 'object-[78%_center] scale-[1.16]',
+    imageClassName: 'object-right scale-[1.16]',
   },
   {
     id: 'creme-antirrugas',
