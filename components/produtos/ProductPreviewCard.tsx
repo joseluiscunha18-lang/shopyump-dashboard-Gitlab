@@ -28,10 +28,10 @@ const ITEMS: PreviewItem[] = [
     price: '450 MT',
   },
   {
-    id: 'tenis-casual',
-    image: 'https://i.ibb.co/tMmLryHM/75943c0a89f2450a9a49da57c81ee7ba.png',
+    id: 'nike-air-force-1',
+    image: 'https://i.ibb.co/0y2zq6VQ/peter-albanese-w-FNTf-Yo9-Vnc-unsplash.jpg',
     bg: 'from-[#F2EDE6] to-[#E4D9CB]',
-    name: 'Tênis Casual',
+    name: 'Nike Air Force 1',
     price: '2.850 MT',
   },
   {
