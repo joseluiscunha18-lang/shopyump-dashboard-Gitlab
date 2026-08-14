@@ -44,6 +44,7 @@ const ITEMS: PreviewItem[] = [
     bg: 'from-[#F3E4D6] to-[#E8D2BC]',
     name: 'Creme Antirrugas',
     price: '3.500 MT',
+    imageClassName: 'scale-[1.14]',
   },
 ];
 
