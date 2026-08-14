@@ -22,10 +22,10 @@ export default async function ProdutosPage() {
         <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
         <div className="relative w-full overflow-hidden rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]">
-          <div className="flex flex-col items-center px-6 pt-10 pb-10 sm:pt-12 sm:pb-12">
+          <div className="flex flex-col items-center px-6 pt-6 pb-6 sm:pt-8 sm:pb-8">
             <ProductPreviewCard />
 
-            <div className="mt-7 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-8">
+            <div className="mt-4 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-5">
               <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
                 Adicione seu primeiro produto
               </h2>
@@ -34,8 +34,8 @@ export default async function ProdutosPage() {
               </p>
             </div>
 
-            <Link href="/produtos/novo" className="mt-7 sm:mt-8">
-              <Button>Criar produto</Button>
+            <Link href="/produtos/novo" className="mt-4 sm:mt-5">
+              <Button variant="dark">Adicionar produto</Button>
             </Link>
           </div>
         </div>
