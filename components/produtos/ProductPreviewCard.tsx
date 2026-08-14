@@ -19,7 +19,7 @@ const ITEMS: PreviewItem[] = [
     id: 'bolsa-feminina',
     image: 'https://i.ibb.co/0y1j5TZJ/a438689f26504d23aa559eeb1123f70f.png',
     bg: 'from-[#F0E2DA] to-[#E3CDC3]',
-    name: 'Bolsa Feminina',
+    name: 'Bolsa Siena',
     price: '3.200 MT',
     imageClassName: 'scale-[1.18]',
   },
@@ -36,7 +36,7 @@ const ITEMS: PreviewItem[] = [
     bg: 'from-[#F2EDE6] to-[#E4D9CB]',
     name: 'Nike Air Force 1',
     price: '2.850 MT',
-    imageClassName: 'object-left scale-[1.16]',
+    imageClassName: 'object-[22%_center] scale-[1.16]',
   },
   {
     id: 'creme-antirrugas',
