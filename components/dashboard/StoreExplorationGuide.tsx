@@ -182,7 +182,7 @@ export function StoreExplorationGuide({
                     className={cn(
                       'text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink',
                       item.id === 'compartilhar' && 'whitespace-nowrap',
-                      item.id === 'produto' && 'max-w-[165px]'
+                      item.id === 'produto' && 'max-w-[152px]'
                     )}
                   >
                     {item.title}
@@ -190,7 +190,7 @@ export function StoreExplorationGuide({
                   <p
                     className={cn(
                       'mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400',
-                      item.id === 'compartilhar' ? 'max-w-[150px]' : item.id === 'produto' ? 'max-w-[175px]' : 'max-w-[230px]'
+                      item.id === 'compartilhar' ? 'max-w-[150px]' : item.id === 'produto' ? 'max-w-[160px]' : 'max-w-[230px]'
                     )}
                   >
                     {item.subtitle}
@@ -207,7 +207,7 @@ export function StoreExplorationGuide({
                 className={cn(
                   'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
                   item.id === 'produto'
-                    ? 'right-3 top-3 bottom-3 w-[46%] max-w-[190px]'
+                    ? 'right-0 top-2 bottom-2 w-[50%] max-w-[204px]'
                     : item.id === 'personalizar'
                       ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
                       : item.id === 'compartilhar'
