@@ -124,7 +124,7 @@ export function ProductPreviewCard() {
       <div
         key={item.id}
         className={cn(
-          'relative w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_14px_26px_-16px_rgba(15,23,42,0.20)]',
+          'relative w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_16px_30px_-14px_rgba(15,23,42,0.24)]',
           phase === 'exiting' && 'animate-product-exit',
           phase === 'entering' && 'animate-product-enter',
         )}
