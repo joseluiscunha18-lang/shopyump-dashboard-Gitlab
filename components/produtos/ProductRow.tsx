@@ -93,10 +93,13 @@ export function ProductRow({
         />
       )}
 
-      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-[#1A1210]/20 bg-slate-100">
+      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
         {produto.fotos?.[0] && (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
         )}
+        {/* Contorno "fundido" à imagem (inset, não uma borda por fora) — a
+        mesma técnica usada no card animado da tela de login/onboarding. */}
+        <div className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_0_0_1px_rgba(26,18,16,0.14)]" />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -122,7 +125,7 @@ export function ProductRow({
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-2xl border border-[#1A1210]/15 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+          <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-2xl border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
             <Link
               href={`/produtos/${produto.id}`}
               onClick={() => setMenuOpen(false)}
@@ -151,7 +154,7 @@ export function ProductRow({
               )}
               {ativo ? 'Inativar' : 'Ativar'}
             </button>
-            <div className="my-1 h-px bg-[#1A1210]/12" />
+            <div className="my-1 h-px bg-[#1A1210]/8" />
             <button
               onClick={handleDelete}
               disabled={pending}
