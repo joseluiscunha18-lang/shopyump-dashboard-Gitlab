@@ -27,7 +27,7 @@ export function Checkbox({
         onChange(!checked);
       }}
       className={cn(
-        'flex h-[17px] w-[17px] flex-shrink-0 items-center justify-center rounded-[5px] border transition-colors',
+        'flex h-[19px] w-[19px] flex-shrink-0 items-center justify-center rounded-[6px] border transition-colors',
         checked || indeterminate
           ? 'border-[#1A1210] bg-[#1A1210]'
           : 'border-slate-300 bg-white hover:border-slate-400',
@@ -35,9 +35,9 @@ export function Checkbox({
       )}
     >
       {indeterminate ? (
-        <Minus size={10} strokeWidth={3} className="text-white" />
+        <Minus size={11} strokeWidth={3} className="text-white" />
       ) : checked ? (
-        <Check size={10} strokeWidth={3} className="text-white" />
+        <Check size={11} strokeWidth={3} className="text-white" />
       ) : null}
     </button>
   );
