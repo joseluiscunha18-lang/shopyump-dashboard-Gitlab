@@ -168,7 +168,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       blur/translucidez) com sombra mais forte, para se destacar claramente
       do fundo cinza da página em vez de se misturar com ele. */}
       <div className="rounded-[28px] border border-[#1A1210]/8 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
-        <div className="border-b border-[#1A1210]/8 p-3">
+        <div className="p-3 pb-2.5">
           <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
           <div className="mt-2.5 px-0.5">
@@ -186,7 +186,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
 
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
               <SearchX size={20} strokeWidth={2.3} />
             </div>
             <div>
@@ -215,7 +215,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                   {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
                 </span>
               ) : (
-                <span className="text-[12px] font-bold text-slate-600">
+                <span className="text-[12px] font-bold text-[#1A1210]/75">
                   {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
                 </span>
               )}
