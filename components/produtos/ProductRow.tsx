@@ -93,7 +93,7 @@ export function ProductRow({
         />
       )}
 
-      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-100">
         {produto.fotos?.[0] && (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
         )}
