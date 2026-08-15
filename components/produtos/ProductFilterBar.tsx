@@ -59,7 +59,7 @@ function FilterDropdown<T extends string>({
           'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 text-[12.5px] font-bold transition-colors',
           isActive
             ? 'border-[#1A1210] bg-[#1A1210] text-white'
-            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-ink',
+            : 'border-white bg-white text-slate-500 shadow-[0_6px_16px_-6px_rgba(15,23,42,0.08)] hover:text-ink',
         )}
       >
         {icon}
