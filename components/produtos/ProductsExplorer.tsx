@@ -168,10 +168,10 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       blur/translucidez) com sombra mais forte, para se destacar claramente
       do fundo cinza da página em vez de se misturar com ele. */}
       <div className="rounded-[28px] border border-[#1A1210]/8 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
-        <div className="px-3 pb-2.5 pt-2">
+        <div className="px-4 pb-3 pt-4">
           <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
-          <div className="mt-2.5 px-0.5">
+          <div className="mt-3">
             <ProductFilterBar
               status={status}
               onStatusChange={setStatus}
