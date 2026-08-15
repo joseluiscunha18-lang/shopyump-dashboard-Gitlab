@@ -8,9 +8,18 @@ import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { useToast } from '@/components/ui/Toast';
+import { Checkbox } from '@/components/ui/Checkbox';
 import type { Produto } from '@/types/database';
 
-export function ProductRow({ produto }: { produto: Produto }) {
+export function ProductRow({
+  produto,
+  selected = false,
+  onToggleSelect,
+}: {
+  produto: Produto;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
+}) {
   const [ativo, setAtivo] = useState(produto.ativo);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -70,8 +79,20 @@ export function ProductRow({ produto }: { produto: Produto }) {
       onKeyDown={(e) => {
         if (e.key === 'Enter') router.push(`/produtos/${produto.id}`);
       }}
-      className="group flex items-center gap-3.5 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer"
+      className={cn(
+        'group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer',
+        selected && 'bg-brand-soft/40 hover:bg-brand-soft/50',
+      )}
     >
+      {onToggleSelect && (
+        <Checkbox
+          checked={selected}
+          onChange={() => onToggleSelect(produto.id)}
+          ariaLabel={`Selecionar ${produto.nome}`}
+          className="ml-0.5 mr-0.5"
+        />
+      )}
+
       <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
         {produto.fotos?.[0] && (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
