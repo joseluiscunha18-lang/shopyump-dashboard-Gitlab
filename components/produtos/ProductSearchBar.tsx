@@ -122,7 +122,7 @@ export function ProductSearchBar({
                   onClick={() => pickSuggestion(p.nome)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-slate-50"
                 >
-                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-slate-200 bg-slate-100 text-slate-300">
+                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#1A1210]/20 bg-slate-100 text-slate-300">
                     {p.fotos?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.fotos[0]} alt="" className="h-full w-full object-cover" />
