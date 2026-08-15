@@ -13,7 +13,7 @@ export function ProductSearchBar({
 }) {
   return (
     <div className="relative">
-      <div className="flex h-11 items-center gap-2.5 rounded-xl border border-[#1A1210]/15 bg-white px-3.5 shadow-[0_2px_6px_rgba(15,23,42,0.06)] transition-colors focus-within:border-ink">
+      <div className="flex h-11 items-center gap-2.5 rounded-b-xl border-x border-b border-[#1A1210]/15 bg-white px-3.5 shadow-[0_2px_6px_rgba(15,23,42,0.06)] transition-colors focus-within:border-ink">
         <Search size={16} strokeWidth={2.3} className="flex-shrink-0 text-[#1A1210]/55" />
         <input
           type="text"
