@@ -51,15 +51,15 @@ function FilterDropdown<T extends string>({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative flex-shrink-0">
+    <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex h-9 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[12.5px] font-bold transition-colors',
+          'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[12.5px] font-bold transition-colors',
           isActive
-            ? 'border-ink bg-ink text-white'
-            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
+            ? 'bg-white text-[#1A1210]'
+            : 'bg-white/[0.07] text-white/70 hover:bg-white/[0.12] hover:text-white',
         )}
       >
         {icon}
@@ -68,10 +68,11 @@ function FilterDropdown<T extends string>({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-1.5 w-[192px] overflow-hidden rounded-2xl border border-zinc-200/70 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+        <div className="absolute left-0 top-[calc(100%+8px)] z-30 w-[192px] overflow-hidden rounded-2xl border border-zinc-200/70 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28)]">
           {options.map((opt) => (
             <button
               key={opt}
+              type="button"
               onClick={() => {
                 onChange(opt);
                 setOpen(false);
@@ -111,7 +112,7 @@ export function ProductFilterBar({
   ) as Record<string, string>;
 
   return (
-    <div className="scrollbar-none flex items-center gap-2 overflow-x-auto pb-0.5">
+    <div className="flex flex-wrap items-center gap-2">
       <FilterDropdown
         label="Status"
         value={status}
