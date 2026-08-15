@@ -71,7 +71,7 @@ export function ProductSearchBar({
 
   return (
     <div ref={rootRef} className="relative">
-      <div className="flex h-11 items-center gap-2.5 rounded-xl border border-white bg-white px-3.5 shadow-[0_6px_16px_-6px_rgba(15,23,42,0.08)] transition-colors focus-within:border-slate-300">
+      <div className="flex h-11 items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 shadow-[0_2px_6px_rgba(15,23,42,0.06)] transition-colors focus-within:border-ink">
         <Search size={16} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />
         <input
           type="text"
@@ -122,7 +122,7 @@ export function ProductSearchBar({
                   onClick={() => pickSuggestion(p.nome)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-slate-50"
                 >
-                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-300">
+                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-slate-200 bg-slate-100 text-slate-300">
                     {p.fotos?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.fotos[0]} alt="" className="h-full w-full object-cover" />
