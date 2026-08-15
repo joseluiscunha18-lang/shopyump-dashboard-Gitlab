@@ -58,8 +58,8 @@ function FilterDropdown<T extends string>({
         className={cn(
           'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[12.5px] font-bold transition-colors',
           isActive
-            ? 'bg-white text-[#1A1210]'
-            : 'bg-white/[0.07] text-white/70 hover:bg-white/[0.12] hover:text-white',
+            ? 'bg-brand-soft text-brand'
+            : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-ink',
         )}
       >
         {icon}
