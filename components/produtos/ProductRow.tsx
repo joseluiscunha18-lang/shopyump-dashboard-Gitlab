@@ -1,20 +1,34 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Pencil, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/Surfaces';
-import { toggleProdutoAtivo, deleteProduto } from '@/lib/mutations/produtos';
+import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { useToast } from '@/components/ui/Toast';
 import type { Produto } from '@/types/database';
 
 export function ProductRow({ produto }: { produto: Produto }) {
   const [ativo, setAtivo] = useState(produto.ativo);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const { show } = useToast();
+  const router = useRouter();
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  function handleToggle() {
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [menuOpen]);
+
+  function handleToggleAtivo() {
+    setMenuOpen(false);
     const next = !ativo;
     setAtivo(next);
     startTransition(async () => {
@@ -26,7 +40,17 @@ export function ProductRow({ produto }: { produto: Produto }) {
     });
   }
 
+  function handleDuplicate() {
+    setMenuOpen(false);
+    startTransition(async () => {
+      const res = await duplicateProduto(produto.id);
+      if (!res.ok) show(res.error ?? 'Não foi possível duplicar o produto.', 'error');
+      else show('Produto duplicado.');
+    });
+  }
+
   function handleDelete() {
+    setMenuOpen(false);
     if (!confirm(`Remover "${produto.nome}"? Esta ação não pode ser desfeita.`)) return;
     startTransition(async () => {
       const res = await deleteProduto(produto.id);
@@ -36,36 +60,88 @@ export function ProductRow({ produto }: { produto: Produto }) {
   }
 
   const preco = produto.preco_promo && produto.preco_promo > 0 ? produto.preco_promo : produto.preco;
+  const temEstoque = typeof produto.estoque === 'number';
 
   return (
-    <div className="flex items-center gap-4 p-4 hover:bg-slate-50/60 transition-colors">
-      <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 relative">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/produtos/${produto.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') router.push(`/produtos/${produto.id}`);
+      }}
+      className="group flex items-center gap-3.5 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer"
+    >
+      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
         {produto.fotos?.[0] && (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
         )}
       </div>
+
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-bold text-ink truncate">{produto.nome}</p>
-        <p className="text-[12px] font-semibold text-slate-500">{preco.toLocaleString('pt-MZ')} MT · {produto.categoria}</p>
+        <p className="truncate text-[13px] font-bold text-ink">{produto.nome}</p>
+        <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-500">
+          {preco.toLocaleString('pt-MZ')} MT · {produto.categoria}
+        </p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+          <span className={cn('h-[6px] w-[6px] rounded-full', ativo ? 'bg-emerald-500' : 'bg-slate-300')} />
+          {ativo ? 'Ativo' : 'Inativo'}
+          {temEstoque && <span className="text-slate-300">· Estoque: {produto.estoque}</span>}
+        </p>
       </div>
-      <button
-        onClick={handleToggle}
-        disabled={pending}
-        className="flex-shrink-0"
-        title={ativo ? 'Visível na loja' : 'Oculto da loja'}
-      >
-        <Badge tone={ativo ? 'success' : 'neutral'}>{ativo ? 'Ativo' : 'Inativo'}</Badge>
-      </button>
-      <Link href={`/produtos/${produto.id}`} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-ink hover:bg-slate-100 transition-colors flex-shrink-0">
-        <Pencil size={15} />
-      </Link>
-      <button
-        onClick={handleDelete}
-        disabled={pending}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-      >
-        <Trash2 size={15} />
-      </button>
+
+      <div ref={menuRef} className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          disabled={pending}
+          aria-label="Ações do produto"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+        >
+          <MoreVertical size={16} />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-2xl border border-zinc-200/70 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+            <Link
+              href={`/produtos/${produto.id}`}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+            >
+              <Pencil size={14} strokeWidth={2.2} className="text-slate-400" />
+              Editar
+            </Link>
+            <button
+              onClick={handleDuplicate}
+              disabled={pending}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+            >
+              <Copy size={14} strokeWidth={2.2} className="text-slate-400" />
+              Duplicar
+            </button>
+            <button
+              onClick={handleToggleAtivo}
+              disabled={pending}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+            >
+              {ativo ? (
+                <EyeOff size={14} strokeWidth={2.2} className="text-slate-400" />
+              ) : (
+                <Eye size={14} strokeWidth={2.2} className="text-slate-400" />
+              )}
+              {ativo ? 'Inativar' : 'Ativar'}
+            </button>
+            <div className="my-1 h-px bg-slate-100" />
+            <button
+              onClick={handleDelete}
+              disabled={pending}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+            >
+              <Trash2 size={14} strokeWidth={2.2} />
+              Excluir
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
