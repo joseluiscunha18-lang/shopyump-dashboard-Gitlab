@@ -71,7 +71,7 @@ export function ProductSearchBar({
 
   return (
     <div ref={rootRef} className="relative">
-      <div className="flex h-11 items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-3.5 shadow-[0_2px_6px_rgba(15,23,42,0.06)] transition-colors focus-within:border-ink">
+      <div className="flex h-11 items-center gap-2.5 rounded-xl border border-[#1A1210]/15 bg-white px-3.5 shadow-[0_2px_6px_rgba(15,23,42,0.06)] transition-colors focus-within:border-ink">
         <Search size={16} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />
         <input
           type="text"
@@ -88,7 +88,7 @@ export function ProductSearchBar({
       </div>
 
       {showPanel && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-[20px] border border-zinc-200/70 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28)]">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-[20px] border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28)]">
           {showRecent && (
             <div className="px-2 pb-1 pt-1.5">
               <p className="px-1 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
@@ -122,13 +122,14 @@ export function ProductSearchBar({
                   onClick={() => pickSuggestion(p.nome)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-slate-50"
                 >
-                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#1A1210]/20 bg-slate-100 text-slate-300">
+                  <span className="relative flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-slate-300">
                     {p.fotos?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.fotos[0]} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <Package size={13} strokeWidth={2} />
                     )}
+                    <span className="pointer-events-none absolute inset-0 rounded-lg shadow-[inset_0_0_0_1px_rgba(26,18,16,0.14)]" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-semibold text-ink">{p.nome}</span>
