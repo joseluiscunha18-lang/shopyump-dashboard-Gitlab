@@ -27,6 +27,27 @@ export async function toggleProdutoAtivo(id: string, ativo: boolean): Promise<Ac
   return updateProduto(id, { ativo });
 }
 
+export async function duplicateProduto(id: string): Promise<ActionResult & { id?: string }> {
+  const supabase = await createClient();
+  const { data: original, error: fetchError } = await supabase
+    .from('produtos')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (fetchError || !original) return { ok: false, error: fetchError?.message ?? 'Produto não encontrado.' };
+
+  const { id: _id, created_at: _createdAt, ...rest } = original;
+  const { data, error } = await supabase
+    .from('produtos')
+    .insert({ ...rest, nome: `${rest.nome} (cópia)`, ativo: false })
+    .select('id')
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath('/produtos');
+  return { ok: true, id: data.id };
+}
+
 export async function deleteProduto(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from('produtos').delete().eq('id', id);
