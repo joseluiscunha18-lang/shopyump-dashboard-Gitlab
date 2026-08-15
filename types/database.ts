@@ -58,6 +58,9 @@ export interface Produto {
   fotos: string[];
   variantes: ProdutoVariantes | null;
   ativo: boolean;
+  /** Opcional — nem toda loja rastreia stock ainda; a linha do produto
+   *  só mostra "Estoque" quando este valor vier preenchido. */
+  estoque?: number | null;
   created_at: string;
 }
 
