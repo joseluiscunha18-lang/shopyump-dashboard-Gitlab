@@ -29,6 +29,7 @@ function FilterDropdown<T extends string>({
   labels,
   onChange,
   isActive,
+  align = 'left',
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -37,6 +38,7 @@ function FilterDropdown<T extends string>({
   labels: Record<T, string>;
   onChange: (v: T) => void;
   isActive: boolean;
+  align?: 'left' | 'right';
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -68,7 +70,12 @@ function FilterDropdown<T extends string>({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-30 w-[192px] overflow-hidden rounded-2xl border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28)]">
+        <div
+          className={cn(
+            'absolute top-[calc(100%+8px)] z-30 w-[192px] overflow-hidden rounded-2xl border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28)]',
+            align === 'right' ? 'right-0' : 'left-0',
+          )}
+        >
           {options.map((opt) => (
             <button
               key={opt}
@@ -137,6 +144,7 @@ export function ProductFilterBar({
         labels={SORT_LABELS}
         onChange={onSortChange}
         isActive={sort !== 'recentes'}
+        align="right"
       />
     </div>
   );
