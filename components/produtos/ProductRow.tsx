@@ -89,7 +89,7 @@ export function ProductRow({
           checked={selected}
           onChange={() => onToggleSelect(produto.id)}
           ariaLabel={`Selecionar ${produto.nome}`}
-          className="ml-0.5 mr-0.5"
+          className="ml-0.5 mr-2"
         />
       )}
 
@@ -107,10 +107,10 @@ export function ProductRow({
         <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-600">
           {preco.toLocaleString('pt-MZ')} MT · {produto.categoria}
         </p>
-        <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
           <span className={cn('h-[6px] w-[6px] rounded-full', ativo ? 'bg-emerald-500' : 'bg-slate-300')} />
           {ativo ? 'Ativo' : 'Inativo'}
-          {temEstoque && <span className="text-slate-300">· Estoque: {produto.estoque}</span>}
+          {temEstoque && <span className="text-slate-400">· Estoque: {produto.estoque}</span>}
         </p>
       </div>
 
@@ -119,9 +119,9 @@ export function ProductRow({
           onClick={() => setMenuOpen((v) => !v)}
           disabled={pending}
           aria-label="Ações do produto"
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
         >
-          <MoreVertical size={16} />
+          <MoreVertical size={17} strokeWidth={2.3} />
         </button>
 
         {menuOpen && (
@@ -131,7 +131,7 @@ export function ProductRow({
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
-              <Pencil size={14} strokeWidth={2.2} className="text-slate-400" />
+              <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />
               Editar
             </Link>
             <button
@@ -139,7 +139,7 @@ export function ProductRow({
               disabled={pending}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
-              <Copy size={14} strokeWidth={2.2} className="text-slate-400" />
+              <Copy size={15} strokeWidth={2.3} className="text-slate-500" />
               Duplicar
             </button>
             <button
@@ -148,9 +148,9 @@ export function ProductRow({
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
               {ativo ? (
-                <EyeOff size={14} strokeWidth={2.2} className="text-slate-400" />
+                <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
               ) : (
-                <Eye size={14} strokeWidth={2.2} className="text-slate-400" />
+                <Eye size={15} strokeWidth={2.3} className="text-slate-500" />
               )}
               {ativo ? 'Inativar' : 'Ativar'}
             </button>
@@ -160,7 +160,7 @@ export function ProductRow({
               disabled={pending}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
             >
-              <Trash2 size={14} strokeWidth={2.2} />
+              <Trash2 size={15} strokeWidth={2.3} />
               Excluir
             </button>
           </div>
