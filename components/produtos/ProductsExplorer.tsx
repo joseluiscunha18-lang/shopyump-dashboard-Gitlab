@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, SearchX, Eye, EyeOff, Copy, Trash2 } from 'lucide-react';
+import { Loader2, SearchX, Eye, EyeOff, Copy, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductRow } from '@/components/produtos/ProductRow';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
@@ -161,125 +161,143 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   }, [hasMore]);
 
   return (
-    // Sem overflow-hidden no contentor: os menus (pesquisa, filtros, "⋮" de
-    // cada produto) são posicionados em absolute e precisam de poder
-    // ultrapassar os limites do card sem serem cortados.
-    <div className="rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_4px_10px_-6px_rgba(15,23,42,0.08),0_12px_20px_-16px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03]">
-      <div className="p-3">
-        <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
+    <>
+      {/* Sem overflow-hidden no contentor: os menus (pesquisa, filtros, "⋮" de
+      cada produto) são posicionados em absolute e precisam de poder
+      ultrapassar os limites do card sem serem cortados. Mesmo tratamento
+      visual dos cards da página inicial: fundo translúcido + borda branca,
+      para "flutuar" sobre o cinza da página em vez de ser um bloco sólido. */}
+      <div className="rounded-[28px] border border-white bg-white/80 shadow-[0_12px_40px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+        <div className="p-3">
+          <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
-        <div className="mt-2.5 px-0.5">
-          <ProductFilterBar
-            status={status}
-            onStatusChange={setStatus}
-            categoria={categoria}
-            onCategoriaChange={setCategoria}
-            categorias={categorias}
-            sort={sort}
-            onSortChange={setSort}
-          />
-        </div>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-b-[28px] border-t border-slate-100 py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
-            <SearchX size={20} strokeWidth={2} />
-          </div>
-          <div>
-            <p className="text-[13px] font-bold text-ink">Nenhum produto encontrado</p>
-            <p className="mt-1 max-w-[240px] text-[12px] font-medium text-slate-400">
-              Tenta ajustar a pesquisa ou os filtros.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="flex h-11 items-center gap-3 border-t border-slate-100 px-4">
-            <Checkbox
-              checked={allVisibleSelected}
-              indeterminate={someVisibleSelected && !allVisibleSelected}
-              onChange={toggleSelectAll}
-              ariaLabel="Selecionar todos os produtos visíveis"
+          <div className="mt-2.5 px-0.5">
+            <ProductFilterBar
+              status={status}
+              onStatusChange={setStatus}
+              categoria={categoria}
+              onCategoriaChange={setCategoria}
+              categorias={categorias}
+              sort={sort}
+              onSortChange={setSort}
             />
+          </div>
+        </div>
 
-            {selectedIds.size > 0 ? (
-              <div className="flex flex-1 items-center justify-between gap-2">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-b-[28px] border-t border-slate-100 py-16 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
+              <SearchX size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-ink">Nenhum produto encontrado</p>
+              <p className="mt-1 max-w-[240px] text-[12px] font-medium text-slate-400">
+                Tenta ajustar a pesquisa ou os filtros.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Cor igual à da página (não branco) para separar claramente o
+            cabeçalho (pesquisa/filtros) da lista, sem criar um contentor
+            dentro de outro contentor. */}
+            <div className="flex h-11 items-center gap-3 bg-[#F6F7F9] px-4">
+              <Checkbox
+                checked={allVisibleSelected}
+                indeterminate={someVisibleSelected && !allVisibleSelected}
+                onChange={toggleSelectAll}
+                ariaLabel="Selecionar todos os produtos visíveis"
+              />
+
+              {selectedIds.size > 0 ? (
                 <span className="text-[12.5px] font-bold text-ink">
                   {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds(new Set())}
-                  className="text-[12px] font-semibold text-slate-400 transition-colors hover:text-ink"
-                >
-                  Cancelar
-                </button>
-              </div>
-            ) : (
-              <span className="text-[12px] font-semibold text-slate-400">
-                {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
-              </span>
-            )}
-          </div>
-
-          {selectedIds.size > 0 && (
-            <div className="border-t border-slate-100 px-3 py-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2.5">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <BulkActionButton
-                    icon={<Eye size={15} strokeWidth={2.2} />}
-                    label="Ativar"
-                    disabled={bulkPending}
-                    onClick={handleBulkAtivar}
-                  />
-                  <BulkActionButton
-                    icon={<EyeOff size={15} strokeWidth={2.2} />}
-                    label="Desativar"
-                    disabled={bulkPending}
-                    onClick={handleBulkDesativar}
-                  />
-                  <BulkActionButton
-                    icon={<Copy size={15} strokeWidth={2.2} />}
-                    label="Duplicar"
-                    disabled={bulkPending}
-                    onClick={handleBulkDuplicar}
-                  />
-                  <BulkActionButton
-                    icon={<Trash2 size={15} strokeWidth={2.2} />}
-                    label="Excluir"
-                    disabled={bulkPending}
-                    onClick={handleBulkExcluir}
-                    tone="danger"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="divide-y divide-slate-100 border-t border-slate-100">
-            {visible.map((p) => (
-              <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
-            ))}
-          </div>
-
-          {hasMore && (
-            <div ref={sentinelRef} className="flex items-center justify-center rounded-b-[28px] border-t border-slate-100 py-4">
-              {loadingMore && (
-                <span className="flex items-center gap-2 text-[12.5px] font-semibold text-slate-400">
-                  <Loader2 size={14} className="animate-spin" />
-                  A carregar...
+              ) : (
+                <span className="text-[12px] font-semibold text-slate-400">
+                  {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
                 </span>
               )}
             </div>
-          )}
-        </>
+
+            <div className="divide-y divide-slate-100 border-t border-slate-100">
+              {visible.map((p) => (
+                <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
+              ))}
+            </div>
+
+            {hasMore && (
+              <div ref={sentinelRef} className="flex items-center justify-center rounded-b-[28px] border-t border-slate-100 py-4">
+                {loadingMore && (
+                  <span className="flex items-center gap-2 text-[12.5px] font-semibold text-slate-400">
+                    <Loader2 size={14} className="animate-spin" />
+                    A carregar...
+                  </span>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Painel flutuante de ações em massa: sobrepõe o conteúdo em vez de
+      empurrar a lista para baixo. Fica acima da BottomNav no mobile (que é
+      fixed) e mais perto do fundo no desktop (onde a BottomNav está oculta). */}
+      {selectedIds.size > 0 && (
+        <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 sm:bottom-6">
+          <div className="flex max-w-full items-center gap-1 rounded-full border border-white/10 bg-[#1A1210] py-1.5 pl-4 pr-1.5 text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]">
+            <span className="mr-1 whitespace-nowrap text-[12.5px] font-bold">
+              {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
+            </span>
+
+            <div className="mx-1 h-5 w-px flex-shrink-0 bg-white/15" />
+
+            <div className="flex items-center gap-0.5">
+              <FloatingActionButton
+                icon={<Eye size={16} strokeWidth={2.2} />}
+                label="Ativar"
+                disabled={bulkPending}
+                onClick={handleBulkAtivar}
+              />
+              <FloatingActionButton
+                icon={<EyeOff size={16} strokeWidth={2.2} />}
+                label="Desativar"
+                disabled={bulkPending}
+                onClick={handleBulkDesativar}
+              />
+              <FloatingActionButton
+                icon={<Copy size={16} strokeWidth={2.2} />}
+                label="Duplicar"
+                disabled={bulkPending}
+                onClick={handleBulkDuplicar}
+              />
+              <FloatingActionButton
+                icon={<Trash2 size={16} strokeWidth={2.2} />}
+                label="Excluir"
+                disabled={bulkPending}
+                onClick={handleBulkExcluir}
+                tone="danger"
+              />
+            </div>
+
+            <div className="mx-1 h-5 w-px flex-shrink-0 bg-white/15" />
+
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              aria-label="Cancelar seleção"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X size={16} strokeWidth={2.4} />
+            </button>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }
 
-function BulkActionButton({
+function FloatingActionButton({
   icon,
   label,
   onClick,
@@ -297,15 +315,14 @@ function BulkActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-label={label}
+      title={label}
       className={cn(
-        'flex flex-col items-center gap-1.5 rounded-xl border bg-white px-2 py-2.5 text-[11.5px] font-bold transition-colors disabled:opacity-50',
-        tone === 'danger'
-          ? 'border-red-100 text-red-500 hover:border-red-200 hover:bg-red-50'
-          : 'border-slate-200 text-ink hover:border-slate-300 hover:bg-slate-100',
+        'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40',
+        tone === 'danger' ? 'text-red-400 hover:bg-red-500/15 hover:text-red-300' : 'text-white/80 hover:bg-white/10 hover:text-white',
       )}
     >
       {icon}
-      {label}
     </button>
   );
 }
