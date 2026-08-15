@@ -110,3 +110,13 @@
 .animate-product-enter {
   animation: product-card-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+/* Hides the scrollbar on horizontally-scrollable filter chip rows while
+   keeping the element natively scrollable (touch/trackpad/keyboard). */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
