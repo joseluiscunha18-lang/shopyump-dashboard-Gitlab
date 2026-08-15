@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { getProdutosByLoja } from '@/lib/queries/produtos';
 import { Button } from '@/components/ui/Button';
@@ -49,8 +48,8 @@ export default async function ProdutosPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
         <Link href="/produtos/novo">
-          <Button size="sm">
-            <Plus size={15} /> Novo produto
+          <Button variant="dark" size="sm">
+            Adicionar produto
           </Button>
         </Link>
       </div>
