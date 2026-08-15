@@ -168,7 +168,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       blur/translucidez) com sombra mais forte, para se destacar claramente
       do fundo cinza da página em vez de se misturar com ele. */}
       <div className="rounded-[28px] border border-slate-200 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
-        <div className="border-b-2 border-slate-200 p-3">
+        <div className="border-b border-[#1A1210]/12 p-3">
           <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
           <div className="mt-2.5 px-0.5">
@@ -198,11 +198,11 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
         ) : (
           <>
-            {/* Cor igual à da página (não branco) + linha mais grossa e
-            escura, para que a divisão entre pesquisa/filtros → seleção →
-            lista fique bem visível, sem criar um contentor dentro de outro
-            contentor. */}
-            <div className="flex h-11 items-center gap-3 border-b-2 border-slate-200 bg-[#F6F7F9] px-4">
+            {/* Cor igual à da página (não branco) + linha fina num tom
+            acastanhado (derivado da cor de marca, não cinzento), para que a
+            divisão entre pesquisa/filtros → seleção → lista fique visível
+            sem se confundir com o fundo nem ficar pesada. */}
+            <div className="flex h-11 items-center gap-3 border-b border-[#1A1210]/12 bg-[#F6F7F9] px-4">
               <Checkbox
                 checked={allVisibleSelected}
                 indeterminate={someVisibleSelected && !allVisibleSelected}
@@ -221,14 +221,14 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               )}
             </div>
 
-            <div className="divide-y-2 divide-slate-200">
+            <div className="divide-y divide-[#1A1210]/10">
               {visible.map((p) => (
                 <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
               ))}
             </div>
 
             {hasMore && (
-              <div ref={sentinelRef} className="flex items-center justify-center rounded-b-[28px] border-t-2 border-slate-200 py-4">
+              <div ref={sentinelRef} className="flex items-center justify-center rounded-b-[28px] border-t border-[#1A1210]/12 py-4">
                 {loadingMore && (
                   <span className="flex items-center gap-2 text-[12.5px] font-semibold text-slate-400">
                     <Loader2 size={14} className="animate-spin" />
