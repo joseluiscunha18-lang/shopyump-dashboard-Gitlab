@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, SearchX, ChevronDown, Copy } from 'lucide-react';
+import { Loader2, SearchX, Eye, EyeOff, Copy, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductRow } from '@/components/produtos/ProductRow';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
@@ -22,9 +22,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [moreOpen, setMoreOpen] = useState(false);
   const [bulkPending, startBulkTransition] = useTransition();
-  const moreRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { show } = useToast();
 
@@ -41,7 +39,18 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       if (status === 'inativos' && p.ativo) return false;
       if (categoria !== 'todas' && p.categoria !== categoria) return false;
       if (q) {
-        const haystack = `${p.nome} ${p.categoria}`.toLowerCase();
+        // A pesquisa cobre tudo o que é mostrado na página de produtos —
+        // não só o nome, mas categoria, preço, estoque e status.
+        const haystack = [
+          p.nome,
+          p.categoria,
+          String(p.preco),
+          p.preco_promo ? String(p.preco_promo) : '',
+          p.ativo ? 'ativo' : 'inativo',
+          typeof p.estoque === 'number' ? String(p.estoque) : '',
+        ]
+          .join(' ')
+          .toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -77,15 +86,6 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
-  useEffect(() => {
-    if (!moreOpen) return;
-    function onClickOutside(e: MouseEvent) {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
-    }
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [moreOpen]);
-
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -108,7 +108,6 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
 
   function runBulk(action: (id: string) => Promise<{ ok: boolean; error?: string }>, successMsg: string, failMsg: string) {
     const ids = Array.from(selectedIds);
-    setMoreOpen(false);
     startBulkTransition(async () => {
       const results = await Promise.all(ids.map((id) => action(id)));
       const failed = results.filter((r) => !r.ok).length;
@@ -162,7 +161,10 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   }, [hasMore]);
 
   return (
-    <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_4px_10px_-6px_rgba(15,23,42,0.08),0_12px_20px_-16px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03]">
+    // Sem overflow-hidden no contentor: os menus (pesquisa, filtros, "⋮" de
+    // cada produto) são posicionados em absolute e precisam de poder
+    // ultrapassar os limites do card sem serem cortados.
+    <div className="rounded-[28px] bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_4px_10px_-6px_rgba(15,23,42,0.08),0_12px_20px_-16px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03]">
       <div className="p-3">
         <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
@@ -180,7 +182,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 border-t border-slate-100 py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-b-[28px] border-t border-slate-100 py-16 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
             <SearchX size={20} strokeWidth={2} />
           </div>
@@ -193,12 +195,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
         </div>
       ) : (
         <>
-          <div
-            className={cn(
-              'flex h-11 items-center gap-3 border-t border-slate-100 px-4 transition-colors',
-              someVisibleSelected && 'bg-brand-soft/30',
-            )}
-          >
+          <div className="flex h-11 items-center gap-3 border-t border-slate-100 px-4">
             <Checkbox
               checked={allVisibleSelected}
               indeterminate={someVisibleSelected && !allVisibleSelected}
@@ -207,57 +204,17 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
             />
 
             {selectedIds.size > 0 ? (
-              <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
-                <span className="text-[12.5px] font-bold text-ink">Selecionados: {selectedIds.size}</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={bulkPending}
-                    onClick={handleBulkAtivar}
-                    className="rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50"
-                  >
-                    Ativar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={bulkPending}
-                    onClick={handleBulkDesativar}
-                    className="rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-50"
-                  >
-                    Desativar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={bulkPending}
-                    onClick={handleBulkExcluir}
-                    className="rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Excluir
-                  </button>
-                  <div ref={moreRef} className="relative">
-                    <button
-                      type="button"
-                      disabled={bulkPending}
-                      onClick={() => setMoreOpen((v) => !v)}
-                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-50"
-                    >
-                      Mais
-                      <ChevronDown size={12} strokeWidth={2.6} className={cn('transition-transform', moreOpen && 'rotate-180')} />
-                    </button>
-                    {moreOpen && (
-                      <div className="absolute right-0 top-[calc(100%+6px)] z-30 w-[176px] overflow-hidden rounded-2xl border border-zinc-200/70 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.28)]">
-                        <button
-                          type="button"
-                          onClick={handleBulkDuplicar}
-                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-                        >
-                          <Copy size={14} strokeWidth={2.2} className="text-slate-400" />
-                          Duplicar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="flex flex-1 items-center justify-between gap-2">
+                <span className="text-[12.5px] font-bold text-ink">
+                  {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-[12px] font-semibold text-slate-400 transition-colors hover:text-ink"
+                >
+                  Cancelar
+                </button>
               </div>
             ) : (
               <span className="text-[12px] font-semibold text-slate-400">
@@ -266,6 +223,40 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
             )}
           </div>
 
+          {selectedIds.size > 0 && (
+            <div className="border-t border-slate-100 px-3 py-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2.5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <BulkActionButton
+                    icon={<Eye size={15} strokeWidth={2.2} />}
+                    label="Ativar"
+                    disabled={bulkPending}
+                    onClick={handleBulkAtivar}
+                  />
+                  <BulkActionButton
+                    icon={<EyeOff size={15} strokeWidth={2.2} />}
+                    label="Desativar"
+                    disabled={bulkPending}
+                    onClick={handleBulkDesativar}
+                  />
+                  <BulkActionButton
+                    icon={<Copy size={15} strokeWidth={2.2} />}
+                    label="Duplicar"
+                    disabled={bulkPending}
+                    onClick={handleBulkDuplicar}
+                  />
+                  <BulkActionButton
+                    icon={<Trash2 size={15} strokeWidth={2.2} />}
+                    label="Excluir"
+                    disabled={bulkPending}
+                    onClick={handleBulkExcluir}
+                    tone="danger"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="divide-y divide-slate-100 border-t border-slate-100">
             {visible.map((p) => (
               <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
@@ -273,7 +264,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
 
           {hasMore && (
-            <div ref={sentinelRef} className="flex items-center justify-center border-t border-slate-100 py-4">
+            <div ref={sentinelRef} className="flex items-center justify-center rounded-b-[28px] border-t border-slate-100 py-4">
               {loadingMore && (
                 <span className="flex items-center gap-2 text-[12.5px] font-semibold text-slate-400">
                   <Loader2 size={14} className="animate-spin" />
@@ -285,5 +276,36 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
         </>
       )}
     </div>
+  );
+}
+
+function BulkActionButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  tone = 'default',
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: 'default' | 'danger';
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'flex flex-col items-center gap-1.5 rounded-xl border bg-white px-2 py-2.5 text-[11.5px] font-bold transition-colors disabled:opacity-50',
+        tone === 'danger'
+          ? 'border-red-100 text-red-500 hover:border-red-200 hover:bg-red-50'
+          : 'border-slate-200 text-ink hover:border-slate-300 hover:bg-slate-100',
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
