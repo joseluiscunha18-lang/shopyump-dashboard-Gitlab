@@ -39,7 +39,7 @@ export function Checkbox({
             'flex h-[19px] w-[19px] items-center justify-center rounded-[6px] border transition-colors',
             checked || indeterminate
               ? 'border-[#1A1210] bg-[#1A1210]'
-              : 'border-slate-400 bg-white hover:border-[#1A1210]/60',
+              : 'border-[#1A1210]/35 bg-white hover:border-[#1A1210]/60',
           )}
         >
           {indeterminate ? (
