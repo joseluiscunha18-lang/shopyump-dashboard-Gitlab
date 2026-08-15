@@ -29,7 +29,7 @@ export function Checkbox({
       className={cn(
         'flex h-[17px] w-[17px] flex-shrink-0 items-center justify-center rounded-[5px] border transition-colors',
         checked || indeterminate
-          ? 'border-brand bg-brand'
+          ? 'border-[#1A1210] bg-[#1A1210]'
           : 'border-slate-300 bg-white hover:border-slate-400',
         className,
       )}
