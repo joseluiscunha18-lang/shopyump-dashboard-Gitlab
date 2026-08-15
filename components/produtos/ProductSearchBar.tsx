@@ -71,8 +71,8 @@ export function ProductSearchBar({
 
   return (
     <div ref={rootRef} className="relative">
-      <div className="flex h-11 items-center gap-2.5 rounded-2xl bg-white/[0.07] px-3.5 transition-colors focus-within:bg-white/[0.1]">
-        <Search size={16} strokeWidth={2.2} className="flex-shrink-0 text-white/45" />
+      <div className="flex h-11 items-center gap-2.5 rounded-2xl bg-slate-100 px-3.5 transition-colors focus-within:bg-slate-100 focus-within:ring-2 focus-within:ring-brand/25">
+        <Search size={16} strokeWidth={2.2} className="flex-shrink-0 text-slate-400" />
         <input
           type="text"
           value={value}
@@ -83,7 +83,7 @@ export function ProductSearchBar({
             if (e.key === 'Enter') commitSearch(value);
           }}
           placeholder="Pesquisar produtos..."
-          className="h-full w-full min-w-0 bg-transparent text-[13px] font-semibold text-white placeholder:text-white/40 focus:outline-none"
+          className="h-full w-full min-w-0 bg-transparent text-[13px] font-semibold text-ink placeholder:text-slate-400 focus:outline-none"
         />
       </div>
 
