@@ -56,10 +56,10 @@ function FilterDropdown<T extends string>({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[12.5px] font-bold transition-colors',
+          'flex h-8 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 text-[12.5px] font-bold transition-colors',
           isActive
-            ? 'bg-brand-soft text-brand'
-            : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-ink',
+            ? 'border-[#1A1210] bg-[#1A1210] text-white'
+            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-ink',
         )}
       >
         {icon}
@@ -80,7 +80,7 @@ function FilterDropdown<T extends string>({
               className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
               <span className="truncate">{labels[opt]}</span>
-              {value === opt && <Check size={14} strokeWidth={2.6} className="flex-shrink-0 text-brand" />}
+              {value === opt && <Check size={14} strokeWidth={2.6} className="flex-shrink-0 text-[#1A1210]" />}
             </button>
           ))}
         </div>
