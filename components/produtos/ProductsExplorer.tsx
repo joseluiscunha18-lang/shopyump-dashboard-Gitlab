@@ -168,7 +168,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       visual dos cards da página inicial: fundo translúcido + borda branca,
       para "flutuar" sobre o cinza da página em vez de ser um bloco sólido. */}
       <div className="rounded-[28px] border border-white bg-white/80 shadow-[0_12px_40px_rgba(15,23,42,0.04)] backdrop-blur-xl">
-        <div className="p-3">
+        <div className="border-b border-slate-100 p-3">
           <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
           <div className="mt-2.5 px-0.5">
@@ -185,7 +185,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-b-[28px] border-t border-slate-100 py-16 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
               <SearchX size={20} strokeWidth={2} />
             </div>
@@ -198,10 +198,11 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
         ) : (
           <>
-            {/* Cor igual à da página (não branco) para separar claramente o
-            cabeçalho (pesquisa/filtros) da lista, sem criar um contentor
-            dentro de outro contentor. */}
-            <div className="flex h-11 items-center gap-3 bg-[#F6F7F9] px-4">
+            {/* Cor igual à da página (não branco) + a mesma linha fina
+            (border-slate-100) usada nos cards da Início, para que a divisão
+            entre pesquisa/filtros → seleção → lista fique visível de
+            imediato, sem criar um contentor dentro de outro contentor. */}
+            <div className="flex h-11 items-center gap-3 border-b border-slate-100 bg-[#F6F7F9] px-4">
               <Checkbox
                 checked={allVisibleSelected}
                 indeterminate={someVisibleSelected && !allVisibleSelected}
@@ -220,7 +221,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               )}
             </div>
 
-            <div className="divide-y divide-slate-100 border-t border-slate-100">
+            <div className="divide-y divide-slate-100">
               {visible.map((p) => (
                 <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
               ))}
