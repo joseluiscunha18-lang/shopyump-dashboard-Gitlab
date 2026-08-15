@@ -186,8 +186,8 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
 
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
-              <SearchX size={20} strokeWidth={2} />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+              <SearchX size={20} strokeWidth={2.3} />
             </div>
             <div>
               <p className="text-[13px] font-bold text-ink">Nenhum produto encontrado</p>
@@ -215,7 +215,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                   {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
                 </span>
               ) : (
-                <span className="text-[12px] font-semibold text-slate-400">
+                <span className="text-[12px] font-bold text-slate-600">
                   {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
                 </span>
               )}
