@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { getProdutosByLoja } from '@/lib/queries/produtos';
-import { Card } from '@/components/ui/Surfaces';
 import { Button } from '@/components/ui/Button';
-import { ProductRow } from '@/components/produtos/ProductRow';
+import { ProductsExplorer } from '@/components/produtos/ProductsExplorer';
 import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
 
 export const metadata: Metadata = { title: 'Produtos | Shopyump' };
@@ -56,11 +55,7 @@ export default async function ProdutosPage() {
         </Link>
       </div>
 
-      <Card className="divide-y divide-slate-100">
-        {produtos.map((p) => (
-          <ProductRow key={p.id} produto={p} />
-        ))}
-      </Card>
+      <ProductsExplorer produtos={produtos} />
     </div>
   );
 }
