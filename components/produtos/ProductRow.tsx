@@ -81,7 +81,7 @@ export function ProductRow({
       }}
       className={cn(
         'group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer',
-        selected && 'bg-brand-soft/40 hover:bg-brand-soft/50',
+        selected && 'bg-[#1A1210]/[0.04] hover:bg-[#1A1210]/[0.06]',
       )}
     >
       {onToggleSelect && (
