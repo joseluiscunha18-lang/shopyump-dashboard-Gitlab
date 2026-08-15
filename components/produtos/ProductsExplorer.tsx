@@ -12,7 +12,6 @@ const PAGE_SIZE = 10;
 
 export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [query, setQuery] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [status, setStatus] = useState<StatusFilter>('todos');
   const [categoria, setCategoria] = useState('todas');
   const [sort, setSort] = useState<SortOption>('recentes');
@@ -23,8 +22,6 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
     () => Array.from(new Set(produtos.map((p) => p.categoria).filter(Boolean))).sort(),
     [produtos],
   );
-
-  const activeFilterCount = (status !== 'todos' ? 1 : 0) + (categoria !== 'todas' ? 1 : 0) + (sort !== 'recentes' ? 1 : 0);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,25 +91,21 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <ProductSearchBar
-        value={query}
-        onChange={setQuery}
-        filtersOpen={filtersOpen}
-        onToggleFilters={() => setFiltersOpen((v) => !v)}
-        activeFilterCount={activeFilterCount}
-      />
+      <div className="rounded-[24px] bg-[#1A1210] p-2.5 shadow-[0_10px_28px_-14px_rgba(26,18,16,0.4)]">
+        <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
-      {filtersOpen && (
-        <ProductFilterBar
-          status={status}
-          onStatusChange={setStatus}
-          categoria={categoria}
-          onCategoriaChange={setCategoria}
-          categorias={categorias}
-          sort={sort}
-          onSortChange={setSort}
-        />
-      )}
+        <div className="mt-2 px-0.5">
+          <ProductFilterBar
+            status={status}
+            onStatusChange={setStatus}
+            categoria={categoria}
+            onCategoriaChange={setCategoria}
+            categorias={categorias}
+            sort={sort}
+            onSortChange={setSort}
+          />
+        </div>
+      </div>
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-[28px] bg-white py-16 text-center shadow-[0_1px_0_rgba(15,23,42,0.04),0_4px_10px_-6px_rgba(15,23,42,0.08)]">
