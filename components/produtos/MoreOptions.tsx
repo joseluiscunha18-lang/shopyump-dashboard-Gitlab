@@ -9,9 +9,14 @@ import { cn } from '@/lib/cn';
 export function MoreOptions({
   value,
   onChange,
+  hasVariants,
 }: {
   value: ProdutoMaisOpcoes;
   onChange: (v: ProdutoMaisOpcoes) => void;
+  /** Quando o produto tem variantes, o peso passa a viver em cada
+   *  variante (StockSection) — deixa de fazer sentido pedir um peso
+   *  padrão aqui, porque cada combinação tende a pesar diferente. */
+  hasVariants: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -40,16 +45,23 @@ export function MoreOptions({
             onChange={(e) => set('sku', e.target.value)}
             placeholder="Gerado automaticamente se deixares vazio"
           />
-          <Input
-            label="Peso padrão (kg)"
-            hint="Usado por todas as variantes, a menos que uma delas defina o seu próprio peso"
-            type="number"
-            min={0}
-            step="0.01"
-            value={value.peso ?? ''}
-            onChange={(e) => set('peso', e.target.value === '' ? null : Number(e.target.value))}
-            placeholder="Opcional"
-          />
+          {!hasVariants && (
+            <Input
+              label="Peso padrão (kg)"
+              hint="Opcional"
+              type="number"
+              min={0}
+              step="0.01"
+              value={value.peso ?? ''}
+              onChange={(e) => set('peso', e.target.value === '' ? null : Number(e.target.value))}
+              placeholder="Opcional"
+            />
+          )}
+          {hasVariants && (
+            <p className="text-[10px] font-medium text-slate-400">
+              Peso: define o peso de cada variante em "Variantes" mais abaixo.
+            </p>
+          )}
           <Textarea
             label="Informações de entrega"
             rows={3}
