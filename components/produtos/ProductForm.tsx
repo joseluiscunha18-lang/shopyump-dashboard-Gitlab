@@ -11,7 +11,7 @@ import { StockSection } from '@/components/produtos/StockSection';
 import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
-import { totalEstoque } from '@/lib/variantes';
+import { herdarEstadoInicial, totalEstoque } from '@/lib/variantes';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
@@ -40,6 +40,28 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const { show } = useToast();
 
   const hasVariants = variantes.opcoes.some((o) => o.valores.length > 0);
+
+  function handleVariantesChange(next: VariantesState) {
+    const tinhaVariantes = variantes.opcoes.some((o) => o.valores.length > 0);
+    const passaATerVariantes = next.opcoes.some((o) => o.valores.length > 0);
+
+    // Primeira variante sendo criada agora: herda o que já existia no
+    // produto (estoque simples e fotos gerais) para não perder dados —
+    // ver lib/variantes.ts#herdarEstadoInicial.
+    if (!tinhaVariantes && passaATerVariantes) {
+      const { combinacoes, imagensPorValor } = herdarEstadoInicial({
+        combinacoes: next.combinacoes,
+        imagensPorValor: next.imagensPorValor,
+        opcoes: next.opcoes,
+        estoqueAtual: controlarEstoque && estoqueSimples !== '' ? Number(estoqueSimples) : null,
+        fotosAtuais: fotos,
+      });
+      setVariantes({ ...next, combinacoes, imagensPorValor });
+      return;
+    }
+
+    setVariantes(next);
+  }
 
   const valid = useMemo(
     () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
@@ -135,7 +157,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* 6. Variantes */}
       <VariantEditor
         state={variantes}
-        onChange={setVariantes}
+        onChange={handleVariantesChange}
         fotosGerais={fotos}
         onAddFotoGeral={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
         lojaId={lojaId}
@@ -151,6 +173,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         controlarEstoque={controlarEstoque}
         onControlarEstoqueChange={setControlarEstoque}
         precoBase={Number(preco) || 0}
+        pesoPadrao={maisOpcoes.peso ?? null}
       />
 
       {/* 8. Mais opções */}
