@@ -37,10 +37,56 @@ export function gerarCombinacoes(opcoes: ProdutoOpcao[], existentes: ProdutoComb
       preco: prev?.preco ?? null,
       estoque: prev?.estoque ?? null,
       sku: prev?.sku ?? null,
+      peso: prev?.peso ?? null,
     };
   });
 }
 
 export function totalEstoque(combinacoes: ProdutoCombinacao[]): number {
   return combinacoes.reduce((sum, c) => sum + (typeof c.estoque === 'number' ? c.estoque : 0), 0);
+}
+
+/**
+ * Resolve o "problema da calça branca + azul" (ver nova_estrutura.txt,
+ * secção 4/5): quando o produto passa de "sem variantes" para "com
+ * variantes" pela primeira vez, o que já estava preenchido — estoque e
+ * fotos do produto — não pode desaparecer. A primeira combinação criada
+ * (ex: "Branco") deve herdar automaticamente esses dados, como se o
+ * estado atual do produto se tivesse tornado a sua primeira variante.
+ *
+ * Só faz sentido chamar isto exatamente na transição (produto tinha 0
+ * combinações e passou a ter exatamente 1). Depois disso, cada variante
+ * nova nasce em branco normalmente — só a primeira herda.
+ */
+export function herdarEstadoInicial({
+  combinacoes,
+  imagensPorValor,
+  opcoes,
+  estoqueAtual,
+  fotosAtuais,
+}: {
+  combinacoes: ProdutoCombinacao[];
+  imagensPorValor: Record<string, string[]>;
+  opcoes: ProdutoOpcao[];
+  estoqueAtual: number | null;
+  fotosAtuais: string[];
+}): { combinacoes: ProdutoCombinacao[]; imagensPorValor: Record<string, string[]> } {
+  if (combinacoes.length !== 1) return { combinacoes, imagensPorValor };
+
+  const [unica] = combinacoes;
+  const opcaoAtiva = opcoes.find((o) => o.valores.length > 0);
+  const valor = opcaoAtiva?.valores[0];
+
+  const combinacaoHerdada: ProdutoCombinacao = {
+    ...unica,
+    estoque: unica.estoque ?? estoqueAtual,
+  };
+
+  const imagensHerdadas = { ...imagensPorValor };
+  if (opcaoAtiva && valor && fotosAtuais.length > 0) {
+    const chave = chaveValor(opcaoAtiva.nome, valor);
+    if (!imagensHerdadas[chave]) imagensHerdadas[chave] = fotosAtuais;
+  }
+
+  return { combinacoes: [combinacaoHerdada], imagensPorValor: imagensHerdadas };
 }
