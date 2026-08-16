@@ -59,7 +59,7 @@ export function MoreOptions({
           )}
           {hasVariants && (
             <p className="text-[10px] font-medium text-slate-400">
-              Peso: define o peso de cada variante em "Variantes" mais abaixo.
+              Peso: define o peso de cada versão em "Versões disponíveis" mais abaixo.
             </p>
           )}
           <Textarea
