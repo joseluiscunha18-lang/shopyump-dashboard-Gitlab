@@ -104,6 +104,13 @@ export interface ProdutoOpcaoRaiz {
   /** ex: "Cor" — pode ser um valor de CARACTERISTICAS_SUGERIDAS ou texto livre ("Outra"). */
   nome: string;
   valores: string[];
+  /**
+   * Só relevante quando `nome === 'Cor'`: hex escolhido pelo vendedor para
+   * cores personalizadas (fora da biblioteca sugerida em lib/cores.ts).
+   * Cores da biblioteca não precisam de entrada aqui — o hex é resolvido
+   * pelo nome. ex: { "Verde-oliva": "#6B7A3A" }
+   */
+  cores?: Record<string, string>;
 }
 
 export interface ProdutoOpcaoFilha {
@@ -114,6 +121,8 @@ export interface ProdutoOpcaoFilha {
   mesmosValoresParaTodas: boolean;
   valoresComuns?: string[];
   valoresPorRaiz?: Record<string, string[]>;
+  /** Só relevante quando `nome === 'Cor'` — ver ProdutoOpcaoRaiz.cores. */
+  cores?: Record<string, string>;
 }
 
 export interface ProdutoVersao {
