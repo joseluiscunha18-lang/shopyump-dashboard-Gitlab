@@ -48,15 +48,19 @@ export type LojaUpdate = Partial<Omit<Loja, 'id' | 'perfil_id' | 'created_at'>>;
  * geradas automaticamente — cada combinação é uma "variante vendível"
  * com o seu próprio preço/estoque/imagens opcionais.
  */
+/**
+ * @deprecated estrutura antiga (lista plana de opções). Ver ProdutoOpcaoRaiz/ProdutoOpcaoFilha.
+ */
 export const OPCOES_VARIANTE_DISPONIVEIS = ['Cor', 'Tamanho', 'Género'] as const;
 export type NomeOpcaoVariante = (typeof OPCOES_VARIANTE_DISPONIVEIS)[number];
 
+/** @deprecated ver ProdutoOpcaoRaiz/ProdutoOpcaoFilha. */
 export interface ProdutoOpcao {
-  /** Um dos valores de OPCOES_VARIANTE_DISPONIVEIS. */
   nome: NomeOpcaoVariante;
   valores: string[];
 }
 
+/** @deprecated ver ProdutoVersao. */
 export interface ProdutoCombinacao {
   /** Identificador estável, ex: "Preto / M" — junta os valores pela ordem das opções. */
   chave: string;
@@ -84,18 +88,72 @@ export interface ProdutoCombinacao {
   ativa?: boolean;
 }
 
+/**
+ * Estrutura de variantes em árvore (ver doc "variacoes_arvore.txt"): o
+ * vendedor não pensa em "variantes" — só diz quais versões do produto
+ * vende. Até 2 características (raiz + filha, ex: Cor → Tamanho); os
+ * valores da filha podem ser diferentes por valor da raiz (o vendedor
+ * nunca é obrigado a criar uma combinação que não existe).
+ */
+export const CARACTERISTICAS_SUGERIDAS = ['Cor', 'Tamanho', 'Material', 'Capacidade', 'Género'] as const;
+
+export const GENEROS = ['Masculino', 'Feminino', 'Unissexo'] as const;
+export type Genero = (typeof GENEROS)[number];
+
+export interface ProdutoOpcaoRaiz {
+  /** ex: "Cor" — pode ser um valor de CARACTERISTICAS_SUGERIDAS ou texto livre ("Outra"). */
+  nome: string;
+  valores: string[];
+}
+
+export interface ProdutoOpcaoFilha {
+  /** ex: "Tamanho" */
+  nome: string;
+  /** true = todos os valores da raiz partilham `valoresComuns`.
+   *  false = cada valor da raiz tem a sua própria lista em `valoresPorRaiz`. */
+  mesmosValoresParaTodas: boolean;
+  valoresComuns?: string[];
+  valoresPorRaiz?: Record<string, string[]>;
+}
+
+export interface ProdutoVersao {
+  /** Identificador estável: "Amarelo / 30", ou só "Amarelo"/"30" se só houver uma característica. */
+  chave: string;
+  /** ex: { Cor: 'Amarelo', Tamanho: '30' } */
+  valores: Record<string, string>;
+  /** null/undefined = herda o preço principal do produto. */
+  preco?: number | null;
+  estoque?: number | null;
+  sku?: string | null;
+  /** kg. null/undefined = herda o peso padrão do produto (só existe quando o produto não tem versões). */
+  peso?: number | null;
+  /**
+   * URLs escolhidas da galeria geral do produto (`produto.fotos`) para
+   * esta versão específica. Opcional — se vazio, a loja usa a galeria
+   * geral. Nunca é upload próprio: são sempre imagens que já existem em
+   * `fotos`.
+   */
+  imagens?: string[];
+  /**
+   * false = versão existe na árvore mas o vendedor não a vende (ex.:
+   * "Preto / L" foi criada e depois esvaziada). Fica escondida na loja e
+   * fora do total de estoque, mas os dados não são apagados. undefined/
+   * true = ativa normalmente.
+   */
+  ativa?: boolean;
+}
+
 export interface ProdutoVariantes {
-  opcoes: ProdutoOpcao[];
-  combinacoes: ProdutoCombinacao[];
+  raiz?: ProdutoOpcaoRaiz | null;
+  filha?: ProdutoOpcaoFilha | null;
+  versoes: ProdutoVersao[];
 
-  /** @deprecated substituído por `combinacao.imagens` — imagens pertencem
-   *  à combinação (a coisa que o cliente compra), não a um valor de opção
-   *  isolado. Mantido só para não partir produtos gravados antes desta
-   *  migração; código novo não deve escrever aqui. */
+  /** @deprecated estrutura anterior (lista plana de opções + produto
+   *  cartesiano). Mantido só para não partir produtos gravados antes
+   *  desta migração — código novo usa raiz/filha/versoes. */
+  opcoes?: ProdutoOpcao[];
+  combinacoes?: ProdutoCombinacao[];
   imagensPorValor?: Record<string, string[]>;
-
-  /** @deprecated campos da estrutura antiga, mantidos só para não partir
-   *  produtos já gravados antes desta migração. Não usar em código novo. */
   tamanhos?: string[];
   cores?: string[];
   numeracao?: (string | number)[];
@@ -126,6 +184,12 @@ export interface Produto {
   preco_promo: number | null;
   categoria: string;
   descricao: string | null;
+  /**
+   * Informação geral do produto — não cria versões. Só vale a pena usar
+   * "Género" como característica de variação (dentro de `variantes`)
+   * quando o mesmo produto tem mesmo versões diferentes por género.
+   */
+  genero?: Genero | null;
   /** Galeria geral do produto — imagens partilhadas por todas as variantes. */
   fotos: string[];
   variantes: ProdutoVariantes | null;
