@@ -12,7 +12,8 @@ import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
 import { totalEstoque } from '@/lib/variantes';
-import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
+import type { Produto, ProdutoMaisOpcoes, Genero } from '@/types/database';
+import { GENEROS } from '@/types/database';
 
 export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
   const [nome, setNome] = useState(produto?.nome ?? '');
@@ -23,9 +24,12 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const [fotos, setFotos] = useState<string[]>(produto?.fotos ?? []);
 
   const [variantes, setVariantes] = useState<VariantesState>({
-    opcoes: produto?.variantes?.opcoes ?? [],
-    combinacoes: produto?.variantes?.combinacoes ?? [],
+    raiz: produto?.variantes?.raiz ?? null,
+    filha: produto?.variantes?.filha ?? null,
+    versoes: produto?.variantes?.versoes ?? [],
   });
+
+  const [genero, setGenero] = useState<Genero | null>(produto?.genero ?? null);
 
   const [controlarEstoque, setControlarEstoque] = useState(typeof produto?.estoque === 'number');
   const [estoqueSimples, setEstoqueSimples] = useState(
@@ -38,7 +42,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const router = useRouter();
   const { show } = useToast();
 
-  const hasVariants = variantes.opcoes.some((o) => o.valores.length > 0);
+  const hasVariants = !!variantes.raiz || !!variantes.filha;
 
   const valid = useMemo(
     () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
@@ -51,7 +55,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     setSaving(true);
 
     const estoque = hasVariants
-      ? totalEstoque(variantes.combinacoes)
+      ? totalEstoque(variantes.versoes)
       : controlarEstoque
         ? estoqueSimples === ''
           ? null
@@ -65,9 +69,10 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       preco_promo: precoPromo ? Number(precoPromo) : null,
       categoria,
       descricao: descricao.trim() || null,
+      genero,
       fotos,
       variantes: hasVariants
-        ? { opcoes: variantes.opcoes, combinacoes: variantes.combinacoes }
+        ? { raiz: variantes.raiz, filha: variantes.filha, versoes: variantes.versoes }
         : null,
       estoque,
       mais_opcoes: Object.values(maisOpcoes).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoes : null,
@@ -109,6 +114,28 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* 4. Categoria */}
       <CategoryPicker value={categoria} onChange={setCategoria} />
 
+      {/* Para quem é este produto? — informação geral, não cria versões */}
+      <div>
+        <label className="mb-1.5 block pl-1 text-[11px] font-black uppercase tracking-widest text-slate-400">
+          Para quem é este produto? <span className="font-medium normal-case text-slate-300">— opcional</span>
+        </label>
+        <div className="flex gap-1.5">
+          {GENEROS.map((g) => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setGenero((atual) => (atual === g ? null : g))}
+              className={[
+                'rounded-full px-3.5 py-2 text-[12px] font-bold transition-colors',
+                genero === g ? 'bg-ink text-white' : 'bg-slate-100 text-slate-500',
+              ].join(' ')}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 5. Preço */}
       <div className="grid grid-cols-2 gap-4">
         <Input
@@ -131,14 +158,15 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         />
       </div>
 
-      {/* 6. Variantes */}
+      {/* 6. Opções do produto */}
       <VariantEditor state={variantes} onChange={setVariantes} />
 
-      {/* 7. Estoque */}
+      {/* 7. Versões disponíveis / Estoque */}
       <StockSection
-        hasVariants={hasVariants}
-        combinacoes={variantes.combinacoes}
-        onCombinacoesChange={(combinacoes) => setVariantes((v) => ({ ...v, combinacoes }))}
+        raiz={variantes.raiz}
+        filha={variantes.filha}
+        versoes={variantes.versoes}
+        onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
         estoqueSimples={estoqueSimples}
         onEstoqueSimplesChange={setEstoqueSimples}
         controlarEstoque={controlarEstoque}
