@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { ChevronDown, ImagePlus } from 'lucide-react';
+import { ChevronDown, ImagePlus, Images } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
+import { ColorDot } from '@/components/produtos/SuggestInput';
 import { agruparPorRaiz, aplicarPesoATodas, totalEstoque } from '@/lib/variantes';
+import { resolverHexCor } from '@/lib/cores';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 import { cn } from '@/lib/cn';
 
@@ -59,9 +61,12 @@ export function StockSection({
               <RaizGroup
                 key={grupo.raizValor}
                 raizValor={grupo.raizValor}
+                raizNome={raiz!.nome}
+                raizCores={raiz!.cores}
                 filhaNome={filha!.nome}
                 versoes={grupo.versoes}
                 precoBase={precoBase}
+                pesoPadrao={pesoPadrao}
                 fotos={fotos}
                 onAddFoto={onAddFoto}
                 lojaId={lojaId}
@@ -82,8 +87,10 @@ export function StockSection({
               <VersaoRow
                 key={v.chave}
                 label={v.chave}
+                corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
                 versao={v}
                 precoBase={precoBase}
+                pesoPadrao={pesoPadrao}
                 fotos={fotos}
                 onAddFoto={onAddFoto}
                 lojaId={lojaId}
@@ -134,9 +141,12 @@ export function StockSection({
 
 function RaizGroup({
   raizValor,
+  raizNome,
+  raizCores,
   filhaNome,
   versoes,
   precoBase,
+  pesoPadrao,
   fotos,
   onAddFoto,
   lojaId,
@@ -145,9 +155,12 @@ function RaizGroup({
   mostrarAplicarATodas,
 }: {
   raizValor: string;
+  raizNome: string;
+  raizCores?: Record<string, string>;
   filhaNome: string;
   versoes: ProdutoVersao[];
   precoBase: number;
+  pesoPadrao?: number | null;
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
@@ -157,12 +170,14 @@ function RaizGroup({
 }) {
   const [expanded, setExpanded] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
+  const ehCor = raizNome === 'Cor';
 
   return (
     <div className="rounded-2xl bg-slate-50/70 px-3.5 py-2.5">
       <button type="button" onClick={() => setExpanded((v) => !v)} className="flex w-full items-center justify-between gap-3">
         <span className="flex items-center gap-1.5">
           <ChevronDown size={13} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
+          {ehCor && <ColorDot hex={resolverHexCor(raizValor, raizCores)} />}
           <span className="text-[12px] font-bold text-ink">{raizValor}</span>
         </span>
         <span className="shrink-0 text-[11px] font-semibold text-slate-400">
@@ -185,6 +200,7 @@ function RaizGroup({
               label={v.valores[filhaNome] ?? v.chave}
               versao={v}
               precoBase={precoBase}
+              pesoPadrao={pesoPadrao}
               fotos={fotos}
               onAddFoto={onAddFoto}
               lojaId={lojaId}
@@ -201,8 +217,10 @@ function RaizGroup({
 
 function VersaoRow({
   label,
+  corHex,
   versao,
   precoBase,
+  pesoPadrao,
   fotos,
   onAddFoto,
   lojaId,
@@ -211,8 +229,11 @@ function VersaoRow({
   mostrarAplicarATodas,
 }: {
   label: string;
+  /** Bolinha de cor mostrada antes do nome — só quando a opção é "Cor". */
+  corHex?: string;
   versao: ProdutoVersao;
   precoBase: number;
+  pesoPadrao?: number | null;
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
@@ -228,9 +249,10 @@ function VersaoRow({
 
   return (
     <div className={cn('rounded-xl bg-white px-3 py-2 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button type="button" onClick={() => setExpanded((v) => !v)} className="flex flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
+          {corHex && <ColorDot hex={corHex} />}
           <span className="truncate text-[12px] font-bold text-ink">{label}</span>
           {!ativa && (
             <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-500">
@@ -239,6 +261,29 @@ function VersaoRow({
           )}
           {versao.preco != null && <span className="shrink-0 text-[10px] font-semibold text-slate-400">{versao.preco} MT</span>}
         </button>
+
+        {/* Ícone de imagem junto da seta — acesso imediato sem abrir os detalhes. */}
+        <button
+          type="button"
+          onClick={() => setImagePickerOpen(true)}
+          title={imagens.length === 0 ? 'Escolher imagens desta versão' : `${imagens.length} imagem(ns) escolhida(s)`}
+          className={cn(
+            'relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-colors active:scale-[0.92]',
+            imagens.length > 0 ? 'ring-1 ring-inset ring-slate-200' : 'bg-slate-50 text-slate-400 hover:text-ink'
+          )}
+        >
+          {imagens[0] ? (
+            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="32px" />
+          ) : (
+            <Images size={15} />
+          )}
+          {imagens.length > 1 && (
+            <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
+              {imagens.length}
+            </span>
+          )}
+        </button>
+
         <input
           type="number"
           min={0}
@@ -279,11 +324,15 @@ function VersaoRow({
                 step="0.01"
                 value={versao.peso ?? ''}
                 onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
-                placeholder="0"
+                placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
                 className="h-9 w-full rounded-xl border border-transparent bg-slate-50 px-3 text-[13px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
               />
               <span className="shrink-0 text-[11px] font-bold text-slate-400">kg</span>
             </div>
+            <p className="mt-1.5 text-[10px] font-medium text-slate-400">
+              Opcional — deixa em branco para usar{' '}
+              {typeof pesoPadrao === 'number' ? `o peso padrão do produto (${pesoPadrao} kg)` : 'o peso padrão do produto'}.
+            </p>
             {mostrarAplicarATodas && typeof versao.peso === 'number' && (
               <button
                 type="button"
@@ -295,33 +344,14 @@ function VersaoRow({
             )}
           </div>
 
-          <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Imagens desta versão — opcional
-            </label>
-            <button
-              type="button"
-              onClick={() => setImagePickerOpen(true)}
-              className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5 active:scale-[0.99]"
-            >
-              <span className="flex items-center gap-1.5">
-                {imagens.slice(0, 4).map((url, i) => (
-                  <div key={url + i} className="relative h-6 w-6 overflow-hidden rounded-full ring-2 ring-white">
-                    <Image src={url} alt="" fill className="object-cover" sizes="24px" />
-                  </div>
-                ))}
-              </span>
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                {imagens.length === 0 ? (
-                  <>
-                    <ImagePlus size={13} /> Usar imagens gerais / escolher
-                  </>
-                ) : (
-                  `${imagens.length} imagem${imagens.length > 1 ? 's' : ''}`
-                )}
-              </span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setImagePickerOpen(true)}
+            className="flex items-center gap-1.5 self-start text-[11px] font-bold text-slate-400 hover:text-ink"
+          >
+            <ImagePlus size={13} />
+            {imagens.length === 0 ? 'Escolher imagens desta versão (opcional)' : `Editar imagens (${imagens.length})`}
+          </button>
 
           <button
             type="button"
