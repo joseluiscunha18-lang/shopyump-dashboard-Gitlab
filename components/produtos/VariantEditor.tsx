@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
+import { SuggestInput, ColorDot } from '@/components/produtos/SuggestInput';
 import { gerarVersoes } from '@/lib/variantes';
+import { resolverHexCor } from '@/lib/cores';
 import { CARACTERISTICAS_SUGERIDAS } from '@/types/database';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 
@@ -56,6 +58,11 @@ export function VariantEditor({
     aplicar({ ...state.raiz, valores }, state.filha);
   }
 
+  function setRaizCorPersonalizada(nome: string, hex: string) {
+    if (!state.raiz) return;
+    aplicar({ ...state.raiz, cores: { ...(state.raiz.cores ?? {}), [nome]: hex } }, state.filha);
+  }
+
   function setFilhaComum(mesmosValoresParaTodas: boolean) {
     if (!state.filha) return;
     if (mesmosValoresParaTodas) {
@@ -82,7 +89,14 @@ export function VariantEditor({
     });
   }
 
+  function setFilhaCorPersonalizada(nome: string, hex: string) {
+    if (!state.filha) return;
+    aplicar(state.raiz, { ...state.filha, cores: { ...(state.filha.cores ?? {}), [nome]: hex } });
+  }
+
   const podeMostrarToggle = (state.raiz?.valores.length ?? 0) >= 2;
+  const raizECor = state.raiz?.nome === 'Cor';
+  const filhaECor = state.filha?.nome === 'Cor';
 
   return (
     <div>
@@ -112,7 +126,14 @@ export function VariantEditor({
                 Remover
               </button>
             </div>
-            <ValoresChips valores={state.raiz.valores} onChange={setRaizValores} placeholder={`+ ${state.raiz.nome}`} />
+            <SuggestInput
+              valores={state.raiz.valores}
+              onChange={setRaizValores}
+              placeholder={`+ ${state.raiz.nome}`}
+              colorMode={raizECor}
+              coresPersonalizadas={state.raiz.cores}
+              onSetCorPersonalizada={setRaizCorPersonalizada}
+            />
           </div>
         )}
 
@@ -167,20 +188,29 @@ export function VariantEditor({
             )}
 
             {state.filha.mesmosValoresParaTodas || !podeMostrarToggle ? (
-              <ValoresChips
+              <SuggestInput
                 valores={state.filha.valoresComuns ?? []}
                 onChange={setFilhaComuns}
                 placeholder={`+ ${state.filha.nome}`}
+                colorMode={filhaECor}
+                coresPersonalizadas={state.filha.cores}
+                onSetCorPersonalizada={setFilhaCorPersonalizada}
               />
             ) : (
               <div className="flex flex-col gap-2.5">
                 {(state.raiz?.valores ?? []).map((raizValor) => (
                   <div key={raizValor}>
-                    <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{raizValor}</p>
-                    <ValoresChips
+                    <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      {raizECor && <ColorDot hex={resolverHexCor(raizValor, state.raiz?.cores)} />}
+                      {raizValor}
+                    </p>
+                    <SuggestInput
                       valores={state.filha!.valoresPorRaiz?.[raizValor] ?? []}
                       onChange={(v) => setFilhaPorRaiz(raizValor, v)}
                       placeholder={`+ ${state.filha!.nome}`}
+                      colorMode={filhaECor}
+                      coresPersonalizadas={state.filha!.cores}
+                      onSetCorPersonalizada={setFilhaCorPersonalizada}
                     />
                   </div>
                 ))}
@@ -257,49 +287,4 @@ function CaracteristicaPicker({ excluir, onPick }: { excluir?: string; onPick: (
   );
 }
 
-function ValoresChips({
-  valores,
-  onChange,
-  placeholder,
-}: {
-  valores: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-}) {
-  const [draft, setDraft] = useState('');
 
-  function commit() {
-    const v = draft.trim();
-    if (v && !valores.includes(v)) onChange([...valores, v]);
-    setDraft('');
-  }
-
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {valores.map((v) => (
-        <span
-          key={v}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white pl-3.5 pr-2 text-[12px] font-bold text-ink shadow-sm"
-        >
-          {v}
-          <button type="button" onClick={() => onChange(valores.filter((x) => x !== v))} className="text-slate-400 hover:text-slate-700">
-            <X size={12} />
-          </button>
-        </span>
-      ))}
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            commit();
-          }
-        }}
-        onBlur={commit}
-        placeholder={placeholder}
-        className="h-9 w-28 rounded-full bg-white px-3.5 text-[12px] font-semibold text-ink shadow-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-ink/10"
-      />
-    </div>
-  );
-}
