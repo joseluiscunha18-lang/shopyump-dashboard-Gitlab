@@ -5,32 +5,59 @@ import { useRouter } from 'next/navigation';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { PhotoUploader } from '@/components/produtos/PhotoUploader';
-import { VariantEditor } from '@/components/produtos/VariantEditor';
+import { CategoryPicker } from '@/components/produtos/CategoryPicker';
+import { VariantEditor, type VariantesState } from '@/components/produtos/VariantEditor';
+import { StockSection } from '@/components/produtos/StockSection';
+import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
-import type { Produto } from '@/types/database';
-
-const CATEGORIAS = ['Moda', 'Beleza', 'Casa', 'Eletrónica', 'Acessórios', 'Alimentação', 'Outros'];
+import { totalEstoque } from '@/lib/variantes';
+import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
   const [nome, setNome] = useState(produto?.nome ?? '');
+  const [descricao, setDescricao] = useState(produto?.descricao ?? '');
+  const [categoria, setCategoria] = useState(produto?.categoria ?? '');
   const [preco, setPreco] = useState(produto ? String(produto.preco) : '');
   const [precoPromo, setPrecoPromo] = useState(produto?.preco_promo ? String(produto.preco_promo) : '');
-  const [categoria, setCategoria] = useState(produto?.categoria ?? CATEGORIAS[0]);
-  const [descricao, setDescricao] = useState(produto?.descricao ?? '');
   const [fotos, setFotos] = useState<string[]>(produto?.fotos ?? []);
-  const [tamanhos, setTamanhos] = useState<string[]>(produto?.variantes?.tamanhos ?? []);
-  const [cores, setCores] = useState<string[]>(produto?.variantes?.cores ?? []);
+
+  const [variantes, setVariantes] = useState<VariantesState>({
+    opcoes: produto?.variantes?.opcoes ?? [],
+    combinacoes: produto?.variantes?.combinacoes ?? [],
+    imagensPorValor: produto?.variantes?.imagensPorValor ?? {},
+  });
+
+  const [controlarEstoque, setControlarEstoque] = useState(typeof produto?.estoque === 'number');
+  const [estoqueSimples, setEstoqueSimples] = useState(
+    typeof produto?.estoque === 'number' ? String(produto.estoque) : ''
+  );
+
+  const [maisOpcoes, setMaisOpcoes] = useState<ProdutoMaisOpcoes>(produto?.mais_opcoes ?? {});
+
   const [saving, setSaving] = useState(false);
   const router = useRouter();
   const { show } = useToast();
 
-  const valid = useMemo(() => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0, [nome, preco, fotos]);
+  const hasVariants = variantes.opcoes.some((o) => o.valores.length > 0);
+
+  const valid = useMemo(
+    () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
+    [nome, preco, fotos, categoria]
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
     setSaving(true);
+
+    const estoque = hasVariants
+      ? totalEstoque(variantes.combinacoes)
+      : controlarEstoque
+        ? estoqueSimples === ''
+          ? null
+          : Number(estoqueSimples)
+        : null;
 
     const payload = {
       loja_id: lojaId,
@@ -40,7 +67,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       categoria,
       descricao: descricao.trim() || null,
       fotos,
-      variantes: { tamanhos, cores },
+      variantes: hasVariants
+        ? { opcoes: variantes.opcoes, combinacoes: variantes.combinacoes, imagensPorValor: variantes.imagensPorValor }
+        : null,
+      estoque,
+      mais_opcoes: Object.values(maisOpcoes).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoes : null,
       ativo: produto?.ativo ?? true,
     };
 
@@ -54,11 +85,32 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-7 pb-24">
+      {/* 1. Imagens */}
       <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
 
-      <Input label="Nome do produto" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Vestido floral" required />
+      {/* 2. Nome do produto */}
+      <Input
+        label="Nome do produto"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        placeholder="Ex: Tênis Nike Air Max"
+        required
+      />
 
+      {/* 3. Descrição */}
+      <Textarea
+        label="Descrição"
+        rows={4}
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+        placeholder="Descreve o produto…"
+      />
+
+      {/* 4. Categoria */}
+      <CategoryPicker value={categoria} onChange={setCategoria} />
+
+      {/* 5. Preço */}
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="Preço (MT)"
@@ -70,7 +122,8 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           required
         />
         <Input
-          label="Preço promocional (opcional)"
+          label="Preço promocional"
+          hint="Opcional"
           type="number"
           min={0}
           value={precoPromo}
@@ -79,27 +132,33 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         />
       </div>
 
-      <div>
-        <label className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block pl-1">Categoria</label>
-        <select
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          className="w-full bg-slate-50 border border-transparent rounded-2xl px-4 py-3.5 text-[13px] font-semibold text-ink outline-none focus:bg-white focus:border-ink focus:ring-4 focus:ring-ink/5 transition-all"
-        >
-          {CATEGORIAS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* 6. Variantes */}
+      <VariantEditor
+        state={variantes}
+        onChange={setVariantes}
+        fotosGerais={fotos}
+        onAddFotoGeral={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
+        lojaId={lojaId}
+      />
 
-      <VariantEditor tamanhos={tamanhos} cores={cores} onTamanhosChange={setTamanhos} onCoresChange={setCores} />
+      {/* 7. Estoque */}
+      <StockSection
+        hasVariants={hasVariants}
+        combinacoes={variantes.combinacoes}
+        onCombinacoesChange={(combinacoes) => setVariantes((v) => ({ ...v, combinacoes }))}
+        estoqueSimples={estoqueSimples}
+        onEstoqueSimplesChange={setEstoqueSimples}
+        controlarEstoque={controlarEstoque}
+        onControlarEstoqueChange={setControlarEstoque}
+        precoBase={Number(preco) || 0}
+      />
 
-      <Textarea label="Descrição" rows={5} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreve o produto…" />
+      {/* 8. Mais opções */}
+      <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={saving} disabled={!valid}>
+      {/* 9. Publicar / Guardar — fixo e acessível no mobile */}
+      <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-slate-100 bg-white/90 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.push('/produtos')}>
