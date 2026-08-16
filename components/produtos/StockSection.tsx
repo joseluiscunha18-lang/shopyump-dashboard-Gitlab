@@ -17,6 +17,7 @@ export function StockSection({
   controlarEstoque,
   onControlarEstoqueChange,
   precoBase,
+  pesoPadrao,
 }: {
   hasVariants: boolean;
   combinacoes: ProdutoCombinacao[];
@@ -26,6 +27,8 @@ export function StockSection({
   controlarEstoque: boolean;
   onControlarEstoqueChange: (v: boolean) => void;
   precoBase: number;
+  /** Peso padrão do produto (kg), definido em "Mais opções". Cada variante pode sobrescrever. */
+  pesoPadrao?: number | null;
 }) {
   if (hasVariants) {
     return (
@@ -42,6 +45,7 @@ export function StockSection({
               key={c.chave}
               combinacao={c}
               precoBase={precoBase}
+              pesoPadrao={pesoPadrao ?? null}
               onChange={(next) => {
                 const copy = [...combinacoes];
                 copy[i] = next;
@@ -84,10 +88,12 @@ export function StockSection({
 function CombinacaoRow({
   combinacao,
   precoBase,
+  pesoPadrao,
   onChange,
 }: {
   combinacao: ProdutoCombinacao;
   precoBase: number;
+  pesoPadrao: number | null;
   onChange: (c: ProdutoCombinacao) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -135,6 +141,29 @@ function CombinacaoRow({
           </div>
           <p className="mt-1.5 text-[10px] font-medium text-slate-400">
             Deixa em branco para usar o preço principal ({precoBase || 0} MT).
+          </p>
+
+          <label className="mb-1 mt-3 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Peso desta variante
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={combinacao.peso ?? ''}
+              onChange={(e) =>
+                onChange({ ...combinacao, peso: e.target.value === '' ? null : Number(e.target.value) })
+              }
+              placeholder={pesoPadrao ? String(pesoPadrao) : '0'}
+              className="h-9 w-full rounded-xl border border-transparent bg-white px-3 text-[13px] font-bold text-ink shadow-sm outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+            />
+            <span className="shrink-0 text-[11px] font-bold text-slate-400">kg</span>
+          </div>
+          <p className="mt-1.5 text-[10px] font-medium text-slate-400">
+            {pesoPadrao
+              ? `Deixa em branco para usar o peso padrão do produto (${pesoPadrao} kg).`
+              : 'Deixa em branco para usar o peso padrão do produto (define em "Mais opções").'}
           </p>
         </div>
       )}
