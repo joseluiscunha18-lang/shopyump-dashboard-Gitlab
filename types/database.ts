@@ -41,10 +41,62 @@ export interface Loja {
 
 export type LojaUpdate = Partial<Omit<Loja, 'id' | 'perfil_id' | 'created_at'>>;
 
+/**
+ * Nova estrutura de variantes (ver doc "nova_estrutura.txt"):
+ * o produto pode ter até 3 opções (Cor, Tamanho, Género), cada uma com
+ * uma lista de valores. Quando há mais de uma opção, as combinações são
+ * geradas automaticamente — cada combinação é uma "variante vendível"
+ * com o seu próprio preço/estoque/imagens opcionais.
+ */
+export const OPCOES_VARIANTE_DISPONIVEIS = ['Cor', 'Tamanho', 'Género'] as const;
+export type NomeOpcaoVariante = (typeof OPCOES_VARIANTE_DISPONIVEIS)[number];
+
+export interface ProdutoOpcao {
+  /** Um dos valores de OPCOES_VARIANTE_DISPONIVEIS. */
+  nome: NomeOpcaoVariante;
+  valores: string[];
+}
+
+export interface ProdutoCombinacao {
+  /** Identificador estável, ex: "Preto / M" — junta os valores pela ordem das opções. */
+  chave: string;
+  /** ex: { Cor: 'Preto', Tamanho: 'M' } */
+  valores: Record<string, string>;
+  /** null/undefined = herda o preço principal do produto. */
+  preco?: number | null;
+  estoque?: number | null;
+  sku?: string | null;
+}
+
 export interface ProdutoVariantes {
+  opcoes: ProdutoOpcao[];
+  combinacoes: ProdutoCombinacao[];
+  /**
+   * Imagens associadas a um valor de opção específico (ex: "Cor:Preto"),
+   * referenciando URLs que já existem em `fotos`. As combinações herdam
+   * automaticamente as imagens do(s) valor(es) que as compõem — não é
+   * preciso associar imagem por combinação. Ver secção "IMAGENS DAS
+   * VARIANTES" da nova estrutura.
+   */
+  imagensPorValor?: Record<string, string[]>;
+
+  /** @deprecated campos da estrutura antiga, mantidos só para não partir
+   *  produtos já gravados antes desta migração. Não usar em código novo. */
   tamanhos?: string[];
-  numeracao?: (string | number)[];
   cores?: string[];
+  numeracao?: (string | number)[];
+}
+
+/** Tudo o que fica escondido em "Mais opções" — nunca obrigatório. */
+export interface ProdutoMaisOpcoes {
+  sku?: string | null;
+  /** kg */
+  peso?: number | null;
+  infoEntrega?: string | null;
+  seoTitulo?: string | null;
+  seoDescricao?: string | null;
+  /** Código do Sistema Harmonizado. */
+  codigoSh?: string | null;
 }
 
 export interface Produto {
@@ -55,12 +107,16 @@ export interface Produto {
   preco_promo: number | null;
   categoria: string;
   descricao: string | null;
+  /** Galeria geral do produto — imagens partilhadas por todas as variantes. */
   fotos: string[];
   variantes: ProdutoVariantes | null;
   ativo: boolean;
-  /** Opcional — nem toda loja rastreia stock ainda; a linha do produto
-   *  só mostra "Estoque" quando este valor vier preenchido. */
+  /** Estoque total. Sem variantes: valor editável directamente. Com
+   *  variantes: soma calculada automaticamente a partir das combinações
+   *  (mantido aqui também para a listagem de produtos não precisar de
+   *  somar nada). */
   estoque?: number | null;
+  mais_opcoes?: ProdutoMaisOpcoes | null;
   created_at: string;
 }
 
