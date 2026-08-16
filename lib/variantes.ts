@@ -1,15 +1,15 @@
 import type { ProdutoCombinacao, ProdutoOpcao } from '@/types/database';
 
-/** Chave estável para um valor de opção, usada em `imagensPorValor`. Ex: "Cor:Preto". */
-export function chaveValor(opcaoNome: string, valor: string): string {
-  return `${opcaoNome}:${valor}`;
-}
-
 /**
  * Gera o produto cartesiano dos valores de todas as opções (só as que já
- * têm pelo menos um valor). Reaproveita preço/estoque de combinações
- * existentes quando a chave coincide, para não perder dados já
- * preenchidos ao adicionar/remover um valor.
+ * têm pelo menos um valor). Reaproveita preço/estoque/peso/imagens/estado
+ * de combinações existentes quando a chave coincide, para não perder
+ * dados já preenchidos ao adicionar/remover um valor de opção.
+ *
+ * As imagens NUNCA são atribuídas automaticamente aqui — cada combinação
+ * nasce sem imagens próprias (usa a galeria geral do produto) até o
+ * vendedor escolher explicitamente. Ver secção "Imagens" da nova
+ * estrutura: a galeria geral nunca é "consumida" por uma variante.
  */
 export function gerarCombinacoes(opcoes: ProdutoOpcao[], existentes: ProdutoCombinacao[]): ProdutoCombinacao[] {
   const ativas = opcoes.filter((o) => o.valores.length > 0);
@@ -38,55 +38,23 @@ export function gerarCombinacoes(opcoes: ProdutoOpcao[], existentes: ProdutoComb
       estoque: prev?.estoque ?? null,
       sku: prev?.sku ?? null,
       peso: prev?.peso ?? null,
+      imagens: prev?.imagens ?? [],
+      ativa: prev?.ativa ?? true,
     };
   });
 }
 
+/** Soma o estoque só das combinações ativas — uma variante desativada
+ *  (ex: "Preto / L" que não existe fisicamente) não conta para o total. */
 export function totalEstoque(combinacoes: ProdutoCombinacao[]): number {
-  return combinacoes.reduce((sum, c) => sum + (typeof c.estoque === 'number' ? c.estoque : 0), 0);
+  return combinacoes
+    .filter((c) => c.ativa !== false)
+    .reduce((sum, c) => sum + (typeof c.estoque === 'number' ? c.estoque : 0), 0);
 }
 
-/**
- * Resolve o "problema da calça branca + azul" (ver nova_estrutura.txt,
- * secção 4/5): quando o produto passa de "sem variantes" para "com
- * variantes" pela primeira vez, o que já estava preenchido — estoque e
- * fotos do produto — não pode desaparecer. A primeira combinação criada
- * (ex: "Branco") deve herdar automaticamente esses dados, como se o
- * estado atual do produto se tivesse tornado a sua primeira variante.
- *
- * Só faz sentido chamar isto exatamente na transição (produto tinha 0
- * combinações e passou a ter exatamente 1). Depois disso, cada variante
- * nova nasce em branco normalmente — só a primeira herda.
- */
-export function herdarEstadoInicial({
-  combinacoes,
-  imagensPorValor,
-  opcoes,
-  estoqueAtual,
-  fotosAtuais,
-}: {
-  combinacoes: ProdutoCombinacao[];
-  imagensPorValor: Record<string, string[]>;
-  opcoes: ProdutoOpcao[];
-  estoqueAtual: number | null;
-  fotosAtuais: string[];
-}): { combinacoes: ProdutoCombinacao[]; imagensPorValor: Record<string, string[]> } {
-  if (combinacoes.length !== 1) return { combinacoes, imagensPorValor };
-
-  const [unica] = combinacoes;
-  const opcaoAtiva = opcoes.find((o) => o.valores.length > 0);
-  const valor = opcaoAtiva?.valores[0];
-
-  const combinacaoHerdada: ProdutoCombinacao = {
-    ...unica,
-    estoque: unica.estoque ?? estoqueAtual,
-  };
-
-  const imagensHerdadas = { ...imagensPorValor };
-  if (opcaoAtiva && valor && fotosAtuais.length > 0) {
-    const chave = chaveValor(opcaoAtiva.nome, valor);
-    if (!imagensHerdadas[chave]) imagensHerdadas[chave] = fotosAtuais;
-  }
-
-  return { combinacoes: [combinacaoHerdada], imagensPorValor: imagensHerdadas };
+/** Aplica o mesmo peso a todas as combinações — usado pelo botão "Usar
+ *  este peso em todas as variantes", para não obrigar o vendedor a
+ *  preencher o mesmo valor várias vezes quando todas pesam igual. */
+export function aplicarPesoATodas(combinacoes: ProdutoCombinacao[], peso: number | null): ProdutoCombinacao[] {
+  return combinacoes.map((c) => ({ ...c, peso }));
 }
