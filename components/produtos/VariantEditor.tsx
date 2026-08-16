@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { Plus, X, ImagePlus, ChevronDown } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
-import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
-import { chaveValor, gerarCombinacoes } from '@/lib/variantes';
+import { gerarCombinacoes } from '@/lib/variantes';
 import { OPCOES_VARIANTE_DISPONIVEIS } from '@/types/database';
 import type { NomeOpcaoVariante, ProdutoCombinacao, ProdutoOpcao } from '@/types/database';
-import { cn } from '@/lib/cn';
 
 const PLACEHOLDERS: Record<NomeOpcaoVariante, string> = {
   Cor: 'Ex: Preto',
@@ -19,24 +16,23 @@ const PLACEHOLDERS: Record<NomeOpcaoVariante, string> = {
 export interface VariantesState {
   opcoes: ProdutoOpcao[];
   combinacoes: ProdutoCombinacao[];
-  imagensPorValor: Record<string, string[]>;
 }
 
+/**
+ * Só define as opções (Cor, Tamanho, Género) e os seus valores — o que
+ * gera as combinações. Nenhuma opção é obrigatória: um produto pode ter
+ * só Cor, só Tamanho, ou nenhuma opção (fica sem variantes). Preço, peso,
+ * estoque e imagens pertencem à combinação final, não a um valor
+ * isolado — ver StockSection.
+ */
 export function VariantEditor({
   state,
   onChange,
-  fotosGerais,
-  onAddFotoGeral,
-  lojaId,
 }: {
   state: VariantesState;
   onChange: (next: VariantesState) => void;
-  fotosGerais: string[];
-  onAddFotoGeral: (url: string) => void;
-  lojaId: string;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [imagePickerFor, setImagePickerFor] = useState<{ opcao: string; valor: string } | null>(null);
 
   const disponiveis = OPCOES_VARIANTE_DISPONIVEIS.filter((n) => !state.opcoes.some((o) => o.nome === n));
 
@@ -49,11 +45,7 @@ export function VariantEditor({
   function removeOpcao(nome: string) {
     const opcoes = state.opcoes.filter((o) => o.nome !== nome);
     const combinacoes = gerarCombinacoes(opcoes, state.combinacoes);
-    const imagensPorValor = { ...state.imagensPorValor };
-    Object.keys(imagensPorValor).forEach((k) => {
-      if (k.startsWith(`${nome}:`)) delete imagensPorValor[k];
-    });
-    onChange({ opcoes, combinacoes, imagensPorValor });
+    onChange({ opcoes, combinacoes });
   }
 
   function setValores(nome: string, valores: string[]) {
@@ -62,20 +54,15 @@ export function VariantEditor({
     onChange({ ...state, opcoes, combinacoes });
   }
 
-  function saveImagens(opcaoNome: string, valor: string, urls: string[]) {
-    onChange({
-      ...state,
-      imagensPorValor: { ...state.imagensPorValor, [chaveValor(opcaoNome, valor)]: urls },
-    });
-  }
-
   const combinacoesCount = state.combinacoes.length;
 
   return (
     <div>
       <div className="mb-1 pl-1">
         <h3 className="text-[13px] font-black text-ink">Variantes</h3>
-        <p className="text-[11px] font-medium text-slate-400">Adiciona opções como cor, tamanho ou género.</p>
+        <p className="text-[11px] font-medium text-slate-400">
+          Escolhe as características que diferenciam este produto — nenhuma é obrigatória.
+        </p>
       </div>
 
       <div className="mt-3 flex flex-col gap-4">
@@ -85,8 +72,6 @@ export function VariantEditor({
             opcao={opcao}
             onValoresChange={(v) => setValores(opcao.nome, v)}
             onRemove={() => removeOpcao(opcao.nome)}
-            imagensPorValor={state.imagensPorValor}
-            onEditImagens={(valor) => setImagePickerFor({ opcao: opcao.nome, valor })}
           />
         ))}
 
@@ -102,7 +87,8 @@ export function VariantEditor({
 
         {combinacoesCount > 1 && (
           <p className="rounded-xl bg-slate-50 px-3.5 py-2.5 text-center text-[11px] font-semibold text-slate-500">
-            {combinacoesCount} combinações serão criadas automaticamente. Preenche o estoque de cada uma mais abaixo.
+            {combinacoesCount} variantes geradas a partir destas opções. Preenche cada uma mais abaixo — e podes
+            desativar as que não existem.
           </p>
         )}
       </div>
@@ -121,19 +107,6 @@ export function VariantEditor({
           ))}
         </div>
       </Sheet>
-
-      {imagePickerFor && (
-        <VariantImagePicker
-          open
-          onClose={() => setImagePickerFor(null)}
-          label={imagePickerFor.valor}
-          lojaId={lojaId}
-          fotosGerais={fotosGerais}
-          selecionadas={state.imagensPorValor[chaveValor(imagePickerFor.opcao, imagePickerFor.valor)] ?? []}
-          onAddToGaleria={onAddFotoGeral}
-          onSave={(urls) => saveImagens(imagePickerFor.opcao, imagePickerFor.valor, urls)}
-        />
-      )}
     </div>
   );
 }
@@ -142,17 +115,12 @@ function OpcaoSection({
   opcao,
   onValoresChange,
   onRemove,
-  imagensPorValor,
-  onEditImagens,
 }: {
   opcao: ProdutoOpcao;
   onValoresChange: (v: string[]) => void;
   onRemove: () => void;
-  imagensPorValor: Record<string, string[]>;
-  onEditImagens: (valor: string) => void;
 }) {
   const [draft, setDraft] = useState('');
-  const [expanded, setExpanded] = useState(false);
 
   function commit() {
     const v = draft.trim();
@@ -199,53 +167,6 @@ function OpcaoSection({
           className="h-9 w-28 rounded-full bg-white px-3.5 text-[12px] font-semibold text-ink shadow-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-ink/10"
         />
       </div>
-
-      {opcao.valores.length > 0 && (
-        <div className="mt-3 border-t border-slate-100 pt-2.5">
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-ink"
-          >
-            <ChevronDown size={13} className={cn('transition-transform', expanded && 'rotate-180')} />
-            Associar imagens por {opcao.nome.toLowerCase()} (opcional)
-          </button>
-
-          {expanded && (
-            <div className="mt-2.5 flex flex-col gap-2">
-              {opcao.valores.map((v) => {
-                const imgs = imagensPorValor[chaveValor(opcao.nome, v)] ?? [];
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => onEditImagens(v)}
-                    className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5 shadow-sm active:scale-[0.99]"
-                  >
-                    <span className="text-[12px] font-bold text-ink">{v}</span>
-                    <div className="flex items-center gap-1.5">
-                      {imgs.slice(0, 3).map((url, i) => (
-                        <div key={url + i} className="relative h-6 w-6 overflow-hidden rounded-full ring-2 ring-white">
-                          <Image src={url} alt="" fill className="object-cover" sizes="24px" />
-                        </div>
-                      ))}
-                      <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                        {imgs.length === 0 ? (
-                          <>
-                            <ImagePlus size={13} /> Adicionar
-                          </>
-                        ) : (
-                          `${imgs.length} imagem${imgs.length > 1 ? 's' : ''}`
-                        )}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
