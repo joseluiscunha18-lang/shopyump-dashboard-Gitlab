@@ -66,6 +66,8 @@ export interface ProdutoCombinacao {
   preco?: number | null;
   estoque?: number | null;
   sku?: string | null;
+  /** kg. null/undefined = herda o peso padrão do produto (`mais_opcoes.peso`). */
+  peso?: number | null;
 }
 
 export interface ProdutoVariantes {
@@ -90,13 +92,18 @@ export interface ProdutoVariantes {
 /** Tudo o que fica escondido em "Mais opções" — nunca obrigatório. */
 export interface ProdutoMaisOpcoes {
   sku?: string | null;
-  /** kg */
+  /** kg. Peso padrão do produto; cada variante pode sobrescrever em `combinacao.peso`. */
   peso?: number | null;
   infoEntrega?: string | null;
+  /**
+   * SEO é gerado automaticamente (ver lib/seo.ts) a partir do nome do
+   * produto + nome da loja. Estes campos ficam reservados para uma futura
+   * opção avançada "Editar SEO" — não são expostos no formulário principal
+   * hoje, mas se estiverem preenchidos, `gerarSeoProduto` usa-os como
+   * override.
+   */
   seoTitulo?: string | null;
   seoDescricao?: string | null;
-  /** Código do Sistema Harmonizado. */
-  codigoSh?: string | null;
 }
 
 export interface Produto {
