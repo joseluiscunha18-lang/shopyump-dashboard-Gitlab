@@ -11,7 +11,7 @@ import { StockSection } from '@/components/produtos/StockSection';
 import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
-import { herdarEstadoInicial, totalEstoque } from '@/lib/variantes';
+import { totalEstoque } from '@/lib/variantes';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
@@ -25,7 +25,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const [variantes, setVariantes] = useState<VariantesState>({
     opcoes: produto?.variantes?.opcoes ?? [],
     combinacoes: produto?.variantes?.combinacoes ?? [],
-    imagensPorValor: produto?.variantes?.imagensPorValor ?? {},
   });
 
   const [controlarEstoque, setControlarEstoque] = useState(typeof produto?.estoque === 'number');
@@ -40,28 +39,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const { show } = useToast();
 
   const hasVariants = variantes.opcoes.some((o) => o.valores.length > 0);
-
-  function handleVariantesChange(next: VariantesState) {
-    const tinhaVariantes = variantes.opcoes.some((o) => o.valores.length > 0);
-    const passaATerVariantes = next.opcoes.some((o) => o.valores.length > 0);
-
-    // Primeira variante sendo criada agora: herda o que já existia no
-    // produto (estoque simples e fotos gerais) para não perder dados —
-    // ver lib/variantes.ts#herdarEstadoInicial.
-    if (!tinhaVariantes && passaATerVariantes) {
-      const { combinacoes, imagensPorValor } = herdarEstadoInicial({
-        combinacoes: next.combinacoes,
-        imagensPorValor: next.imagensPorValor,
-        opcoes: next.opcoes,
-        estoqueAtual: controlarEstoque && estoqueSimples !== '' ? Number(estoqueSimples) : null,
-        fotosAtuais: fotos,
-      });
-      setVariantes({ ...next, combinacoes, imagensPorValor });
-      return;
-    }
-
-    setVariantes(next);
-  }
 
   const valid = useMemo(
     () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
@@ -90,7 +67,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       descricao: descricao.trim() || null,
       fotos,
       variantes: hasVariants
-        ? { opcoes: variantes.opcoes, combinacoes: variantes.combinacoes, imagensPorValor: variantes.imagensPorValor }
+        ? { opcoes: variantes.opcoes, combinacoes: variantes.combinacoes }
         : null,
       estoque,
       mais_opcoes: Object.values(maisOpcoes).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoes : null,
@@ -155,13 +132,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       </div>
 
       {/* 6. Variantes */}
-      <VariantEditor
-        state={variantes}
-        onChange={handleVariantesChange}
-        fotosGerais={fotos}
-        onAddFotoGeral={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
-        lojaId={lojaId}
-      />
+      <VariantEditor state={variantes} onChange={setVariantes} />
 
       {/* 7. Estoque */}
       <StockSection
@@ -174,10 +145,13 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         onControlarEstoqueChange={setControlarEstoque}
         precoBase={Number(preco) || 0}
         pesoPadrao={maisOpcoes.peso ?? null}
+        fotos={fotos}
+        onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
+        lojaId={lojaId}
       />
 
       {/* 8. Mais opções */}
-      <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
+      <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} hasVariants={hasVariants} />
 
       {/* 9. Publicar / Guardar — fixo e acessível no mobile */}
       <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-slate-100 bg-white/90 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
