@@ -41,7 +41,8 @@ export function MoreOptions({
             placeholder="Gerado automaticamente se deixares vazio"
           />
           <Input
-            label="Peso (kg)"
+            label="Peso padrão (kg)"
+            hint="Usado por todas as variantes, a menos que uma delas defina o seu próprio peso"
             type="number"
             min={0}
             step="0.01"
@@ -55,25 +56,6 @@ export function MoreOptions({
             value={value.infoEntrega ?? ''}
             onChange={(e) => set('infoEntrega', e.target.value)}
             placeholder="Ex: Envio em 2-3 dias úteis"
-          />
-          <Input
-            label="Título SEO"
-            value={value.seoTitulo ?? ''}
-            onChange={(e) => set('seoTitulo', e.target.value)}
-            placeholder="Opcional"
-          />
-          <Textarea
-            label="Descrição SEO"
-            rows={2}
-            value={value.seoDescricao ?? ''}
-            onChange={(e) => set('seoDescricao', e.target.value)}
-            placeholder="Opcional"
-          />
-          <Input
-            label="Código SH"
-            value={value.codigoSh ?? ''}
-            onChange={(e) => set('codigoSh', e.target.value)}
-            placeholder="Opcional"
           />
         </div>
       )}
