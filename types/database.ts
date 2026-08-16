@@ -66,20 +66,32 @@ export interface ProdutoCombinacao {
   preco?: number | null;
   estoque?: number | null;
   sku?: string | null;
-  /** kg. null/undefined = herda o peso padrão do produto (`mais_opcoes.peso`). */
+  /** kg. null/undefined = herda o peso padrão do produto (só existe quando o produto não tem variantes). */
   peso?: number | null;
+  /**
+   * URLs escolhidas da galeria geral do produto (`produto.fotos`) para
+   * esta combinação específica. Opcional — se vazio, a loja usa a
+   * galeria geral. Nunca é upload próprio: são sempre imagens que já
+   * existem em `fotos`.
+   */
+  imagens?: string[];
+  /**
+   * false = combinação existe (por causa do cruzamento de opções) mas o
+   * vendedor não a vende — ex.: "Preto / L" não existe fisicamente.
+   * Fica escondida na loja e fora do total de estoque, mas os dados não
+   * são apagados (pode reativar). undefined/true = ativa normalmente.
+   */
+  ativa?: boolean;
 }
 
 export interface ProdutoVariantes {
   opcoes: ProdutoOpcao[];
   combinacoes: ProdutoCombinacao[];
-  /**
-   * Imagens associadas a um valor de opção específico (ex: "Cor:Preto"),
-   * referenciando URLs que já existem em `fotos`. As combinações herdam
-   * automaticamente as imagens do(s) valor(es) que as compõem — não é
-   * preciso associar imagem por combinação. Ver secção "IMAGENS DAS
-   * VARIANTES" da nova estrutura.
-   */
+
+  /** @deprecated substituído por `combinacao.imagens` — imagens pertencem
+   *  à combinação (a coisa que o cliente compra), não a um valor de opção
+   *  isolado. Mantido só para não partir produtos gravados antes desta
+   *  migração; código novo não deve escrever aqui. */
   imagensPorValor?: Record<string, string[]>;
 
   /** @deprecated campos da estrutura antiga, mantidos só para não partir
