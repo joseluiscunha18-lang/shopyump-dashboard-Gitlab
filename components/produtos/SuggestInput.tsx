@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { CORES_SUGERIDAS, resolverHexCor } from '@/lib/cores';
 
@@ -10,14 +10,6 @@ import { CORES_SUGERIDAS, resolverHexCor } from '@/lib/cores';
  *  por cima do outro e o toque do vendedor acerta no campo errado. */
 let idAtivo = 0;
 const OPEN_EVENT = 'shopyump:suggest-input-open';
-
-function alturaVisivel() {
-  if (typeof window === 'undefined') return 0;
-  // window.visualViewport encolhe quando o teclado virtual abre — usar isto
-  // em vez de innerHeight é o que permite decidir "abrir para cima" quando
-  // o teclado está a tapar a parte de baixo do ecrã.
-  return window.visualViewport?.height ?? window.innerHeight;
-}
 
 /**
  * Campo de valores de opção (ex: cores, tamanhos) com um painel de
@@ -75,21 +67,32 @@ export function SuggestInput({
     window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: myId.current }));
 
     const rect = wrapRef.current?.getBoundingClientRect();
-    if (rect) {
-      const espacoAbaixo = alturaVisivel() - rect.bottom;
-      // Preferir abrir para cima sempre que o espaço por baixo for
-      // apertado — cobre tanto ecrãs pequenos como o teclado virtual aberto.
-      setAbrirParaCima(espacoAbaixo < 260);
-    }
+    // Abrir para cima é a prioridade — é o que evita o teclado virtual
+    // cortar o painel. Só cai para baixo se o campo estiver mesmo colado
+    // ao topo do ecrã, sem espaço nenhum para o painel abrir para cima.
+    setAbrirParaCima(!rect || rect.top > 180);
     setOpen(true);
   }
 
   const biblioteca = useMemo(() => (colorMode ? CORES_SUGERIDAS.map((c) => c.nome) : sugestoesExtras ?? []), [colorMode, sugestoesExtras]);
 
+  // Em modo cor a grelha funciona como uma lista de marcação: mostra a
+  // biblioteca inteira (mais cores personalizadas já usadas) e cada
+  // quadradinho tem o seu próprio checkbox — marcar adiciona a cor (e já
+  // gera as respetivas variantes), desmarcar remove. Fora do modo cor
+  // mantém-se uma lista simples que fecha a sugestão ao escolher.
+  const opcoesCor = useMemo(() => {
+    if (!colorMode) return [];
+    const termo = draft.trim().toLowerCase();
+    const extras = valores.filter((v) => !biblioteca.includes(v));
+    return [...biblioteca, ...extras].filter((nome) => !termo || nome.toLowerCase().includes(termo));
+  }, [colorMode, biblioteca, valores, draft]);
+
   const sugestoes = useMemo(() => {
+    if (colorMode) return [];
     const termo = draft.trim().toLowerCase();
     return biblioteca.filter((nome) => !valores.includes(nome) && (!termo || nome.toLowerCase().includes(termo)));
-  }, [biblioteca, draft, valores]);
+  }, [colorMode, biblioteca, draft, valores]);
 
   const correspondeExata = draft.trim() && biblioteca.some((n) => n.toLowerCase() === draft.trim().toLowerCase());
 
@@ -100,6 +103,15 @@ export function SuggestInput({
     if (colorMode && hex && onSetCorPersonalizada) onSetCorPersonalizada(v, hex);
     setDraft('');
     setNovaCorHex('#3B82F6');
+  }
+
+  function alternar(nome: string, hex?: string) {
+    if (valores.includes(nome)) {
+      onChange(valores.filter((x) => x !== nome));
+    } else {
+      onChange([...valores, nome]);
+      if (hex && onSetCorPersonalizada) onSetCorPersonalizada(nome, hex);
+    }
   }
 
   function remover(v: string) {
@@ -152,24 +164,41 @@ export function SuggestInput({
             abrirParaCima ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+6px)]'
           )}
         >
-          {sugestoes.length === 0 && !draft.trim() && biblioteca.length === 0 && (
+          {!colorMode && sugestoes.length === 0 && !draft.trim() && biblioteca.length === 0 && (
             <p className="px-2 py-2 text-[11px] font-medium text-slate-400">Começa a escrever para criar um valor.</p>
           )}
 
           {colorMode ? (
             <div className="flex flex-wrap gap-2 p-1">
-              {sugestoes.map((nome) => (
-                <button
-                  key={nome}
-                  type="button"
-                  onClick={() => adicionar(nome, resolverHexCor(nome))}
-                  title={nome}
-                  className="flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-center transition-colors hover:bg-slate-50 active:bg-slate-100"
-                >
-                  <ColorSquare hex={resolverHexCor(nome)} size={28} />
-                  <span className="w-full truncate text-[9px] font-bold text-slate-500">{nome}</span>
-                </button>
-              ))}
+              {opcoesCor.map((nome) => {
+                const marcada = valores.includes(nome);
+                return (
+                  <button
+                    key={nome}
+                    type="button"
+                    onClick={() => alternar(nome, resolverHexCor(nome, coresPersonalizadas))}
+                    title={nome}
+                    className={cn(
+                      'flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-center transition-colors hover:bg-slate-50 active:bg-slate-100',
+                      marcada && 'bg-slate-50'
+                    )}
+                  >
+                    <span className="relative">
+                      <ColorSquare hex={resolverHexCor(nome, coresPersonalizadas)} size={28} />
+                      {/* Quadradinho de marcação — mostra se esta cor já está selecionada. */}
+                      <span
+                        className={cn(
+                          'absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-[5px] border transition-colors',
+                          marcada ? 'border-ink bg-ink text-white' : 'border-slate-300 bg-white text-transparent'
+                        )}
+                      >
+                        <Check size={10} strokeWidth={3} />
+                      </span>
+                    </span>
+                    <span className="w-full truncate text-[9px] font-bold text-slate-500">{nome}</span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             sugestoes.length > 0 && (
