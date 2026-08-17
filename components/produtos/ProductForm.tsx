@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/Button';
 import { PhotoUploader } from '@/components/produtos/PhotoUploader';
 import { CategoryPicker } from '@/components/produtos/CategoryPicker';
 import { VariantEditor, type VariantesState } from '@/components/produtos/VariantEditor';
+import { PesoPadraoInput } from '@/components/produtos/PesoPadraoInput';
 import { StockSection } from '@/components/produtos/StockSection';
 import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
 import { totalEstoque } from '@/lib/variantes';
-import type { Produto, ProdutoMaisOpcoes, Genero } from '@/types/database';
-import { GENEROS } from '@/types/database';
+import { pesoParaKg, type UnidadePeso } from '@/lib/peso';
+import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
   const [nome, setNome] = useState(produto?.nome ?? '');
@@ -29,14 +30,30 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     versoes: produto?.variantes?.versoes ?? [],
   });
 
-  const [genero, setGenero] = useState<Genero | null>(produto?.genero ?? null);
+  // "Para quem é este produto?" foi removido do formulário — o campo
+  // continua a existir no registo (e em `Genero` como opção de variante,
+  // que é uma coisa diferente), mas deixou de ser editável aqui. Preserva
+  // o valor já gravado em vez de o apagar silenciosamente ao guardar.
+  const genero = produto?.genero ?? null;
 
   const [controlarEstoque, setControlarEstoque] = useState(typeof produto?.estoque === 'number');
   const [estoqueSimples, setEstoqueSimples] = useState(
     typeof produto?.estoque === 'number' ? String(produto.estoque) : ''
   );
 
-  const [maisOpcoes, setMaisOpcoes] = useState<ProdutoMaisOpcoes>(produto?.mais_opcoes ?? {});
+  // Peso padrão — vive antes de "Opções do produto" porque é usado
+  // automaticamente por todas as variantes. Guardado sempre em kg
+  // (`mais_opcoes.peso`), mas o vendedor pode digitar em g ou kg.
+  const [pesoPadraoUnidade, setPesoPadraoUnidade] = useState<UnidadePeso>('kg');
+  const [pesoPadraoValor, setPesoPadraoValor] = useState(
+    typeof produto?.mais_opcoes?.peso === 'number' ? String(produto.mais_opcoes.peso) : ''
+  );
+  const pesoPadraoKg = useMemo(() => {
+    if (pesoPadraoValor.trim() === '' || Number.isNaN(Number(pesoPadraoValor))) return null;
+    return pesoParaKg(Number(pesoPadraoValor), pesoPadraoUnidade);
+  }, [pesoPadraoValor, pesoPadraoUnidade]);
+
+  const [maisOpcoes, setMaisOpcoes] = useState<Omit<ProdutoMaisOpcoes, 'peso'>>(produto?.mais_opcoes ?? {});
 
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -62,6 +79,8 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           : Number(estoqueSimples)
         : null;
 
+    const maisOpcoesFinal: ProdutoMaisOpcoes = { ...maisOpcoes, peso: pesoPadraoKg };
+
     const payload = {
       loja_id: lojaId,
       nome: nome.trim(),
@@ -75,7 +94,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         ? { raiz: variantes.raiz, filha: variantes.filha, versoes: variantes.versoes }
         : null,
       estoque,
-      mais_opcoes: Object.values(maisOpcoes).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoes : null,
+      mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoesFinal : null,
       ativo: produto?.ativo ?? true,
     };
 
@@ -114,28 +133,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* 4. Categoria */}
       <CategoryPicker value={categoria} onChange={setCategoria} />
 
-      {/* Para quem é este produto? — informação geral, não cria versões */}
-      <div>
-        <label className="mb-1.5 block pl-1 text-[11px] font-black uppercase tracking-widest text-slate-400">
-          Para quem é este produto? <span className="font-medium normal-case text-slate-300">— opcional</span>
-        </label>
-        <div className="flex gap-1.5">
-          {GENEROS.map((g) => (
-            <button
-              key={g}
-              type="button"
-              onClick={() => setGenero((atual) => (atual === g ? null : g))}
-              className={[
-                'rounded-full px-3.5 py-2 text-[12px] font-bold transition-colors',
-                genero === g ? 'bg-ink text-white' : 'bg-slate-100 text-slate-500',
-              ].join(' ')}
-            >
-              {g}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* 5. Preço */}
       <div className="grid grid-cols-2 gap-4">
         <Input
@@ -158,10 +155,18 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         />
       </div>
 
-      {/* 6. Opções do produto */}
+      {/* 6. Peso padrão — usado automaticamente por todas as variantes */}
+      <PesoPadraoInput
+        valor={pesoPadraoValor}
+        unidade={pesoPadraoUnidade}
+        onChangeValor={setPesoPadraoValor}
+        onChangeUnidade={setPesoPadraoUnidade}
+      />
+
+      {/* 7. Opções do produto */}
       <VariantEditor state={variantes} onChange={setVariantes} />
 
-      {/* 7. Versões disponíveis / Estoque */}
+      {/* 8. Versões disponíveis / Estoque */}
       <StockSection
         raiz={variantes.raiz}
         filha={variantes.filha}
@@ -172,16 +177,16 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         controlarEstoque={controlarEstoque}
         onControlarEstoqueChange={setControlarEstoque}
         precoBase={Number(preco) || 0}
-        pesoPadrao={maisOpcoes.peso ?? null}
+        pesoPadrao={pesoPadraoKg}
         fotos={fotos}
         onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
         lojaId={lojaId}
       />
 
-      {/* 8. Mais opções */}
-      <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} hasVariants={hasVariants} />
+      {/* 9. Mais opções */}
+      <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
-      {/* 9. Publicar / Guardar — fixo e acessível no mobile */}
+      {/* 10. Publicar / Guardar — fixo e acessível no mobile */}
       <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-slate-100 bg-white/90 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
