@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ChevronDown, ImagePlus, Images } from 'lucide-react';
+import { ChevronDown, ImagePlus, Images, MoreVertical, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
 import { agruparPorRaiz, aplicarPesoATodas, totalEstoque } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
+import { formatarPeso } from '@/lib/peso';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 import { cn } from '@/lib/cn';
 
@@ -133,7 +134,7 @@ export function StockSection({
         </p>
       )}
       {typeof pesoPadrao === 'number' && (
-        <p className="mt-2 pl-1 text-[11px] font-medium text-slate-400">Peso: {pesoPadrao} kg</p>
+        <p className="mt-2 pl-1 text-[11px] font-medium text-slate-400">Peso: {formatarPeso(pesoPadrao)}</p>
       )}
     </div>
   );
@@ -243,14 +244,38 @@ function VersaoRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const ativa = versao.ativa !== false;
   const imagens = versao.imagens ?? [];
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [menuOpen]);
+
+  function handleRemover() {
+    setMenuOpen(false);
+    if (!confirm(`Remover a versão "${label}"? Fica escondida na loja — dá para reativar depois.`)) return;
+    onChange({ ...versao, ativa: false });
+  }
+
+  function handleReativar() {
+    setMenuOpen(false);
+    onChange({ ...versao, ativa: true });
+  }
+
   return (
     <div className={cn('rounded-xl bg-white px-3 py-2 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
+      {/* Linha compacta — só o essencial: nome/cor, preço, peso (quando
+      definido), imagem, estoque e o menu "⋯" para ações menos frequentes. */}
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setExpanded((v) => !v)} className="flex flex-1 items-center gap-1.5 text-left">
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
           {corHex && <ColorDot hex={corHex} />}
           <span className="truncate text-[12px] font-bold text-ink">{label}</span>
@@ -259,7 +284,12 @@ function VersaoRow({
               Indisponível
             </span>
           )}
-          {versao.preco != null && <span className="shrink-0 text-[10px] font-semibold text-slate-400">{versao.preco} MT</span>}
+          <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-slate-400">
+            {versao.preco != null && <span>{versao.preco} MT</span>}
+            {typeof versao.peso === 'number' && (
+              <span>{versao.preco != null ? '· ' : ''}{formatarPeso(versao.peso)}</span>
+            )}
+          </span>
         </button>
 
         {/* Ícone de imagem junto da seta — acesso imediato sem abrir os detalhes. */}
@@ -291,10 +321,60 @@ function VersaoRow({
           value={versao.estoque ?? ''}
           onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
           placeholder="0"
-          className="h-8 w-16 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+          className="h-8 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
         />
+
+        {/* "⋯" — ações menos frequentes (editar detalhes / remover versão).
+        Fica ao lado das outras ações da linha; nunca um ícone de lixo
+        sempre visível. */}
+        <div ref={menuRef} className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Ações da versão"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+          >
+            <MoreVertical size={15} strokeWidth={2.3} />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-20 mt-1.5 w-[168px] overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setExpanded(true);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              >
+                <Pencil size={14} strokeWidth={2.3} className="text-slate-500" />
+                Editar detalhes
+              </button>
+              {ativa ? (
+                <button
+                  type="button"
+                  onClick={handleRemover}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+                >
+                  <Trash2 size={14} strokeWidth={2.3} />
+                  Remover versão
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleReativar}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                >
+                  <RotateCcw size={14} strokeWidth={2.3} className="text-slate-500" />
+                  Reativar versão
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Detalhes menos frequentes — só aparecem ao expandir a versão. */}
       {expanded && (
         <div className="mt-2.5 flex flex-col gap-3 border-t border-slate-100 pt-2.5">
           <div>
@@ -331,7 +411,7 @@ function VersaoRow({
             </div>
             <p className="mt-1.5 text-[10px] font-medium text-slate-400">
               Opcional — deixa em branco para usar{' '}
-              {typeof pesoPadrao === 'number' ? `o peso padrão do produto (${pesoPadrao} kg)` : 'o peso padrão do produto'}.
+              {typeof pesoPadrao === 'number' ? `o peso padrão do produto (${formatarPeso(pesoPadrao)})` : 'o peso padrão do produto'}.
             </p>
             {mostrarAplicarATodas && typeof versao.peso === 'number' && (
               <button
@@ -351,14 +431,6 @@ function VersaoRow({
           >
             <ImagePlus size={13} />
             {imagens.length === 0 ? 'Escolher imagens desta versão (opcional)' : `Editar imagens (${imagens.length})`}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onChange({ ...versao, ativa: !ativa })}
-            className="self-start text-[11px] font-bold text-slate-400 hover:text-red-500"
-          >
-            {ativa ? 'Esta versão não existe — remover' : 'Reativar versão'}
           </button>
         </div>
       )}
