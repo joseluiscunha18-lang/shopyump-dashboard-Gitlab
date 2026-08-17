@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { ChevronDown, ImagePlus, Images, MoreVertical, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
-import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, totalEstoque } from '@/lib/variantes';
+import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, imagensParaVersao, totalEstoque } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
 import { formatarPeso } from '@/lib/peso';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoNeta, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
@@ -30,6 +30,8 @@ export function StockSection({
   fotos,
   onAddFoto,
   lojaId,
+  imagensPorCaracteristica,
+  onChangeImagensCaracteristica,
 }: {
   raiz: ProdutoOpcaoRaiz | null;
   filha: ProdutoOpcaoFilha | null;
@@ -45,6 +47,11 @@ export function StockSection({
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
+  /** Imagens por valor de característica (ex: foto de "Vermelho") — nível
+   *  do meio da hierarquia de imagens, entre a galeria geral e a imagem
+   *  própria de uma versão. Ver `imagensParaVersao()` em lib/variantes.ts. */
+  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
+  onChangeImagensCaracteristica: (nomeCaracteristica: string, valor: string, urls: string[]) => void;
 }) {
   const arvore = raiz && filha ? agruparPorRaiz(raiz, versoes) : null;
 
@@ -74,6 +81,8 @@ export function StockSection({
               fotos={fotos}
               onAddFoto={onAddFoto}
               lojaId={lojaId}
+              imagensPorCaracteristica={imagensPorCaracteristica}
+              onChangeImagensCaracteristica={onChangeImagensCaracteristica}
               onChangeVersao={(chave, next) => onVersoesChange(versoes.map((v) => (v.chave === chave ? next : v)))}
               onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
               mostrarAplicarATodas={versoes.length > 1}
@@ -99,6 +108,7 @@ export function StockSection({
               fotos={fotos}
               onAddFoto={onAddFoto}
               lojaId={lojaId}
+              imagensPorCaracteristica={imagensPorCaracteristica}
               onChange={(next) => {
                 const copy = [...versoes];
                 copy[i] = next;
@@ -111,6 +121,62 @@ export function StockSection({
         </div>
       )}
     </div>
+  );
+}
+
+/** Botão + picker de imagem para um VALOR de característica (ex: a foto de
+ *  "Vermelho"), usado no cabeçalho de RaizGroup/FilhaGroup — nunca no nível
+ *  achatado (uma só característica), porque aí um valor já é uma versão e
+ *  a imagem própria da versão já cobre o caso. */
+function GroupImageButton({
+  label,
+  imagens,
+  fotos,
+  onAddFoto,
+  lojaId,
+  onSave,
+}: {
+  label: string;
+  imagens: string[];
+  fotos: string[];
+  onAddFoto: (url: string) => void;
+  lojaId: string;
+  onSave: (urls: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        title={imagens.length === 0 ? `Foto padrão para todas as versões de "${label}"` : `${imagens.length} foto(s) de "${label}"`}
+        className={cn(
+          'relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-colors active:scale-[0.92]',
+          imagens.length > 0 ? 'ring-1 ring-inset ring-slate-200' : 'bg-white text-slate-400 hover:text-ink'
+        )}
+      >
+        {imagens[0] ? (
+          <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
+        ) : (
+          <ImagePlus size={13} />
+        )}
+      </button>
+      {open && (
+        <VariantImagePicker
+          open
+          onClose={() => setOpen(false)}
+          label={label}
+          lojaId={lojaId}
+          fotosGerais={fotos}
+          selecionadas={imagens}
+          onAddToGaleria={onAddFoto}
+          onSave={onSave}
+        />
+      )}
+    </>
   );
 }
 
@@ -127,6 +193,8 @@ function RaizGroup({
   fotos,
   onAddFoto,
   lojaId,
+  imagensPorCaracteristica,
+  onChangeImagensCaracteristica,
   onChangeVersao,
   onAplicarPesoATodas,
   mostrarAplicarATodas,
@@ -143,6 +211,8 @@ function RaizGroup({
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
+  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
+  onChangeImagensCaracteristica: (nomeCaracteristica: string, valor: string, urls: string[]) => void;
   onChangeVersao: (chave: string, next: ProdutoVersao) => void;
   onAplicarPesoATodas: (peso: number | null) => void;
   mostrarAplicarATodas: boolean;
@@ -150,21 +220,33 @@ function RaizGroup({
   const [expanded, setExpanded] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
   const ehCor = raizNome === 'Cor';
+  // Só faz sentido dar imagem de grupo quando há uma segunda camada — com
+  // uma única característica, o valor já É a versão e a imagem própria da
+  // versão (mais abaixo) já resolve isso sem duplicar o conceito.
+  const imagensDoGrupo = imagensPorCaracteristica?.[raizNome]?.[raizValor] ?? [];
 
   return (
     <div className="rounded-2xl bg-slate-50/70 px-3.5 py-2.5">
-      <button type="button" onClick={() => setExpanded((v) => !v)} className="flex w-full items-center justify-between gap-3">
-        <span className="flex items-center gap-1.5">
+      <div className="flex w-full items-center justify-between gap-2">
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={13} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
           {ehCor && <ColorDot hex={resolverHexCor(raizValor, raizCores)} />}
-          <span className="text-[12px] font-bold text-ink">{raizValor}</span>
-        </span>
+          <span className="truncate text-[12px] font-bold text-ink">{raizValor}</span>
+        </button>
         <span className="shrink-0 text-[11px] font-semibold text-slate-400">
           {versoes.length === 0
             ? `sem ${filha.nome.toLowerCase()}s ainda`
             : `${ativos} ${filha.nome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
-      </button>
+        <GroupImageButton
+          label={raizValor}
+          imagens={imagensDoGrupo}
+          fotos={fotos}
+          onAddFoto={onAddFoto}
+          lojaId={lojaId}
+          onSave={(urls) => onChangeImagensCaracteristica(raizNome, raizValor, urls)}
+        />
+      </div>
 
       {expanded && (
         <div className="mt-2.5 flex flex-col gap-2 border-t border-slate-200/70 pt-2.5">
@@ -174,11 +256,19 @@ function RaizGroup({
             </p>
           )}
 
+          {imagensDoGrupo.length > 0 && versoes.length > 0 && (
+            <p className="text-[10px] font-medium text-slate-400">
+              Estas fotos são usadas em todas as versões de "{raizValor}", a não ser que uma versão tenha imagem
+              própria.
+            </p>
+          )}
+
           {neta
             ? agruparPorFilha(filha, raizValor, versoes).map((grupo) => (
                 <FilhaGroup
                   key={grupo.filhaValor}
                   filhaValor={grupo.filhaValor}
+                  filhaNome={filha.nome}
                   filhaEhCor={filha.nome === 'Cor'}
                   filhaCores={filha.cores}
                   netaNome={neta.nome}
@@ -189,6 +279,8 @@ function RaizGroup({
                   fotos={fotos}
                   onAddFoto={onAddFoto}
                   lojaId={lojaId}
+                  imagensPorCaracteristica={imagensPorCaracteristica}
+                  onChangeImagensCaracteristica={onChangeImagensCaracteristica}
                   onChangeVersao={onChangeVersao}
                   onAplicarPesoATodas={onAplicarPesoATodas}
                   mostrarAplicarATodas={mostrarAplicarATodas}
@@ -205,6 +297,7 @@ function RaizGroup({
                   fotos={fotos}
                   onAddFoto={onAddFoto}
                   lojaId={lojaId}
+                  imagensPorCaracteristica={imagensPorCaracteristica}
                   onChange={(next) => onChangeVersao(v.chave, next)}
                   onAplicarPesoATodas={onAplicarPesoATodas}
                   mostrarAplicarATodas={mostrarAplicarATodas}
@@ -221,6 +314,7 @@ function RaizGroup({
  *  (VersaoRow) recebe estoque. */
 function FilhaGroup({
   filhaValor,
+  filhaNome,
   filhaEhCor,
   filhaCores,
   netaNome,
@@ -231,11 +325,14 @@ function FilhaGroup({
   fotos,
   onAddFoto,
   lojaId,
+  imagensPorCaracteristica,
+  onChangeImagensCaracteristica,
   onChangeVersao,
   onAplicarPesoATodas,
   mostrarAplicarATodas,
 }: {
   filhaValor: string;
+  filhaNome: string;
   filhaEhCor: boolean;
   filhaCores?: Record<string, string>;
   netaNome: string;
@@ -246,27 +343,38 @@ function FilhaGroup({
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
+  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
+  onChangeImagensCaracteristica: (nomeCaracteristica: string, valor: string, urls: string[]) => void;
   onChangeVersao: (chave: string, next: ProdutoVersao) => void;
   onAplicarPesoATodas: (peso: number | null) => void;
   mostrarAplicarATodas: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
+  const imagensDoGrupo = imagensPorCaracteristica?.[filhaNome]?.[filhaValor] ?? [];
 
   return (
     <div className="ml-2 rounded-xl bg-white/70 px-3 py-2 ring-1 ring-inset ring-slate-200/70">
-      <button type="button" onClick={() => setExpanded((v) => !v)} className="flex w-full items-center justify-between gap-3">
-        <span className="flex items-center gap-1.5">
+      <div className="flex w-full items-center justify-between gap-2">
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
           {filhaEhCor && <ColorDot hex={resolverHexCor(filhaValor, filhaCores)} />}
-          <span className="text-[11.5px] font-bold text-ink">{filhaValor}</span>
-        </span>
+          <span className="truncate text-[11.5px] font-bold text-ink">{filhaValor}</span>
+        </button>
         <span className="shrink-0 text-[10.5px] font-semibold text-slate-400">
           {versoes.length === 0
             ? `sem ${netaNome.toLowerCase()}s ainda`
             : `${ativos} ${netaNome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
-      </button>
+        <GroupImageButton
+          label={filhaValor}
+          imagens={imagensDoGrupo}
+          fotos={fotos}
+          onAddFoto={onAddFoto}
+          lojaId={lojaId}
+          onSave={(urls) => onChangeImagensCaracteristica(filhaNome, filhaValor, urls)}
+        />
+      </div>
 
       {expanded && (
         <div className="mt-2 flex flex-col gap-1.5 border-t border-slate-100 pt-2">
@@ -286,6 +394,7 @@ function FilhaGroup({
               fotos={fotos}
               onAddFoto={onAddFoto}
               lojaId={lojaId}
+              imagensPorCaracteristica={imagensPorCaracteristica}
               onChange={(next) => onChangeVersao(v.chave, next)}
               onAplicarPesoATodas={onAplicarPesoATodas}
               mostrarAplicarATodas={mostrarAplicarATodas}
@@ -307,6 +416,7 @@ function VersaoRow({
   fotos,
   onAddFoto,
   lojaId,
+  imagensPorCaracteristica,
   onChange,
   onAplicarPesoATodas,
   mostrarAplicarATodas,
@@ -322,6 +432,7 @@ function VersaoRow({
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
+  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
   onChange: (v: ProdutoVersao) => void;
   onAplicarPesoATodas: (peso: number | null) => void;
   mostrarAplicarATodas: boolean;
@@ -332,7 +443,13 @@ function VersaoRow({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const ativa = versao.ativa !== false;
-  const imagens = versao.imagens ?? [];
+  // Hierarquia completa: imagem própria da versão → imagem herdada da
+  // característica (ex: "Vermelho") → galeria geral do produto. O botão
+  // de imagem mostra sempre o que vai aparecer na loja, mesmo quando a
+  // versão em si não tem imagem própria escolhida.
+  const resolvido = imagensParaVersao(versao, imagensPorCaracteristica, fotos);
+  const imagens = resolvido.imagens;
+  const imagemPropria = resolvido.origem === 'versao';
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -377,18 +494,31 @@ function VersaoRow({
           </span>
         </button>
 
-        {/* Ícone de imagem junto da seta — acesso imediato sem abrir os detalhes. */}
+        {/* Ícone de imagem junto da seta — acesso imediato sem abrir os
+        detalhes. Mostra sempre a imagem que vai aparecer na loja, mesmo
+        quando é herdada (característica ou galeria geral); o anel
+        pontilhado avisa que não é uma escolha própria desta versão. */}
         <button
           type="button"
           onClick={() => setImagePickerOpen(true)}
-          title={imagens.length === 0 ? 'Escolher imagens desta versão' : `${imagens.length} imagem(ns) escolhida(s)`}
+          title={
+            imagens.length === 0
+              ? 'Escolher imagens desta versão'
+              : imagemPropria
+                ? `${imagens.length} imagem(ns) desta versão`
+                : `${imagens.length} imagem(ns) herdada(s) — toca para escolher uma própria`
+          }
           className={cn(
             'relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-colors active:scale-[0.92]',
-            imagens.length > 0 ? 'ring-1 ring-inset ring-slate-200' : 'bg-slate-50 text-slate-400 hover:text-ink'
+            imagens.length > 0
+              ? imagemPropria
+                ? 'ring-1 ring-inset ring-slate-200'
+                : 'ring-1 ring-inset ring-dashed ring-slate-300'
+              : 'bg-slate-50 text-slate-400 hover:text-ink'
           )}
         >
           {imagens[0] ? (
-            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="32px" />
+            <Image src={imagens[0]} alt="" fill className={cn('object-cover', !imagemPropria && 'opacity-70')} sizes="32px" />
           ) : (
             <Images size={15} />
           )}
@@ -515,14 +645,21 @@ function VersaoRow({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setImagePickerOpen(true)}
-            className="flex items-center gap-1.5 self-start text-[11px] font-bold text-slate-400 hover:text-ink"
-          >
-            <ImagePlus size={13} />
-            {imagens.length === 0 ? 'Escolher imagens desta versão (opcional)' : `Editar imagens (${imagens.length})`}
-          </button>
+          <div className="flex flex-col items-start gap-1">
+            <button
+              type="button"
+              onClick={() => setImagePickerOpen(true)}
+              className="flex items-center gap-1.5 self-start text-[11px] font-bold text-slate-400 hover:text-ink"
+            >
+              <ImagePlus size={13} />
+              {imagemPropria ? `Editar imagens (${imagens.length})` : 'Escolher imagem própria para esta versão'}
+            </button>
+            {!imagemPropria && imagens.length > 0 && (
+              <p className="text-[10px] font-medium text-slate-400">
+                Por agora usa {resolvido.origem === 'caracteristica' ? `a foto de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"` : 'a galeria geral do produto'}.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
