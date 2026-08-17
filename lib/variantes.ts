@@ -77,6 +77,39 @@ export function gerarVersoes(
   return versoes;
 }
 
+export type OrigemImagens = 'versao' | 'caracteristica' | 'geral';
+
+/**
+ * Resolve a hierarquia de imagens de uma versão: imagem própria da versão
+ * (mais específica) → imagem do valor da característica (ex: todas as
+ * versões "Vermelho / *" herdam a foto de "Vermelho") → galeria geral do
+ * produto (fallback final, sempre existe se o produto tiver fotos).
+ *
+ * Percorre `versao.valores` na ordem em que foi construído (raiz → filha
+ * → neta — ver `montar()` acima), por isso se, por acaso, mais do que uma
+ * característica tiver imagem própria definida, ganha a mais "externa"
+ * (normalmente a raiz, que é onde a característica visual — tipo Cor —
+ * costuma viver).
+ */
+export function imagensParaVersao(
+  versao: ProdutoVersao,
+  imagensPorCaracteristica: Record<string, Record<string, string[]>> | null | undefined,
+  fotosGerais: string[]
+): { imagens: string[]; origem: OrigemImagens; caracteristica?: string } {
+  if (versao.imagens && versao.imagens.length > 0) {
+    return { imagens: versao.imagens, origem: 'versao' };
+  }
+  if (imagensPorCaracteristica) {
+    for (const [nomeCaracteristica, valorAtual] of Object.entries(versao.valores)) {
+      const imagens = imagensPorCaracteristica[nomeCaracteristica]?.[valorAtual];
+      if (imagens && imagens.length > 0) {
+        return { imagens, origem: 'caracteristica', caracteristica: nomeCaracteristica };
+      }
+    }
+  }
+  return { imagens: fotosGerais, origem: 'geral' };
+}
+
 /** Soma o estoque só das versões ativas. */
 export function totalEstoque(versoes: ProdutoVersao[]): number {
   return versoes.filter((v) => v.ativa !== false).reduce((sum, v) => sum + (typeof v.estoque === 'number' ? v.estoque : 0), 0);
@@ -115,6 +148,71 @@ export function agruparPorFilha(
     filhaValor,
     versoes: versoes.filter((v) => v.valores[filha.nome] === filhaValor),
   }));
+}
+
+/**
+ * Funde, dentro de `versoes`, todas as versões cujo valor em
+ * `nomeCaracteristica` esteja em `valoresAntigos` num único valor
+ * `valorNovo` — usado pela fusão de Género (Masculino + Feminino →
+ * Unissexo), mas escrito de forma genérica para não ficar preso a esse
+ * caso. Duas (ou três) versões que só diferiam nesse valor tornam-se uma:
+ * o estoque é somado, as imagens são unidas (sem duplicar), e
+ * preço/sku/peso ficam com o primeiro valor não-nulo encontrado — nunca
+ * ficam a zero só porque a chave mudou. Versões cujo valor não está em
+ * `valoresAntigos` (ex: uma 4ª opção de género escrita à mão) não são
+ * tocadas.
+ *
+ * O resultado deve ser passado como `existentes` a `gerarVersoes()` a
+ * seguir a atualizar raiz/filha/neta — a chave da versão fundida
+ * (`Object.values(valores).join(' / ')`) é construída da mesma forma que
+ * `gerarVersoes()` constrói a chave da nova combinação "Unissexo", por
+ * isso o reaproveitamento por chave funciona sem precisar de mais nada.
+ */
+export function fundirVersoesPorValor(
+  nomeCaracteristica: string,
+  valoresAntigos: string[],
+  valorNovo: string,
+  versoes: ProdutoVersao[]
+): ProdutoVersao[] {
+  const grupos = new Map<string, ProdutoVersao[]>();
+  const semGrupo: ProdutoVersao[] = [];
+
+  for (const v of versoes) {
+    const valorAtual = v.valores[nomeCaracteristica];
+    if (valorAtual == null || !valoresAntigos.includes(valorAtual)) {
+      semGrupo.push(v);
+      continue;
+    }
+    const resto = { ...v.valores };
+    delete resto[nomeCaracteristica];
+    const chaveGrupo = JSON.stringify(resto);
+    grupos.set(chaveGrupo, [...(grupos.get(chaveGrupo) ?? []), v]);
+  }
+
+  const fundidas: ProdutoVersao[] = [];
+  for (const doGrupo of grupos.values()) {
+    // Se já houver uma versão com o valor novo (ex: já existia "Unissexo"
+    // ao lado de "Masculino"/"Feminino"), essa é a base — mantém-lhe o
+    // preço/sku/peso/imagens em vez dos de uma versão M/F qualquer.
+    const base = doGrupo.find((v) => v.valores[nomeCaracteristica] === valorNovo) ?? doGrupo[0];
+    const novosValores = { ...base.valores, [nomeCaracteristica]: valorNovo };
+    const estoqueTotal = doGrupo.reduce((soma, v) => soma + (typeof v.estoque === 'number' ? v.estoque : 0), 0);
+    const imagens = Array.from(new Set(doGrupo.flatMap((v) => v.imagens ?? [])));
+    const ativa = doGrupo.some((v) => v.ativa !== false);
+
+    fundidas.push({
+      chave: Object.values(novosValores).join(' / '),
+      valores: novosValores,
+      preco: base.preco ?? doGrupo.find((v) => v.preco != null)?.preco ?? null,
+      estoque: doGrupo.some((v) => typeof v.estoque === 'number') ? estoqueTotal : null,
+      sku: base.sku ?? doGrupo.find((v) => v.sku != null)?.sku ?? null,
+      peso: base.peso ?? doGrupo.find((v) => v.peso != null)?.peso ?? null,
+      imagens,
+      ativa,
+    });
+  }
+
+  return [...semGrupo, ...fundidas];
 }
 
 /** Todas as combinações "raizValor / filhaValor" já definidas — usadas pela
