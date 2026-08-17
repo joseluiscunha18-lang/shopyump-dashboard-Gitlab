@@ -178,6 +178,24 @@ export interface ProdutoVariantes {
   neta?: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
 
+  /**
+   * Imagens associadas a um VALOR de uma característica (ex: "Vermelho"
+   * dentro de "Cor"), não a uma versão final — servem de imagem padrão
+   * para todas as versões que tenham esse valor, sem o lojista escolher
+   * a mesma foto em cada combinação (ex: Vermelho/30, Vermelho/32,
+   * Vermelho/34 herdam automaticamente a foto de "Vermelho").
+   *
+   * Chave externa = nome da característica tal como está em
+   * raiz.nome/filha.nome/neta.nome (normalmente a que muda visualmente,
+   * ex: "Cor" — mas não é obrigatório ser a raiz). Chave interna = valor
+   * dentro dessa característica (ex: "Vermelho").
+   *
+   * Nunca é a única fonte: ver `imagensParaVersao()` em lib/variantes.ts
+   * para a hierarquia completa (imagem própria da versão → imagem da
+   * característica → galeria geral do produto).
+   */
+  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
+
   /** @deprecated estrutura anterior (lista plana de opções + produto
    *  cartesiano). Mantido só para não partir produtos gravados antes
    *  desta migração — código novo usa raiz/filha/versoes. */
