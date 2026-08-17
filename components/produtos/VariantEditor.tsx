@@ -59,9 +59,15 @@ export function VariantEditor({
     aplicar({ ...state.raiz, valores }, state.filha);
   }
 
-  function setRaizCorPersonalizada(nome: string, hex: string) {
+  // Marcar/desmarcar uma cor tem de mexer em valores e em cores na mesma
+  // atualização — se fossem duas chamadas a aplicar() separadas, a segunda
+  // partiria sempre do state.raiz de antes do clique e anulava a primeira.
+  function toggleRaizCor(nome: string, hex?: string) {
     if (!state.raiz) return;
-    aplicar({ ...state.raiz, cores: { ...(state.raiz.cores ?? {}), [nome]: hex } }, state.filha);
+    const jaTem = state.raiz.valores.includes(nome);
+    const valores = jaTem ? state.raiz.valores.filter((v) => v !== nome) : [...state.raiz.valores, nome];
+    const cores = !jaTem && hex ? { ...(state.raiz.cores ?? {}), [nome]: hex } : state.raiz.cores;
+    aplicar({ ...state.raiz, valores, cores }, state.filha);
   }
 
   function setFilhaComum(mesmosValoresParaTodas: boolean) {
@@ -90,9 +96,26 @@ export function VariantEditor({
     });
   }
 
-  function setFilhaCorPersonalizada(nome: string, hex: string) {
+  function toggleFilhaComumCor(nome: string, hex?: string) {
     if (!state.filha) return;
-    aplicar(state.raiz, { ...state.filha, cores: { ...(state.filha.cores ?? {}), [nome]: hex } });
+    const atuais = state.filha.valoresComuns ?? [];
+    const jaTem = atuais.includes(nome);
+    const valoresComuns = jaTem ? atuais.filter((v) => v !== nome) : [...atuais, nome];
+    const cores = !jaTem && hex ? { ...(state.filha.cores ?? {}), [nome]: hex } : state.filha.cores;
+    aplicar(state.raiz, { ...state.filha, valoresComuns, cores });
+  }
+
+  function toggleFilhaPorRaizCor(raizValor: string, nome: string, hex?: string) {
+    if (!state.filha) return;
+    const atuais = state.filha.valoresPorRaiz?.[raizValor] ?? [];
+    const jaTem = atuais.includes(nome);
+    const valores = jaTem ? atuais.filter((v) => v !== nome) : [...atuais, nome];
+    const cores = !jaTem && hex ? { ...(state.filha.cores ?? {}), [nome]: hex } : state.filha.cores;
+    aplicar(state.raiz, {
+      ...state.filha,
+      valoresPorRaiz: { ...(state.filha.valoresPorRaiz ?? {}), [raizValor]: valores },
+      cores,
+    });
   }
 
   const podeMostrarToggle = (state.raiz?.valores.length ?? 0) >= 2;
@@ -134,7 +157,7 @@ export function VariantEditor({
               placeholder={`+ ${state.raiz.nome}`}
               colorMode={raizECor}
               coresPersonalizadas={state.raiz.cores}
-              onSetCorPersonalizada={setRaizCorPersonalizada}
+              onToggleCor={toggleRaizCor}
               sugestoesExtras={raizECor ? undefined : sugestoesParaCaracteristica(state.raiz.nome)}
             />
           </div>
@@ -198,7 +221,7 @@ export function VariantEditor({
                 placeholder={`+ ${state.filha.nome}`}
                 colorMode={filhaECor}
                 coresPersonalizadas={state.filha.cores}
-                onSetCorPersonalizada={setFilhaCorPersonalizada}
+                onToggleCor={toggleFilhaComumCor}
                 sugestoesExtras={filhaECor ? undefined : sugestoesParaCaracteristica(state.filha.nome)}
               />
             ) : (
@@ -216,7 +239,7 @@ export function VariantEditor({
                       placeholder={`+ ${state.filha!.nome}`}
                       colorMode={filhaECor}
                       coresPersonalizadas={state.filha!.cores}
-                      onSetCorPersonalizada={setFilhaCorPersonalizada}
+                      onToggleCor={(nome, hex) => toggleFilhaPorRaizCor(raizValor, nome, hex)}
                       sugestoesExtras={filhaECor ? undefined : sugestoesParaCaracteristica(state.filha!.nome)}
                     />
                   </div>
