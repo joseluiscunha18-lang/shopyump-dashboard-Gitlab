@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Switch } from '@/components/ui/Switch';
 import { PhotoUploader } from '@/components/produtos/PhotoUploader';
 import { CategoryPicker } from '@/components/produtos/CategoryPicker';
 import { VariantEditor, type VariantesState } from '@/components/produtos/VariantEditor';
@@ -27,6 +28,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const [variantes, setVariantes] = useState<VariantesState>({
     raiz: produto?.variantes?.raiz ?? null,
     filha: produto?.variantes?.filha ?? null,
+    neta: produto?.variantes?.neta ?? null,
     versoes: produto?.variantes?.versoes ?? [],
   });
 
@@ -59,7 +61,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const router = useRouter();
   const { show } = useToast();
 
-  const hasVariants = !!variantes.raiz || !!variantes.filha;
+  const hasVariants = !!variantes.raiz || !!variantes.filha || !!variantes.neta;
 
   const valid = useMemo(
     () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
@@ -71,13 +73,18 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     if (!valid) return;
     setSaving(true);
 
-    const estoque = hasVariants
-      ? totalEstoque(variantes.versoes)
-      : controlarEstoque
-        ? estoqueSimples === ''
+    // "Controlar estoque" é um interruptor único, definido antes de "Opções
+    // do produto": quando desligado, o produto fica sempre disponível
+    // (estoque null), quer tenha variantes ou não. Os valores já digitados
+    // por combinação continuam guardados em `variantes.versoes` mesmo
+    // desligado — só deixam de contar para o total.
+    const estoque = !controlarEstoque
+      ? null
+      : hasVariants
+        ? totalEstoque(variantes.versoes)
+        : estoqueSimples === ''
           ? null
-          : Number(estoqueSimples)
-        : null;
+          : Number(estoqueSimples);
 
     const maisOpcoesFinal: ProdutoMaisOpcoes = { ...maisOpcoes, peso: pesoPadraoKg };
 
@@ -91,7 +98,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       genero,
       fotos,
       variantes: hasVariants
-        ? { raiz: variantes.raiz, filha: variantes.filha, versoes: variantes.versoes }
+        ? { raiz: variantes.raiz, filha: variantes.filha, neta: variantes.neta, versoes: variantes.versoes }
         : null,
       estoque,
       mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoesFinal : null,
@@ -155,7 +162,41 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         />
       </div>
 
-      {/* 6. Peso padrão — usado automaticamente por todas as variantes */}
+      {/* 6. Estoque — interruptor único, antes de "Opções do produto" para
+      quem publica um produto simples nem precisar de pensar em estoque. */}
+      <div>
+        <div className="mb-2 flex items-center justify-between pl-1">
+          <h3 className="text-[13px] font-black text-ink">Estoque</h3>
+          <label className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-400">Controlar estoque</span>
+            <Switch checked={controlarEstoque} onChange={setControlarEstoque} ariaLabel="Controlar estoque" size="sm" />
+          </label>
+        </div>
+
+        {controlarEstoque && !hasVariants && (
+          <Input
+            type="number"
+            min={0}
+            value={estoqueSimples}
+            onChange={(e) => setEstoqueSimples(e.target.value)}
+            placeholder="0"
+          />
+        )}
+
+        {controlarEstoque && hasVariants && (
+          <p className="pl-1 text-[11px] font-medium text-slate-400">
+            Define o estoque de cada combinação mais abaixo, em "Opções do produto".
+          </p>
+        )}
+
+        {!controlarEstoque && (
+          <p className="pl-1 text-[11px] font-medium text-slate-400">
+            O produto fica sempre disponível, sem limite de quantidade.
+          </p>
+        )}
+      </div>
+
+      {/* 7. Peso padrão — usado automaticamente por todas as variantes */}
       <PesoPadraoInput
         valor={pesoPadraoValor}
         unidade={pesoPadraoUnidade}
@@ -163,30 +204,30 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         onChangeUnidade={setPesoPadraoUnidade}
       />
 
-      {/* 7. Opções do produto */}
+      {/* 8. Opções do produto */}
       <VariantEditor state={variantes} onChange={setVariantes} />
 
-      {/* 8. Versões disponíveis / Estoque */}
-      <StockSection
-        raiz={variantes.raiz}
-        filha={variantes.filha}
-        versoes={variantes.versoes}
-        onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
-        estoqueSimples={estoqueSimples}
-        onEstoqueSimplesChange={setEstoqueSimples}
-        controlarEstoque={controlarEstoque}
-        onControlarEstoqueChange={setControlarEstoque}
-        precoBase={Number(preco) || 0}
-        pesoPadrao={pesoPadraoKg}
-        fotos={fotos}
-        onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
-        lojaId={lojaId}
-      />
+      {/* 9. Versões disponíveis / Estoque por combinação — só faz sentido com opções definidas */}
+      {hasVariants && (
+        <StockSection
+          raiz={variantes.raiz}
+          filha={variantes.filha}
+          neta={variantes.neta}
+          versoes={variantes.versoes}
+          onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
+          controlarEstoque={controlarEstoque}
+          precoBase={Number(preco) || 0}
+          pesoPadrao={pesoPadraoKg}
+          fotos={fotos}
+          onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
+          lojaId={lojaId}
+        />
+      )}
 
-      {/* 9. Mais opções */}
+      {/* 10. Mais opções */}
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
-      {/* 10. Publicar / Guardar — fixo e acessível no mobile */}
+      {/* 11. Publicar / Guardar — fixo e acessível no mobile */}
       <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-slate-100 bg-white/90 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
