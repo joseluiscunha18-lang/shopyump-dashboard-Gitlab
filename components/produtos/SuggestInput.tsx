@@ -5,12 +5,27 @@ import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { CORES_SUGERIDAS, resolverHexCor } from '@/lib/cores';
 
+/** Garante que só um painel de sugestões fica aberto de cada vez — sem
+ *  isto, dois campos (ex: "Cor" e "Tamanho") podem abrir os painéis um
+ *  por cima do outro e o toque do vendedor acerta no campo errado. */
+let idAtivo = 0;
+const OPEN_EVENT = 'shopyump:suggest-input-open';
+
+function alturaVisivel() {
+  if (typeof window === 'undefined') return 0;
+  // window.visualViewport encolhe quando o teclado virtual abre — usar isto
+  // em vez de innerHeight é o que permite decidir "abrir para cima" quando
+  // o teclado está a tapar a parte de baixo do ecrã.
+  return window.visualViewport?.height ?? window.innerHeight;
+}
+
 /**
  * Campo de valores de opção (ex: cores, tamanhos) com um painel de
  * sugestões flutuante — aparece já ao tocar no campo vazio, e filtra em
  * tempo real enquanto o vendedor digita, como uma pesquisa rápida sem
- * abrir página separada. Em modo cor, cada sugestão e cada chip mostra
- * uma bolinha da cor real; cores fora da biblioteca sugerida podem ser
+ * abrir página separada. Abre para cima quando não há espaço por baixo
+ * (ecrã pequeno / teclado aberto). Em modo cor mostra sugestões como
+ * quadradinhos coloridos; cores fora da biblioteca sugerida podem ser
  * criadas com um seletor de cor nativo.
  */
 export function SuggestInput({
@@ -20,6 +35,7 @@ export function SuggestInput({
   colorMode = false,
   coresPersonalizadas,
   onSetCorPersonalizada,
+  sugestoesExtras,
 }: {
   valores: string[];
   onChange: (v: string[]) => void;
@@ -27,24 +43,48 @@ export function SuggestInput({
   colorMode?: boolean;
   coresPersonalizadas?: Record<string, string>;
   onSetCorPersonalizada?: (nome: string, hex: string) => void;
+  /** Sugestões prontas para características que não são "Cor" (ex: Tamanho: PP, P, M...). */
+  sugestoesExtras?: string[];
 }) {
   const [draft, setDraft] = useState('');
   const [open, setOpen] = useState(false);
+  const [abrirParaCima, setAbrirParaCima] = useState(false);
   const [novaCorHex, setNovaCorHex] = useState('#3B82F6');
   const wrapRef = useRef<HTMLDivElement>(null);
+  const myId = useRef(0);
 
   useEffect(() => {
     function onOutside(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
+    function onOtherOpen(e: Event) {
+      const detail = (e as CustomEvent<number>).detail;
+      if (detail !== myId.current) setOpen(false);
+    }
     document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
+    window.addEventListener(OPEN_EVENT, onOtherOpen);
+    return () => {
+      document.removeEventListener('mousedown', onOutside);
+      window.removeEventListener(OPEN_EVENT, onOtherOpen);
+    };
   }, []);
 
-  const biblioteca = useMemo(
-    () => (colorMode ? CORES_SUGERIDAS.map((c) => c.nome) : []),
-    [colorMode]
-  );
+  function abrirPainel() {
+    idAtivo += 1;
+    myId.current = idAtivo;
+    window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: myId.current }));
+
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (rect) {
+      const espacoAbaixo = alturaVisivel() - rect.bottom;
+      // Preferir abrir para cima sempre que o espaço por baixo for
+      // apertado — cobre tanto ecrãs pequenos como o teclado virtual aberto.
+      setAbrirParaCima(espacoAbaixo < 260);
+    }
+    setOpen(true);
+  }
+
+  const biblioteca = useMemo(() => (colorMode ? CORES_SUGERIDAS.map((c) => c.nome) : sugestoesExtras ?? []), [colorMode, sugestoesExtras]);
 
   const sugestoes = useMemo(() => {
     const termo = draft.trim().toLowerCase();
@@ -83,10 +123,10 @@ export function SuggestInput({
         ))}
         <input
           value={draft}
-          onFocus={() => setOpen(true)}
+          onFocus={abrirPainel}
           onChange={(e) => {
             setDraft(e.target.value);
-            setOpen(true);
+            if (!open) abrirPainel();
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ',') {
@@ -105,30 +145,55 @@ export function SuggestInput({
       </div>
 
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-20 max-h-60 w-64 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.14)]">
-          {sugestoes.length === 0 && !draft.trim() && (
-            <p className="px-3 py-2 text-[11px] font-medium text-slate-400">Começa a escrever para pesquisar.</p>
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          className={cn(
+            'absolute left-0 z-30 max-h-60 w-72 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.16)]',
+            abrirParaCima ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+6px)]'
           )}
-          {sugestoes.map((nome) => (
-            <button
-              key={nome}
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => adicionar(nome, colorMode ? resolverHexCor(nome) : undefined)}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50 active:bg-slate-100"
-            >
-              {colorMode && <ColorDot hex={resolverHexCor(nome)} />}
-              {nome}
-            </button>
-          ))}
+        >
+          {sugestoes.length === 0 && !draft.trim() && biblioteca.length === 0 && (
+            <p className="px-2 py-2 text-[11px] font-medium text-slate-400">Começa a escrever para criar um valor.</p>
+          )}
+
+          {colorMode ? (
+            <div className="flex flex-wrap gap-2 p-1">
+              {sugestoes.map((nome) => (
+                <button
+                  key={nome}
+                  type="button"
+                  onClick={() => adicionar(nome, resolverHexCor(nome))}
+                  title={nome}
+                  className="flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-center transition-colors hover:bg-slate-50 active:bg-slate-100"
+                >
+                  <ColorSquare hex={resolverHexCor(nome)} size={28} />
+                  <span className="w-full truncate text-[9px] font-bold text-slate-500">{nome}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            sugestoes.length > 0 && (
+              <div className="flex flex-col gap-0.5">
+                {sugestoes.map((nome) => (
+                  <button
+                    key={nome}
+                    type="button"
+                    onClick={() => adicionar(nome)}
+                    className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50 active:bg-slate-100"
+                  >
+                    {nome}
+                  </button>
+                ))}
+              </div>
+            )
+          )}
 
           {draft.trim() && !correspondeExata && (
-            <div className="mt-0.5 flex items-center gap-1.5 border-t border-slate-100 px-1.5 pt-1.5">
+            <div className="mt-0.5 flex items-center gap-1.5 border-t border-slate-100 p-1.5 pt-1.5">
               {colorMode && (
                 <input
                   type="color"
                   value={novaCorHex}
-                  onMouseDown={(e) => e.stopPropagation()}
                   onChange={(e) => setNovaCorHex(e.target.value)}
                   className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-transparent p-0.5"
                   title="Escolher cor"
@@ -136,7 +201,6 @@ export function SuggestInput({
               )}
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => adicionar(draft, colorMode ? novaCorHex : undefined)}
                 className="flex flex-1 items-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-bold text-ink transition-colors hover:bg-slate-50 active:bg-slate-100"
               >
@@ -151,11 +215,18 @@ export function SuggestInput({
   );
 }
 
-export function ColorDot({ hex }: { hex: string }) {
+/** Quadradinho de cor — mesmo estilo usado nas listagens de produtos, em
+ *  vez de texto puro, para selecionar/identificar a cor de um relance. */
+export function ColorSquare({ hex, size = 16 }: { hex: string; size?: number }) {
   return (
     <span
-      className={cn('h-4 w-4 shrink-0 rounded-full ring-1 ring-inset ring-black/10')}
-      style={{ backgroundColor: hex }}
+      className="shrink-0 rounded-md ring-1 ring-inset ring-black/10"
+      style={{ backgroundColor: hex, width: size, height: size }}
     />
   );
+}
+
+/** Alias compacto do quadradinho, usado inline junto a texto (chips, linhas de versão). */
+export function ColorDot({ hex }: { hex: string }) {
+  return <ColorSquare hex={hex} size={16} />;
 }
