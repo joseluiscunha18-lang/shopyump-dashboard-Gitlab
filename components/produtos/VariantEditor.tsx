@@ -6,6 +6,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { SuggestInput, ColorDot } from '@/components/produtos/SuggestInput';
 import { gerarVersoes } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
+import { sugestoesParaCaracteristica } from '@/lib/sugestoesOpcao';
 import { CARACTERISTICAS_SUGERIDAS } from '@/types/database';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 
@@ -127,12 +128,14 @@ export function VariantEditor({
               </button>
             </div>
             <SuggestInput
+              key={`raiz-${state.raiz.nome}`}
               valores={state.raiz.valores}
               onChange={setRaizValores}
               placeholder={`+ ${state.raiz.nome}`}
               colorMode={raizECor}
               coresPersonalizadas={state.raiz.cores}
               onSetCorPersonalizada={setRaizCorPersonalizada}
+              sugestoesExtras={raizECor ? undefined : sugestoesParaCaracteristica(state.raiz.nome)}
             />
           </div>
         )}
@@ -189,12 +192,14 @@ export function VariantEditor({
 
             {state.filha.mesmosValoresParaTodas || !podeMostrarToggle ? (
               <SuggestInput
+                key={`filha-${state.filha.nome}`}
                 valores={state.filha.valoresComuns ?? []}
                 onChange={setFilhaComuns}
                 placeholder={`+ ${state.filha.nome}`}
                 colorMode={filhaECor}
                 coresPersonalizadas={state.filha.cores}
                 onSetCorPersonalizada={setFilhaCorPersonalizada}
+                sugestoesExtras={filhaECor ? undefined : sugestoesParaCaracteristica(state.filha.nome)}
               />
             ) : (
               <div className="flex flex-col gap-2.5">
@@ -205,12 +210,14 @@ export function VariantEditor({
                       {raizValor}
                     </p>
                     <SuggestInput
+                      key={`filha-${state.filha!.nome}-${raizValor}`}
                       valores={state.filha!.valoresPorRaiz?.[raizValor] ?? []}
                       onChange={(v) => setFilhaPorRaiz(raizValor, v)}
                       placeholder={`+ ${state.filha!.nome}`}
                       colorMode={filhaECor}
                       coresPersonalizadas={state.filha!.cores}
                       onSetCorPersonalizada={setFilhaCorPersonalizada}
+                      sugestoesExtras={filhaECor ? undefined : sugestoesParaCaracteristica(state.filha!.nome)}
                     />
                   </div>
                 ))}
