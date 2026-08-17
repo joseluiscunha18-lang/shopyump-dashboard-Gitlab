@@ -91,9 +91,11 @@ export interface ProdutoCombinacao {
 /**
  * Estrutura de variantes em árvore (ver doc "variacoes_arvore.txt"): o
  * vendedor não pensa em "variantes" — só diz quais versões do produto
- * vende. Até 2 características (raiz + filha, ex: Cor → Tamanho); os
- * valores da filha podem ser diferentes por valor da raiz (o vendedor
- * nunca é obrigado a criar uma combinação que não existe).
+ * vende. Até 3 características (raiz → filha → neta, ex: Cor → Material →
+ * Tamanho); os valores de cada nível podem ser diferentes por combinação
+ * do(s) nível(eis) acima (o vendedor nunca é obrigado a criar uma
+ * combinação que não existe). Só a combinação final (a folha da árvore)
+ * recebe estoque/preço/imagens.
  */
 export const CARACTERISTICAS_SUGERIDAS = ['Cor', 'Tamanho', 'Material', 'Capacidade', 'Género'] as const;
 
@@ -121,6 +123,24 @@ export interface ProdutoOpcaoFilha {
   mesmosValoresParaTodas: boolean;
   valoresComuns?: string[];
   valoresPorRaiz?: Record<string, string[]>;
+  /** Só relevante quando `nome === 'Cor'` — ver ProdutoOpcaoRaiz.cores. */
+  cores?: Record<string, string>;
+}
+
+/**
+ * Terceira característica (ex: "Tamanho" em Cor → Material → Tamanho) — só
+ * existe quando já há raiz e filha. Os seus valores podem ser comuns a
+ * todas as combinações de raiz+filha, ou diferentes por combinação.
+ */
+export interface ProdutoOpcaoNeta {
+  /** ex: "Tamanho" */
+  nome: string;
+  /** true = todas as combinações raiz+filha partilham `valoresComuns`.
+   *  false = cada combinação tem a sua própria lista em `valoresPorCombinacao`. */
+  mesmosValoresParaTodas: boolean;
+  valoresComuns?: string[];
+  /** chave = "raizValor / filhaValor" (mesmo formato usado na chave das versões de 2 níveis). */
+  valoresPorCombinacao?: Record<string, string[]>;
   /** Só relevante quando `nome === 'Cor'` — ver ProdutoOpcaoRaiz.cores. */
   cores?: Record<string, string>;
 }
@@ -155,6 +175,7 @@ export interface ProdutoVersao {
 export interface ProdutoVariantes {
   raiz?: ProdutoOpcaoRaiz | null;
   filha?: ProdutoOpcaoFilha | null;
+  neta?: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
 
   /** @deprecated estrutura anterior (lista plana de opções + produto
