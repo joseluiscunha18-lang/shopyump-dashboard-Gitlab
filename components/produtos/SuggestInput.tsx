@@ -26,7 +26,7 @@ export function SuggestInput({
   placeholder,
   colorMode = false,
   coresPersonalizadas,
-  onSetCorPersonalizada,
+  onToggleCor,
   sugestoesExtras,
 }: {
   valores: string[];
@@ -34,7 +34,11 @@ export function SuggestInput({
   placeholder: string;
   colorMode?: boolean;
   coresPersonalizadas?: Record<string, string>;
-  onSetCorPersonalizada?: (nome: string, hex: string) => void;
+  /** Em modo cor, marcar/desmarcar e (quando marca) guardar o hex têm de
+   *  acontecer como uma única atualização — daí um só callback em vez de
+   *  onChange + "definir cor" separados, que corriam o risco de o segundo
+   *  pisar o primeiro por partirem do mesmo estado anterior ao clique. */
+  onToggleCor?: (nome: string, hex?: string) => void;
   /** Sugestões prontas para características que não são "Cor" (ex: Tamanho: PP, P, M...). */
   sugestoesExtras?: string[];
 }) {
@@ -99,18 +103,24 @@ export function SuggestInput({
   function adicionar(nome: string, hex?: string) {
     const v = nome.trim();
     if (!v || valores.includes(v)) return;
-    onChange([...valores, v]);
-    if (colorMode && hex && onSetCorPersonalizada) onSetCorPersonalizada(v, hex);
+    if (colorMode && onToggleCor) {
+      onToggleCor(v, hex);
+    } else {
+      onChange([...valores, v]);
+    }
     setDraft('');
     setNovaCorHex('#3B82F6');
   }
 
   function alternar(nome: string, hex?: string) {
+    if (colorMode && onToggleCor) {
+      onToggleCor(nome, hex);
+      return;
+    }
     if (valores.includes(nome)) {
       onChange(valores.filter((x) => x !== nome));
     } else {
       onChange([...valores, nome]);
-      if (hex && onSetCorPersonalizada) onSetCorPersonalizada(nome, hex);
     }
   }
 
