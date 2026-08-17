@@ -4,25 +4,26 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { SuggestInput, ColorDot } from '@/components/produtos/SuggestInput';
-import { gerarVersoes } from '@/lib/variantes';
+import { combinacoesRaizFilha, gerarVersoes } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
 import { sugestoesParaCaracteristica } from '@/lib/sugestoesOpcao';
 import { CARACTERISTICAS_SUGERIDAS } from '@/types/database';
-import type { ProdutoOpcaoFilha, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
+import type { ProdutoOpcaoFilha, ProdutoOpcaoNeta, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 
 export interface VariantesState {
   raiz: ProdutoOpcaoRaiz | null;
   filha: ProdutoOpcaoFilha | null;
+  neta: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
 }
 
 /**
  * "Opções do produto" — o vendedor nunca vê a palavra "variante". Define
- * no máximo 2 características (raiz + filha, ex: Cor → Tamanho); os
- * valores da filha podem ser diferentes por valor da raiz, para nunca
- * criar uma versão que o vendedor não disse que existe. As versões
- * resultantes (preço/estoque/peso/imagens) são editadas mais abaixo, em
- * "Versões disponíveis" (StockSection).
+ * no máximo 3 características (raiz → filha → neta, ex: Cor → Material →
+ * Tamanho); os valores de cada nível podem ser diferentes por combinação
+ * do(s) nível(eis) acima, para nunca criar uma versão que o vendedor não
+ * disse que existe. As versões resultantes (preço/estoque/peso/imagens)
+ * são editadas mais abaixo, em "Versões disponíveis" (StockSection).
  */
 export function VariantEditor({
   state,
@@ -31,32 +32,41 @@ export function VariantEditor({
   state: VariantesState;
   onChange: (next: VariantesState) => void;
 }) {
-  const [pickerAlvo, setPickerAlvo] = useState<'raiz' | 'filha' | null>(null);
+  const [pickerAlvo, setPickerAlvo] = useState<'raiz' | 'filha' | 'neta' | null>(null);
 
-  function aplicar(raiz: ProdutoOpcaoRaiz | null, filha: ProdutoOpcaoFilha | null) {
-    onChange({ raiz, filha, versoes: gerarVersoes(raiz, filha, state.versoes) });
+  function aplicar(raiz: ProdutoOpcaoRaiz | null, filha: ProdutoOpcaoFilha | null, neta: ProdutoOpcaoNeta | null) {
+    onChange({ raiz, filha, neta, versoes: gerarVersoes(raiz, filha, neta, state.versoes) });
   }
 
   function escolherCaracteristica(nome: string) {
     if (pickerAlvo === 'raiz') {
-      aplicar({ nome, valores: [] }, state.filha);
+      aplicar({ nome, valores: [] }, state.filha, state.neta);
     } else if (pickerAlvo === 'filha') {
-      aplicar(state.raiz, { nome, mesmosValoresParaTodas: true, valoresComuns: [] });
+      aplicar(state.raiz, { nome, mesmosValoresParaTodas: true, valoresComuns: [] }, state.neta);
+    } else if (pickerAlvo === 'neta') {
+      aplicar(state.raiz, state.filha, { nome, mesmosValoresParaTodas: true, valoresComuns: [] });
     }
     setPickerAlvo(null);
   }
 
+  // Remover um nível arrasta consigo os níveis abaixo — os valores destes
+  // dependem sempre da combinação dos níveis acima, por isso deixam de
+  // fazer sentido sozinhos.
   function removerRaiz() {
-    aplicar(null, state.filha);
+    aplicar(null, state.filha, null);
   }
 
   function removerFilha() {
-    aplicar(state.raiz, null);
+    aplicar(state.raiz, null, null);
+  }
+
+  function removerNeta() {
+    aplicar(state.raiz, state.filha, null);
   }
 
   function setRaizValores(valores: string[]) {
     if (!state.raiz) return;
-    aplicar({ ...state.raiz, valores }, state.filha);
+    aplicar({ ...state.raiz, valores }, state.filha, state.neta);
   }
 
   // Marcar/desmarcar uma cor tem de mexer em valores e em cores na mesma
@@ -67,33 +77,34 @@ export function VariantEditor({
     const jaTem = state.raiz.valores.includes(nome);
     const valores = jaTem ? state.raiz.valores.filter((v) => v !== nome) : [...state.raiz.valores, nome];
     const cores = !jaTem && hex ? { ...(state.raiz.cores ?? {}), [nome]: hex } : state.raiz.cores;
-    aplicar({ ...state.raiz, valores, cores }, state.filha);
+    aplicar({ ...state.raiz, valores, cores }, state.filha, state.neta);
   }
 
   function setFilhaComum(mesmosValoresParaTodas: boolean) {
     if (!state.filha) return;
     if (mesmosValoresParaTodas) {
       const uniao = Array.from(new Set(Object.values(state.filha.valoresPorRaiz ?? {}).flat()));
-      aplicar(state.raiz, { ...state.filha, mesmosValoresParaTodas: true, valoresComuns: uniao });
+      aplicar(state.raiz, { ...state.filha, mesmosValoresParaTodas: true, valoresComuns: uniao }, state.neta);
     } else {
       const valoresPorRaiz = Object.fromEntries(
         (state.raiz?.valores ?? []).map((v) => [v, [...(state.filha!.valoresComuns ?? [])]])
       );
-      aplicar(state.raiz, { ...state.filha, mesmosValoresParaTodas: false, valoresPorRaiz });
+      aplicar(state.raiz, { ...state.filha, mesmosValoresParaTodas: false, valoresPorRaiz }, state.neta);
     }
   }
 
   function setFilhaComuns(valores: string[]) {
     if (!state.filha) return;
-    aplicar(state.raiz, { ...state.filha, valoresComuns: valores });
+    aplicar(state.raiz, { ...state.filha, valoresComuns: valores }, state.neta);
   }
 
   function setFilhaPorRaiz(raizValor: string, valores: string[]) {
     if (!state.filha) return;
-    aplicar(state.raiz, {
-      ...state.filha,
-      valoresPorRaiz: { ...(state.filha.valoresPorRaiz ?? {}), [raizValor]: valores },
-    });
+    aplicar(
+      state.raiz,
+      { ...state.filha, valoresPorRaiz: { ...(state.filha.valoresPorRaiz ?? {}), [raizValor]: valores } },
+      state.neta
+    );
   }
 
   function toggleFilhaComumCor(nome: string, hex?: string) {
@@ -102,7 +113,7 @@ export function VariantEditor({
     const jaTem = atuais.includes(nome);
     const valoresComuns = jaTem ? atuais.filter((v) => v !== nome) : [...atuais, nome];
     const cores = !jaTem && hex ? { ...(state.filha.cores ?? {}), [nome]: hex } : state.filha.cores;
-    aplicar(state.raiz, { ...state.filha, valoresComuns, cores });
+    aplicar(state.raiz, { ...state.filha, valoresComuns, cores }, state.neta);
   }
 
   function toggleFilhaPorRaizCor(raizValor: string, nome: string, hex?: string) {
@@ -111,16 +122,71 @@ export function VariantEditor({
     const jaTem = atuais.includes(nome);
     const valores = jaTem ? atuais.filter((v) => v !== nome) : [...atuais, nome];
     const cores = !jaTem && hex ? { ...(state.filha.cores ?? {}), [nome]: hex } : state.filha.cores;
-    aplicar(state.raiz, {
-      ...state.filha,
-      valoresPorRaiz: { ...(state.filha.valoresPorRaiz ?? {}), [raizValor]: valores },
+    aplicar(
+      state.raiz,
+      { ...state.filha, valoresPorRaiz: { ...(state.filha.valoresPorRaiz ?? {}), [raizValor]: valores }, cores },
+      state.neta
+    );
+  }
+
+  // --- Neta (3ª característica) — mesmo padrão da filha, mas os valores
+  // "por combinação" usam a chave "raizValor / filhaValor" em vez de só
+  // o valor da raiz, porque dependem dos dois níveis acima.
+  function setNetaComum(mesmosValoresParaTodas: boolean) {
+    if (!state.neta) return;
+    if (mesmosValoresParaTodas) {
+      const uniao = Array.from(new Set(Object.values(state.neta.valoresPorCombinacao ?? {}).flat()));
+      aplicar(state.raiz, state.filha, { ...state.neta, mesmosValoresParaTodas: true, valoresComuns: uniao });
+    } else {
+      const combos = combinacoesRaizFilha(state.raiz, state.filha);
+      const valoresPorCombinacao = Object.fromEntries(
+        combos.map((c) => [c.chave, [...(state.neta!.valoresComuns ?? [])]])
+      );
+      aplicar(state.raiz, state.filha, { ...state.neta, mesmosValoresParaTodas: false, valoresPorCombinacao });
+    }
+  }
+
+  function setNetaComuns(valores: string[]) {
+    if (!state.neta) return;
+    aplicar(state.raiz, state.filha, { ...state.neta, valoresComuns: valores });
+  }
+
+  function setNetaPorCombinacao(chave: string, valores: string[]) {
+    if (!state.neta) return;
+    aplicar(state.raiz, state.filha, {
+      ...state.neta,
+      valoresPorCombinacao: { ...(state.neta.valoresPorCombinacao ?? {}), [chave]: valores },
+    });
+  }
+
+  function toggleNetaComumCor(nome: string, hex?: string) {
+    if (!state.neta) return;
+    const atuais = state.neta.valoresComuns ?? [];
+    const jaTem = atuais.includes(nome);
+    const valoresComuns = jaTem ? atuais.filter((v) => v !== nome) : [...atuais, nome];
+    const cores = !jaTem && hex ? { ...(state.neta.cores ?? {}), [nome]: hex } : state.neta.cores;
+    aplicar(state.raiz, state.filha, { ...state.neta, valoresComuns, cores });
+  }
+
+  function toggleNetaPorCombinacaoCor(chave: string, nome: string, hex?: string) {
+    if (!state.neta) return;
+    const atuais = state.neta.valoresPorCombinacao?.[chave] ?? [];
+    const jaTem = atuais.includes(nome);
+    const valores = jaTem ? atuais.filter((v) => v !== nome) : [...atuais, nome];
+    const cores = !jaTem && hex ? { ...(state.neta.cores ?? {}), [nome]: hex } : state.neta.cores;
+    aplicar(state.raiz, state.filha, {
+      ...state.neta,
+      valoresPorCombinacao: { ...(state.neta.valoresPorCombinacao ?? {}), [chave]: valores },
       cores,
     });
   }
 
-  const podeMostrarToggle = (state.raiz?.valores.length ?? 0) >= 2;
+  const podeMostrarToggleFilha = (state.raiz?.valores.length ?? 0) >= 2;
+  const combosRaizFilha = combinacoesRaizFilha(state.raiz, state.filha);
+  const podeMostrarToggleNeta = combosRaizFilha.length >= 2;
   const raizECor = state.raiz?.nome === 'Cor';
   const filhaECor = state.filha?.nome === 'Cor';
+  const netaECor = state.neta?.nome === 'Cor';
 
   return (
     <div>
@@ -189,7 +255,7 @@ export function VariantEditor({
               </p>
             )}
 
-            {podeMostrarToggle && (
+            {podeMostrarToggleFilha && (
               <div className="mb-3">
                 <p className="mb-1.5 text-[11px] font-semibold text-slate-500">
                   Os valores de {state.filha.nome} são iguais para todas as {state.raiz?.nome}?
@@ -213,7 +279,7 @@ export function VariantEditor({
               </div>
             )}
 
-            {state.filha.mesmosValoresParaTodas || !podeMostrarToggle ? (
+            {state.filha.mesmosValoresParaTodas || !podeMostrarToggleFilha ? (
               <SuggestInput
                 key={`filha-${state.filha.nome}`}
                 valores={state.filha.valoresComuns ?? []}
@@ -248,11 +314,94 @@ export function VariantEditor({
             )}
           </div>
         )}
+
+        {state.raiz && state.filha && !state.neta && (
+          <button
+            type="button"
+            onClick={() => setPickerAlvo('neta')}
+            className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-3.5 text-[12px] font-bold text-slate-500 transition-colors hover:border-slate-300 hover:text-ink active:scale-[0.99]"
+          >
+            <Plus size={15} /> Adicionar mais uma característica (opcional)
+          </button>
+        )}
+
+        {state.neta && (
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">{state.neta.nome}</span>
+              <button type="button" onClick={removerNeta} className="text-[11px] font-bold text-slate-400 hover:text-red-500">
+                Remover
+              </button>
+            </div>
+
+            {podeMostrarToggleNeta && (
+              <div className="mb-3">
+                <p className="mb-1.5 text-[11px] font-semibold text-slate-500">
+                  Os valores de {state.neta.nome} são iguais para todas as combinações de {state.raiz?.nome} +{' '}
+                  {state.filha?.nome}?
+                </p>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setNetaComum(true)} className={pillClass(state.neta.mesmosValoresParaTodas)}>
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNetaComum(false)}
+                    className={pillClass(!state.neta.mesmosValoresParaTodas)}
+                  >
+                    Não, cada combinação tem os seus
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {state.neta.mesmosValoresParaTodas || !podeMostrarToggleNeta ? (
+              <SuggestInput
+                key={`neta-${state.neta.nome}`}
+                valores={state.neta.valoresComuns ?? []}
+                onChange={setNetaComuns}
+                placeholder={`+ ${state.neta.nome}`}
+                colorMode={netaECor}
+                coresPersonalizadas={state.neta.cores}
+                onToggleCor={toggleNetaComumCor}
+                sugestoesExtras={netaECor ? undefined : sugestoesParaCaracteristica(state.neta.nome)}
+              />
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {combosRaizFilha.map((combo) => (
+                  <div key={combo.chave}>
+                    <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      {raizECor && <ColorDot hex={resolverHexCor(combo.raizValor, state.raiz?.cores)} />}
+                      {filhaECor && <ColorDot hex={resolverHexCor(combo.filhaValor, state.filha?.cores)} />}
+                      {combo.raizValor} · {combo.filhaValor}
+                    </p>
+                    <SuggestInput
+                      key={`neta-${state.neta!.nome}-${combo.chave}`}
+                      valores={state.neta!.valoresPorCombinacao?.[combo.chave] ?? []}
+                      onChange={(v) => setNetaPorCombinacao(combo.chave, v)}
+                      placeholder={`+ ${state.neta!.nome}`}
+                      colorMode={netaECor}
+                      coresPersonalizadas={state.neta!.cores}
+                      onToggleCor={(nome, hex) => toggleNetaPorCombinacaoCor(combo.chave, nome, hex)}
+                      sugestoesExtras={netaECor ? undefined : sugestoesParaCaracteristica(state.neta!.nome)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Sheet open={pickerAlvo !== null} onClose={() => setPickerAlvo(null)} title="Qual característica diferencia o produto?">
         <CaracteristicaPicker
-          excluir={pickerAlvo === 'filha' && state.raiz ? state.raiz.nome : undefined}
+          excluir={
+            pickerAlvo === 'filha' && state.raiz
+              ? [state.raiz.nome]
+              : pickerAlvo === 'neta'
+                ? [state.raiz?.nome, state.filha?.nome].filter((n): n is string => !!n)
+                : []
+          }
           onPick={escolherCaracteristica}
         />
       </Sheet>
@@ -267,11 +416,11 @@ function pillClass(active: boolean) {
   ].join(' ');
 }
 
-function CaracteristicaPicker({ excluir, onPick }: { excluir?: string; onPick: (nome: string) => void }) {
+function CaracteristicaPicker({ excluir, onPick }: { excluir?: string[]; onPick: (nome: string) => void }) {
   const [outraAberta, setOutraAberta] = useState(false);
   const [outraTexto, setOutraTexto] = useState('');
 
-  const opcoes = CARACTERISTICAS_SUGERIDAS.filter((n) => n !== excluir);
+  const opcoes = CARACTERISTICAS_SUGERIDAS.filter((n) => !excluir?.includes(n));
 
   return (
     <div className="flex flex-col gap-1.5 pb-4">
@@ -316,5 +465,3 @@ function CaracteristicaPicker({ excluir, onPick }: { excluir?: string; onPick: (
     </div>
   );
 }
-
-
