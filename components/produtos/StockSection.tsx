@@ -3,25 +3,28 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronDown, ImagePlus, Images, MoreVertical, Pencil, RotateCcw, Trash2 } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Switch } from '@/components/ui/Switch';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
-import { agruparPorRaiz, aplicarPesoATodas, totalEstoque } from '@/lib/variantes';
+import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, totalEstoque } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
 import { formatarPeso } from '@/lib/peso';
-import type { ProdutoOpcaoFilha, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
+import type { ProdutoOpcaoFilha, ProdutoOpcaoNeta, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 import { cn } from '@/lib/cn';
 
+/**
+ * "Versões disponíveis" — só é montado quando o produto tem opções (raiz
+ * e/ou filha). O controlo geral de "Controlar estoque" vive no
+ * ProductForm, antes de "Opções do produto"; aqui só decidimos se o
+ * campo de estoque de cada combinação final aparece ou não — os valores
+ * nunca são apagados quando o estoque está desativado, só escondidos.
+ */
 export function StockSection({
   raiz,
   filha,
+  neta,
   versoes,
   onVersoesChange,
-  estoqueSimples,
-  onEstoqueSimplesChange,
   controlarEstoque,
-  onControlarEstoqueChange,
   precoBase,
   pesoPadrao,
   fotos,
@@ -30,111 +33,82 @@ export function StockSection({
 }: {
   raiz: ProdutoOpcaoRaiz | null;
   filha: ProdutoOpcaoFilha | null;
+  neta: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
   onVersoesChange: (v: ProdutoVersao[]) => void;
-  estoqueSimples: string;
-  onEstoqueSimplesChange: (v: string) => void;
+  /** Controla só a visibilidade do campo de estoque de cada combinação — vem do topo do formulário. */
   controlarEstoque: boolean;
-  onControlarEstoqueChange: (v: boolean) => void;
   precoBase: number;
-  /** Peso padrão do produto (kg) — só é relevante quando o produto não tem versões. */
+  /** Peso padrão do produto (kg) — usado como placeholder quando a versão não tem peso próprio. */
   pesoPadrao?: number | null;
   /** Galeria geral do produto — cada versão escolhe imagens daqui, nunca envia de novo. */
   fotos: string[];
   onAddFoto: (url: string) => void;
   lojaId: string;
 }) {
-  const hasVariants = !!raiz || !!filha;
-
-  if (hasVariants) {
-    const arvore = raiz && filha ? agruparPorRaiz(raiz, versoes) : null;
-
-    return (
-      <div>
-        <div className="mb-2 flex items-center justify-between pl-1">
-          <h3 className="text-[13px] font-black text-ink">Versões disponíveis</h3>
-          <span className="text-[11px] font-bold text-slate-400">{totalEstoque(versoes)} unidades no total</span>
-        </div>
-
-        {arvore ? (
-          <div className="flex flex-col gap-2">
-            {arvore.map((grupo) => (
-              <RaizGroup
-                key={grupo.raizValor}
-                raizValor={grupo.raizValor}
-                raizNome={raiz!.nome}
-                raizCores={raiz!.cores}
-                filhaNome={filha!.nome}
-                versoes={grupo.versoes}
-                precoBase={precoBase}
-                pesoPadrao={pesoPadrao}
-                fotos={fotos}
-                onAddFoto={onAddFoto}
-                lojaId={lojaId}
-                onChangeVersao={(chave, next) => onVersoesChange(versoes.map((v) => (v.chave === chave ? next : v)))}
-                onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
-                mostrarAplicarATodas={versoes.length > 1}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {versoes.length === 0 && (
-              <p className="rounded-xl bg-slate-50 px-3.5 py-3 text-center text-[11px] font-semibold text-slate-400">
-                Adiciona valores em "Opções do produto" acima para gerar as versões.
-              </p>
-            )}
-            {versoes.map((v, i) => (
-              <VersaoRow
-                key={v.chave}
-                label={v.chave}
-                corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
-                versao={v}
-                precoBase={precoBase}
-                pesoPadrao={pesoPadrao}
-                fotos={fotos}
-                onAddFoto={onAddFoto}
-                lojaId={lojaId}
-                onChange={(next) => {
-                  const copy = [...versoes];
-                  copy[i] = next;
-                  onVersoesChange(copy);
-                }}
-                onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
-                mostrarAplicarATodas={versoes.length > 1}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const arvore = raiz && filha ? agruparPorRaiz(raiz, versoes) : null;
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between pl-1">
-        <h3 className="text-[13px] font-black text-ink">Estoque</h3>
-        <label className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-400">Controlar estoque</span>
-          <Switch checked={controlarEstoque} onChange={onControlarEstoqueChange} ariaLabel="Controlar estoque" size="sm" />
-        </label>
+        <h3 className="text-[13px] font-black text-ink">Versões disponíveis</h3>
+        {controlarEstoque && (
+          <span className="text-[11px] font-bold text-slate-400">{totalEstoque(versoes)} unidades no total</span>
+        )}
       </div>
-      {controlarEstoque && (
-        <Input
-          type="number"
-          min={0}
-          value={estoqueSimples}
-          onChange={(e) => onEstoqueSimplesChange(e.target.value)}
-          placeholder="0"
-        />
-      )}
-      {!controlarEstoque && (
-        <p className="pl-1 text-[11px] font-medium text-slate-400">
-          O produto fica sempre disponível, sem limite de quantidade.
-        </p>
-      )}
-      {typeof pesoPadrao === 'number' && (
-        <p className="mt-2 pl-1 text-[11px] font-medium text-slate-400">Peso: {formatarPeso(pesoPadrao)}</p>
+
+      {arvore ? (
+        <div className="flex flex-col gap-2">
+          {arvore.map((grupo) => (
+            <RaizGroup
+              key={grupo.raizValor}
+              raizValor={grupo.raizValor}
+              raizNome={raiz!.nome}
+              raizCores={raiz!.cores}
+              filha={filha!}
+              neta={neta}
+              versoes={grupo.versoes}
+              controlarEstoque={controlarEstoque}
+              precoBase={precoBase}
+              pesoPadrao={pesoPadrao}
+              fotos={fotos}
+              onAddFoto={onAddFoto}
+              lojaId={lojaId}
+              onChangeVersao={(chave, next) => onVersoesChange(versoes.map((v) => (v.chave === chave ? next : v)))}
+              onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
+              mostrarAplicarATodas={versoes.length > 1}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {versoes.length === 0 && (
+            <p className="rounded-xl bg-slate-50 px-3.5 py-3 text-center text-[11px] font-semibold text-slate-400">
+              Adiciona valores em "Opções do produto" acima para gerar as versões.
+            </p>
+          )}
+          {versoes.map((v, i) => (
+            <VersaoRow
+              key={v.chave}
+              label={v.chave}
+              corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
+              versao={v}
+              controlarEstoque={controlarEstoque}
+              precoBase={precoBase}
+              pesoPadrao={pesoPadrao}
+              fotos={fotos}
+              onAddFoto={onAddFoto}
+              lojaId={lojaId}
+              onChange={(next) => {
+                const copy = [...versoes];
+                copy[i] = next;
+                onVersoesChange(copy);
+              }}
+              onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
+              mostrarAplicarATodas={versoes.length > 1}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -144,8 +118,10 @@ function RaizGroup({
   raizValor,
   raizNome,
   raizCores,
-  filhaNome,
+  filha,
+  neta,
   versoes,
+  controlarEstoque,
   precoBase,
   pesoPadrao,
   fotos,
@@ -158,8 +134,10 @@ function RaizGroup({
   raizValor: string;
   raizNome: string;
   raizCores?: Record<string, string>;
-  filhaNome: string;
+  filha: ProdutoOpcaoFilha;
+  neta: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
+  controlarEstoque: boolean;
   precoBase: number;
   pesoPadrao?: number | null;
   fotos: string[];
@@ -183,8 +161,8 @@ function RaizGroup({
         </span>
         <span className="shrink-0 text-[11px] font-semibold text-slate-400">
           {versoes.length === 0
-            ? `sem ${filhaNome.toLowerCase()}s ainda`
-            : `${ativos} ${filhaNome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
+            ? `sem ${filha.nome.toLowerCase()}s ainda`
+            : `${ativos} ${filha.nome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
       </button>
 
@@ -192,14 +170,117 @@ function RaizGroup({
         <div className="mt-2.5 flex flex-col gap-2 border-t border-slate-200/70 pt-2.5">
           {versoes.length === 0 && (
             <p className="text-[11px] font-medium text-slate-400">
-              Ainda sem {filhaNome.toLowerCase()}s para "{raizValor}" — adiciona em "Opções do produto" acima.
+              Ainda sem {filha.nome.toLowerCase()}s para "{raizValor}" — adiciona em "Opções do produto" acima.
+            </p>
+          )}
+
+          {neta
+            ? agruparPorFilha(filha, raizValor, versoes).map((grupo) => (
+                <FilhaGroup
+                  key={grupo.filhaValor}
+                  filhaValor={grupo.filhaValor}
+                  filhaEhCor={filha.nome === 'Cor'}
+                  filhaCores={filha.cores}
+                  netaNome={neta.nome}
+                  versoes={grupo.versoes}
+                  controlarEstoque={controlarEstoque}
+                  precoBase={precoBase}
+                  pesoPadrao={pesoPadrao}
+                  fotos={fotos}
+                  onAddFoto={onAddFoto}
+                  lojaId={lojaId}
+                  onChangeVersao={onChangeVersao}
+                  onAplicarPesoATodas={onAplicarPesoATodas}
+                  mostrarAplicarATodas={mostrarAplicarATodas}
+                />
+              ))
+            : versoes.map((v) => (
+                <VersaoRow
+                  key={v.chave}
+                  label={v.valores[filha.nome] ?? v.chave}
+                  versao={v}
+                  controlarEstoque={controlarEstoque}
+                  precoBase={precoBase}
+                  pesoPadrao={pesoPadrao}
+                  fotos={fotos}
+                  onAddFoto={onAddFoto}
+                  lojaId={lojaId}
+                  onChange={(next) => onChangeVersao(v.chave, next)}
+                  onAplicarPesoATodas={onAplicarPesoATodas}
+                  mostrarAplicarATodas={mostrarAplicarATodas}
+                />
+              ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Terceiro nível da árvore (só existe quando há "neta") — agrupador
+ *  expansível igual ao RaizGroup, mas um nível mais fundo; só a folha
+ *  (VersaoRow) recebe estoque. */
+function FilhaGroup({
+  filhaValor,
+  filhaEhCor,
+  filhaCores,
+  netaNome,
+  versoes,
+  controlarEstoque,
+  precoBase,
+  pesoPadrao,
+  fotos,
+  onAddFoto,
+  lojaId,
+  onChangeVersao,
+  onAplicarPesoATodas,
+  mostrarAplicarATodas,
+}: {
+  filhaValor: string;
+  filhaEhCor: boolean;
+  filhaCores?: Record<string, string>;
+  netaNome: string;
+  versoes: ProdutoVersao[];
+  controlarEstoque: boolean;
+  precoBase: number;
+  pesoPadrao?: number | null;
+  fotos: string[];
+  onAddFoto: (url: string) => void;
+  lojaId: string;
+  onChangeVersao: (chave: string, next: ProdutoVersao) => void;
+  onAplicarPesoATodas: (peso: number | null) => void;
+  mostrarAplicarATodas: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const ativos = versoes.filter((v) => v.ativa !== false).length;
+
+  return (
+    <div className="ml-2 rounded-xl bg-white/70 px-3 py-2 ring-1 ring-inset ring-slate-200/70">
+      <button type="button" onClick={() => setExpanded((v) => !v)} className="flex w-full items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5">
+          <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
+          {filhaEhCor && <ColorDot hex={resolverHexCor(filhaValor, filhaCores)} />}
+          <span className="text-[11.5px] font-bold text-ink">{filhaValor}</span>
+        </span>
+        <span className="shrink-0 text-[10.5px] font-semibold text-slate-400">
+          {versoes.length === 0
+            ? `sem ${netaNome.toLowerCase()}s ainda`
+            : `${ativos} ${netaNome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="mt-2 flex flex-col gap-1.5 border-t border-slate-100 pt-2">
+          {versoes.length === 0 && (
+            <p className="text-[10.5px] font-medium text-slate-400">
+              Ainda sem {netaNome.toLowerCase()}s para "{filhaValor}" — adiciona em "Opções do produto" acima.
             </p>
           )}
           {versoes.map((v) => (
             <VersaoRow
               key={v.chave}
-              label={v.valores[filhaNome] ?? v.chave}
+              label={v.valores[netaNome] ?? v.chave}
               versao={v}
+              controlarEstoque={controlarEstoque}
               precoBase={precoBase}
               pesoPadrao={pesoPadrao}
               fotos={fotos}
@@ -220,6 +301,7 @@ function VersaoRow({
   label,
   corHex,
   versao,
+  controlarEstoque,
   precoBase,
   pesoPadrao,
   fotos,
@@ -233,6 +315,8 @@ function VersaoRow({
   /** Bolinha de cor mostrada antes do nome — só quando a opção é "Cor". */
   corHex?: string;
   versao: ProdutoVersao;
+  /** Mostra/esconde o campo de estoque desta combinação — os dados nunca são apagados quando fica escondido. */
+  controlarEstoque: boolean;
   precoBase: number;
   pesoPadrao?: number | null;
   fotos: string[];
@@ -273,7 +357,8 @@ function VersaoRow({
   return (
     <div className={cn('rounded-xl bg-white px-3 py-2 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
       {/* Linha compacta — só o essencial: nome/cor, preço, peso (quando
-      definido), imagem, estoque e o menu "⋯" para ações menos frequentes. */}
+      definido), imagem, estoque (se ativo) e o menu "⋯" para ações menos
+      frequentes. */}
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
@@ -314,15 +399,21 @@ function VersaoRow({
           )}
         </button>
 
-        <input
-          type="number"
-          min={0}
-          disabled={!ativa}
-          value={versao.estoque ?? ''}
-          onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
-          placeholder="0"
-          className="h-8 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
-        />
+        {/* Estoque — editável direto na linha, sem abrir a versão. Só
+        aparece quando "Controlar estoque" está ligado; os dados guardados
+        não desaparecem, só ficam escondidos enquanto estiver desligado. */}
+        {controlarEstoque && (
+          <input
+            type="number"
+            min={0}
+            disabled={!ativa}
+            value={versao.estoque ?? ''}
+            onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder="0"
+            aria-label={`Estoque de ${label}`}
+            className="h-8 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+          />
+        )}
 
         {/* "⋯" — ações menos frequentes (editar detalhes / remover versão).
         Fica ao lado das outras ações da linha; nunca um ícone de lixo
