@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { CORES_SUGERIDAS, resolverHexCor } from '@/lib/cores';
 
 /** Garante que só um painel de sugestões fica aberto de cada vez — sem
@@ -169,34 +170,30 @@ export function SuggestInput({
           )}
 
           {colorMode ? (
-            <div className="flex flex-wrap gap-2 p-1">
+            <div className="flex flex-col gap-0.5">
               {opcoesCor.map((nome) => {
                 const marcada = valores.includes(nome);
                 return (
-                  <button
+                  <div
                     key={nome}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => alternar(nome, resolverHexCor(nome, coresPersonalizadas))}
-                    title={nome}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        alternar(nome, resolverHexCor(nome, coresPersonalizadas));
+                      }
+                    }}
                     className={cn(
-                      'flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-center transition-colors hover:bg-slate-50 active:bg-slate-100',
+                      'flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-slate-50 active:bg-slate-100',
                       marcada && 'bg-slate-50'
                     )}
                   >
-                    <span className="relative">
-                      <ColorSquare hex={resolverHexCor(nome, coresPersonalizadas)} size={28} />
-                      {/* Quadradinho de marcação — mostra se esta cor já está selecionada. */}
-                      <span
-                        className={cn(
-                          'absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-[5px] border transition-colors',
-                          marcada ? 'border-ink bg-ink text-white' : 'border-slate-300 bg-white text-transparent'
-                        )}
-                      >
-                        <Check size={10} strokeWidth={3} />
-                      </span>
-                    </span>
-                    <span className="w-full truncate text-[9px] font-bold text-slate-500">{nome}</span>
-                  </button>
+                    <ColorSquare hex={resolverHexCor(nome, coresPersonalizadas)} size={20} />
+                    <span className="flex-1 truncate text-[13px] font-semibold text-ink">{nome}</span>
+                    <Checkbox checked={marcada} onChange={() => alternar(nome, resolverHexCor(nome, coresPersonalizadas))} ariaLabel={nome} />
+                  </div>
                 );
               })}
             </div>
