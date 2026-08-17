@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { CORES_SUGERIDAS, resolverHexCor } from '@/lib/cores';
 
 /** Garante que só um painel de sugestões fica aberto de cada vez — sem
@@ -174,26 +173,30 @@ export function SuggestInput({
               {opcoesCor.map((nome) => {
                 const marcada = valores.includes(nome);
                 return (
-                  <div
+                  <button
                     key={nome}
-                    role="button"
-                    tabIndex={0}
+                    type="button"
                     onClick={() => alternar(nome, resolverHexCor(nome, coresPersonalizadas))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        alternar(nome, resolverHexCor(nome, coresPersonalizadas));
-                      }
-                    }}
                     className={cn(
-                      'flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-slate-50 active:bg-slate-100',
+                      'flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-slate-50 active:bg-slate-100',
                       marcada && 'bg-slate-50'
                     )}
                   >
+                    {/* Só o clique na linha inteira marca/desmarca — o
+                    quadradinho é só visual, para nunca ter uma segunda área
+                    de toque a competir com a da linha (era isso que fazia o
+                    toque, por vezes, acertar na linha errada). */}
+                    <span
+                      className={cn(
+                        'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors',
+                        marcada ? 'border-ink bg-ink text-white' : 'border-slate-300 bg-white text-transparent'
+                      )}
+                    >
+                      <Check size={11} strokeWidth={3} />
+                    </span>
                     <ColorSquare hex={resolverHexCor(nome, coresPersonalizadas)} size={20} />
                     <span className="flex-1 truncate text-[13px] font-semibold text-ink">{nome}</span>
-                    <Checkbox checked={marcada} onChange={() => alternar(nome, resolverHexCor(nome, coresPersonalizadas))} ariaLabel={nome} />
-                  </div>
+                  </button>
                 );
               })}
             </div>
