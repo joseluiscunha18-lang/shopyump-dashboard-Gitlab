@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Sparkles } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { SuggestInput, ColorDot } from '@/components/produtos/SuggestInput';
-import { combinacoesRaizFilha, gerarVersoes } from '@/lib/variantes';
+import { combinacoesRaizFilha, fundirVersoesPorValor, gerarVersoes } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
 import { sugestoesParaCaracteristica } from '@/lib/sugestoesOpcao';
+import { aplicarFusaoGenero, avaliarValoresGenero, ehCaracteristicaGenero } from '@/lib/genero';
 import { CARACTERISTICAS_SUGERIDAS } from '@/types/database';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoNeta, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 
@@ -15,6 +16,12 @@ export interface VariantesState {
   filha: ProdutoOpcaoFilha | null;
   neta: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
+  /** Imagens por valor de característica (ex: foto de "Vermelho" herdada
+   *  por todas as versões vermelhas) — editadas em StockSection, não
+   *  aqui, mas o estado vive junto do resto das "Opções do produto"
+   *  porque uma fusão de género também tem de fundir estas imagens. Ver
+   *  `imagensParaVersao()` em lib/variantes.ts. */
+  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
 }
 
 /**
@@ -35,7 +42,13 @@ export function VariantEditor({
   const [pickerAlvo, setPickerAlvo] = useState<'raiz' | 'filha' | 'neta' | null>(null);
 
   function aplicar(raiz: ProdutoOpcaoRaiz | null, filha: ProdutoOpcaoFilha | null, neta: ProdutoOpcaoNeta | null) {
-    onChange({ raiz, filha, neta, versoes: gerarVersoes(raiz, filha, neta, state.versoes) });
+    onChange({
+      raiz,
+      filha,
+      neta,
+      versoes: gerarVersoes(raiz, filha, neta, state.versoes),
+      imagensPorCaracteristica: state.imagensPorCaracteristica,
+    });
   }
 
   function escolherCaracteristica(nome: string) {
@@ -188,6 +201,136 @@ export function VariantEditor({
   const filhaECor = state.filha?.nome === 'Cor';
   const netaECor = state.neta?.nome === 'Cor';
 
+  // --- Fusão de Género (Masculino + Feminino → Unissexo) -------------
+  //
+  // "Género" pode viver na raiz, na filha ou na neta, e dentro da filha/
+  // neta os valores podem ser globais (`mesmosValoresParaTodas`) ou
+  // diferentes por combinação acima (`valoresPorRaiz` / `valoresPorCombinacao`).
+  // `gruposGenero` normaliza tudo isso numa lista plana de "grupos" — cada
+  // grupo é uma lista de valores independente que pode precisar de fusão —
+  // para o resto da lógica não ter de saber em que nível o género está.
+  type GrupoGenero = { chave: string; label: string; valores: string[] };
+
+  function gruposGenero(): GrupoGenero[] {
+    if (state.raiz && ehCaracteristicaGenero(state.raiz.nome)) {
+      return [{ chave: 'raiz', label: state.raiz.nome, valores: state.raiz.valores }];
+    }
+    if (state.filha && ehCaracteristicaGenero(state.filha.nome)) {
+      if (state.filha.mesmosValoresParaTodas || !podeMostrarToggleFilha) {
+        return [{ chave: 'filha', label: state.filha.nome, valores: state.filha.valoresComuns ?? [] }];
+      }
+      return (state.raiz?.valores ?? []).map((raizValor) => ({
+        chave: `filha:${raizValor}`,
+        label: `${state.filha!.nome} · ${raizValor}`,
+        valores: state.filha!.valoresPorRaiz?.[raizValor] ?? [],
+      }));
+    }
+    if (state.neta && ehCaracteristicaGenero(state.neta.nome)) {
+      if (state.neta.mesmosValoresParaTodas || !podeMostrarToggleNeta) {
+        return [{ chave: 'neta', label: state.neta.nome, valores: state.neta.valoresComuns ?? [] }];
+      }
+      return combosRaizFilha.map((combo) => ({
+        chave: `neta:${combo.chave}`,
+        label: `${state.neta!.nome} · ${combo.raizValor} · ${combo.filhaValor}`,
+        valores: state.neta!.valoresPorCombinacao?.[combo.chave] ?? [],
+      }));
+    }
+    return [];
+  }
+
+  const grupos = gruposGenero();
+  const gruposParaColapsar = grupos.filter((g) => avaliarValoresGenero(g.valores) === 'colapsar');
+  const gruposParaFundir = grupos.filter((g) => avaliarValoresGenero(g.valores) === 'fundir');
+  const assinaturaFundir = gruposParaFundir.map((g) => `${g.chave}:${[...g.valores].sort().join(',')}`).join('|');
+
+  const [fusaoDispensada, setFusaoDispensada] = useState<string | null>(null);
+
+  // Aplica "Unissexo" aos grupos indicados: funde as versões existentes
+  // (soma estoque, une imagens) e só depois regenera a árvore, para nunca
+  // apagar dados só porque a chave da combinação mudou.
+  function aplicarUnissexoAosGrupos(alvo: GrupoGenero[]) {
+    const nomeCaracteristica = state.raiz && ehCaracteristicaGenero(state.raiz.nome)
+      ? state.raiz.nome
+      : state.filha && ehCaracteristicaGenero(state.filha.nome)
+        ? state.filha.nome
+        : state.neta?.nome;
+    if (!nomeCaracteristica) return;
+
+    const versoesFundidas = fundirVersoesPorValor(
+      nomeCaracteristica,
+      ['Masculino', 'Feminino', 'Unissexo'],
+      'Unissexo',
+      state.versoes
+    );
+
+    const chavesAlvo = new Set(alvo.map((g) => g.chave));
+    let novoRaiz = state.raiz;
+    let novoFilha = state.filha;
+    let novoNeta = state.neta;
+
+    if (state.raiz && ehCaracteristicaGenero(state.raiz.nome) && chavesAlvo.has('raiz')) {
+      novoRaiz = { ...state.raiz, valores: aplicarFusaoGenero(state.raiz.valores) };
+    } else if (state.filha && ehCaracteristicaGenero(state.filha.nome)) {
+      if (chavesAlvo.has('filha')) {
+        novoFilha = { ...state.filha, valoresComuns: aplicarFusaoGenero(state.filha.valoresComuns ?? []) };
+      } else {
+        const valoresPorRaiz = { ...(state.filha.valoresPorRaiz ?? {}) };
+        for (const raizValor of Object.keys(valoresPorRaiz)) {
+          if (chavesAlvo.has(`filha:${raizValor}`)) {
+            valoresPorRaiz[raizValor] = aplicarFusaoGenero(valoresPorRaiz[raizValor]);
+          }
+        }
+        novoFilha = { ...state.filha, valoresPorRaiz };
+      }
+    } else if (state.neta && ehCaracteristicaGenero(state.neta.nome)) {
+      if (chavesAlvo.has('neta')) {
+        novoNeta = { ...state.neta, valoresComuns: aplicarFusaoGenero(state.neta.valoresComuns ?? []) };
+      } else {
+        const valoresPorCombinacao = { ...(state.neta.valoresPorCombinacao ?? {}) };
+        for (const chave of Object.keys(valoresPorCombinacao)) {
+          if (chavesAlvo.has(`neta:${chave}`)) {
+            valoresPorCombinacao[chave] = aplicarFusaoGenero(valoresPorCombinacao[chave]);
+          }
+        }
+        novoNeta = { ...state.neta, valoresPorCombinacao };
+      }
+    }
+
+    // Se a característica de género também tiver imagens por valor
+    // definidas (ex: uma foto genérica para "Masculino"), funde-as da
+    // mesma forma que as versões — Unissexo herda a primeira que existir.
+    const imagensDoNivel = state.imagensPorCaracteristica?.[nomeCaracteristica];
+    const imagensPorCaracteristica = imagensDoNivel
+      ? {
+          ...state.imagensPorCaracteristica,
+          [nomeCaracteristica]: {
+            ...Object.fromEntries(
+              Object.entries(imagensDoNivel).filter(([v]) => !['Masculino', 'Feminino', 'Unissexo'].includes(v))
+            ),
+            Unissexo: imagensDoNivel.Unissexo ?? imagensDoNivel.Masculino ?? imagensDoNivel.Feminino ?? [],
+          },
+        }
+      : state.imagensPorCaracteristica;
+
+    onChange({
+      raiz: novoRaiz,
+      filha: novoFilha,
+      neta: novoNeta,
+      versoes: gerarVersoes(novoRaiz, novoFilha, novoNeta, versoesFundidas),
+      imagensPorCaracteristica,
+    });
+  }
+
+  // Masculino + Feminino + Unissexo em simultâneo nunca é ambíguo — corta
+  // direto, sem interromper o lojista com uma pergunta cuja resposta só
+  // pode ser "sim".
+  useEffect(() => {
+    if (gruposParaColapsar.length > 0) {
+      aplicarUnissexoAosGrupos(gruposParaColapsar);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gruposParaColapsar.length > 0]);
+
   return (
     <div>
       <div className="mb-1 pl-1">
@@ -198,6 +341,37 @@ export function VariantEditor({
       </div>
 
       <div className="mt-3 flex flex-col gap-3">
+        {gruposParaFundir.length > 0 && assinaturaFundir !== fusaoDispensada && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
+            <div className="mb-2.5 flex items-start gap-2">
+              <Sparkles size={15} className="mt-0.5 shrink-0 text-amber-500" />
+              <p className="text-[12px] font-semibold leading-snug text-amber-800">
+                Este produto está disponível para masculino e feminino. Podemos tratar como Unissexo para
+                simplificar as versões — o estoque de cada uma é somado, nada se perde.
+              </p>
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  aplicarUnissexoAosGrupos(gruposParaFundir);
+                  setFusaoDispensada(null);
+                }}
+                className="rounded-full bg-ink px-3.5 py-2 text-[11px] font-bold text-white transition-colors active:scale-[0.98]"
+              >
+                Usar Unissexo
+              </button>
+              <button
+                type="button"
+                onClick={() => setFusaoDispensada(assinaturaFundir)}
+                className="rounded-full bg-white px-3.5 py-2 text-[11px] font-bold text-amber-700 shadow-sm transition-colors active:scale-[0.98]"
+              >
+                Manter separados
+              </button>
+            </div>
+          </div>
+        )}
+
         {!state.raiz && (
           <button
             type="button"
