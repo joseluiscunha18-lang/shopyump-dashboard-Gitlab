@@ -30,6 +30,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     filha: produto?.variantes?.filha ?? null,
     neta: produto?.variantes?.neta ?? null,
     versoes: produto?.variantes?.versoes ?? [],
+    imagensPorCaracteristica: produto?.variantes?.imagensPorCaracteristica ?? undefined,
   });
 
   // "Para quem é este produto?" foi removido do formulário — o campo
@@ -98,7 +99,13 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       genero,
       fotos,
       variantes: hasVariants
-        ? { raiz: variantes.raiz, filha: variantes.filha, neta: variantes.neta, versoes: variantes.versoes }
+        ? {
+            raiz: variantes.raiz,
+            filha: variantes.filha,
+            neta: variantes.neta,
+            versoes: variantes.versoes,
+            imagensPorCaracteristica: variantes.imagensPorCaracteristica,
+          }
         : null,
       estoque,
       mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoesFinal : null,
@@ -221,6 +228,16 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           fotos={fotos}
           onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
           lojaId={lojaId}
+          imagensPorCaracteristica={variantes.imagensPorCaracteristica}
+          onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
+            setVariantes((v) => ({
+              ...v,
+              imagensPorCaracteristica: {
+                ...(v.imagensPorCaracteristica ?? {}),
+                [nomeCaracteristica]: { ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}), [valor]: urls },
+              },
+            }))
+          }
         />
       )}
 
