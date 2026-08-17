@@ -6,21 +6,19 @@ import { Input, Textarea } from '@/components/ui/Input';
 import type { ProdutoMaisOpcoes } from '@/types/database';
 import { cn } from '@/lib/cn';
 
+/** Peso padrão saiu daqui — vive agora antes de "Opções do produto"
+ *  (PesoPadraoInput), porque é usado logo por todas as variantes e não
+ *  faz sentido ficar escondido em "Mais opções". */
 export function MoreOptions({
   value,
   onChange,
-  hasVariants,
 }: {
-  value: ProdutoMaisOpcoes;
-  onChange: (v: ProdutoMaisOpcoes) => void;
-  /** Quando o produto tem variantes, o peso passa a viver em cada
-   *  variante (StockSection) — deixa de fazer sentido pedir um peso
-   *  padrão aqui, porque cada combinação tende a pesar diferente. */
-  hasVariants: boolean;
+  value: Omit<ProdutoMaisOpcoes, 'peso'>;
+  onChange: (v: Omit<ProdutoMaisOpcoes, 'peso'>) => void;
 }) {
   const [open, setOpen] = useState(false);
 
-  function set<K extends keyof ProdutoMaisOpcoes>(key: K, v: ProdutoMaisOpcoes[K]) {
+  function set<K extends keyof Omit<ProdutoMaisOpcoes, 'peso'>>(key: K, v: ProdutoMaisOpcoes[K]) {
     onChange({ ...value, [key]: v });
   }
 
@@ -45,23 +43,6 @@ export function MoreOptions({
             onChange={(e) => set('sku', e.target.value)}
             placeholder="Gerado automaticamente se deixares vazio"
           />
-          {!hasVariants && (
-            <Input
-              label="Peso padrão (kg)"
-              hint="Opcional"
-              type="number"
-              min={0}
-              step="0.01"
-              value={value.peso ?? ''}
-              onChange={(e) => set('peso', e.target.value === '' ? null : Number(e.target.value))}
-              placeholder="Opcional"
-            />
-          )}
-          {hasVariants && (
-            <p className="text-[10px] font-medium text-slate-400">
-              Peso: define o peso de cada versão em "Versões disponíveis" mais abaixo.
-            </p>
-          )}
           <Textarea
             label="Informações de entrega"
             rows={3}
