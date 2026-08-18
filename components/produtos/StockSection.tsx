@@ -237,26 +237,43 @@ function RaizGroup({
 
           {neta
             ? agruparPorFilha(filha, raizValor, versoes).map((grupo) => (
-                <FilhaGroup
-                  key={grupo.filhaValor}
-                  filhaValor={grupo.filhaValor}
-                  filhaNome={filha.nome}
-                  filhaEhCor={filha.nome === 'Cor'}
-                  filhaCores={filha.cores}
-                  netaNome={neta.nome}
-                  versoes={grupo.versoes}
-                  controlarEstoque={controlarEstoque}
-                  precoBase={precoBase}
-                  pesoPadrao={pesoPadrao}
-                  fotos={fotos}
-                  onAddFoto={onAddFoto}
-                  lojaId={lojaId}
-                  imagensPorCaracteristica={imagensPorCaracteristica}
-                  onChangeImagensCaracteristica={onChangeImagensCaracteristica}
-                  onChangeVersao={onChangeVersao}
-                  onAplicarPesoATodas={onAplicarPesoATodas}
-                  mostrarAplicarATodas={mostrarAplicarATodas}
-                />
+                // Com 3 características, o nível do meio (filha) funciona como
+                // separador visual — não é um accordion clicável. O utilizador
+                // abre a cor e vê imediatamente todas as versões finais agrupadas
+                // visualmente por tamanho/filha, sem clique extra.
+                <div key={grupo.filhaValor} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5 px-0.5 pb-0.5 pt-1">
+                    {filha.nome === 'Cor' && (
+                      <ColorDot hex={resolverHexCor(grupo.filhaValor, filha.cores)} />
+                    )}
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      {grupo.filhaValor}
+                    </span>
+                  </div>
+                  {grupo.versoes.length === 0 ? (
+                    <p className="text-[10.5px] font-medium text-slate-400 px-1">
+                      Ainda sem {neta.nome.toLowerCase()}s — adiciona em "Opções do produto" acima.
+                    </p>
+                  ) : (
+                    grupo.versoes.map((v) => (
+                      <VersaoRow
+                        key={v.chave}
+                        label={v.valores[neta.nome] ?? v.chave}
+                        versao={v}
+                        controlarEstoque={controlarEstoque}
+                        precoBase={precoBase}
+                        pesoPadrao={pesoPadrao}
+                        fotos={fotos}
+                        onAddFoto={onAddFoto}
+                        lojaId={lojaId}
+                        imagensPorCaracteristica={imagensPorCaracteristica}
+                        onChange={(next) => onChangeVersao(v.chave, next)}
+                        onAplicarPesoATodas={onAplicarPesoATodas}
+                        mostrarAplicarATodas={mostrarAplicarATodas}
+                      />
+                    ))
+                  )}
+                </div>
               ))
             : versoes.map((v) => (
                 <VersaoRow
@@ -294,112 +311,6 @@ function RaizGroup({
   );
 }
 
-/** Terceiro nível da árvore (só existe quando há "neta") — agrupador
- *  expansível igual ao RaizGroup, mas um nível mais fundo; só a folha
- *  (VersaoRow) recebe estoque. */
-function FilhaGroup({
-  filhaValor,
-  filhaNome,
-  filhaEhCor,
-  filhaCores,
-  netaNome,
-  versoes,
-  controlarEstoque,
-  precoBase,
-  pesoPadrao,
-  fotos,
-  onAddFoto,
-  lojaId,
-  imagensPorCaracteristica,
-  onChangeImagensCaracteristica,
-  onChangeVersao,
-  onAplicarPesoATodas,
-  mostrarAplicarATodas,
-}: {
-  filhaValor: string;
-  filhaNome: string;
-  filhaEhCor: boolean;
-  filhaCores?: Record<string, string>;
-  netaNome: string;
-  versoes: ProdutoVersao[];
-  controlarEstoque: boolean;
-  precoBase: number;
-  pesoPadrao?: number | null;
-  fotos: string[];
-  onAddFoto: (url: string) => void;
-  lojaId: string;
-  imagensPorCaracteristica?: Record<string, Record<string, string[]>>;
-  onChangeImagensCaracteristica: (nomeCaracteristica: string, valor: string, urls: string[]) => void;
-  onChangeVersao: (chave: string, next: ProdutoVersao) => void;
-  onAplicarPesoATodas: (peso: number | null) => void;
-  mostrarAplicarATodas: boolean;
-}) {
-  // Começa expandido — ao abrir o grupo raiz, o utilizador já vê todos os
-  // sub-grupos de filha abertos, expondo as versões finais sem cliques extra.
-  const [expanded, setExpanded] = useState(true);
-  const [imagePickerOpen, setImagePickerOpen] = useState(false);
-  const ativos = versoes.filter((v) => v.ativa !== false).length;
-  const imagensDoGrupo = imagensPorCaracteristica?.[filhaNome]?.[filhaValor] ?? [];
-  const imagensExibidas = imagensDoGrupo.length > 0 ? imagensDoGrupo : fotos;
-
-  return (
-    <div className="ml-2 rounded-xl bg-white/70 px-3 py-2 ring-1 ring-inset ring-slate-200/70">
-      <div className="flex w-full items-center justify-between gap-2">
-        <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-          <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
-          {filhaEhCor && <ColorDot hex={resolverHexCor(filhaValor, filhaCores)} />}
-          <span className="truncate text-[11.5px] font-bold text-ink">{filhaValor}</span>
-        </button>
-        <span className="shrink-0 text-[10.5px] font-semibold text-slate-400">
-          {versoes.length === 0
-            ? `sem ${netaNome.toLowerCase()}s ainda`
-            : `${ativos} ${netaNome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
-        </span>
-        <GroupThumbnail imagens={imagensExibidas} onClick={() => setImagePickerOpen(true)} />
-      </div>
-
-      {expanded && (
-        <div className="mt-2 flex flex-col gap-1.5 border-t border-slate-100 pt-2">
-          {versoes.length === 0 && (
-            <p className="text-[10.5px] font-medium text-slate-400">
-              Ainda sem {netaNome.toLowerCase()}s para "{filhaValor}" — adiciona em "Opções do produto" acima.
-            </p>
-          )}
-          {versoes.map((v) => (
-            <VersaoRow
-              key={v.chave}
-              label={v.valores[netaNome] ?? v.chave}
-              versao={v}
-              controlarEstoque={controlarEstoque}
-              precoBase={precoBase}
-              pesoPadrao={pesoPadrao}
-              fotos={fotos}
-              onAddFoto={onAddFoto}
-              lojaId={lojaId}
-              imagensPorCaracteristica={imagensPorCaracteristica}
-              onChange={(next) => onChangeVersao(v.chave, next)}
-              onAplicarPesoATodas={onAplicarPesoATodas}
-              mostrarAplicarATodas={mostrarAplicarATodas}
-            />
-          ))}
-        </div>
-      )}
-
-      {imagePickerOpen && (
-        <VariantImagePicker
-          open
-          onClose={() => setImagePickerOpen(false)}
-          label={filhaValor}
-          lojaId={lojaId}
-          fotosGerais={fotos}
-          selecionadas={imagensDoGrupo}
-          onAddToGaleria={onAddFoto}
-          onSave={(urls) => onChangeImagensCaracteristica(filhaNome, filhaValor, urls)}
-        />
-      )}
-    </div>
-  );
-}
 
 function VersaoRow({
   label,
