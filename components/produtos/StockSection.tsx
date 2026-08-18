@@ -193,7 +193,10 @@ function RaizGroup({
   onAplicarPesoATodas: (peso: number | null) => void;
   mostrarAplicarATodas: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  // Começa expandido — o utilizador abre a cor e vê imediatamente todas
+  // as combinações finais, sem clique adicional. Pode fechar se quiser
+  // compactar a vista quando há muitos grupos.
+  const [expanded, setExpanded] = useState(true);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
   const ehCor = raizNome === 'Cor';
@@ -331,7 +334,9 @@ function FilhaGroup({
   onAplicarPesoATodas: (peso: number | null) => void;
   mostrarAplicarATodas: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  // Começa expandido — ao abrir o grupo raiz, o utilizador já vê todos os
+  // sub-grupos de filha abertos, expondo as versões finais sem cliques extra.
+  const [expanded, setExpanded] = useState(true);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
   const imagensDoGrupo = imagensPorCaracteristica?.[filhaNome]?.[filhaValor] ?? [];
