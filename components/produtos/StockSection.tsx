@@ -124,37 +124,20 @@ export function StockSection({
   );
 }
 
-/** Botão de imagem do grupo — usado dentro do conteúdo expandido de
- *  RaizGroup/FilhaGroup, nunca no nível achatado (uma só característica),
- *  porque aí um valor já é uma versão e a imagem própria da versão já
- *  cobre o caso. Só aparece depois de o lojista abrir o grupo — não
- *  polui a lista fechada. O picker em si é controlado pelo pai, para a
- *  miniatura no cabeçalho (fechado) poder abrir o mesmo picker. */
-function GroupImageButton({ label, imagens, onOpen }: { label: string; imagens: string[]; onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex items-center gap-2 self-start rounded-lg py-1 text-[10.5px] font-bold text-slate-400 transition-colors hover:text-ink"
-    >
-      {imagens[0] ? (
-        <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-slate-200">
-          <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
-        </span>
-      ) : (
-        <ImagePlus size={13} className="shrink-0" />
-      )}
-      {imagens.length > 0 ? `Imagem de "${label}" (${imagens.length}) — editar` : `Definir imagem para todas as versões de "${label}"`}
-    </button>
-  );
-}
-
-/** Miniatura discreta mostrada ao lado do valor SÓ quando já há uma
- *  imagem própria definida para ele — sem imagem nenhuma, não mostra nada
- *  (nem placeholder, nem ícone de câmara). Clicar abre o editor direto,
- *  sem precisar de expandir o grupo primeiro. */
-function ThumbnailSeDefinida({ imagens, onClick }: { imagens: string[]; onClick: () => void }) {
-  if (imagens.length === 0) return null;
+/** Miniatura de imagem do grupo — vive sempre no cabeçalho (aberto ou
+ *  fechado), ao lado do valor da característica, nunca escondida atrás de
+ *  um "editar" dentro do conteúdo expandido: a seta serve só para abrir
+ *  as combinações, a miniatura é o único ponto de entrada para imagens.
+ *
+ *  Três estados, nesta ordem de prioridade:
+ *  1. Imagem própria definida para este valor → mostra-a.
+ *  2. Sem imagem própria mas o produto tem galeria geral → mostra a 1ª
+ *     foto da galeria como indicação visual (herança), NÃO como
+ *     atribuição definitiva — continua a poder ser trocada por valor.
+ *  3. Nem imagem própria nem galeria geral → ícone "+" discreto.
+ *
+ *  Clicar abre sempre o editor deste valor específico. */
+function GroupThumbnail({ imagens, onClick }: { imagens: string[]; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -162,9 +145,13 @@ function ThumbnailSeDefinida({ imagens, onClick }: { imagens: string[]; onClick:
         e.stopPropagation();
         onClick();
       }}
-      className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
+      className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
     >
-      <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
+      {imagens[0] ? (
+        <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
+      ) : (
+        <ImagePlus size={12} className="text-slate-300" />
+      )}
     </button>
   );
 }
@@ -214,6 +201,9 @@ function RaizGroup({
   // uma única característica, o valor já É a versão e a imagem própria da
   // versão (mais abaixo) já resolve isso sem duplicar o conceito.
   const imagensDoGrupo = imagensPorCaracteristica?.[raizNome]?.[raizValor] ?? [];
+  // O que mostrar na miniatura: imagem própria deste valor, senão a 1ª
+  // foto da galeria geral (herança visual, não atribuição definitiva).
+  const imagensExibidas = imagensDoGrupo.length > 0 ? imagensDoGrupo : fotos;
 
   return (
     <div className="rounded-2xl bg-slate-50/70 px-3.5 py-2.5">
@@ -228,10 +218,10 @@ function RaizGroup({
             ? `sem ${filha.nome.toLowerCase()}s ainda`
             : `${ativos} ${filha.nome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
-        {/* Miniatura só aparece se já houver imagem definida para este
-        valor — sem imagem nenhuma, a linha fica limpa (nada de ícone de
-        câmara em todas as linhas). */}
-        <ThumbnailSeDefinida imagens={imagensDoGrupo} onClick={() => setImagePickerOpen(true)} />
+        {/* Miniatura sempre visível no cabeçalho — é o único ponto de
+        entrada para imagens deste valor. A seta ao lado serve só para
+        abrir as combinações abaixo, nunca para revelar a imagem. */}
+        <GroupThumbnail imagens={imagensExibidas} onClick={() => setImagePickerOpen(true)} />
       </div>
 
       {expanded && (
@@ -241,12 +231,6 @@ function RaizGroup({
               Ainda sem {filha.nome.toLowerCase()}s para "{raizValor}" — adiciona em "Opções do produto" acima.
             </p>
           )}
-
-          {/* Controlo de imagem só aparece aqui, depois de o lojista abrir
-          o grupo — não é preciso marcar "esta imagem é para todas as
-          versões": sem nada escolhido, herda automaticamente a galeria
-          geral do produto. */}
-          <GroupImageButton label={raizValor} imagens={imagensDoGrupo} onOpen={() => setImagePickerOpen(true)} />
 
           {neta
             ? agruparPorFilha(filha, raizValor, versoes).map((grupo) => (
@@ -351,6 +335,7 @@ function FilhaGroup({
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
   const imagensDoGrupo = imagensPorCaracteristica?.[filhaNome]?.[filhaValor] ?? [];
+  const imagensExibidas = imagensDoGrupo.length > 0 ? imagensDoGrupo : fotos;
 
   return (
     <div className="ml-2 rounded-xl bg-white/70 px-3 py-2 ring-1 ring-inset ring-slate-200/70">
@@ -365,7 +350,7 @@ function FilhaGroup({
             ? `sem ${netaNome.toLowerCase()}s ainda`
             : `${ativos} ${netaNome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
-        <ThumbnailSeDefinida imagens={imagensDoGrupo} onClick={() => setImagePickerOpen(true)} />
+        <GroupThumbnail imagens={imagensExibidas} onClick={() => setImagePickerOpen(true)} />
       </div>
 
       {expanded && (
@@ -375,7 +360,6 @@ function FilhaGroup({
               Ainda sem {netaNome.toLowerCase()}s para "{filhaValor}" — adiciona em "Opções do produto" acima.
             </p>
           )}
-          <GroupImageButton label={filhaValor} imagens={imagensDoGrupo} onOpen={() => setImagePickerOpen(true)} />
           {versoes.map((v) => (
             <VersaoRow
               key={v.chave}
@@ -497,24 +481,37 @@ function VersaoRow({
           </span>
         </button>
 
-        {/* Miniatura só aparece se esta versão tiver imagem PRÓPRIA — se
-        estiver a herdar (da característica ou da galeria geral), a linha
-        fica limpa, sem ícone nenhum. Clicar abre o editor direto. */}
-        {imagemPropria && (
-          <button
-            type="button"
-            onClick={() => setImagePickerOpen(true)}
-            title={`${imagens.length} imagem(ns) própria(s) desta versão`}
-            className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
-          >
-            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
-            {imagens.length > 1 && (
-              <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
-                {imagens.length}
-              </span>
-            )}
-          </button>
-        )}
+        {/* Miniatura sempre visível — mostra o que vai aparecer na loja
+        mesmo quando esta versão não tem imagem própria (própria →
+        herdada da característica → galeria geral → ícone "+" se não
+        houver nada). Clicar abre sempre o editor desta versão. */}
+        <button
+          type="button"
+          onClick={() => setImagePickerOpen(true)}
+          title={
+            imagemPropria
+              ? `${imagens.length} imagem(ns) própria(s) desta versão`
+              : resolvido.origem === 'caracteristica'
+                ? `A herdar imagem de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"`
+                : imagens.length > 0
+                  ? 'A herdar a galeria geral do produto'
+                  : 'Definir imagem'
+          }
+          className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
+        >
+          {imagens[0] ? (
+            <>
+              <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
+              {imagemPropria && imagens.length > 1 && (
+                <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
+                  {imagens.length}
+                </span>
+              )}
+            </>
+          ) : (
+            <ImagePlus size={13} className="text-slate-300" />
+          )}
+        </button>
 
         {/* Peso — editável direto na linha, sempre visível (não só quando
         "Controlar estoque" está ligado, porque pesagem serve para o cálculo
