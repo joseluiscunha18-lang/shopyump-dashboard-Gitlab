@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ChevronDown, ImagePlus, MoreVertical, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ImagePlus, MoreVertical, RotateCcw, Trash2 } from 'lucide-react';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
 import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, imagensParaVersao, totalEstoque } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
-import { formatarPeso } from '@/lib/peso';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoNeta, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 import { cn } from '@/lib/cn';
 
@@ -343,7 +342,6 @@ function VersaoRow({
   onAplicarPesoATodas: (peso: number | null) => void;
   mostrarAplicarATodas: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -378,23 +376,21 @@ function VersaoRow({
   }
 
   return (
-    <div className={cn('rounded-xl bg-white px-3 py-2 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
-      {/* Linha compacta — nome à esquerda, depois miniatura de imagem e
-      campos editáveis de preço/peso/estoque sempre visíveis sem expandir.
+    <div className={cn('rounded-xl bg-white px-4 py-3 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
+      {/* Linha — nome à esquerda, miniatura e campos editáveis sempre visíveis.
       O menu "⋯" dá acesso a ações menos frequentes. */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
 
-        {/* Nome / label da versão — toca para expandir detalhes adicionais */}
-        <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-          <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
+        {/* Nome / label da versão */}
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
           {corHex && <ColorDot hex={corHex} />}
-          <span className="truncate text-[12px] font-bold text-ink">{label}</span>
+          <span className="truncate text-[13px] font-bold text-ink">{label}</span>
           {!ativa && (
             <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-500">
               Indisponível
             </span>
           )}
-        </button>
+        </div>
 
         {/* Miniatura de imagem — sempre visível, clicar abre o editor */}
         <button
@@ -512,17 +508,7 @@ function VersaoRow({
                   Usar imagem herdada
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setExpanded(true);
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
-              >
-                <Pencil size={14} strokeWidth={2.3} className="text-slate-500" />
-                Editar detalhes
-              </button>
+
               {ativa ? (
                 <button
                   type="button"
@@ -547,49 +533,6 @@ function VersaoRow({
         </div>
       </div>
 
-      {/* Detalhes menos frequentes — só aparecem ao expandir a versão.
-      Preço, peso e estoque já estão editáveis na linha acima; aqui ficam
-      só notas contextuais e ações secundárias. */}
-      {expanded && (
-        <div className="mt-2.5 flex flex-col gap-3 border-t border-slate-100 pt-2.5">
-          <p className="text-[10px] font-medium text-slate-400">
-            Preço: deixa em branco para usar o preço principal ({precoBase || 0} MT).
-          </p>
-
-          <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Peso</label>
-            <p className="text-[10px] font-medium text-slate-400">
-              Editável na linha acima (kg). Deixa em branco para usar{' '}
-              {typeof pesoPadrao === 'number' ? `o peso padrão do produto (${formatarPeso(pesoPadrao)})` : 'o peso padrão do produto'}.
-            </p>
-            {mostrarAplicarATodas && typeof versao.peso === 'number' && (
-              <button
-                type="button"
-                onClick={() => onAplicarPesoATodas(versao.peso ?? null)}
-                className="mt-1.5 text-[10px] font-bold text-ink underline decoration-slate-300 underline-offset-2 hover:decoration-ink"
-              >
-                Usar este peso em todas as versões
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-col items-start gap-1">
-            <label className="mb-0.5 block text-[10px] font-black uppercase tracking-widest text-slate-400">Imagem</label>
-            <p className="text-[10.5px] font-medium text-slate-400">
-              {imagemPropria
-                ? `${imagens.length} imagem(ns) própria(s) desta versão.`
-                : `Sem imagem própria — a usar ${resolvido.origem === 'caracteristica' ? `a foto de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"` : 'a galeria geral do produto'}.`}
-            </p>
-            <button
-              type="button"
-              onClick={() => setImagePickerOpen(true)}
-              className="flex items-center gap-1.5 self-start text-[11px] font-bold text-ink underline decoration-slate-300 underline-offset-2 hover:decoration-ink"
-            >
-              {imagemPropria ? 'Editar imagens' : 'Escolher imagem própria'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {imagePickerOpen && (
         <VariantImagePicker
