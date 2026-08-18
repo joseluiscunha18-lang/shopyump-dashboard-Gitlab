@@ -2,12 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { produtoParaLinha } from '@/lib/db/produtoMapper';
 import type { ProdutoInsert, ProdutoUpdate } from '@/types/database';
 import type { ActionResult } from '@/lib/mutations/loja';
 
 export async function createProduto(input: ProdutoInsert): Promise<ActionResult & { id?: string }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('produtos').insert(input).select('id').single();
+  const { data, error } = await supabase.from('produtos').insert(produtoParaLinha(input)).select('id').single();
   if (error) return { ok: false, error: error.message };
 
   revalidatePath('/produtos');
@@ -16,7 +17,7 @@ export async function createProduto(input: ProdutoInsert): Promise<ActionResult 
 
 export async function updateProduto(id: string, patch: ProdutoUpdate): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase.from('produtos').update(patch).eq('id', id);
+  const { error } = await supabase.from('produtos').update(produtoParaLinha(patch)).eq('id', id);
   if (error) return { ok: false, error: error.message };
 
   revalidatePath('/produtos');
