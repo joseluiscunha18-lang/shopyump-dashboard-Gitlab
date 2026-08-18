@@ -5,11 +5,15 @@
  * valor que não está aqui); o match do nome da característica é
  * case-insensitive e cobre também nomes livres parecidos (ex: "cor da
  * tampa" continua a mostrar as cores).
+ *
+ * As listas de tamanhos são exportadas porque `caracteristicasPorCategoria.ts`
+ * reutiliza-as (ex: Calçados sempre sugere TAMANHOS_CALCADO, nunca a lista
+ * genérica) em vez de duplicar os números aqui e lá.
  */
-const TAMANHOS_LETRA = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG', 'Único'];
-const TAMANHOS_ROUPA_INFANTIL = ['RN', '0-3M', '3-6M', '6-9M', '9-12M', '12-18M', '18-24M'];
-const TAMANHOS_NUMERO = ['30', '32', '34', '36', '38', '40', '42', '44', '46'];
-const TAMANHOS_CALCADO = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
+export const TAMANHOS_LETRA = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG', 'Único'];
+export const TAMANHOS_ROUPA_INFANTIL = ['RN', '0-3M', '3-6M', '6-9M', '9-12M', '12-18M', '18-24M'];
+export const TAMANHOS_NUMERO = ['30', '32', '34', '36', '38', '40', '42', '44', '46'];
+export const TAMANHOS_CALCADO = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
 
 const SUGESTOES_POR_NOME: { padrao: RegExp; valores: string[] }[] = [
   { padrao: /^tamanho$/i, valores: [...TAMANHOS_LETRA, ...TAMANHOS_NUMERO] },
