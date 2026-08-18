@@ -379,10 +379,12 @@ function VersaoRow({
 
   return (
     <div className={cn('rounded-xl bg-white px-3 py-2 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
-      {/* Linha compacta — só o essencial: nome/cor, preço, peso (quando
-      definido), imagem, estoque (se ativo) e o menu "⋯" para ações menos
-      frequentes. */}
+      {/* Linha compacta — nome à esquerda, depois miniatura de imagem e
+      campos editáveis de preço/peso/estoque sempre visíveis sem expandir.
+      O menu "⋯" dá acesso a ações menos frequentes. */}
       <div className="flex items-center gap-2">
+
+        {/* Nome / label da versão — toca para expandir detalhes adicionais */}
         <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={12} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
           {corHex && <ColorDot hex={corHex} />}
@@ -392,15 +394,9 @@ function VersaoRow({
               Indisponível
             </span>
           )}
-          <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-slate-400">
-            {versao.preco != null && <span>{versao.preco} MT</span>}
-          </span>
         </button>
 
-        {/* Miniatura sempre visível — mostra o que vai aparecer na loja
-        mesmo quando esta versão não tem imagem própria (própria →
-        herdada da característica → galeria geral → ícone "+" se não
-        houver nada). Clicar abre sempre o editor desta versão. */}
+        {/* Miniatura de imagem — sempre visível, clicar abre o editor */}
         <button
           type="button"
           onClick={() => setImagePickerOpen(true)}
@@ -429,36 +425,52 @@ function VersaoRow({
           )}
         </button>
 
-        {/* Peso — editável direto na linha, sempre visível (não só quando
-        "Controlar estoque" está ligado, porque pesagem serve para o cálculo
-        de envio independentemente do estoque). Fica antes do estoque na
-        ordem dos campos rápidos: peso primeiro, depois estoque. */}
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          value={versao.peso ?? ''}
-          onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
-          placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
-          title={`Peso de ${label} (kg)`}
-          aria-label={`Peso de ${label}`}
-          className="h-8 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-        />
-
-        {/* Estoque — editável direto na linha, sem abrir a versão. Só
-        aparece quando "Controlar estoque" está ligado; os dados guardados
-        não desaparecem, só ficam escondidos enquanto estiver desligado. */}
-        {controlarEstoque && (
+        {/* Preço — editável direto na linha, sempre visível */}
+        <div className="flex shrink-0 flex-col items-end">
           <input
             type="number"
             min={0}
-            disabled={!ativa}
-            value={versao.estoque ?? ''}
-            onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
-            placeholder="0"
-            aria-label={`Estoque de ${label}`}
-            className="h-8 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+            value={versao.preco ?? ''}
+            onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder={String(precoBase || 0)}
+            title={`Preço de ${label} (MT)`}
+            aria-label={`Preço de ${label}`}
+            className="h-7 w-16 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
           />
+          <span className="text-[9px] font-semibold text-slate-400">MT</span>
+        </div>
+
+        {/* Peso — editável direto na linha, sempre visível */}
+        <div className="flex shrink-0 flex-col items-end">
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={versao.peso ?? ''}
+            onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
+            title={`Peso de ${label} (kg)`}
+            aria-label={`Peso de ${label}`}
+            className="h-7 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+          />
+          <span className="text-[9px] font-semibold text-slate-400">kg</span>
+        </div>
+
+        {/* Estoque — editável direto na linha, visível quando "Controlar estoque" está ligado */}
+        {controlarEstoque && (
+          <div className="flex shrink-0 flex-col items-end">
+            <input
+              type="number"
+              min={0}
+              disabled={!ativa}
+              value={versao.estoque ?? ''}
+              onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
+              placeholder="0"
+              aria-label={`Estoque de ${label}`}
+              className="h-7 w-12 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+            />
+            <span className="text-[9px] font-semibold text-slate-400">un.</span>
+          </div>
         )}
 
         {/* "⋯" — ações menos frequentes (editar detalhes / remover versão).
@@ -535,26 +547,14 @@ function VersaoRow({
         </div>
       </div>
 
-      {/* Detalhes menos frequentes — só aparecem ao expandir a versão. */}
+      {/* Detalhes menos frequentes — só aparecem ao expandir a versão.
+      Preço, peso e estoque já estão editáveis na linha acima; aqui ficam
+      só notas contextuais e ações secundárias. */}
       {expanded && (
         <div className="mt-2.5 flex flex-col gap-3 border-t border-slate-100 pt-2.5">
-          <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Preço</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                value={versao.preco ?? ''}
-                onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
-                placeholder={String(precoBase || 0)}
-                className="h-9 w-full rounded-xl border border-transparent bg-slate-50 px-3 text-[13px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-              />
-              <span className="shrink-0 text-[11px] font-bold text-slate-400">MT</span>
-            </div>
-            <p className="mt-1.5 text-[10px] font-medium text-slate-400">
-              Deixa em branco para usar o preço principal ({precoBase || 0} MT).
-            </p>
-          </div>
+          <p className="text-[10px] font-medium text-slate-400">
+            Preço: deixa em branco para usar o preço principal ({precoBase || 0} MT).
+          </p>
 
           <div>
             <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Peso</label>
