@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ChevronDown, ImagePlus, Images, MoreVertical, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ImagePlus, MoreVertical, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
 import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, imagensParaVersao, totalEstoque } from '@/lib/variantes';
@@ -124,59 +124,48 @@ export function StockSection({
   );
 }
 
-/** Botão + picker de imagem para um VALOR de característica (ex: a foto de
- *  "Vermelho"), usado no cabeçalho de RaizGroup/FilhaGroup — nunca no nível
- *  achatado (uma só característica), porque aí um valor já é uma versão e
- *  a imagem própria da versão já cobre o caso. */
-function GroupImageButton({
-  label,
-  imagens,
-  fotos,
-  onAddFoto,
-  lojaId,
-  onSave,
-}: {
-  label: string;
-  imagens: string[];
-  fotos: string[];
-  onAddFoto: (url: string) => void;
-  lojaId: string;
-  onSave: (urls: string[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
+/** Botão de imagem do grupo — usado dentro do conteúdo expandido de
+ *  RaizGroup/FilhaGroup, nunca no nível achatado (uma só característica),
+ *  porque aí um valor já é uma versão e a imagem própria da versão já
+ *  cobre o caso. Só aparece depois de o lojista abrir o grupo — não
+ *  polui a lista fechada. O picker em si é controlado pelo pai, para a
+ *  miniatura no cabeçalho (fechado) poder abrir o mesmo picker. */
+function GroupImageButton({ label, imagens, onOpen }: { label: string; imagens: string[]; onOpen: () => void }) {
   return (
-    <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        title={imagens.length === 0 ? `Foto padrão para todas as versões de "${label}"` : `${imagens.length} foto(s) de "${label}"`}
-        className={cn(
-          'relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-colors active:scale-[0.92]',
-          imagens.length > 0 ? 'ring-1 ring-inset ring-slate-200' : 'bg-white text-slate-400 hover:text-ink'
-        )}
-      >
-        {imagens[0] ? (
-          <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
-        ) : (
-          <ImagePlus size={13} />
-        )}
-      </button>
-      {open && (
-        <VariantImagePicker
-          open
-          onClose={() => setOpen(false)}
-          label={label}
-          lojaId={lojaId}
-          fotosGerais={fotos}
-          selecionadas={imagens}
-          onAddToGaleria={onAddFoto}
-          onSave={onSave}
-        />
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex items-center gap-2 self-start rounded-lg py-1 text-[10.5px] font-bold text-slate-400 transition-colors hover:text-ink"
+    >
+      {imagens[0] ? (
+        <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-slate-200">
+          <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
+        </span>
+      ) : (
+        <ImagePlus size={13} className="shrink-0" />
       )}
-    </>
+      {imagens.length > 0 ? `Imagem de "${label}" (${imagens.length}) — editar` : `Definir imagem para todas as versões de "${label}"`}
+    </button>
+  );
+}
+
+/** Miniatura discreta mostrada ao lado do valor SÓ quando já há uma
+ *  imagem própria definida para ele — sem imagem nenhuma, não mostra nada
+ *  (nem placeholder, nem ícone de câmara). Clicar abre o editor direto,
+ *  sem precisar de expandir o grupo primeiro. */
+function ThumbnailSeDefinida({ imagens, onClick }: { imagens: string[]; onClick: () => void }) {
+  if (imagens.length === 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
+    >
+      <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
+    </button>
   );
 }
 
@@ -218,6 +207,7 @@ function RaizGroup({
   mostrarAplicarATodas: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
   const ehCor = raizNome === 'Cor';
   // Só faz sentido dar imagem de grupo quando há uma segunda camada — com
@@ -238,14 +228,10 @@ function RaizGroup({
             ? `sem ${filha.nome.toLowerCase()}s ainda`
             : `${ativos} ${filha.nome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
-        <GroupImageButton
-          label={raizValor}
-          imagens={imagensDoGrupo}
-          fotos={fotos}
-          onAddFoto={onAddFoto}
-          lojaId={lojaId}
-          onSave={(urls) => onChangeImagensCaracteristica(raizNome, raizValor, urls)}
-        />
+        {/* Miniatura só aparece se já houver imagem definida para este
+        valor — sem imagem nenhuma, a linha fica limpa (nada de ícone de
+        câmara em todas as linhas). */}
+        <ThumbnailSeDefinida imagens={imagensDoGrupo} onClick={() => setImagePickerOpen(true)} />
       </div>
 
       {expanded && (
@@ -256,12 +242,11 @@ function RaizGroup({
             </p>
           )}
 
-          {imagensDoGrupo.length > 0 && versoes.length > 0 && (
-            <p className="text-[10px] font-medium text-slate-400">
-              Estas fotos são usadas em todas as versões de "{raizValor}", a não ser que uma versão tenha imagem
-              própria.
-            </p>
-          )}
+          {/* Controlo de imagem só aparece aqui, depois de o lojista abrir
+          o grupo — não é preciso marcar "esta imagem é para todas as
+          versões": sem nada escolhido, herda automaticamente a galeria
+          geral do produto. */}
+          <GroupImageButton label={raizValor} imagens={imagensDoGrupo} onOpen={() => setImagePickerOpen(true)} />
 
           {neta
             ? agruparPorFilha(filha, raizValor, versoes).map((grupo) => (
@@ -304,6 +289,19 @@ function RaizGroup({
                 />
               ))}
         </div>
+      )}
+
+      {imagePickerOpen && (
+        <VariantImagePicker
+          open
+          onClose={() => setImagePickerOpen(false)}
+          label={raizValor}
+          lojaId={lojaId}
+          fotosGerais={fotos}
+          selecionadas={imagensDoGrupo}
+          onAddToGaleria={onAddFoto}
+          onSave={(urls) => onChangeImagensCaracteristica(raizNome, raizValor, urls)}
+        />
       )}
     </div>
   );
@@ -350,6 +348,7 @@ function FilhaGroup({
   mostrarAplicarATodas: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const ativos = versoes.filter((v) => v.ativa !== false).length;
   const imagensDoGrupo = imagensPorCaracteristica?.[filhaNome]?.[filhaValor] ?? [];
 
@@ -366,14 +365,7 @@ function FilhaGroup({
             ? `sem ${netaNome.toLowerCase()}s ainda`
             : `${ativos} ${netaNome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
         </span>
-        <GroupImageButton
-          label={filhaValor}
-          imagens={imagensDoGrupo}
-          fotos={fotos}
-          onAddFoto={onAddFoto}
-          lojaId={lojaId}
-          onSave={(urls) => onChangeImagensCaracteristica(filhaNome, filhaValor, urls)}
-        />
+        <ThumbnailSeDefinida imagens={imagensDoGrupo} onClick={() => setImagePickerOpen(true)} />
       </div>
 
       {expanded && (
@@ -383,6 +375,7 @@ function FilhaGroup({
               Ainda sem {netaNome.toLowerCase()}s para "{filhaValor}" — adiciona em "Opções do produto" acima.
             </p>
           )}
+          <GroupImageButton label={filhaValor} imagens={imagensDoGrupo} onOpen={() => setImagePickerOpen(true)} />
           {versoes.map((v) => (
             <VersaoRow
               key={v.chave}
@@ -401,6 +394,19 @@ function FilhaGroup({
             />
           ))}
         </div>
+      )}
+
+      {imagePickerOpen && (
+        <VariantImagePicker
+          open
+          onClose={() => setImagePickerOpen(false)}
+          label={filhaValor}
+          lojaId={lojaId}
+          fotosGerais={fotos}
+          selecionadas={imagensDoGrupo}
+          onAddToGaleria={onAddFoto}
+          onSave={(urls) => onChangeImagensCaracteristica(filhaNome, filhaValor, urls)}
+        />
       )}
     </div>
   );
@@ -488,46 +494,43 @@ function VersaoRow({
           )}
           <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-slate-400">
             {versao.preco != null && <span>{versao.preco} MT</span>}
-            {typeof versao.peso === 'number' && (
-              <span>{versao.preco != null ? '· ' : ''}{formatarPeso(versao.peso)}</span>
-            )}
           </span>
         </button>
 
-        {/* Ícone de imagem junto da seta — acesso imediato sem abrir os
-        detalhes. Mostra sempre a imagem que vai aparecer na loja, mesmo
-        quando é herdada (característica ou galeria geral); o anel
-        pontilhado avisa que não é uma escolha própria desta versão. */}
-        <button
-          type="button"
-          onClick={() => setImagePickerOpen(true)}
-          title={
-            imagens.length === 0
-              ? 'Escolher imagens desta versão'
-              : imagemPropria
-                ? `${imagens.length} imagem(ns) desta versão`
-                : `${imagens.length} imagem(ns) herdada(s) — toca para escolher uma própria`
-          }
-          className={cn(
-            'relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-colors active:scale-[0.92]',
-            imagens.length > 0
-              ? imagemPropria
-                ? 'ring-1 ring-inset ring-slate-200'
-                : 'ring-1 ring-inset ring-dashed ring-slate-300'
-              : 'bg-slate-50 text-slate-400 hover:text-ink'
-          )}
-        >
-          {imagens[0] ? (
-            <Image src={imagens[0]} alt="" fill className={cn('object-cover', !imagemPropria && 'opacity-70')} sizes="32px" />
-          ) : (
-            <Images size={15} />
-          )}
-          {imagens.length > 1 && (
-            <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
-              {imagens.length}
-            </span>
-          )}
-        </button>
+        {/* Miniatura só aparece se esta versão tiver imagem PRÓPRIA — se
+        estiver a herdar (da característica ou da galeria geral), a linha
+        fica limpa, sem ícone nenhum. Clicar abre o editor direto. */}
+        {imagemPropria && (
+          <button
+            type="button"
+            onClick={() => setImagePickerOpen(true)}
+            title={`${imagens.length} imagem(ns) própria(s) desta versão`}
+            className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
+          >
+            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
+            {imagens.length > 1 && (
+              <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
+                {imagens.length}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Peso — editável direto na linha, sempre visível (não só quando
+        "Controlar estoque" está ligado, porque pesagem serve para o cálculo
+        de envio independentemente do estoque). Fica antes do estoque na
+        ordem dos campos rápidos: peso primeiro, depois estoque. */}
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          value={versao.peso ?? ''}
+          onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
+          placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
+          title={`Peso de ${label} (kg)`}
+          aria-label={`Peso de ${label}`}
+          className="h-8 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+        />
 
         {/* Estoque — editável direto na linha, sem abrir a versão. Só
         aparece quando "Controlar estoque" está ligado; os dados guardados
@@ -560,6 +563,30 @@ function VersaoRow({
 
           {menuOpen && (
             <div className="absolute right-0 top-full z-20 mt-1.5 w-[168px] overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setImagePickerOpen(true);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              >
+                <ImagePlus size={14} strokeWidth={2.3} className="text-slate-500" />
+                Imagem desta versão
+              </button>
+              {imagemPropria && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onChange({ ...versao, imagens: [] });
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                >
+                  <RotateCcw size={14} strokeWidth={2.3} className="text-slate-500" />
+                  Usar imagem herdada
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -618,20 +645,8 @@ function VersaoRow({
 
           <div>
             <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Peso</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={versao.peso ?? ''}
-                onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
-                placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
-                className="h-9 w-full rounded-xl border border-transparent bg-slate-50 px-3 text-[13px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-              />
-              <span className="shrink-0 text-[11px] font-bold text-slate-400">kg</span>
-            </div>
-            <p className="mt-1.5 text-[10px] font-medium text-slate-400">
-              Opcional — deixa em branco para usar{' '}
+            <p className="text-[10px] font-medium text-slate-400">
+              Editável na linha acima (kg). Deixa em branco para usar{' '}
               {typeof pesoPadrao === 'number' ? `o peso padrão do produto (${formatarPeso(pesoPadrao)})` : 'o peso padrão do produto'}.
             </p>
             {mostrarAplicarATodas && typeof versao.peso === 'number' && (
@@ -646,19 +661,19 @@ function VersaoRow({
           </div>
 
           <div className="flex flex-col items-start gap-1">
+            <label className="mb-0.5 block text-[10px] font-black uppercase tracking-widest text-slate-400">Imagem</label>
+            <p className="text-[10.5px] font-medium text-slate-400">
+              {imagemPropria
+                ? `${imagens.length} imagem(ns) própria(s) desta versão.`
+                : `Sem imagem própria — a usar ${resolvido.origem === 'caracteristica' ? `a foto de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"` : 'a galeria geral do produto'}.`}
+            </p>
             <button
               type="button"
               onClick={() => setImagePickerOpen(true)}
-              className="flex items-center gap-1.5 self-start text-[11px] font-bold text-slate-400 hover:text-ink"
+              className="flex items-center gap-1.5 self-start text-[11px] font-bold text-ink underline decoration-slate-300 underline-offset-2 hover:decoration-ink"
             >
-              <ImagePlus size={13} />
-              {imagemPropria ? `Editar imagens (${imagens.length})` : 'Escolher imagem própria para esta versão'}
+              {imagemPropria ? 'Editar imagens' : 'Escolher imagem própria'}
             </button>
-            {!imagemPropria && imagens.length > 0 && (
-              <p className="text-[10px] font-medium text-slate-400">
-                Por agora usa {resolvido.origem === 'caracteristica' ? `a foto de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"` : 'a galeria geral do produto'}.
-              </p>
-            )}
           </div>
         </div>
       )}
