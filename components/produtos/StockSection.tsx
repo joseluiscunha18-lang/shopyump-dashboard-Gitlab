@@ -551,26 +551,26 @@ function VersaoRow({
         ("kg", "g", "lb", "oz") é clicável e abre um seletor; o valor
         continua sempre guardado em kg, só a exibição muda de unidade. */}
         {controlarPeso && (
-          <div className="flex flex-1 items-center gap-1.5">
+          <div className="flex flex-1 items-center gap-1">
             <div ref={unidadeRef} className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setUnidadePickerOpen((v) => !v)}
-                aria-label="Trocar unidade de peso"
+                aria-label={`Escolher unidade de peso de ${label}`}
                 className="rounded px-1 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
               >
                 {pesoUnidade}
               </button>
               {unidadePickerOpen && (
-                <div className="absolute left-0 top-full z-20 mt-1.5 flex gap-1 rounded-full border border-slate-100 bg-white p-1 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+                <div className="absolute left-0 top-full z-20 mt-1.5 w-14 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
                   {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
                     <button
                       key={u}
                       type="button"
                       onClick={() => trocarUnidadePeso(u)}
                       className={cn(
-                        'rounded-full px-2.5 py-1 text-[10.5px] font-bold transition-colors',
-                        pesoUnidade === u ? 'bg-ink text-white' : 'text-slate-500 hover:bg-slate-50'
+                        'flex w-full items-center justify-center rounded-xl px-2 py-1.5 text-[11px] font-bold transition-colors',
+                        pesoUnidade === u ? 'bg-ink text-white' : 'text-ink hover:bg-slate-50'
                       )}
                     >
                       {u}
