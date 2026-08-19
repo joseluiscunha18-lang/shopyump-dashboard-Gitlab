@@ -46,7 +46,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   // Peso padrão — vive antes de "Opções do produto" porque é usado
   // automaticamente por todas as variantes. Guardado sempre em kg
-  // (`mais_opcoes.peso`), mas o vendedor pode digitar em g ou kg.
+  // (`mais_opcoes.peso`), mas o vendedor pode digitar em g, kg, lb ou oz.
+  // "Controlar peso" segue a mesma lógica do interruptor de estoque: quando
+  // desligado, o campo fica escondido e o valor gravado passa a null, mas
+  // nada já digitado é apagado da tela enquanto o formulário está aberto.
+  const [controlarPeso, setControlarPeso] = useState(true);
   const [pesoPadraoUnidade, setPesoPadraoUnidade] = useState<UnidadePeso>('kg');
   const [pesoPadraoValor, setPesoPadraoValor] = useState(
     typeof produto?.mais_opcoes?.peso === 'number' ? String(produto.mais_opcoes.peso) : ''
@@ -87,7 +91,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           ? null
           : Number(estoqueSimples);
 
-    const maisOpcoesFinal: ProdutoMaisOpcoes = { ...maisOpcoes, peso: pesoPadraoKg };
+    const maisOpcoesFinal: ProdutoMaisOpcoes = { ...maisOpcoes, peso: controlarPeso ? pesoPadraoKg : null };
 
     const payload = {
       loja_id: lojaId,
@@ -203,13 +207,31 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         )}
       </div>
 
-      {/* 7. Peso padrão — usado automaticamente por todas as variantes */}
-      <PesoPadraoInput
-        valor={pesoPadraoValor}
-        unidade={pesoPadraoUnidade}
-        onChangeValor={setPesoPadraoValor}
-        onChangeUnidade={setPesoPadraoUnidade}
-      />
+      {/* 7. Peso — mesmo padrão do interruptor de Estoque acima: quando
+      desligado, o produto fica sem peso definido (não entra no cálculo de
+      envio), mas o valor já digitado continua guardado na tela. */}
+      <div>
+        <div className="mb-2 flex items-center justify-between pl-1">
+          <h3 className="text-[13px] font-black text-ink">Peso</h3>
+          <label className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-400">Controlar peso</span>
+            <Switch checked={controlarPeso} onChange={setControlarPeso} ariaLabel="Controlar peso" size="sm" />
+          </label>
+        </div>
+
+        {controlarPeso ? (
+          <PesoPadraoInput
+            valor={pesoPadraoValor}
+            unidade={pesoPadraoUnidade}
+            onChangeValor={setPesoPadraoValor}
+            onChangeUnidade={setPesoPadraoUnidade}
+          />
+        ) : (
+          <p className="pl-1 text-[11px] font-medium text-slate-400">
+            O peso não entra no cálculo de envio deste produto.
+          </p>
+        )}
+      </div>
 
       {/* 8. Opções do produto */}
       <VariantEditor state={variantes} onChange={setVariantes} />
@@ -223,6 +245,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           versoes={variantes.versoes}
           onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
           controlarEstoque={controlarEstoque}
+          controlarPeso={controlarPeso}
           precoBase={Number(preco) || 0}
           pesoPadrao={pesoPadraoKg}
           fotos={fotos}
