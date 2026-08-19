@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft, Check, Search } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
-import { cn } from '@/lib/cn';
 import {
   CATEGORIAS_TOPO,
   SEPARADOR_CATEGORIA,
@@ -98,7 +97,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
         {segmentosValor.length > 0 ? (
           <span className="flex min-w-0 flex-1 flex-col">
             {segmentosValor.length > 1 && (
-              <span className="truncate text-[11px] font-semibold text-slate-400">
+              <span className="truncate text-[11px] font-semibold text-slate-500">
                 {segmentosValor.slice(0, -1).join(SEPARADOR_CATEGORIA)}
               </span>
             )}
@@ -107,9 +106,9 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
             </span>
           </span>
         ) : (
-          <span className="text-[13px] font-semibold text-slate-400">Escolher categoria</span>
+          <span className="text-[13px] font-semibold text-slate-500">Escolher categoria</span>
         )}
-        <ChevronRight size={16} className="shrink-0 text-slate-400" />
+        <ChevronRight size={18} className="shrink-0 text-slate-500" />
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Categoria" heightVh={72} closeButton>
@@ -117,52 +116,48 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
         fixa no topo da folha para continuar acessível ao fazer scroll na
         lista de resultados ou de navegação por caminho. */}
         <div className="sticky top-0 z-10 -mx-6 bg-white px-6 pb-3 pt-1">
-          <div className="flex items-center gap-2.5 border-b border-slate-200 pb-2.5 transition-colors focus-within:border-ink">
-            <Search size={16} strokeWidth={2.3} className="shrink-0 text-slate-400" />
+          <div className="relative">
+            <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               ref={inputRef}
               value={termo}
               onChange={(e) => setTermo(e.target.value)}
               placeholder="Pesquisar categoria ou subcategoria…"
-              className="h-full w-full min-w-0 bg-transparent text-[13px] font-semibold text-ink outline-none placeholder:text-slate-400"
+              className="w-full rounded-2xl border border-transparent bg-slate-50 py-3 pl-10 pr-4 text-[13px] font-semibold text-ink outline-none placeholder:font-medium placeholder:text-slate-500 focus:border-ink focus:bg-white focus:ring-4 focus:ring-ink/5"
             />
           </div>
         </div>
 
         {termo.trim() ? (
-          // Modo pesquisa: todos os níveis, caminho completo em cada
-          // resultado — nome encontrado em destaque, caminho como
-          // informação secundária abaixo.
+          // Modo pesquisa: cada resultado numa única linha — nome em
+          // destaque e, ao lado, só a categoria de topo como contexto
+          // (não o caminho completo, que repete informação e ocupa
+          // duas linhas por resultado à toa).
           <div className="flex flex-col pb-3">
             {resultados.length === 0 && (
-              <p className="px-1 py-6 text-[13px] font-medium text-slate-400">
+              <p className="px-1 py-6 text-[13px] font-semibold text-slate-500">
                 Nenhuma categoria encontrada para &ldquo;{termo.trim()}&rdquo;.
               </p>
             )}
-            {resultados.map((r, i) => (
+            {resultados.map((r) => (
               <button
                 key={r.texto}
                 type="button"
                 onClick={() => selecionar(r.texto)}
-                className={cn(
-                  'flex items-center justify-between gap-3 px-1 py-3 text-left transition-colors active:bg-slate-50',
-                  i !== 0 && 'border-t border-slate-100'
-                )}
+                className="flex items-center justify-between gap-3 px-1 py-3 text-left transition-colors active:bg-slate-50"
               >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-bold text-ink">
+                <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                  <span className="truncate text-[13px] font-bold text-ink">
                     {r.caminho[r.caminho.length - 1]}
                   </span>
                   {r.caminho.length > 1 && (
-                    <span className="mt-0.5 block truncate text-[11.5px] font-medium text-slate-400">
-                      {r.caminho.slice(0, -1).join(SEPARADOR_CATEGORIA)}
-                    </span>
+                    <span className="shrink-0 text-[11.5px] font-semibold text-slate-500">{r.topo}</span>
                   )}
                 </span>
                 {value === r.texto ? (
-                  <Check size={16} className="shrink-0 text-ink" />
+                  <Check size={18} className="shrink-0 text-ink" />
                 ) : (
-                  <ChevronRight size={15} className="shrink-0 text-slate-400" />
+                  <ChevronRight size={18} className="shrink-0 text-slate-500" />
                 )}
               </button>
             ))}
@@ -184,7 +179,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
             )}
 
             <div className="flex flex-col">
-              {opcoesNivel.map((nome, i) => {
+              {opcoesNivel.map((nome) => {
                 const caminhoOpcao = [...caminho, nome];
                 const textoOpcao = caminhoOpcao.join(SEPARADOR_CATEGORIA);
                 const selecionavel = nivelSaoItensFinal;
@@ -193,16 +188,13 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
                     key={nome}
                     type="button"
                     onClick={() => tocarOpcao(nome)}
-                    className={cn(
-                      'flex items-center justify-between gap-3 px-1 py-3 text-left transition-colors active:bg-slate-50',
-                      i !== 0 && 'border-t border-slate-100'
-                    )}
+                    className="flex items-center justify-between gap-3 px-1 py-3 text-left transition-colors active:bg-slate-50"
                   >
                     <span className="truncate text-[13px] font-bold text-ink">{nome}</span>
                     {selecionavel ? (
-                      value === textoOpcao && <Check size={16} className="shrink-0 text-ink" />
+                      value === textoOpcao && <Check size={18} className="shrink-0 text-ink" />
                     ) : (
-                      <ChevronRight size={15} className="shrink-0 text-slate-500" />
+                      <ChevronRight size={18} className="shrink-0 text-slate-500" />
                     )}
                   </button>
                 );
