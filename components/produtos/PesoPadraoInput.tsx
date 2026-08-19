@@ -1,6 +1,6 @@
 'use client';
 
-import { kgParaUnidade } from '@/lib/peso';
+import { kgParaUnidade, pesoParaKg } from '@/lib/peso';
 import type { UnidadePeso } from '@/lib/peso';
 
 /**
@@ -24,9 +24,9 @@ export function PesoPadraoInput({
   function trocarUnidade(u: UnidadePeso) {
     if (u === unidade) return;
     // Converte o valor já digitado para a nova unidade, para o vendedor
-    // não perder o número ao trocar entre g e kg.
+    // não perder o número ao trocar de unidade.
     if (valor.trim() !== '' && !Number.isNaN(Number(valor))) {
-      const kg = unidade === 'g' ? Number(valor) / 1000 : Number(valor);
+      const kg = pesoParaKg(Number(valor), unidade);
       onChangeValor(String(kgParaUnidade(kg, u)));
     }
     onChangeUnidade(u);
@@ -49,13 +49,13 @@ export function PesoPadraoInput({
           className="h-11 w-full min-w-0 flex-1 rounded-xl bg-slate-100 px-3.5 text-[13px] font-bold text-ink outline-none focus:ring-2 focus:ring-ink/10"
         />
         <div className="flex shrink-0 gap-1 rounded-full bg-slate-100 p-1">
-          {(['g', 'kg'] as const).map((u) => (
+          {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
             <button
               key={u}
               type="button"
               onClick={() => trocarUnidade(u)}
               className={[
-                'rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors',
+                'rounded-full px-2.5 py-1.5 text-[11px] font-bold transition-colors',
                 unidade === u ? 'bg-ink text-white' : 'text-slate-500',
               ].join(' ')}
             >
