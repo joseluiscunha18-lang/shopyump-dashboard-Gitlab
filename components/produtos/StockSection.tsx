@@ -533,6 +533,7 @@ function VersaoRow({
         )}
       </div>
 
+      {imagePickerOpen && (
         <VariantImagePicker
           open
           onClose={() => setImagePickerOpen(false)}
