@@ -377,11 +377,9 @@ function VersaoRow({
 
   return (
     <div className={cn('rounded-xl bg-white px-4 py-3 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
-      {/* Linha — nome à esquerda, miniatura e campos editáveis sempre visíveis.
-      O menu "⋯" dá acesso a ações menos frequentes. */}
-      <div className="flex items-center gap-3">
-
-        {/* Nome / label da versão */}
+      {/* Linha 1 — identidade da versão: nome com largura total (nunca
+      corta), miniatura de imagem e menu de ações. */}
+      <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           {corHex && <ColorDot hex={corHex} />}
           <span className="truncate text-[13px] font-bold text-ink">{label}</span>
@@ -421,63 +419,13 @@ function VersaoRow({
           )}
         </button>
 
-        {/* Preço — editável direto na linha, sempre visível */}
-        <div className="flex shrink-0 flex-col items-end">
-          <input
-            type="number"
-            min={0}
-            value={versao.preco ?? ''}
-            onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
-            placeholder={String(precoBase || 0)}
-            title={`Preço de ${label} (MT)`}
-            aria-label={`Preço de ${label}`}
-            className="h-7 w-16 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-          />
-          <span className="text-[9px] font-semibold text-slate-400">MT</span>
-        </div>
-
-        {/* Peso — editável direto na linha, sempre visível */}
-        <div className="flex shrink-0 flex-col items-end">
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={versao.peso ?? ''}
-            onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
-            placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
-            title={`Peso de ${label} (kg)`}
-            aria-label={`Peso de ${label}`}
-            className="h-7 w-14 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-          />
-          <span className="text-[9px] font-semibold text-slate-400">kg</span>
-        </div>
-
-        {/* Estoque — editável direto na linha, visível quando "Controlar estoque" está ligado */}
-        {controlarEstoque && (
-          <div className="flex shrink-0 flex-col items-end">
-            <input
-              type="number"
-              min={0}
-              disabled={!ativa}
-              value={versao.estoque ?? ''}
-              onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
-              placeholder="0"
-              aria-label={`Estoque de ${label}`}
-              className="h-7 w-12 shrink-0 rounded-lg border border-transparent bg-slate-50 px-2 text-right text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
-            />
-            <span className="text-[9px] font-semibold text-slate-400">un.</span>
-          </div>
-        )}
-
-        {/* "⋯" — ações menos frequentes (editar detalhes / remover versão).
-        Fica ao lado das outras ações da linha; nunca um ícone de lixo
-        sempre visível. */}
+        {/* "⋯" — ações menos frequentes (imagem própria / remover versão). */}
         <div ref={menuRef} className="relative shrink-0">
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Ações da versão"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
           >
             <MoreVertical size={15} strokeWidth={2.3} />
           </button>
@@ -533,8 +481,58 @@ function VersaoRow({
         </div>
       </div>
 
+      {/* Linha 2 — preço, peso e estoque, editáveis direto, sem disputar
+      espaço com o nome. */}
+      <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-2">
+        {/* Preço */}
+        <div className="flex flex-1 items-center gap-1.5">
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">MT</span>
+          <input
+            type="number"
+            min={0}
+            value={versao.preco ?? ''}
+            onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder={String(precoBase || 0)}
+            title={`Preço de ${label} (MT)`}
+            aria-label={`Preço de ${label}`}
+            className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+          />
+        </div>
 
-      {imagePickerOpen && (
+        {/* Peso */}
+        <div className="flex flex-1 items-center gap-1.5">
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">kg</span>
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={versao.peso ?? ''}
+            onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
+            title={`Peso de ${label} (kg)`}
+            aria-label={`Peso de ${label}`}
+            className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+          />
+        </div>
+
+        {/* Estoque — visível quando "Controlar estoque" está ligado */}
+        {controlarEstoque && (
+          <div className="flex flex-1 items-center gap-1.5">
+            <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">un.</span>
+            <input
+              type="number"
+              min={0}
+              disabled={!ativa}
+              value={versao.estoque ?? ''}
+              onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
+              placeholder="0"
+              aria-label={`Estoque de ${label}`}
+              className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+            />
+          </div>
+        )}
+      </div>
+
         <VariantImagePicker
           open
           onClose={() => setImagePickerOpen(false)}
