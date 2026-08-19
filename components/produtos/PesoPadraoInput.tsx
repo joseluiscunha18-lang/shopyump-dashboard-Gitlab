@@ -48,21 +48,18 @@ export function PesoPadraoInput({
           placeholder="0"
           className="h-11 w-full min-w-0 flex-1 rounded-xl bg-slate-100 px-3.5 text-[13px] font-bold text-ink outline-none focus:ring-2 focus:ring-ink/10"
         />
-        <div className="flex shrink-0 gap-1 rounded-full bg-slate-100 p-1">
+        <select
+          value={unidade}
+          onChange={(e) => trocarUnidade(e.target.value as UnidadePeso)}
+          aria-label="Unidade do peso padrão"
+          className="h-11 shrink-0 rounded-xl bg-slate-100 pl-3 pr-7 text-[12px] font-bold text-ink outline-none focus:ring-2 focus:ring-ink/10 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22 fill=%22%2394a3b8%22><path d=%22M5.5 7.5l4.5 4.5 4.5-4.5%22 stroke=%22%2394a3b8%22 stroke-width=%221.6%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>')] bg-no-repeat bg-[right_0.5rem_center]"
+        >
           {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
-            <button
-              key={u}
-              type="button"
-              onClick={() => trocarUnidade(u)}
-              className={[
-                'rounded-full px-2.5 py-1.5 text-[11px] font-bold transition-colors',
-                unidade === u ? 'bg-ink text-white' : 'text-slate-500',
-              ].join(' ')}
-            >
+            <option key={u} value={u}>
               {u}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
       <p className="mt-1.5 pl-1 text-[10px] font-medium text-slate-400">
         Usado por todas as versões — dentro de uma versão dá para pôr um peso próprio só quando for diferente.
