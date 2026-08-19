@@ -318,16 +318,76 @@ export function itensDe(topo: string, sub?: string): string[] {
 }
 
 /**
+ * Sinónimos e termos coloquiais usados em Moçambique que não aparecem
+ * literalmente na taxonomia — ex: "celular" (em vez de "telemóvel"),
+ * "notebook" (em vez de "portátil"). O vendedor não precisa de saber o
+ * nome exato cadastrado; escreve o termo que usa no dia a dia e a
+ * pesquisa traduz para o termo da taxonomia por trás. Chaves e valores
+ * já normalizados (sem acentos, minúsculas) para comparar diretamente
+ * com `chaveBusca`.
+ */
+const SINONIMOS_BUSCA: Record<string, string> = {
+  celular: 'telemovel',
+  smartphone: 'telemovel',
+  notebook: 'portatil',
+  laptop: 'portatil',
+  pc: 'computador',
+  tv: 'televisor',
+  televisao: 'televisor',
+  geladeira: 'frigorifico',
+  freezer: 'congelador',
+  fogao: 'fogoes',
+  'micro ondas': 'micro-ondas',
+  microondas: 'micro-ondas',
+  headset: 'fones',
+  'fone de ouvido': 'fones',
+  auscultadores: 'fones',
+  cueca: 'roupa interior',
+  sutia: 'roupa interior',
+  soutien: 'roupa interior',
+  calcinha: 'roupa interior',
+  tenis: 'tenis',
+  sapatilha: 'sapatilhas',
+  mala: 'malas',
+  carregador: 'carregadores',
+  'power bank': 'power banks',
+  bateria: 'power banks',
+  colchao: 'colchoes',
+  edredao: 'edredons',
+  cobertor: 'cobertores',
+  panela: 'panelas',
+  liquidificador: 'liquidificadores',
+  ventilador: 'ventoinhas',
+  moto: 'motociclos',
+  mota: 'motociclos',
+  carro: 'automovel',
+  pneu: 'pneus',
+  oculos: 'oculos de sol',
+  relogio: 'relogios',
+  bicicleta: 'bicicletas',
+  capacete: 'capacetes',
+  perfume: 'perfumes',
+  batom: 'batom',
+};
+
+/**
  * Pesquisa em todos os níveis da taxonomia (categoria, subcategoria e
  * item final) e devolve categorias finais cujo caminho completo contém o
  * termo — é isso que permite escrever "ténis" e encontrar
  * "Moda › Calçados › Ténis", ou escrever "moda" e ver todas as categorias
- * de Moda. Sem limite de resultados ("limit_visible_categories": false).
+ * de Moda. Também reconhece sinónimos comuns (ver `SINONIMOS_BUSCA`), para
+ * o vendedor não ter de adivinhar o nome exato da taxonomia. Sem limite
+ * de resultados ("limit_visible_categories": false).
  */
 export function buscarCategorias(termo: string): CategoriaFolha[] {
   const chave = normalizar(termo);
   if (!chave) return [];
-  return TODAS_CATEGORIAS.filter((c) => c.chaveBusca.includes(chave));
+
+  const termosBusca = [chave];
+  const sinonimo = SINONIMOS_BUSCA[chave];
+  if (sinonimo && sinonimo !== chave) termosBusca.push(sinonimo);
+
+  return TODAS_CATEGORIAS.filter((c) => termosBusca.some((t) => c.chaveBusca.includes(t)));
 }
 
 /** Divide "Moda › Calçados › Ténis" em ['Moda', 'Calçados', 'Ténis'] —
