@@ -7,6 +7,7 @@ import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
 import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, imagensParaVersao, totalEstoque } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';
+import { kgParaUnidade, pesoParaKg, type UnidadePeso } from '@/lib/peso';
 import type { ProdutoOpcaoFilha, ProdutoOpcaoNeta, ProdutoOpcaoRaiz, ProdutoVersao } from '@/types/database';
 import { cn } from '@/lib/cn';
 
@@ -24,6 +25,7 @@ export function StockSection({
   versoes,
   onVersoesChange,
   controlarEstoque,
+  controlarPeso,
   precoBase,
   pesoPadrao,
   fotos,
@@ -39,6 +41,8 @@ export function StockSection({
   onVersoesChange: (v: ProdutoVersao[]) => void;
   /** Controla só a visibilidade do campo de estoque de cada combinação — vem do topo do formulário. */
   controlarEstoque: boolean;
+  /** Controla só a visibilidade do campo de peso de cada combinação — vem do topo do formulário. */
+  controlarPeso: boolean;
   precoBase: number;
   /** Peso padrão do produto (kg) — usado como placeholder quando a versão não tem peso próprio. */
   pesoPadrao?: number | null;
@@ -75,6 +79,7 @@ export function StockSection({
               neta={neta}
               versoes={grupo.versoes}
               controlarEstoque={controlarEstoque}
+              controlarPeso={controlarPeso}
               precoBase={precoBase}
               pesoPadrao={pesoPadrao}
               fotos={fotos}
@@ -102,6 +107,7 @@ export function StockSection({
               corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
               versao={v}
               controlarEstoque={controlarEstoque}
+              controlarPeso={controlarPeso}
               precoBase={precoBase}
               pesoPadrao={pesoPadrao}
               fotos={fotos}
@@ -163,6 +169,7 @@ function RaizGroup({
   neta,
   versoes,
   controlarEstoque,
+  controlarPeso,
   precoBase,
   pesoPadrao,
   fotos,
@@ -181,6 +188,7 @@ function RaizGroup({
   neta: ProdutoOpcaoNeta | null;
   versoes: ProdutoVersao[];
   controlarEstoque: boolean;
+  controlarPeso: boolean;
   precoBase: number;
   pesoPadrao?: number | null;
   fotos: string[];
@@ -260,6 +268,7 @@ function RaizGroup({
                         label={v.valores[neta.nome] ?? v.chave}
                         versao={v}
                         controlarEstoque={controlarEstoque}
+                        controlarPeso={controlarPeso}
                         precoBase={precoBase}
                         pesoPadrao={pesoPadrao}
                         fotos={fotos}
@@ -280,6 +289,7 @@ function RaizGroup({
                   label={v.valores[filha.nome] ?? v.chave}
                   versao={v}
                   controlarEstoque={controlarEstoque}
+                  controlarPeso={controlarPeso}
                   precoBase={precoBase}
                   pesoPadrao={pesoPadrao}
                   fotos={fotos}
@@ -316,6 +326,7 @@ function VersaoRow({
   corHex,
   versao,
   controlarEstoque,
+  controlarPeso,
   precoBase,
   pesoPadrao,
   fotos,
@@ -332,6 +343,8 @@ function VersaoRow({
   versao: ProdutoVersao;
   /** Mostra/esconde o campo de estoque desta combinação — os dados nunca são apagados quando fica escondido. */
   controlarEstoque: boolean;
+  /** Mostra/esconde o campo de peso desta combinação — os dados nunca são apagados quando fica escondido. */
+  controlarPeso: boolean;
   precoBase: number;
   pesoPadrao?: number | null;
   fotos: string[];
@@ -345,6 +358,13 @@ function VersaoRow({
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Unidade de exibição do campo de peso — só afeta o que aparece no
+  // input; o valor continua sempre guardado em kg (versao.peso). Cada
+  // versão lembra a sua própria unidade escolhida, tal como o peso padrão.
+  const [pesoUnidade, setPesoUnidade] = useState<UnidadePeso>('kg');
+  const [unidadePickerOpen, setUnidadePickerOpen] = useState(false);
+  const unidadeRef = useRef<HTMLDivElement>(null);
 
   const ativa = versao.ativa !== false;
   // Hierarquia completa: imagem própria da versão → imagem herdada da
@@ -363,6 +383,20 @@ function VersaoRow({
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!unidadePickerOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (unidadeRef.current && !unidadeRef.current.contains(e.target as Node)) setUnidadePickerOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [unidadePickerOpen]);
+
+  function trocarUnidadePeso(u: UnidadePeso) {
+    setUnidadePickerOpen(false);
+    setPesoUnidade(u);
+  }
 
   function handleRemover() {
     setMenuOpen(false);
@@ -457,6 +491,20 @@ function VersaoRow({
                 </button>
               )}
 
+              {controlarPeso && mostrarAplicarATodas && typeof versao.peso === 'number' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onAplicarPesoATodas(versao.peso ?? null);
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                >
+                  <RotateCcw size={14} strokeWidth={2.3} className="text-slate-500" />
+                  Usar este peso em todas
+                </button>
+              )}
+
               {ativa ? (
                 <button
                   type="button"
@@ -499,21 +547,56 @@ function VersaoRow({
           />
         </div>
 
-        {/* Peso */}
-        <div className="flex flex-1 items-center gap-1.5">
-          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">kg</span>
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={versao.peso ?? ''}
-            onChange={(e) => onChange({ ...versao, peso: e.target.value === '' ? null : Number(e.target.value) })}
-            placeholder={typeof pesoPadrao === 'number' ? String(pesoPadrao) : '0'}
-            title={`Peso de ${label} (kg)`}
-            aria-label={`Peso de ${label}`}
-            className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-          />
-        </div>
+        {/* Peso — visível quando "Controlar peso" está ligado. A unidade
+        ("kg", "g", "lb", "oz") é clicável e abre um seletor; o valor
+        continua sempre guardado em kg, só a exibição muda de unidade. */}
+        {controlarPeso && (
+          <div className="flex flex-1 items-center gap-1.5">
+            <div ref={unidadeRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setUnidadePickerOpen((v) => !v)}
+                aria-label="Trocar unidade de peso"
+                className="rounded px-1 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+              >
+                {pesoUnidade}
+              </button>
+              {unidadePickerOpen && (
+                <div className="absolute left-0 top-full z-20 mt-1.5 flex gap-1 rounded-full border border-slate-100 bg-white p-1 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+                  {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => trocarUnidadePeso(u)}
+                      className={cn(
+                        'rounded-full px-2.5 py-1 text-[10.5px] font-bold transition-colors',
+                        pesoUnidade === u ? 'bg-ink text-white' : 'text-slate-500 hover:bg-slate-50'
+                      )}
+                    >
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={typeof versao.peso === 'number' ? kgParaUnidade(versao.peso, pesoUnidade) : ''}
+              onChange={(e) =>
+                onChange({
+                  ...versao,
+                  peso: e.target.value === '' ? null : pesoParaKg(Number(e.target.value), pesoUnidade),
+                })
+              }
+              placeholder={typeof pesoPadrao === 'number' ? String(kgParaUnidade(pesoPadrao, pesoUnidade)) : '0'}
+              title={`Peso de ${label} (${pesoUnidade})`}
+              aria-label={`Peso de ${label}`}
+              className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+            />
+          </div>
+        )}
 
         {/* Estoque — visível quando "Controlar estoque" está ligado */}
         {controlarEstoque && (
