@@ -66,90 +66,6 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
   return new File([arr], filename, { type: mime });
 }
 
-/**
- * Remove o fundo localmente via canvas — sem API.
- * Lê os pixels da imagem, torna transparentes os que estiverem
- * perto do branco/cinza claro (cor de fundo típica de produto).
- * Funciona bem para fundos uniformes; para produção substituir
- * por chamada real a remove.bg ou similar.
- */
-/**
- * Remove o fundo localmente via canvas — sem API externa.
- * Faz fetch da imagem como blob para evitar restrições CORS,
- * depois remove pixels próximos da cor de fundo amostrada no canto.
- * Para produção: substituir pelo corpo desta função pela chamada
- * real a remove.bg ou similar — a assinatura permanece igual.
- */
-async function removeBgApi(imageUrl: string): Promise<string> {
-  // Fetch como blob para contornar CORS em URLs externas (Supabase, etc.)
-  let objectUrl = imageUrl;
-  try {
-    const res = await fetch(imageUrl);
-    const blob = await res.blob();
-    objectUrl = URL.createObjectURL(blob);
-  } catch {
-    // Se o fetch falhar (ex: blob: URL), usa o src directamente
-    objectUrl = imageUrl;
-  }
-
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    img.onload = () => {
-      const W = img.naturalWidth;
-      const H = img.naturalHeight;
-      const canvas = document.createElement('canvas');
-      canvas.width = W;
-      canvas.height = H;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-
-      let imageData: ImageData;
-      try {
-        imageData = ctx.getImageData(0, 0, W, H);
-      } catch {
-        // Taint de segurança → resolve com a imagem original (demo mode)
-        canvas.toBlob((b) => {
-          if (!b) return reject(new Error('Falhou'));
-          resolve(URL.createObjectURL(b));
-        }, 'image/png');
-        return;
-      }
-
-      const data = imageData.data;
-
-      // Amostra a cor do canto superior-esquerdo como cor de fundo
-      const bgR = data[0];
-      const bgG = data[1];
-      const bgB = data[2];
-      const TOLERANCE = 40;
-      const FEATHER = 22;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const dist = Math.sqrt(
-          (r - bgR) ** 2 + (g - bgG) ** 2 + (b - bgB) ** 2,
-        );
-        if (dist < TOLERANCE) {
-          data[i + 3] = 0;
-        } else if (dist < TOLERANCE + FEATHER) {
-          data[i + 3] = Math.round(((dist - TOLERANCE) / FEATHER) * 255);
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-      canvas.toBlob((blob) => {
-        if (!blob) return reject(new Error('Falhou conversão'));
-        if (objectUrl !== imageUrl) URL.revokeObjectURL(objectUrl);
-        resolve(URL.createObjectURL(blob));
-      }, 'image/png');
-    };
-    img.onerror = reject;
-    img.src = objectUrl;
-  });
-}
-
 // ─── Sparkle star (SVG gold, retirado do reference) ──────────────────────────
 
 function GoldSparkle({ className, delay }: { className: string; delay: string }) {
@@ -810,7 +726,9 @@ export function PhotoUploader({
 
     try {
       // Simula frases IA (2.5s) + depois laser (2s) = total ~4.5s visualmente
-      const resultUrl = await removeBgApi(url);
+      // Sem API real de remoção de fundo: mantemos a imagem original
+      // intacta do início ao fim — só a animação (estrelas + laser) corre.
+      const resultUrl = url;
 
       // Fase 1: overlay escuro + estrelas (já activo)
       // Fase 2: após 2.5s → clareia e laser começa
