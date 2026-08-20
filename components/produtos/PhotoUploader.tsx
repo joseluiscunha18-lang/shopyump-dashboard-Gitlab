@@ -392,12 +392,13 @@ function CropAndEditSheet({
               onPointerMove={(e) => !bgDone && onPointerMove(e)}
               onPointerUp={() => !bgDone && onPointerUp()}
             >
-              {/* Imagem sem fundo (atrás, para revelação) */}
+              {/* Imagem sem fundo (atrás, para revelação) — mesmo enquadramento que o utilizador ajustou, nunca recompõe */}
               {bgRemoved && (
                 <img
                   src={bgRemoved}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover z-0"
+                  className="absolute pointer-events-none z-0"
+                  style={{ ...imgStyle(), maxWidth: 'none' }}
                 />
               )}
 
@@ -408,12 +409,11 @@ function CropAndEditSheet({
                 alt=""
                 draggable={false}
                 className={cn(
-                  'absolute z-10 transition-transform duration-700',
-                  !bgDone ? 'pointer-events-none' : 'inset-0 w-full h-full object-cover',
+                  'absolute pointer-events-none z-10 transition-opacity duration-700',
                   laserPhase && 'animate-wipe-rl',
                   bgDone && 'opacity-0',
                 )}
-                style={!bgDone ? { ...imgStyle(), maxWidth: 'none' } : undefined}
+                style={{ ...imgStyle(), maxWidth: 'none' }}
                 onLoad={(e) => {
                   const t = e.currentTarget;
                   setImgSize({ w: t.naturalWidth, h: t.naturalHeight });
