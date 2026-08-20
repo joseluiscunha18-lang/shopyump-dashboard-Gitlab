@@ -7,12 +7,10 @@ import {
   Loader2,
   Star,
   Trash2,
-  Scissors,
-  Sparkles,
   RotateCcw,
   Check,
-  ArrowLeft,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { uploadImage, BUCKETS } from '@/lib/storage';
 import { Sheet } from '@/components/ui/Sheet';
@@ -22,25 +20,17 @@ const MAX_FOTOS = 8;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BgState = 'idle' | 'processing' | 'done' | 'error';
+type BgState = 'idle' | 'processing' | 'laser' | 'done' | 'error';
 
 interface EditState {
-  /** URL original (nunca alterada após o primeiro carregamento) */
   original: string;
-  /** URL actualmente em uso (pode ser original ou pós-remoção de fundo) */
   current: string;
-  /** URL com fundo removido (null se ainda não processado) */
   bgRemoved: string | null;
   bgState: BgState;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Recorta a imagem de origem para um quadrado 1:1 centrado em (offsetX,
- * offsetY) — onde offset é o deslocamento do utilizador a partir do centro
- * natural. Devolve um data-URL PNG.
- */
 async function cropToSquare(
   src: string,
   offsetX: number,
@@ -52,14 +42,9 @@ async function cropToSquare(
     img.onload = () => {
       const { naturalWidth: W, naturalHeight: H } = img;
       const side = Math.min(W, H);
-      // Centro natural
-      const cx = W / 2;
-      const cy = H / 2;
-      // Escala: os offsets vêm em px da pré-visualização (300 px fixos),
-      // converter para px nativos.
       const scale = side / 300;
-      const sx = cx - side / 2 + offsetX * scale;
-      const sy = cy - side / 2 + offsetY * scale;
+      const sx = W / 2 - side / 2 + offsetX * scale;
+      const sy = H / 2 - side / 2 + offsetY * scale;
       const canvas = document.createElement('canvas');
       canvas.width = 1000;
       canvas.height = 1000;
@@ -72,7 +57,6 @@ async function cropToSquare(
   });
 }
 
-/** Converte data-URL para File para poder fazer upload */
 function dataURLtoFile(dataUrl: string, filename: string): File {
   const [header, base64] = dataUrl.split(',');
   const mime = header.match(/:(.*?);/)![1];
@@ -82,48 +66,162 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
   return new File([arr], filename, { type: mime });
 }
 
-/** Remove o fundo via remove.bg (API key no env) */
 async function removeBgApi(imageUrl: string): Promise<string> {
   const apiKey = process.env.NEXT_PUBLIC_REMOVE_BG_API_KEY;
   if (!apiKey) throw new Error('API key não configurada');
-
   const res = await fetch('https://api.remove.bg/v1.0/removebg', {
     method: 'POST',
-    headers: {
-      'X-Api-Key': apiKey,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ image_url: imageUrl, size: 'auto' }),
   });
-
   if (!res.ok) throw new Error('Falhou a remoção de fundo');
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }
 
-// ─── CropEditor ───────────────────────────────────────────────────────────────
+// ─── Sparkle star (SVG gold, retirado do reference) ──────────────────────────
 
-/**
- * Editor de enquadramento 1:1. O utilizador arrasta a imagem dentro de uma
- * janela quadrada fixa. Não é um editor de fotografia completo — apenas o
- * suficiente para ajustar o centramento.
- */
-function CropEditor({
+function GoldSparkle({ className, delay }: { className: string; delay: string }) {
+  return (
+    <svg
+      className={cn('gold-sparkle animate-twinkle absolute', className)}
+      style={{ animationDelay: delay }}
+      viewBox="0 0 24 24"
+    >
+      <defs>
+        <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFD700" />
+          <stop offset="50%" stopColor="#FDB931" />
+          <stop offset="100%" stopColor="#B8860B" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M12,21.5C12,21.5 12,12 2.5,12C12,12 12,2.5 12,2.5C12,2.5 12,12 21.5,12C12,12 12,21.5 12,21.5Z"
+        fill="url(#gold-grad)"
+      />
+    </svg>
+  );
+}
+
+// ─── ImagePreviewWithBg ───────────────────────────────────────────────────────
+// Pré-visualização quadrada com as animações originais de remoção de fundo:
+// overlay escuro + estrelas douradas → laser da direita para esquerda → reveal
+
+function ImagePreviewWithBg({
   src,
-  onConfirm,
-  onCancel,
+  bgRemovedSrc,
+  bgState,
 }: {
   src: string;
-  onConfirm: (offsetX: number, offsetY: number) => void;
-  onCancel: () => void;
+  bgRemovedSrc: string | null;
+  bgState: BgState;
 }) {
-  // offset em px (espaço da pré-visualização 300×300)
+  const processing = bgState === 'processing';
+  const laser = bgState === 'laser';
+  const done = bgState === 'done';
+
+  return (
+    <div
+      className="relative w-full rounded-[32px] overflow-hidden bg-[#F8FAFC] border border-gray-50 shadow-inner"
+      style={{ paddingBottom: '100%' }}
+    >
+      {/* Xadrez de transparência — só visível quando fundo removido */}
+      {done && (
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage:
+              'repeating-conic-gradient(#e2e8f0 0% 25%, white 0% 50%)',
+            backgroundSize: '16px 16px',
+          }}
+        />
+      )}
+
+      {/* Camada: imagem com fundo removido (atrás, revelada pelo laser) */}
+      {bgRemovedSrc && (
+        <img
+          src={bgRemovedSrc}
+          alt=""
+          className="absolute inset-0 w-full h-full object-contain z-[5] pointer-events-none"
+        />
+      )}
+
+      {/* Camada: imagem original — faz wipe para a direita durante o laser */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        className={cn(
+          'absolute inset-0 w-full h-full object-contain z-10 pointer-events-none transition-transform duration-700',
+          laser && 'animate-wipe-rl',
+        )}
+      />
+
+      {/* Overlay escuro + estrelas durante processing */}
+      {(processing || laser) && (
+        <div
+          className={cn(
+            'absolute inset-0 z-20 pointer-events-none overflow-hidden transition-opacity duration-500',
+            processing ? 'opacity-100' : 'opacity-0',
+          )}
+          style={{ backgroundColor: 'rgba(18,14,10,0.65)', backdropFilter: 'blur(2px)' }}
+        >
+          <GoldSparkle className="top-[15%] left-[20%] w-4 h-4" delay="0.1s" />
+          <GoldSparkle className="top-[25%] right-[20%] w-7 h-7" delay="0.5s" />
+          <GoldSparkle className="bottom-[20%] left-[30%] w-5 h-5" delay="0.8s" />
+          <GoldSparkle className="top-[50%] right-[10%] w-3 h-3" delay="1.2s" />
+          <div className="absolute top-[40%] left-[15%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse opacity-60" />
+          <div
+            className="absolute bottom-[35%] right-[25%] w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse opacity-40"
+            style={{ animationDelay: '0.3s' }}
+          />
+        </div>
+      )}
+
+      {/* Laser — passa da direita para a esquerda */}
+      {laser && (
+        <div className="animate-laser-rl absolute top-0 bottom-0 w-[3px] bg-white z-30 shadow-[0_0_25px_8px_rgba(255,255,255,1)]" />
+      )}
+
+      {/* Badge de conclusão */}
+      {done && (
+        <div className="animate-fade-up-in absolute bottom-3 left-3 z-30 flex items-center gap-1.5 rounded-full bg-emerald-500 px-2.5 py-1 shadow-sm pointer-events-none">
+          <Check size={11} className="text-white" />
+          <span className="text-[10px] font-black uppercase tracking-wider text-white">
+            Fundo removido
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CropAndEditSheet ─────────────────────────────────────────────────────────
+// Ecrã unificado: posicionar 1:1 + remover fundo + confirmar.
+// Aberto automaticamente ao adicionar/trocar uma imagem.
+
+function CropAndEditSheet({
+  open,
+  src,
+  editState,
+  onConfirm,
+  onClose,
+  onBgRemove,
+  onBgUndo,
+}: {
+  open: boolean;
+  src: string;
+  editState: EditState;
+  onConfirm: (offsetX: number, offsetY: number) => void;
+  onClose: () => void;
+  onBgRemove: () => void;
+  onBgUndo: () => void;
+}) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragStart = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
-  const PREVIEW = 300; // tamanho da janela de pré-visualização em px
+  const PREVIEW = 300;
 
-  // Calcula os limites de deslocamento
   function clamp(val: number, min: number, max: number) {
     return Math.min(Math.max(val, min), max);
   }
@@ -133,9 +231,12 @@ function CropEditor({
     const scale = PREVIEW / Math.min(imgSize.w, imgSize.h);
     const renderedW = imgSize.w * scale;
     const renderedH = imgSize.h * scale;
-    const maxX = (renderedW - PREVIEW) / 2;
-    const maxY = (renderedH - PREVIEW) / 2;
-    return { minX: -maxX, maxX, minY: -maxY, maxY };
+    return {
+      minX: -(renderedW - PREVIEW) / 2,
+      maxX: (renderedW - PREVIEW) / 2,
+      minY: -(renderedH - PREVIEW) / 2,
+      maxY: (renderedH - PREVIEW) / 2,
+    };
   }
 
   function onPointerDown(e: React.PointerEvent) {
@@ -158,7 +259,6 @@ function CropEditor({
     dragStart.current = null;
   }
 
-  // Calcula o estilo da imagem dentro do quadrado de pré-visualização
   function imgStyle() {
     if (!imgSize) return {};
     const scale = PREVIEW / Math.min(imgSize.w, imgSize.h);
@@ -171,258 +271,300 @@ function CropEditor({
     };
   }
 
+  const { bgState, bgRemoved } = editState;
+  const processing = bgState === 'processing';
+  const laserPhase = bgState === 'laser';
+  const bgDone = bgState === 'done';
+  const bgError = bgState === 'error';
+  const busy = processing || laserPhase;
+
+  // Texto de status IA
+
+  // Gerido pelo pai via bgState — mas precisamos de reiniciar o offset
+  // ao abrir com uma imagem nova
   return (
-    <div className="flex flex-col items-center gap-5 py-2">
-      {/* Janela de pré-visualização */}
-      <div
-        className="relative overflow-hidden rounded-2xl bg-slate-100 cursor-grab active:cursor-grabbing touch-none select-none"
-        style={{ width: PREVIEW, height: PREVIEW }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt=""
-          draggable={false}
-          className="absolute pointer-events-none"
-          style={{ ...imgStyle(), maxWidth: 'none' }}
-          onLoad={(e) => {
-            const t = e.currentTarget;
-            setImgSize({ w: t.naturalWidth, h: t.naturalHeight });
-          }}
-        />
-        {/* Grade sutil de enquadramento */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px)',
-          backgroundSize: '100px 100px',
-        }} />
-        {/* Cantos */}
-        {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map((pos) => (
-          <div
-            key={pos}
-            className={cn('absolute w-6 h-6 pointer-events-none', pos)}
-            style={{
-              borderTop: pos.includes('top') ? '2px solid white' : undefined,
-              borderBottom: pos.includes('bottom') ? '2px solid white' : undefined,
-              borderLeft: pos.includes('left') ? '2px solid white' : undefined,
-              borderRight: pos.includes('right') ? '2px solid white' : undefined,
-            }}
-          />
-        ))}
-      </div>
+    <Sheet open={open} onClose={onClose} title="Posicionar imagem" subtitle="1:1 · Arraste para ajustar" closeButton heightVh={92}>
+      <div className="flex flex-col gap-5 pb-6">
 
-      <p className="text-[12px] font-medium text-slate-400 text-center">
-        Arraste para ajustar o enquadramento
-      </p>
+        {/* ── Área de pré-visualização / posicionamento ── */}
+        <div className="flex flex-col items-center gap-3">
 
-      <div className="flex w-full gap-3">
+          {/* Janela quadrada de recorte */}
+          {!bgDone ? (
+            <div
+              className="relative overflow-hidden rounded-[28px] bg-slate-100 cursor-grab active:cursor-grabbing touch-none select-none shadow-inner mx-auto"
+              style={{ width: PREVIEW, height: PREVIEW }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+            >
+              {/* Imagem arrastável */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt=""
+                draggable={false}
+                className={cn(
+                  'absolute pointer-events-none',
+                  busy && 'opacity-50',
+                )}
+                style={{ ...imgStyle(), maxWidth: 'none' }}
+                onLoad={(e) => {
+                  const t = e.currentTarget;
+                  setImgSize({ w: t.naturalWidth, h: t.naturalHeight });
+                }}
+              />
+
+              {/* Grade de composição */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
+                  backgroundSize: '100px 100px',
+                }}
+              />
+
+              {/* Cantos */}
+              {(['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'] as const).map((pos) => (
+                <div
+                  key={pos}
+                  className={cn('absolute w-7 h-7 pointer-events-none', pos)}
+                  style={{
+                    borderTop: pos.includes('top') ? '2.5px solid white' : undefined,
+                    borderBottom: pos.includes('bottom') ? '2.5px solid white' : undefined,
+                    borderLeft: pos.includes('left') ? '2.5px solid white' : undefined,
+                    borderRight: pos.includes('right') ? '2.5px solid white' : undefined,
+                    borderRadius: pos.includes('top-0 left-0') ? '12px 0 0 0' :
+                                  pos.includes('top-0 right-0') ? '0 12px 0 0' :
+                                  pos.includes('bottom-0 left-0') ? '0 0 0 12px' : '0 0 12px 0',
+                  }}
+                />
+              ))}
+
+              {/* Overlay escuro + estrelas durante processamento */}
+              {busy && (
+                <div
+                  className={cn(
+                    'absolute inset-0 z-20 pointer-events-none overflow-hidden transition-opacity duration-500',
+                    processing ? 'opacity-100' : 'opacity-0',
+                  )}
+                  style={{ backgroundColor: 'rgba(18,14,10,0.65)', backdropFilter: 'blur(2px)' }}
+                >
+                  <GoldSparkle className="top-[15%] left-[20%] w-4 h-4" delay="0.1s" />
+                  <GoldSparkle className="top-[25%] right-[20%] w-7 h-7" delay="0.5s" />
+                  <GoldSparkle className="bottom-[20%] left-[30%] w-5 h-5" delay="0.8s" />
+                  <GoldSparkle className="top-[50%] right-[10%] w-3 h-3" delay="1.2s" />
+                  <div className="absolute top-[40%] left-[15%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse opacity-60" />
+                  <div
+                    className="absolute bottom-[35%] right-[25%] w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse opacity-40"
+                    style={{ animationDelay: '0.3s' }}
+                  />
+                </div>
+              )}
+
+              {/* Laser */}
+              {laserPhase && (
+                <div className="animate-laser-rl absolute top-0 bottom-0 w-[3px] bg-white z-30 shadow-[0_0_25px_8px_rgba(255,255,255,1)]" />
+              )}
+            </div>
+          ) : (
+            /* Pós-remoção: preview com fundo transparente */
+            <div className="w-full max-w-[300px] mx-auto">
+              <ImagePreviewWithBg
+                src={src}
+                bgRemovedSrc={bgRemoved}
+                bgState={bgState}
+              />
+            </div>
+          )}
+
+          {/* Texto de status IA */}
+          {busy && (
+            <span className="status-premium text-[10px]">
+              {processing ? 'A analisar imagem…' : 'A finalizar…'}
+            </span>
+          )}
+
+          {!busy && !bgDone && (
+            <p className="text-[11px] font-medium text-slate-400 text-center">
+              Arraste para posicionar · O resultado será 1:1
+            </p>
+          )}
+        </div>
+
+        {/* ── Remover fundo ── */}
+        {!bgDone && !bgError && (
+          <button
+            type="button"
+            onClick={onBgRemove}
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {busy ? (
+              <Loader2 size={15} className="animate-spin text-slate-400" />
+            ) : (
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+            )}
+            Remover fundo
+          </button>
+        )}
+
+        {bgDone && (
+          <button
+            type="button"
+            onClick={onBgUndo}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform"
+          >
+            <RotateCcw size={15} className="text-slate-400" />
+            Desfazer remoção
+          </button>
+        )}
+
+        {bgError && (
+          <>
+            <button
+              type="button"
+              onClick={onBgRemove}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 border border-red-100 py-3.5 text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
+            >
+              <RefreshCw size={15} />
+              Tentar novamente
+            </button>
+            <p className="text-center text-[11px] font-medium text-red-400">
+              Não foi possível remover o fundo. Imagem original preservada.
+            </p>
+          </>
+        )}
+
+        {/* ── Confirmar / Usar imagem ── */}
         <button
           type="button"
-          onClick={onCancel}
-          className="flex-1 h-11 rounded-2xl border border-slate-200 text-[13px] font-bold text-slate-500 active:scale-[0.98] transition-transform"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
+          disabled={busy}
           onClick={() => onConfirm(offset.x, offset.y)}
-          className="flex-1 h-11 rounded-2xl bg-[#0f172a] text-white text-[13px] font-bold active:scale-[0.98] transition-transform"
+          className="w-full py-4 rounded-2xl bg-[#0F172A] text-white text-[14px] font-bold shadow-lg active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
         >
           Usar imagem
         </button>
       </div>
-    </div>
+    </Sheet>
   );
 }
 
-// ─── ImageEditor sheet ────────────────────────────────────────────────────────
+// ─── ImageActionSheet ─────────────────────────────────────────────────────────
+// Sheet que abre ao tocar numa foto já existente na grelha.
 
-function ImageEditorSheet({
+function ImageActionSheet({
   open,
   onClose,
+  isCover,
   editState,
+  onEdit,
+  onMakeCover,
+  onRemove,
   onBgRemove,
   onBgUndo,
-  onSwap,
-  onRemove,
-  onMakeCover,
-  isCover,
-  onCropOpen,
 }: {
   open: boolean;
   onClose: () => void;
+  isCover: boolean;
   editState: EditState | null;
+  onEdit: () => void;
+  onMakeCover: () => void;
+  onRemove: () => void;
   onBgRemove: () => void;
   onBgUndo: () => void;
-  onSwap: () => void;
-  onRemove: () => void;
-  onMakeCover: () => void;
-  isCover: boolean;
-  onCropOpen: () => void;
 }) {
   if (!editState) return null;
-
   const { current, bgState, bgRemoved } = editState;
-  const processing = bgState === 'processing';
   const bgDone = bgState === 'done';
   const bgError = bgState === 'error';
 
   return (
     <Sheet open={open} onClose={onClose} title="Editar imagem" closeButton>
-      <div className="flex flex-col gap-4 pb-6">
-        {/* Pré-visualização quadrada */}
-        <div className="relative mx-auto aspect-square w-full max-w-[260px] overflow-hidden rounded-2xl bg-slate-100">
-          {/* Fundo transparente — xadrez discreto */}
-          {bgDone && (
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  'repeating-conic-gradient(#e2e8f0 0% 25%, white 0% 50%)',
-                backgroundSize: '20px 20px',
-              }}
-            />
-          )}
-          <Image
-            key={current}
-            src={current}
-            alt=""
-            fill
-            className={cn(
-              'object-contain transition-opacity duration-300',
-              processing && 'opacity-60'
-            )}
-            sizes="260px"
-            unoptimized={current.startsWith('blob:')}
+      <div className="flex flex-col gap-3 pb-6">
+        {/* Preview */}
+        <div className="mx-auto w-full max-w-[200px]">
+          <ImagePreviewWithBg
+            src={editState.original}
+            bgRemovedSrc={bgRemoved}
+            bgState={bgState}
           />
-
-          {/* Animação de processamento */}
-          {processing && (
-            <div className="absolute inset-0 overflow-hidden rounded-2xl">
-              <div
-                className="animate-bg-remove-sweep absolute inset-y-0 w-1/3"
-                style={{
-                  background:
-                    'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)',
-                }}
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm">
-                  <Loader2 size={18} className="animate-spin text-slate-600" />
-                </div>
-                <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold text-slate-600 shadow-sm">
-                  Removendo fundo…
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Badge de sucesso */}
-          {bgDone && (
-            <div className="animate-fade-up-in absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-emerald-500 px-2.5 py-1 shadow-sm">
-              <Check size={11} className="text-white" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-white">
-                Fundo removido
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Botão "Trocar imagem" */}
+        <div className="h-px bg-slate-100 my-1" />
+
+        {/* Ajustar enquadramento */}
         <button
           type="button"
-          onClick={onSwap}
-          className="text-center text-[12px] font-bold text-slate-400 underline-offset-2 hover:text-slate-600 active:scale-[0.98] transition-transform"
+          onClick={onEdit}
+          className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
         >
-          Trocar imagem
+          <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+          Ajustar enquadramento
         </button>
 
-        {/* Separador */}
-        <div className="h-px bg-slate-100" />
-
-        {/* Ações */}
-        <div className="flex flex-col gap-2">
-          {/* Ajustar enquadramento */}
+        {/* Remover fundo */}
+        {!bgDone && !bgError && (
           <button
             type="button"
-            onClick={onCropOpen}
+            onClick={onBgRemove}
             className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
           >
-            <Scissors size={16} className="text-slate-400" />
-            Ajustar enquadramento
+            <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+            Remover fundo
           </button>
+        )}
 
-          {/* Remover fundo — estados */}
-          {!bgDone && !bgError && (
-            <button
-              type="button"
-              onClick={onBgRemove}
-              disabled={processing}
-              className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform disabled:opacity-50 disabled:pointer-events-none"
-            >
-              {processing ? (
-                <Loader2 size={16} className="animate-spin text-slate-400" />
-              ) : (
-                <Sparkles size={16} className="text-slate-400" />
-              )}
-              {processing ? 'Removendo fundo…' : 'Remover fundo'}
-            </button>
-          )}
-
-          {bgDone && (
-            <>
-              <button
-                type="button"
-                onClick={onBgUndo}
-                className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
-              >
-                <RotateCcw size={16} className="text-slate-400" />
-                Desfazer remoção
-              </button>
-            </>
-          )}
-
-          {bgError && (
-            <button
-              type="button"
-              onClick={onBgRemove}
-              className="flex items-center gap-3 rounded-2xl bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
-            >
-              <RefreshCw size={16} />
-              Tentar novamente
-            </button>
-          )}
-
-          {bgError && (
-            <p className="px-1 text-[11px] font-medium text-red-400">
-              Não foi possível remover o fundo. A imagem original foi preservada.
-            </p>
-          )}
-
-          {/* Tornar capa */}
-          {!isCover && (
-            <button
-              type="button"
-              onClick={onMakeCover}
-              className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
-            >
-              <Star size={16} className="text-slate-400" />
-              Tornar imagem de capa
-            </button>
-          )}
-
-          {/* Remover */}
+        {bgDone && (
           <button
             type="button"
-            onClick={onRemove}
+            onClick={onBgUndo}
+            className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
+          >
+            <RotateCcw size={16} className="text-slate-400" />
+            Desfazer remoção
+          </button>
+        )}
+
+        {bgError && (
+          <button
+            type="button"
+            onClick={onBgRemove}
             className="flex items-center gap-3 rounded-2xl bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
           >
-            <Trash2 size={16} />
-            Remover imagem
+            <RefreshCw size={16} />
+            Tentar novamente
           </button>
-        </div>
+        )}
+
+        {/* Tornar capa */}
+        {!isCover && (
+          <button
+            type="button"
+            onClick={onMakeCover}
+            className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
+          >
+            <Star size={16} className="text-slate-400" />
+            Tornar imagem de capa
+          </button>
+        )}
+
+        {/* Remover */}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex items-center gap-3 rounded-2xl bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
+        >
+          <Trash2 size={16} />
+          Remover imagem
+        </button>
       </div>
     </Sheet>
   );
@@ -441,7 +583,7 @@ export function PhotoUploader({
 }) {
   const [uploading, setUploading] = useState(false);
 
-  // drag-to-reorder — instânea, sem long-press
+  // drag-to-reorder — instâneo, sem long-press
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -450,22 +592,22 @@ export function PhotoUploader({
   const orderRef = useRef(photos);
   orderRef.current = photos;
 
-  // editor
-  const [editorIndex, setEditorIndex] = useState<number | null>(null);
-  const [cropIndex, setCropIndex] = useState<number | null>(null);
+  // ecrãs de edição
+  const [cropIndex, setCropIndex] = useState<number | null>(null);       // posicionar + bg-remove
+  const [actionIndex, setActionIndex] = useState<number | null>(null);   // menu de acções para fotos existentes
+
   const [editStates, setEditStates] = useState<Record<string, EditState>>({});
 
   const inputRef = useRef<HTMLInputElement>(null);
   const swapInputRef = useRef<HTMLInputElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
 
   // ── Upload ──────────────────────────────────────────────────────────────────
 
   async function handleFiles(files: FileList | null, replaceIndex?: number) {
     if (!files || files.length === 0) return;
     setUploading(true);
-    const uploaded: string[] = [];
     const limit = replaceIndex !== undefined ? 1 : MAX_FOTOS - photos.length;
+    const uploaded: string[] = [];
     for (const file of Array.from(files).slice(0, limit)) {
       const { url } = await uploadImage(BUCKETS.produtos, file, lojaId);
       if (url) uploaded.push(url);
@@ -474,14 +616,12 @@ export function PhotoUploader({
       const next = [...photos];
       next[replaceIndex] = uploaded[0];
       onChange(next);
-      // Abre o enquadramento automático ao trocar
-      setTimeout(() => setCropIndex(replaceIndex), 100);
+      setTimeout(() => setCropIndex(replaceIndex), 80);
     } else {
       const newPhotos = [...photos, ...uploaded];
       onChange(newPhotos);
-      // Abre o enquadramento na última foto adicionada
-      if (uploaded.length === 1) {
-        setTimeout(() => setCropIndex(newPhotos.length - 1), 100);
+      if (uploaded.length >= 1) {
+        setTimeout(() => setCropIndex(newPhotos.length - 1), 80);
       }
     }
     setUploading(false);
@@ -489,9 +629,9 @@ export function PhotoUploader({
     if (swapInputRef.current) swapInputRef.current.value = '';
   }
 
-  // ── Reorder — drag instantâneo ───────────────────────────────────────────────
+  // ── Drag-to-reorder ──────────────────────────────────────────────────────────
 
-  const DRAG_PX = 5; // pixels mínimos para activar drag
+  const DRAG_PX = 5;
 
   function onPointerDown(e: React.PointerEvent, index: number) {
     dragStartPos.current = { x: e.clientX, y: e.clientY };
@@ -501,8 +641,7 @@ export function PhotoUploader({
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (dragStartPos.current === null || dragStartIndex.current === null) return;
-
+    if (!dragStartPos.current || dragStartIndex.current === null) return;
     const dx = e.clientX - dragStartPos.current.x;
     const dy = e.clientY - dragStartPos.current.y;
 
@@ -512,11 +651,11 @@ export function PhotoUploader({
       setDragIndex(dragStartIndex.current);
     }
 
-    // Posição flutuante do thumbnail
     setFloatPos({ x: e.clientX, y: e.clientY });
 
-    // Detectar a célula abaixo
-    const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-photo-index]') as HTMLElement | null;
+    const el = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest('[data-photo-index]') as HTMLElement | null;
     if (!el) return;
     const over = Number(el.dataset.photoIndex);
     if (Number.isNaN(over) || over === dragStartIndex.current) return;
@@ -531,104 +670,110 @@ export function PhotoUploader({
 
   function onPointerUp(index: number) {
     if (isDraggingRef.current) {
-      // Era drag — terminar
       isDraggingRef.current = false;
       setDragIndex(null);
       setFloatPos(null);
       dragStartPos.current = null;
       dragStartIndex.current = null;
     } else {
-      // Era tap — abrir editor
       dragStartPos.current = null;
       dragStartIndex.current = null;
-      setEditorIndex(index);
+      setActionIndex(index);
     }
   }
 
-  // ── EditState helpers ────────────────────────────────────────────────────────
+  // ── EditState ────────────────────────────────────────────────────────────────
 
   function getEditState(url: string): EditState {
     return editStates[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' };
   }
 
-  function setEditState(url: string, patch: Partial<EditState>) {
+  function patchEditState(url: string, patch: Partial<EditState>) {
     setEditStates((prev) => ({
       ...prev,
-      [url]: { ...getEditState(url), ...patch },
+      [url]: { ...(prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState }), ...patch },
     }));
   }
 
-  // ── Editor actions ────────────────────────────────────────────────────────────
+  // ── BG removal com sequência de animações do reference ────────────────────────
 
-  function handleRemove(index: number) {
-    onChange(photos.filter((_, i) => i !== index));
-    setEditorIndex(null);
-  }
+  async function handleBgRemove(url: string) {
+    patchEditState(url, { bgState: 'processing' });
 
-  function handleMakeCover(index: number) {
-    if (index === 0) return setEditorIndex(null);
-    const next = [...photos];
-    const [item] = next.splice(index, 1);
-    next.unshift(item);
-    onChange(next);
-    setEditorIndex(null);
-  }
-
-  async function handleBgRemove(originalUrl: string) {
-    setEditState(originalUrl, { bgState: 'processing' });
     try {
-      const resultUrl = await removeBgApi(originalUrl);
-      setEditState(originalUrl, { bgState: 'done', bgRemoved: resultUrl, current: resultUrl });
-      // Reflectir na lista de fotos
-      onChange(photos.map((u) => (u === originalUrl ? resultUrl : u)));
+      // Simula frases IA (2.5s) + depois laser (2s) = total ~4.5s visualmente
+      const resultUrl = await removeBgApi(url);
+
+      // Fase 1: overlay escuro + estrelas (já activo)
+      // Fase 2: após 2.5s → clareia e laser começa
+      await new Promise<void>((res) => setTimeout(res, 2500));
+      patchEditState(url, { bgState: 'laser', bgRemoved: resultUrl });
+
+      // Fase 3: após 2s do laser → done
+      await new Promise<void>((res) => setTimeout(res, 2000));
+      patchEditState(url, { bgState: 'done', current: resultUrl });
+      onChange(photos.map((u) => (u === url ? resultUrl : u)));
     } catch {
-      setEditState(originalUrl, { bgState: 'error' });
+      patchEditState(url, { bgState: 'error' });
     }
   }
 
-  function handleBgUndo(originalUrl: string) {
-    const state = getEditState(originalUrl);
-    setEditState(originalUrl, { bgState: 'idle', current: state.original });
+  function handleBgUndo(url: string) {
+    const state = getEditState(url);
+    patchEditState(url, { bgState: 'idle', current: state.original });
     onChange(photos.map((u) => (u === state.bgRemoved ? state.original : u)));
   }
 
-  // ── Crop ──────────────────────────────────────────────────────────────────────
+  // ── Crop confirm ─────────────────────────────────────────────────────────────
 
   async function handleCropConfirm(index: number, offsetX: number, offsetY: number) {
     const url = photos[index];
     const state = getEditState(url);
     try {
       const croppedDataUrl = await cropToSquare(state.current, offsetX, offsetY);
-      // Upload do recorte
       const file = dataURLtoFile(croppedDataUrl, `crop-${Date.now()}.png`);
       const { url: newUrl } = await uploadImage(BUCKETS.produtos, file, lojaId);
       if (newUrl) {
         const next = [...photos];
         next[index] = newUrl;
         onChange(next);
-        // Actualizar editState com nova URL
         setEditStates((prev) => {
-          const existing = prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' };
-          const newState: EditState = { ...existing, current: newUrl };
+          const existing = prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState };
           const updated = { ...prev };
           delete updated[url];
-          updated[newUrl] = newState;
+          updated[newUrl] = { ...existing, original: newUrl, current: newUrl };
           return updated;
         });
       }
     } catch {
-      // silently ignore crop errors
+      // silent
     }
     setCropIndex(null);
   }
 
+  // ── Acções ───────────────────────────────────────────────────────────────────
+
+  function handleRemove(index: number) {
+    onChange(photos.filter((_, i) => i !== index));
+    setActionIndex(null);
+  }
+
+  function handleMakeCover(index: number) {
+    if (index === 0) return setActionIndex(null);
+    const next = [...photos];
+    const [item] = next.splice(index, 1);
+    next.unshift(item);
+    onChange(next);
+    setActionIndex(null);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const editorPhoto = editorIndex !== null ? photos[editorIndex] : null;
-  const editorState = editorPhoto ? getEditState(editorPhoto) : null;
-
   const cropPhoto = cropIndex !== null ? photos[cropIndex] : null;
-  const cropState = cropPhoto ? getEditState(cropPhoto) : null;
+  const cropEditState = cropPhoto ? getEditState(cropPhoto) : null;
+
+  const actionPhoto = actionIndex !== null ? photos[actionIndex] : null;
+  const actionEditState = actionPhoto ? getEditState(actionPhoto) : null;
 
   return (
     <div>
@@ -646,7 +791,7 @@ export function PhotoUploader({
       </div>
 
       {/* Grelha */}
-      <div ref={gridRef} className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-4 gap-2.5">
         {photos.map((url, i) => {
           const dragging = dragIndex === i;
           return (
@@ -657,10 +802,8 @@ export function PhotoUploader({
               onPointerMove={onPointerMove}
               onPointerUp={() => onPointerUp(i)}
               className={cn(
-                'group relative aspect-square touch-none select-none overflow-hidden rounded-2xl bg-slate-100 shadow-sm transition-all duration-150',
-                dragging
-                  ? 'opacity-30 scale-95 ring-2 ring-ink/20'
-                  : 'opacity-100 scale-100'
+                'relative aspect-square touch-none select-none overflow-hidden rounded-2xl bg-slate-100 shadow-sm transition-all duration-150',
+                dragging ? 'opacity-25 scale-95 ring-2 ring-ink/20' : 'opacity-100 scale-100',
               )}
             >
               <Image
@@ -680,7 +823,6 @@ export function PhotoUploader({
           );
         })}
 
-        {/* Botão adicionar */}
         {photos.length < MAX_FOTOS && (
           <button
             type="button"
@@ -688,27 +830,20 @@ export function PhotoUploader({
             disabled={uploading}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-500 active:bg-slate-50"
           >
-            {uploading ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <Plus size={20} />
-            )}
-            <span className="text-[9px] font-bold uppercase tracking-wider">
-              Adicionar
-            </span>
+            {uploading ? <Loader2 size={20} className="animate-spin" /> : <Plus size={20} />}
+            <span className="text-[9px] font-bold uppercase tracking-wider">Adicionar</span>
           </button>
         )}
       </div>
 
-      {/* Floating thumbnail durante drag */}
+      {/* Thumbnail flutuante durante drag */}
       {dragIndex !== null && floatPos && photos[dragIndex] && (
         <div
           className="pointer-events-none fixed z-[200] h-16 w-16 overflow-hidden rounded-2xl shadow-2xl ring-2 ring-ink/20"
           style={{
             left: floatPos.x - 32,
             top: floatPos.y - 32,
-            transform: 'scale(1.1) rotate(2deg)',
-            transition: 'transform 0.1s ease',
+            transform: 'scale(1.12) rotate(2deg)',
           }}
         >
           <Image
@@ -742,48 +877,43 @@ export function PhotoUploader({
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => handleFiles(e.target.files, editorIndex ?? undefined)}
+        onChange={(e) => handleFiles(e.target.files, actionIndex ?? undefined)}
       />
 
-      {/* Editor de imagem */}
-      <ImageEditorSheet
-        open={editorIndex !== null && cropIndex === null}
-        onClose={() => setEditorIndex(null)}
-        editState={editorState}
-        isCover={editorIndex === 0}
-        onBgRemove={() => editorPhoto && handleBgRemove(editorState?.original ?? editorPhoto)}
-        onBgUndo={() => editorPhoto && handleBgUndo(editorState?.original ?? editorPhoto)}
-        onSwap={() => swapInputRef.current?.click()}
-        onRemove={() => editorIndex !== null && handleRemove(editorIndex)}
-        onMakeCover={() => editorIndex !== null && handleMakeCover(editorIndex)}
-        onCropOpen={() => {
-          setCropIndex(editorIndex);
-          setEditorIndex(null);
-        }}
-      />
+      {/* Ecrã de posicionamento + remover fundo (novo upload / trocar) */}
+      {cropPhoto && cropEditState && (
+        <CropAndEditSheet
+          open={cropIndex !== null}
+          src={cropEditState.current}
+          editState={cropEditState}
+          onClose={() => setCropIndex(null)}
+          onConfirm={(ox, oy) => cropIndex !== null && handleCropConfirm(cropIndex, ox, oy)}
+          onBgRemove={() => cropPhoto && handleBgRemove(cropEditState.original)}
+          onBgUndo={() => cropPhoto && handleBgUndo(cropEditState.original)}
+        />
+      )}
 
-      {/* Editor de enquadramento 1:1 */}
-      <Sheet
-        open={cropIndex !== null}
-        onClose={() => {
-          setCropIndex(null);
-          // Se veio do editor, voltar ao editor
-          if (editorIndex !== null) {
-            // mantém editorIndex já definido
-          }
+      {/* Menu de acções para fotos existentes (tap) */}
+      <ImageActionSheet
+        open={actionIndex !== null}
+        onClose={() => setActionIndex(null)}
+        isCover={actionIndex === 0}
+        editState={actionEditState}
+        onEdit={() => {
+          setCropIndex(actionIndex);
+          setActionIndex(null);
         }}
-        title="Ajustar enquadramento"
-        subtitle="1:1 · Arraste para posicionar"
-        closeButton
-      >
-        {cropPhoto && cropState && (
-          <CropEditor
-            src={cropState.current}
-            onConfirm={(ox, oy) => cropIndex !== null && handleCropConfirm(cropIndex, ox, oy)}
-            onCancel={() => setCropIndex(null)}
-          />
-        )}
-      </Sheet>
+        onMakeCover={() => actionIndex !== null && handleMakeCover(actionIndex)}
+        onRemove={() => actionIndex !== null && handleRemove(actionIndex)}
+        onBgRemove={() => {
+          if (!actionPhoto) return;
+          const st = getEditState(actionPhoto);
+          handleBgRemove(st.original);
+          setActionIndex(null);
+          setCropIndex(actionIndex);
+        }}
+        onBgUndo={() => actionPhoto && handleBgUndo(getEditState(actionPhoto).original)}
+      />
     </div>
   );
 }
