@@ -29,6 +29,7 @@ export function Sheet({
   onClose,
   title,
   subtitle,
+  headerExtra,
   children,
   footer,
   heightVh = 88,
@@ -38,6 +39,10 @@ export function Sheet({
   onClose: () => void;
   title?: string;
   subtitle?: string;
+  /** Conteúdo extra no cabeçalho fixo (ex: uma barra de pesquisa), fora
+   *  da área com scroll. Faz parte da zona de arrastar para fechar, para
+   *  o gesto não ficar limitado só à alcinha lá no topo. */
+  headerExtra?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   heightVh?: number;
@@ -119,30 +124,39 @@ export function Sheet({
           !dragging && 'transition-transform duration-300 ease-out'
         )}
       >
+        {/* Zona de arrastar para fechar — inclui a alcinha, o título e o
+        headerExtra (ex: barra de pesquisa), para o gesto ter uma área
+        confortável em vez de ficar restrito só aos 4px da alcinha.
+        Elementos interativos dentro do headerExtra (like o campo de
+        pesquisa) param a propagação no próprio pointerdown, então tocar
+        neles continua a funcionar normalmente sem iniciar um arrasto. */}
         <div
-          className="relative flex shrink-0 cursor-grab touch-none flex-col items-center pt-3 pb-1 active:cursor-grabbing"
+          className="relative flex shrink-0 cursor-grab touch-none flex-col active:cursor-grabbing"
           onPointerDown={onHandlePointerDown}
           onPointerMove={onHandlePointerMove}
           onPointerUp={onHandlePointerUp}
         >
-          <div className="h-1 w-9 rounded-full bg-slate-200" />
-          {closeButton && (
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar"
-              className="absolute right-3 top-1.5 flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-ink active:scale-95"
-            >
-              <X size={20} />
-            </button>
-          )}
-        </div>
-        {(title || subtitle) && (
-          <div className="shrink-0 px-6 pb-2 pt-1">
-            {title && <h3 className="text-[16px] font-black tracking-tight text-ink">{title}</h3>}
-            {subtitle && <p className="mt-0.5 text-[12px] font-medium text-slate-400">{subtitle}</p>}
+          <div className="flex flex-col items-center pt-3 pb-1">
+            <div className="h-1 w-9 rounded-full bg-slate-200" />
+            {closeButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Fechar"
+                className="absolute right-3 top-1.5 flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-ink active:scale-95"
+              >
+                <X size={20} />
+              </button>
+            )}
           </div>
-        )}
+          {(title || subtitle) && (
+            <div className="px-6 pb-2 pt-1">
+              {title && <h3 className="text-[16px] font-black tracking-tight text-ink">{title}</h3>}
+              {subtitle && <p className="mt-0.5 text-[12px] font-medium text-slate-400">{subtitle}</p>}
+            </div>
+          )}
+          {headerExtra && <div className="px-6 pb-3">{headerExtra}</div>}
+        </div>
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-2">{children}</div>
         {footer && <div className="shrink-0 border-t border-slate-100 bg-slate-50/60 px-6 py-4">{footer}</div>}
         <div className="shrink-0" style={{ height: 'env(safe-area-inset-bottom, 8px)' }} />
