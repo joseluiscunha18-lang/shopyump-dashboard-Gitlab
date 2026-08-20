@@ -25,6 +25,12 @@ interface EditState {
   bgState: BgState;
 }
 
+// Alvo do sheet de recorte: uma foto já existente na grelha, ou uma foto
+// nova ainda não confirmada (nunca aparece nas miniaturas antes de "Usar imagem").
+type CropTarget =
+  | { type: 'existing'; index: number }
+  | { type: 'new'; url: string; replaceIndex?: number };
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function cropToSquare(
@@ -781,32 +787,45 @@ export function PhotoUploader({
   const orderRef = useRef(photos);
   orderRef.current = photos;
 
-  const [cropIndex, setCropIndex] = useState<number | null>(null);
+  const [cropTarget, setCropTarget] = useState<CropTarget | null>(null);
+  const [pendingQueue, setPendingQueue] = useState<string[]>([]);
   const [actionIndex, setActionIndex] = useState<number | null>(null);
   const [editStates, setEditStates] = useState<Record<string, EditState>>({});
 
   const inputRef = useRef<HTMLInputElement>(null);
   const swapInputRef = useRef<HTMLInputElement>(null);
 
+  // Abre automaticamente o próximo ficheiro pendente na fila (um de cada vez),
+  // assim que o sheet de recorte anterior fechar.
+  useEffect(() => {
+    if (cropTarget || pendingQueue.length === 0) return;
+    const [next, ...rest] = pendingQueue;
+    setCropTarget({ type: 'new', url: next });
+    setPendingQueue(rest);
+  }, [cropTarget, pendingQueue]);
+
   // ── Upload ──────────────────────────────────────────────────────────────────
 
   function handleFiles(files: FileList | null, replaceIndex?: number) {
     if (!files || files.length === 0) return;
-    const limit = replaceIndex !== undefined ? 1 : MAX_FOTOS - photos.length;
-    const localUrls = Array.from(files)
-      .slice(0, limit)
-      .map((file) => URL.createObjectURL(file));
 
-    if (replaceIndex !== undefined && localUrls[0]) {
-      const next = [...photos];
-      next[replaceIndex] = localUrls[0];
-      onChange(next);
-      setCropIndex(replaceIndex);
-    } else if (localUrls.length >= 1) {
-      const newPhotos = [...photos, ...localUrls];
-      onChange(newPhotos);
-      setCropIndex(newPhotos.length - 1);
+    if (replaceIndex !== undefined) {
+      const file = files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        setCropTarget({ type: 'new', url, replaceIndex });
+      }
+    } else {
+      const reservedSlots =
+        (cropTarget?.type === 'new' && cropTarget.replaceIndex === undefined ? 1 : 0) +
+        pendingQueue.length;
+      const limit = Math.max(MAX_FOTOS - photos.length - reservedSlots, 0);
+      const urls = Array.from(files)
+        .slice(0, limit)
+        .map((file) => URL.createObjectURL(file));
+      if (urls.length > 0) setPendingQueue((prev) => [...prev, ...urls]);
     }
+
     if (inputRef.current) inputRef.current.value = '';
     if (swapInputRef.current) swapInputRef.current.value = '';
   }
@@ -897,16 +916,18 @@ export function PhotoUploader({
 
   // ── Crop confirm — fecha instantaneamente, gera novo blob cropado ───────────
   // O upload para o Supabase só acontece ao guardar o produto (ProductForm).
+  // Fotos novas só entram no array `photos` (e portanto nas miniaturas) aqui,
+  // depois de o utilizador confirmar com "Usar imagem".
 
   function handleCropConfirm(
-    index: number,
+    target: CropTarget,
     getCrop: () => { cropBox: CropBox; naturalSize: { w: number; h: number }; renderedSize: { w: number; h: number } },
   ) {
-    const url = photos[index];
-    const state = getEditState(url);
+    const sourceUrl = target.type === 'existing' ? photos[target.index] : target.url;
+    const state = getEditState(sourceUrl);
 
     // Fecha o sheet imediatamente
-    setCropIndex(null);
+    setCropTarget(null);
 
     // Aplica o crop localmente (gera novo blob) em background
     (async () => {
@@ -918,13 +939,22 @@ export function PhotoUploader({
         const blob = await res.blob();
         const blobUrl = URL.createObjectURL(blob);
 
-        const next = [...orderRef.current];
-        next[index] = blobUrl;
-        onChange(next);
+        if (target.type === 'existing') {
+          const next = [...orderRef.current];
+          next[target.index] = blobUrl;
+          onChange(next);
+        } else if (target.replaceIndex !== undefined) {
+          const next = [...orderRef.current];
+          next[target.replaceIndex] = blobUrl;
+          onChange(next);
+        } else {
+          onChange([...orderRef.current, blobUrl]);
+        }
+
         setEditStates((prev) => {
-          const existing = prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState };
+          const existing = prev[sourceUrl] ?? { original: sourceUrl, current: sourceUrl, bgRemoved: null, bgState: 'idle' as BgState };
           const updated = { ...prev };
-          delete updated[url];
+          delete updated[sourceUrl];
           updated[blobUrl] = { ...existing, original: blobUrl, current: blobUrl };
           return updated;
         });
@@ -932,6 +962,22 @@ export function PhotoUploader({
         // silent — mantém a foto original se o crop falhar
       }
     })();
+  }
+
+  // Cancela um recorte pendente (foto nova ainda não confirmada) — descarta
+  // a imagem sem nunca a ter mostrado nas miniaturas.
+  function handleCropCancel() {
+    if (cropTarget?.type === 'new') {
+      const url = cropTarget.url;
+      setEditStates((prev) => {
+        if (!(url in prev)) return prev;
+        const updated = { ...prev };
+        delete updated[url];
+        return updated;
+      });
+      URL.revokeObjectURL(url);
+    }
+    setCropTarget(null);
   }
 
   // ── Acções ───────────────────────────────────────────────────────────────────
@@ -952,8 +998,9 @@ export function PhotoUploader({
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const cropPhoto = cropIndex !== null ? photos[cropIndex] : null;
-  const cropEditState = cropPhoto ? getEditState(cropPhoto) : null;
+  const cropSrcUrl =
+    cropTarget?.type === 'existing' ? photos[cropTarget.index] : cropTarget?.url ?? null;
+  const cropEditState = cropSrcUrl ? getEditState(cropSrcUrl) : null;
 
   const actionPhoto = actionIndex !== null ? photos[actionIndex] : null;
   const actionEditState = actionPhoto ? getEditState(actionPhoto) : null;
@@ -1059,15 +1106,15 @@ export function PhotoUploader({
         onChange={(e) => handleFiles(e.target.files, actionIndex ?? undefined)}
       />
 
-      {cropPhoto && cropEditState && (
+      {cropSrcUrl && cropEditState && (
         <CropAndEditSheet
-          open={cropIndex !== null}
+          open={cropTarget !== null}
           src={cropEditState.current}
           editState={cropEditState}
-          onClose={() => setCropIndex(null)}
-          onConfirm={(getCrop) => cropIndex !== null && handleCropConfirm(cropIndex, getCrop)}
-          onBgRemove={() => cropPhoto && handleBgRemove(cropEditState.original)}
-          onBgUndo={() => cropPhoto && handleBgUndo(cropEditState.original)}
+          onClose={handleCropCancel}
+          onConfirm={(getCrop) => cropTarget && handleCropConfirm(cropTarget, getCrop)}
+          onBgRemove={() => handleBgRemove(cropEditState.original)}
+          onBgUndo={() => handleBgUndo(cropEditState.original)}
         />
       )}
 
@@ -1077,17 +1124,17 @@ export function PhotoUploader({
         isCover={actionIndex === 0}
         editState={actionEditState}
         onEdit={() => {
-          setCropIndex(actionIndex);
+          if (actionIndex !== null) setCropTarget({ type: 'existing', index: actionIndex });
           setActionIndex(null);
         }}
         onMakeCover={() => actionIndex !== null && handleMakeCover(actionIndex)}
         onRemove={() => actionIndex !== null && handleRemove(actionIndex)}
         onBgRemove={() => {
-          if (!actionPhoto) return;
+          if (!actionPhoto || actionIndex === null) return;
           const st = getEditState(actionPhoto);
           handleBgRemove(st.original);
           setActionIndex(null);
-          setCropIndex(actionIndex);
+          setCropTarget({ type: 'existing', index: actionIndex });
         }}
         onBgUndo={() => actionPhoto && handleBgUndo(getEditState(actionPhoto).original)}
       />
