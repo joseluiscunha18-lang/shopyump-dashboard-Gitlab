@@ -958,8 +958,21 @@ export function PhotoUploader({
           updated[blobUrl] = { ...existing, original: blobUrl, current: blobUrl };
           return updated;
         });
-      } catch {
-        // silent — mantém a foto original se o crop falhar
+      } catch (err) {
+        // Antes, a foto já estava no array mesmo antes do recorte terminar,
+        // por isso uma falha aqui não a fazia desaparecer. Agora que só
+        // entra no array após o recorte, uma falha silenciosa perdia a
+        // imagem por completo. Para não a perder, adiciona a original.
+        console.error('Falha ao recortar imagem, a usar original:', err);
+        if (target.type === 'existing') {
+          // já estava no array — não faz nada, mantém a foto como estava
+        } else if (target.replaceIndex !== undefined) {
+          const next = [...orderRef.current];
+          next[target.replaceIndex] = sourceUrl;
+          onChange(next);
+        } else {
+          onChange([...orderRef.current, sourceUrl]);
+        }
       }
     })();
   }
