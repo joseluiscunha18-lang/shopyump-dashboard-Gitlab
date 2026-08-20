@@ -114,23 +114,26 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
         <ChevronRight size={18} className="shrink-0 text-slate-500" />
       </button>
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="Categoria" heightVh={66} closeButton>
-        {/* Pesquisa — sempre visível e em primeiro lugar (search_first),
-        fixa no topo da folha para continuar acessível ao fazer scroll na
-        lista de resultados ou de navegação por caminho. */}
-        <div className="sticky top-0 z-10 -mx-6 bg-white px-6 pb-3 pt-1">
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Categoria"
+        heightVh={66}
+        closeButton
+        headerExtra={
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               ref={inputRef}
               value={termo}
               onChange={(e) => setTermo(e.target.value)}
+              onPointerDown={(e) => e.stopPropagation()}
               placeholder="Pesquisar categoria ou subcategoria…"
-              className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-[13px] font-semibold text-ink outline-none placeholder:font-medium placeholder:text-slate-500 focus:border-ink"
+              className="w-full touch-auto rounded-2xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-[13px] font-semibold text-ink outline-none placeholder:font-medium placeholder:text-slate-500 focus:border-ink"
             />
           </div>
-        </div>
-
+        }
+      >
         {termo.trim() ? (
           // Modo pesquisa: cada resultado numa única linha — nome em
           // destaque e, ao lado, só a categoria de topo como contexto
