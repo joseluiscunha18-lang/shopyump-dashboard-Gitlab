@@ -175,11 +175,13 @@ interface CropBox {
 function Cropper({
   src,
   onReady,
+  transparent,
 }: {
   src: string;
   onReady: (
     getCrop: () => { cropBox: CropBox; naturalSize: { w: number; h: number }; renderedSize: { w: number; h: number } },
   ) => void;
+  transparent?: boolean;
 }) {
   const CONTAINER = 315; // px — quadrado fixo visível (+5%)
 
@@ -333,6 +335,18 @@ function Cropper({
       className="relative overflow-hidden rounded-2xl bg-black/80 mx-auto touch-none select-none"
       style={{ width: CONTAINER, height: CONTAINER }}
     >
+      {/* Fundo em xadrez — só visível através de áreas transparentes (pós remoção de fundo) */}
+      {transparent && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              'repeating-conic-gradient(#e2e8f0 0% 25%, white 0% 50%)',
+            backgroundSize: '16px 16px',
+          }}
+        />
+      )}
+
       {/* Imagem fixa — nunca se move */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -538,24 +552,15 @@ function CropAndEditSheet({
             <div style={{ width: 315 }}>
               <ImagePreviewWithBg src={src} bgRemovedSrc={editState.bgRemoved} bgState={bgState} />
             </div>
-          ) : !bgDone ? (
+          ) : (
+            // Cropper continua ativo mesmo depois de remover o fundo —
+            // garante que o recorte final é sempre 1:1, preenchendo o quadrado.
             <Cropper
+              key={src}
               src={src}
+              transparent={bgDone}
               onReady={(getter) => { getCropRef.current = getter; }}
             />
-          ) : (
-            // Depois de remover fundo, mostra preview simples (sem crop)
-            <div
-              className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm mx-auto"
-              style={{ width: 315, height: 315 }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain"
-              />
-            </div>
           )}
 
           {busy && (
