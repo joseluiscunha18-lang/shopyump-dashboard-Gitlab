@@ -120,3 +120,30 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* Image editor — background-removal processing animation.
+   A slow, elegant sweep across the image preview that reads as
+   "something subtle is happening" without screaming "loading". */
+@keyframes bg-remove-sweep {
+  0%   { transform: translateX(-100%) skewX(-8deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(200%) skewX(-8deg); opacity: 0; }
+}
+.animate-bg-remove-sweep {
+  animation: bg-remove-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Fade-in for result reveal */
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up-in {
+  animation: fade-up-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Drag float — thumbnail lifts while being dragged */
+@keyframes thumb-lift {
+  to { transform: scale(1.08) rotate(1.5deg); }
+}
