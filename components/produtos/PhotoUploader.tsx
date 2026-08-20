@@ -10,7 +10,6 @@ import {
   RotateCcw,
   RefreshCw,
 } from 'lucide-react';
-import { uploadImage, BUCKETS } from '@/lib/storage';
 import { Sheet } from '@/components/ui/Sheet';
 import { cn } from '@/lib/cn';
 
@@ -19,14 +18,11 @@ const MAX_FOTOS = 8;
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type BgState = 'idle' | 'processing' | 'laser' | 'done' | 'error';
-type UploadState = 'idle' | 'uploading' | 'done' | 'error';
-
 interface EditState {
   original: string;
   current: string;
   bgRemoved: string | null;
   bgState: BgState;
-  uploadState?: UploadState;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -761,11 +757,9 @@ function ImageActionSheet({
 export function PhotoUploader({
   photos,
   onChange,
-  lojaId,
 }: {
   photos: string[];
   onChange: (photos: string[]) => void;
-  lojaId: string;
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null);
@@ -857,13 +851,13 @@ export function PhotoUploader({
   // ── EditState ────────────────────────────────────────────────────────────────
 
   function getEditState(url: string): EditState {
-    return editStates[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle', uploadState: 'idle' };
+    return editStates[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' };
   }
 
   function patchEditState(url: string, patch: Partial<EditState>) {
     setEditStates((prev) => ({
       ...prev,
-      [url]: { ...(prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState, uploadState: 'idle' as UploadState }), ...patch },
+      [url]: { ...(prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState }), ...patch },
     }));
   }
 
@@ -889,7 +883,8 @@ export function PhotoUploader({
     onChange(photos.map((u) => (u === state.bgRemoved ? state.original : u)));
   }
 
-  // ── Crop confirm — fecha INSTANTANEAMENTE, upload em background ───────────────
+  // ── Crop confirm — fecha instantaneamente, gera novo blob cropado ───────────
+  // O upload para o Supabase só acontece ao guardar o produto (ProductForm).
 
   function handleCropConfirm(
     index: number,
@@ -898,33 +893,31 @@ export function PhotoUploader({
     const url = photos[index];
     const state = getEditState(url);
 
-    // 1. Fecha o sheet imediatamente
+    // Fecha o sheet imediatamente
     setCropIndex(null);
 
-    // 2. Marca a foto como "a fazer upload" (mostra spinner na miniatura)
-    patchEditState(url, { uploadState: 'uploading' });
-
-    // 3. Processa e faz upload em background (sem await no render path)
+    // Aplica o crop localmente (gera novo blob) em background
     (async () => {
       try {
         const { cropBox, naturalSize, renderedSize } = getCrop();
         const croppedDataUrl = await cropToSquare(state.current, cropBox, naturalSize, renderedSize);
-        const file = dataURLtoFile(croppedDataUrl, `crop-${Date.now()}.png`);
-        const { url: newUrl } = await uploadImage(BUCKETS.produtos, file, lojaId);
-        if (newUrl) {
-          const next = [...orderRef.current];
-          next[index] = newUrl;
-          onChange(next);
-          setEditStates((prev) => {
-            const existing = prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState, uploadState: 'idle' as UploadState };
-            const updated = { ...prev };
-            delete updated[url];
-            updated[newUrl] = { ...existing, original: newUrl, current: newUrl, uploadState: 'done' };
-            return updated;
-          });
-        }
+        // Converte para blob URL para manter a pré-visualização
+        const res = await fetch(croppedDataUrl);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const next = [...orderRef.current];
+        next[index] = blobUrl;
+        onChange(next);
+        setEditStates((prev) => {
+          const existing = prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState };
+          const updated = { ...prev };
+          delete updated[url];
+          updated[blobUrl] = { ...existing, original: blobUrl, current: blobUrl };
+          return updated;
+        });
       } catch {
-        patchEditState(url, { uploadState: 'error' });
+        // silent — mantém a foto original se o crop falhar
       }
     })();
   }
@@ -970,8 +963,6 @@ export function PhotoUploader({
       <div className="grid grid-cols-4 gap-2.5">
         {photos.map((url, i) => {
           const dragging = dragIndex === i;
-          const es = getEditState(url);
-          const uploading = es.uploadState === 'uploading';
           return (
             <div
               key={url + i}
@@ -997,12 +988,7 @@ export function PhotoUploader({
                   <Star size={9} className="fill-white" /> Capa
                 </span>
               )}
-              {/* Spinner de upload em background */}
-              {uploading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-2xl">
-                  <Loader2 size={18} className="animate-spin text-white" />
-                </div>
-              )}
+
             </div>
           );
         })}
