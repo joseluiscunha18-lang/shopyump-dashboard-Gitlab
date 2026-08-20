@@ -121,7 +121,7 @@ function ImagePreviewWithBg({
         <img
           src={bgRemovedSrc}
           alt=""
-          className="absolute inset-0 w-full h-full object-contain z-[5] pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover z-[5] pointer-events-none"
         />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,7 +129,7 @@ function ImagePreviewWithBg({
         src={src}
         alt=""
         className={cn(
-          'absolute inset-0 w-full h-full object-contain z-10 pointer-events-none transition-transform duration-700',
+          'absolute inset-0 w-full h-full object-cover z-10 pointer-events-none transition-transform duration-700',
           laser && 'animate-wipe-rl',
         )}
       />
