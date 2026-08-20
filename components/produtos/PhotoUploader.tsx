@@ -8,7 +8,6 @@ import {
   Star,
   Trash2,
   RotateCcw,
-  Check,
   RefreshCw,
   X,
 } from 'lucide-react';
@@ -169,16 +168,6 @@ function ImagePreviewWithBg({
       {laser && (
         <div className="animate-laser-rl absolute top-0 bottom-0 w-[3px] bg-white z-30 shadow-[0_0_25px_8px_rgba(255,255,255,1)]" />
       )}
-
-      {/* Badge de conclusão */}
-      {done && (
-        <div className="animate-fade-up-in absolute bottom-3 left-3 z-30 flex items-center gap-1.5 rounded-full bg-emerald-500 px-2.5 py-1 shadow-sm pointer-events-none">
-          <Check size={11} className="text-white" />
-          <span className="text-[10px] font-black uppercase tracking-wider text-white">
-            Fundo removido
-          </span>
-        </div>
-      )}
     </div>
   );
 }
@@ -295,15 +284,13 @@ function CropAndEditSheet({
         {/* ── Área de pré-visualização / posicionamento ── */}
         <div className="flex flex-col items-center gap-3">
 
-          {/* Janela de recorte / preview — design exacto do outro ficheiro (cartão branco + quadrado interior), mesma estrutura do início ao fim para não trocar de imagem/piscar */}
+          {/* Janela de recorte / preview — mesma borda/sombra suave das outras imagens da grelha */}
           <div
-            className={cn(
-              'bg-white rounded-[40px] p-3 shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-gray-100 relative transition-all duration-500 mx-auto',
-            )}
-            style={{ width: (bgDone ? 300 : PREVIEW) + 24 }}
+            className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm mx-auto transition-all duration-500"
+            style={{ width: bgDone ? 300 : PREVIEW, height: bgDone ? 300 : PREVIEW }}
           >
             <div
-              className="w-full pb-[100%] relative rounded-[32px] overflow-hidden bg-[#F8FAFC] border border-gray-50 shadow-inner cursor-grab active:cursor-grabbing touch-none select-none"
+              className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none select-none"
               onPointerDown={(e) => !bgDone && onPointerDown(e)}
               onPointerMove={(e) => !bgDone && onPointerMove(e)}
               onPointerUp={() => !bgDone && onPointerUp()}
@@ -389,16 +376,6 @@ function CropAndEditSheet({
               {/* Raio laser — passa da direita para a esquerda */}
               {laserPhase && (
                 <div className="animate-laser-rl absolute top-0 bottom-0 w-[3px] bg-white z-30 shadow-[0_0_25px_8px_rgba(255,255,255,1)]" />
-              )}
-
-              {/* Badge de conclusão */}
-              {bgDone && (
-                <div className="animate-fade-up-in absolute bottom-3 left-3 z-30 flex items-center gap-1.5 rounded-full bg-emerald-500 px-2.5 py-1 shadow-sm pointer-events-none">
-                  <Check size={11} className="text-white" />
-                  <span className="text-[10px] font-black uppercase tracking-wider text-white">
-                    Fundo removido
-                  </span>
-                </div>
               )}
             </div>
           </div>
