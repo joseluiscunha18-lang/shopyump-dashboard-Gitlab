@@ -379,95 +379,123 @@ function CropAndEditSheet({
         {/* ── Área de pré-visualização / posicionamento ── */}
         <div className="flex flex-col items-center gap-3">
 
-          {/* Janela quadrada de recorte */}
-          {!bgDone ? (
-            <div
-              className="relative overflow-hidden rounded-[28px] bg-slate-100 cursor-grab active:cursor-grabbing touch-none select-none shadow-inner mx-auto"
-              style={{ width: PREVIEW, height: PREVIEW }}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-            >
-              {/* Imagem arrastável */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt=""
-                draggable={false}
-                className={cn(
-                  'absolute pointer-events-none',
-                  busy && 'opacity-50',
-                )}
-                style={{ ...imgStyle(), maxWidth: 'none' }}
-                onLoad={(e) => {
-                  const t = e.currentTarget;
-                  setImgSize({ w: t.naturalWidth, h: t.naturalHeight });
-                }}
-              />
-
-              {/* Grade de composição */}
+          {/* Janela de recorte / preview — mesma estrutura do início ao fim, sem trocar de componente, para não "piscar" ao terminar */}
+          <div
+            className="relative overflow-hidden rounded-[28px] bg-[#F8FAFC] border border-gray-50 cursor-grab active:cursor-grabbing touch-none select-none shadow-inner mx-auto transition-all duration-500"
+            style={{ width: PREVIEW, height: PREVIEW }}
+            onPointerDown={(e) => !bgDone && onPointerDown(e)}
+            onPointerMove={(e) => !bgDone && onPointerMove(e)}
+            onPointerUp={() => !bgDone && onPointerUp()}
+          >
+            {/* Xadrez de transparência — só visível quando fundo já removido */}
+            {bgDone && (
               <div
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-0 z-0"
                 style={{
                   backgroundImage:
-                    'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-                  backgroundSize: '100px 100px',
+                    'repeating-conic-gradient(#e2e8f0 0% 25%, white 0% 50%)',
+                  backgroundSize: '16px 16px',
                 }}
               />
+            )}
 
-              {/* Cantos */}
-              {(['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'] as const).map((pos) => (
+            {/* Imagem com fundo removido (atrás, revelada pelo laser) */}
+            {bgRemoved && (
+              <img
+                src={bgRemoved}
+                alt=""
+                className="absolute inset-0 w-full h-full object-contain z-[1] pointer-events-none"
+              />
+            )}
+
+            {/* Imagem original — arrastável antes de remover fundo, depois desvanece */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt=""
+              draggable={false}
+              className={cn(
+                'absolute pointer-events-none z-10 transition-opacity duration-700',
+                busy && 'opacity-50',
+                laserPhase && 'animate-wipe-rl',
+                bgDone && 'opacity-0',
+              )}
+              style={
+                !bgDone
+                  ? { ...imgStyle(), maxWidth: 'none' }
+                  : { inset: 0, width: '100%', height: '100%', objectFit: 'contain' }
+              }
+              onLoad={(e) => {
+                const t = e.currentTarget;
+                setImgSize({ w: t.naturalWidth, h: t.naturalHeight });
+              }}
+            />
+
+            {/* Grade de composição + cantos — só antes de terminar */}
+            {!bgDone && (
+              <>
                 <div
-                  key={pos}
-                  className={cn('absolute w-7 h-7 pointer-events-none', pos)}
+                  className="absolute inset-0 pointer-events-none"
                   style={{
-                    borderTop: pos.includes('top') ? '2.5px solid white' : undefined,
-                    borderBottom: pos.includes('bottom') ? '2.5px solid white' : undefined,
-                    borderLeft: pos.includes('left') ? '2.5px solid white' : undefined,
-                    borderRight: pos.includes('right') ? '2.5px solid white' : undefined,
-                    borderRadius: pos.includes('top-0 left-0') ? '12px 0 0 0' :
-                                  pos.includes('top-0 right-0') ? '0 12px 0 0' :
-                                  pos.includes('bottom-0 left-0') ? '0 0 0 12px' : '0 0 12px 0',
+                    backgroundImage:
+                      'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
+                    backgroundSize: '100px 100px',
                   }}
                 />
-              ))}
-
-              {/* Overlay escuro + estrelas durante processamento */}
-              {busy && (
-                <div
-                  className={cn(
-                    'absolute inset-0 z-20 pointer-events-none overflow-hidden transition-opacity duration-500',
-                    processing ? 'opacity-100' : 'opacity-0',
-                  )}
-                  style={{ backgroundColor: 'rgba(18,14,10,0.65)', backdropFilter: 'blur(2px)' }}
-                >
-                  <GoldSparkle className="top-[15%] left-[20%] w-4 h-4" delay="0.1s" />
-                  <GoldSparkle className="top-[25%] right-[20%] w-7 h-7" delay="0.5s" />
-                  <GoldSparkle className="bottom-[20%] left-[30%] w-5 h-5" delay="0.8s" />
-                  <GoldSparkle className="top-[50%] right-[10%] w-3 h-3" delay="1.2s" />
-                  <div className="absolute top-[40%] left-[15%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse opacity-60" />
+                {(['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'] as const).map((pos) => (
                   <div
-                    className="absolute bottom-[35%] right-[25%] w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse opacity-40"
-                    style={{ animationDelay: '0.3s' }}
+                    key={pos}
+                    className={cn('absolute w-7 h-7 pointer-events-none', pos)}
+                    style={{
+                      borderTop: pos.includes('top') ? '2.5px solid white' : undefined,
+                      borderBottom: pos.includes('bottom') ? '2.5px solid white' : undefined,
+                      borderLeft: pos.includes('left') ? '2.5px solid white' : undefined,
+                      borderRight: pos.includes('right') ? '2.5px solid white' : undefined,
+                      borderRadius: pos.includes('top-0 left-0') ? '12px 0 0 0' :
+                                    pos.includes('top-0 right-0') ? '0 12px 0 0' :
+                                    pos.includes('bottom-0 left-0') ? '0 0 0 12px' : '0 0 12px 0',
+                    }}
                   />
-                </div>
-              )}
+                ))}
+              </>
+            )}
 
-              {/* Laser */}
-              {laserPhase && (
-                <div className="animate-laser-rl absolute top-0 bottom-0 w-[3px] bg-white z-30 shadow-[0_0_25px_8px_rgba(255,255,255,1)]" />
-              )}
-            </div>
-          ) : (
-            /* Pós-remoção: preview com fundo transparente */
-            <div className="w-full max-w-[300px] mx-auto">
-              <ImagePreviewWithBg
-                src={src}
-                bgRemovedSrc={bgRemoved}
-                bgState={bgState}
-              />
-            </div>
-          )}
+            {/* Overlay escuro + estrelas durante processamento */}
+            {busy && (
+              <div
+                className={cn(
+                  'absolute inset-0 z-20 pointer-events-none overflow-hidden transition-opacity duration-500',
+                  processing ? 'opacity-100' : 'opacity-0',
+                )}
+                style={{ backgroundColor: 'rgba(18,14,10,0.65)', backdropFilter: 'blur(2px)' }}
+              >
+                <GoldSparkle className="top-[15%] left-[20%] w-4 h-4" delay="0.1s" />
+                <GoldSparkle className="top-[25%] right-[20%] w-7 h-7" delay="0.5s" />
+                <GoldSparkle className="bottom-[20%] left-[30%] w-5 h-5" delay="0.8s" />
+                <GoldSparkle className="top-[50%] right-[10%] w-3 h-3" delay="1.2s" />
+                <div className="absolute top-[40%] left-[15%] w-1 h-1 bg-yellow-200 rounded-full animate-pulse opacity-60" />
+                <div
+                  className="absolute bottom-[35%] right-[25%] w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse opacity-40"
+                  style={{ animationDelay: '0.3s' }}
+                />
+              </div>
+            )}
+
+            {/* Laser — passa da direita para a esquerda */}
+            {laserPhase && (
+              <div className="animate-laser-rl absolute top-0 bottom-0 w-[3px] bg-white z-30 shadow-[0_0_25px_8px_rgba(255,255,255,1)]" />
+            )}
+
+            {/* Badge de conclusão */}
+            {bgDone && (
+              <div className="animate-fade-up-in absolute bottom-3 left-3 z-30 flex items-center gap-1.5 rounded-full bg-emerald-500 px-2.5 py-1 shadow-sm pointer-events-none">
+                <Check size={11} className="text-white" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-white">
+                  Fundo removido
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Texto de status IA */}
           {busy && (
