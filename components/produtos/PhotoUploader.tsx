@@ -540,7 +540,14 @@ function CropAndEditSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Posicionar imagem" subtitle="Arraste e ajuste o enquadramento" closeButton heightVh={92}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={busy ? 'A remover fundo' : 'Posicionar imagem'}
+      subtitle={busy ? undefined : 'Arraste e ajuste o enquadramento'}
+      closeButton
+      heightVh={92}
+    >
       <div className="flex flex-col gap-5 pb-6">
 
         {/* Cropper principal */}
@@ -671,13 +678,17 @@ function ImageActionSheet({
   return (
     <Sheet open={open} onClose={onClose} title="Editar imagem" closeButton>
       <div className="flex flex-col gap-3 pb-6">
-        <div className="mx-auto w-full max-w-[200px]">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="mx-auto w-full max-w-[200px] active:scale-[0.98] transition-transform"
+        >
           <ImagePreviewWithBg
             src={editState.original}
             bgRemovedSrc={bgRemoved}
             bgState={bgState}
           />
-        </div>
+        </button>
 
         <div className="h-px bg-slate-100 my-1" />
 
