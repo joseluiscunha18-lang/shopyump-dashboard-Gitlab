@@ -181,7 +181,7 @@ function Cropper({
     getCrop: () => { cropBox: CropBox; naturalSize: { w: number; h: number }; renderedSize: { w: number; h: number } },
   ) => void;
 }) {
-  const CONTAINER = 300; // px — quadrado fixo visível
+  const CONTAINER = 315; // px — quadrado fixo visível (+5%)
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
@@ -520,9 +520,9 @@ function CropAndEditSheet({
     } else {
       // fallback: confirma sem crop data (usa a imagem como está)
       onConfirm(() => ({
-        cropBox: { x: 0, y: 0, size: 300 },
-        naturalSize: { w: 300, h: 300 },
-        renderedSize: { w: 300, h: 300 },
+        cropBox: { x: 0, y: 0, size: 315 },
+        naturalSize: { w: 315, h: 315 },
+        renderedSize: { w: 315, h: 315 },
       }));
     }
     // onConfirm é responsável por fechar o sheet; não esperamos
@@ -534,7 +534,11 @@ function CropAndEditSheet({
 
         {/* Cropper principal */}
         <div className="flex flex-col items-center gap-3">
-          {!bgDone ? (
+          {busy ? (
+            <div style={{ width: 315 }}>
+              <ImagePreviewWithBg src={src} bgRemovedSrc={editState.bgRemoved} bgState={bgState} />
+            </div>
+          ) : !bgDone ? (
             <Cropper
               src={src}
               onReady={(getter) => { getCropRef.current = getter; }}
@@ -543,7 +547,7 @@ function CropAndEditSheet({
             // Depois de remover fundo, mostra preview simples (sem crop)
             <div
               className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm mx-auto"
-              style={{ width: 300, height: 300 }}
+              style={{ width: 315, height: 315 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -558,12 +562,6 @@ function CropAndEditSheet({
             <span className="status-premium text-[10px]">
               {processing ? statusText : 'A finalizar…'}
             </span>
-          )}
-
-          {!busy && !bgDone && (
-            <p className="text-[11px] font-medium text-slate-400 text-center">
-              Área de recorte 1:1 · Arraste a imagem ou as alças
-            </p>
           )}
         </div>
 
