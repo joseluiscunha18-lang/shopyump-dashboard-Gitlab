@@ -743,9 +743,11 @@ function ImageActionSheet({
 export function PhotoUploader({
   photos,
   onChange,
+  lojaId,
 }: {
   photos: string[];
   onChange: (photos: string[]) => void;
+  lojaId?: string;
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null);
@@ -933,7 +935,7 @@ export function PhotoUploader({
   const actionEditState = actionPhoto ? getEditState(actionPhoto) : null;
 
   return (
-    <div>
+    <div data-loja-id={lojaId}>
       <div className="mb-2 flex items-center justify-between pl-1">
         <div>
           <h3 className="text-[13px] font-black text-ink">Imagens</h3>
