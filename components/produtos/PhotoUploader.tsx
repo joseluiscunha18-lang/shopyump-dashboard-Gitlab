@@ -160,11 +160,11 @@ function ImagePreviewWithBg({
 }
 
 // ─── Cropper com alças de redimensionamento ───────────────────────────────────
-// Lógica: a imagem é exibida em tamanho natural dentro de um container com
-// overflow:hidden. O utilizador arrasta a imagem por baixo (pan) ou usa as
-// alças nos 4 cantos + 4 lados para ajustar a crop box quadrada.
+// Lógica: a imagem é exibida em tamanho fixo (nunca se move) dentro de um
+// container. A crop box quadrada arrasta-se dentro da imagem (a imagem é
+// o limite) e redimensiona-se apenas pelas 4 alças dos cantos.
 
-type Handle = 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se';
+type Handle = 'nw' | 'ne' | 'sw' | 'se';
 
 interface CropBox {
   x: number; // posição relativa ao canto superior-esquerdo da imagem renderizada
@@ -187,13 +187,14 @@ function Cropper({
   const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
   const [imgRendered, setImgRendered] = useState<{ w: number; h: number } | null>(null);
 
-  // Posição do canto sup-esq da imagem dentro do container (pode ser negativa = pan)
+  // Posição do canto sup-esq da imagem dentro do container — fixa após o load
+  // (a imagem é centrada e nunca se move).
   const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
   // Crop box: coordenadas relativas ao canto sup-esq da imagem renderizada
   const [cropBox, setCropBox] = useState<CropBox>({ x: 0, y: 0, size: CONTAINER });
 
   // refs de arrastos
-  const panStart = useRef<{ px: number; py: number; ix: number; iy: number } | null>(null);
+  const boxDragStart = useRef<{ px: number; py: number; bx: number; by: number } | null>(null);
   const handleStart = useRef<{
     handle: Handle;
     px: number; py: number;
@@ -212,53 +213,53 @@ function Cropper({
     const nat = { w: img.naturalWidth, h: img.naturalHeight };
     setImgNatural(nat);
 
-    // Calcula tamanho renderizado: fit dentro de CONTAINER, mantendo aspect
-    const scale = Math.max(CONTAINER / nat.w, CONTAINER / nat.h);
+    // Fit da imagem inteira dentro de CONTAINER (contain), mantendo aspect.
+    // A imagem fica sempre visível por completo e fixa.
+    const scale = Math.min(CONTAINER / nat.w, CONTAINER / nat.h);
     const rw = Math.round(nat.w * scale);
     const rh = Math.round(nat.h * scale);
     setImgRendered({ w: rw, h: rh });
 
-    // Centra a imagem e define crop box centrada (quadrado máximo)
+    // Centra a imagem no container — posição fixa, não muda mais.
     const startX = (CONTAINER - rw) / 2;
     const startY = (CONTAINER - rh) / 2;
     setImgPos({ x: startX, y: startY });
 
-    const boxSize = Math.min(rw, rh, CONTAINER);
-    const bx = (rw - boxSize) / 2 - startX; // relativo à img
-    const by = (rh - boxSize) / 2 - startY;
-    setCropBox({ x: bx > 0 ? bx : 0, y: by > 0 ? by : 0, size: boxSize });
+    // Crop box centrada, quadrado máximo que cabe na imagem.
+    const boxSize = Math.min(rw, rh);
+    const bx = (rw - boxSize) / 2;
+    const by = (rh - boxSize) / 2;
+    setCropBox({ x: bx, y: by, size: boxSize });
   }
 
-  // ── Pan da imagem ─────────────────────────────────────────────────────────
+  // ── Arrastar a crop box dentro da imagem (imagem fixa) ────────────────────
 
-  function onPanDown(e: React.PointerEvent) {
+  function onBoxDown(e: React.PointerEvent) {
     if (handleStart.current) return;
+    e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    panStart.current = { px: e.clientX, py: e.clientY, ix: imgPos.x, iy: imgPos.y };
+    boxDragStart.current = { px: e.clientX, py: e.clientY, bx: cropBox.x, by: cropBox.y };
   }
 
-  function onPanMove(e: React.PointerEvent) {
-    if (!panStart.current || !imgRendered) return;
-    const dx = e.clientX - panStart.current.px;
-    const dy = e.clientY - panStart.current.py;
+  function onBoxMove(e: React.PointerEvent) {
+    if (!boxDragStart.current || !imgRendered) return;
+    const dx = e.clientX - boxDragStart.current.px;
+    const dy = e.clientY - boxDragStart.current.py;
 
-    // Limita o pan: a imagem não pode sair inteiramente da crop box
-    const newX = Math.min(
-      cropBox.x, // img não move mais para a direita que o início da crop box
-      Math.max(panStart.current.ix + dx, cropBox.x + cropBox.size - imgRendered.w),
-    );
-    const newY = Math.min(
-      cropBox.y,
-      Math.max(panStart.current.iy + dy, cropBox.y + cropBox.size - imgRendered.h),
-    );
-    setImgPos({ x: newX, y: newY });
+    const maxX = imgRendered.w - cropBox.size;
+    const maxY = imgRendered.h - cropBox.size;
+
+    const newX = Math.min(Math.max(boxDragStart.current.bx + dx, 0), Math.max(maxX, 0));
+    const newY = Math.min(Math.max(boxDragStart.current.by + dy, 0), Math.max(maxY, 0));
+
+    setCropBox((prev) => ({ ...prev, x: newX, y: newY }));
   }
 
-  function onPanUp() {
-    panStart.current = null;
+  function onBoxUp() {
+    boxDragStart.current = null;
   }
 
-  // ── Handles de redimensionamento ──────────────────────────────────────────
+  // ── Handles de redimensionamento (só 4 cantos) ────────────────────────────
 
   function onHandleDown(e: React.PointerEvent, handle: Handle) {
     e.stopPropagation();
@@ -296,25 +297,13 @@ function Cropper({
     } else if (handle === 'se') {
       const delta = Math.max(dx, dy);
       size = Math.max(MIN_SIZE, size + delta);
-    } else if (handle === 'n') {
-      const newSize = Math.max(MIN_SIZE, size - dy);
-      y = box.y + (size - newSize);
-      size = newSize;
-    } else if (handle === 's') {
-      size = Math.max(MIN_SIZE, size + dy);
-    } else if (handle === 'w') {
-      const newSize = Math.max(MIN_SIZE, size - dx);
-      x = box.x + (size - newSize);
-      size = newSize;
-    } else if (handle === 'e') {
-      size = Math.max(MIN_SIZE, size + dx);
     }
 
-    // Limita dentro da imagem renderizada
-    const imgRight = imgRendered.w + imgPos.x;
-    const imgBottom = imgRendered.h + imgPos.y;
-    x = Math.max(imgPos.x, Math.min(x, imgRight - MIN_SIZE));
-    y = Math.max(imgPos.y, Math.min(y, imgBottom - MIN_SIZE));
+    // Limita dentro da imagem renderizada (referencial próprio da imagem, começa em 0,0)
+    const imgRight = imgRendered.w;
+    const imgBottom = imgRendered.h;
+    x = Math.max(0, Math.min(x, imgRight - MIN_SIZE));
+    y = Math.max(0, Math.min(y, imgBottom - MIN_SIZE));
     size = Math.min(size, imgRight - x, imgBottom - y, CONTAINER);
 
     setCropBox({ x, y, size });
@@ -336,10 +325,6 @@ function Cropper({
     { id: 'ne', style: { top: -6, right: -6 }, cursor: 'nesw-resize' },
     { id: 'sw', style: { bottom: -6, left: -6 }, cursor: 'nesw-resize' },
     { id: 'se', style: { bottom: -6, right: -6 }, cursor: 'nwse-resize' },
-    { id: 'n', style: { top: -5, left: '50%', transform: 'translateX(-50%)' }, cursor: 'n-resize' },
-    { id: 's', style: { bottom: -5, left: '50%', transform: 'translateX(-50%)' }, cursor: 's-resize' },
-    { id: 'w', style: { left: -5, top: '50%', transform: 'translateY(-50%)' }, cursor: 'w-resize' },
-    { id: 'e', style: { right: -5, top: '50%', transform: 'translateY(-50%)' }, cursor: 'e-resize' },
   ];
 
   return (
@@ -347,11 +332,8 @@ function Cropper({
       ref={containerRef}
       className="relative overflow-hidden rounded-2xl bg-black/80 mx-auto touch-none select-none"
       style={{ width: CONTAINER, height: CONTAINER }}
-      onPointerDown={onPanDown}
-      onPointerMove={(e) => { onPanMove(e); onHandleMove(e); }}
-      onPointerUp={() => { onPanUp(); onHandleUp(); }}
     >
-      {/* Imagem arrastável */}
+      {/* Imagem fixa — nunca se move */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
@@ -369,18 +351,20 @@ function Cropper({
         onLoad={onImgLoad}
       />
 
-      {/* Overlay de escurecimento — 4 quadrantes ao redor da crop box */}
-      {/* Implementado com clip-path inverso usando box-shadow enorme na crop box */}
-
-      {/* Área de recorte — a imagem aparece aqui em plena opacidade */}
+      {/* Área de recorte — a imagem aparece aqui em plena opacidade.
+          Esta área é a que se arrasta (a imagem por trás está fixa). */}
       <div
-        className="absolute pointer-events-none overflow-hidden"
+        className="absolute overflow-hidden touch-none"
         style={{
           left: cropScreen.left,
           top: cropScreen.top,
           width: cropScreen.size,
           height: cropScreen.size,
+          cursor: 'move',
         }}
+        onPointerDown={onBoxDown}
+        onPointerMove={(e) => { onBoxMove(e); onHandleMove(e); }}
+        onPointerUp={() => { onBoxUp(); onHandleUp(); }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -398,7 +382,7 @@ function Cropper({
         />
         {/* Grade de composição */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage:
               'linear-gradient(rgba(255,255,255,.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.15) 1px, transparent 1px)',
@@ -407,7 +391,7 @@ function Cropper({
         />
       </div>
 
-      {/* Borda da crop box + alças */}
+      {/* Borda da crop box + alças (só cantos) */}
       <div
         className="absolute pointer-events-none"
         style={{
@@ -438,7 +422,7 @@ function Cropper({
           />
         ))}
 
-        {/* Alças de redimensionamento (pointer-events: all) */}
+        {/* Alças de redimensionamento — só os 4 cantos (pointer-events: all) */}
         {handles.map(({ id, style, cursor }) => (
           <div
             key={id}
@@ -453,11 +437,13 @@ function Cropper({
               justifyContent: 'center',
             }}
             onPointerDown={(e) => onHandleDown(e, id)}
+            onPointerMove={onHandleMove}
+            onPointerUp={onHandleUp}
           >
             <div
               style={{
-                width: id.length === 1 ? 14 : 12, // lados vs cantos
-                height: id.length === 1 ? 14 : 12,
+                width: 12,
+                height: 12,
                 borderRadius: '50%',
                 background: 'white',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
@@ -473,7 +459,7 @@ function Cropper({
           className="text-[10px] font-semibold text-white/70 bg-black/30 rounded-full px-3 py-1"
           style={{ backdropFilter: 'blur(4px)' }}
         >
-          Arraste a imagem · Use as alças para ajustar
+          Arraste dentro da área · Use os cantos para ajustar
         </span>
       </div>
     </div>
