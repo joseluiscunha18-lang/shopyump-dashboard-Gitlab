@@ -582,7 +582,6 @@ export function PhotoUploader({
   onChange: (photos: string[]) => void;
   lojaId: string;
 }) {
-  const [uploading, setUploading] = useState(false);
 
   // drag-to-reorder — instâneo, sem long-press
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -604,28 +603,27 @@ export function PhotoUploader({
 
   // ── Upload ──────────────────────────────────────────────────────────────────
 
-  async function handleFiles(files: FileList | null, replaceIndex?: number) {
+  function handleFiles(files: FileList | null, replaceIndex?: number) {
     if (!files || files.length === 0) return;
-    setUploading(true);
     const limit = replaceIndex !== undefined ? 1 : MAX_FOTOS - photos.length;
-    const uploaded: string[] = [];
-    for (const file of Array.from(files).slice(0, limit)) {
-      const { url } = await uploadImage(BUCKETS.produtos, file, lojaId);
-      if (url) uploaded.push(url);
-    }
-    if (replaceIndex !== undefined && uploaded[0]) {
+    // Apenas cria URLs locais (blob:) para pré-visualização instantânea —
+    // nada é enviado para o Supabase aqui. O upload real só acontece
+    // quando o utilizador confirma o recorte/remoção de fundo (ou ao
+    // guardar o produto).
+    const localUrls = Array.from(files)
+      .slice(0, limit)
+      .map((file) => URL.createObjectURL(file));
+
+    if (replaceIndex !== undefined && localUrls[0]) {
       const next = [...photos];
-      next[replaceIndex] = uploaded[0];
+      next[replaceIndex] = localUrls[0];
       onChange(next);
-      setTimeout(() => setCropIndex(replaceIndex), 80);
-    } else {
-      const newPhotos = [...photos, ...uploaded];
+      setCropIndex(replaceIndex);
+    } else if (localUrls.length >= 1) {
+      const newPhotos = [...photos, ...localUrls];
       onChange(newPhotos);
-      if (uploaded.length >= 1) {
-        setTimeout(() => setCropIndex(newPhotos.length - 1), 80);
-      }
+      setCropIndex(newPhotos.length - 1);
     }
-    setUploading(false);
     if (inputRef.current) inputRef.current.value = '';
     if (swapInputRef.current) swapInputRef.current.value = '';
   }
@@ -830,10 +828,9 @@ export function PhotoUploader({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-500 active:bg-slate-50"
           >
-            {uploading ? <Loader2 size={20} className="animate-spin" /> : <Plus size={20} />}
+            <Plus size={20} />
             <span className="text-[9px] font-bold uppercase tracking-wider">Adicionar</span>
           </button>
         )}
