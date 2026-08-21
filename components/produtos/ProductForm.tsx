@@ -13,6 +13,7 @@ import { StockSection } from '@/components/produtos/StockSection';
 import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
+import { uploadImage, BUCKETS } from '@/lib/storage';
 import { totalEstoque } from '@/lib/variantes';
 import { pesoParaKg, type UnidadePeso } from '@/lib/peso';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
@@ -93,6 +94,32 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
     const maisOpcoesFinal: ProdutoMaisOpcoes = { ...maisOpcoes, peso: controlarPeso ? pesoPadraoKg : null };
 
+    // As fotos novas (adicionadas/recortadas no PhotoUploader) existem só
+    // como blob: local no browser — têm de ser enviadas para o Supabase
+    // Storage aqui, antes de gravar, para virarem URLs públicas permanentes.
+    // Fotos que já eram https:// (já guardadas antes) não são reenviadas.
+    const fotosFinais: string[] = [];
+    for (const foto of fotos) {
+      if (!foto.startsWith('blob:')) {
+        fotosFinais.push(foto);
+        continue;
+      }
+      try {
+        const res = await fetch(foto);
+        const blob = await res.blob();
+        const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
+        const { url, error } = await uploadImage(BUCKETS.produtos, file, lojaId);
+        if (error || !url) {
+          setSaving(false);
+          return show(error ?? 'Não foi possível enviar uma das imagens.', 'error');
+        }
+        fotosFinais.push(url);
+      } catch {
+        setSaving(false);
+        return show('Não foi possível enviar uma das imagens.', 'error');
+      }
+    }
+
     const payload = {
       loja_id: lojaId,
       nome: nome.trim(),
@@ -101,7 +128,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       categoria,
       descricao: descricao.trim() || null,
       genero,
-      fotos,
+      fotos: fotosFinais,
       variantes: hasVariants
         ? {
             raiz: variantes.raiz,
