@@ -1023,14 +1023,14 @@ export function PhotoUploader({
       {/* Cabeçalho da secção */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-black uppercase tracking-[0.07em] text-[#78716C]">
+          <span className="text-[11px] font-black uppercase tracking-[0.07em] text-[#52525B]">
             Imagens
           </span>
-          <span className="text-[11.5px] font-medium text-[#A8A29E]">
+          <span className="text-[11.5px] font-medium text-[#71717A]">
             A primeira imagem é a capa do produto.
           </span>
         </div>
-        <span className="rounded-[8px] bg-[#F5F3F0] px-2.5 py-1 text-[11px] font-bold text-[#78716C]">
+        <span className="rounded-[8px] bg-[#F4F4F3] px-2.5 py-1 text-[11px] font-bold text-[#52525B]">
           {photos.length}/{MAX_FOTOS}
         </span>
       </div>
@@ -1047,7 +1047,7 @@ export function PhotoUploader({
               onPointerMove={onPointerMove}
               onPointerUp={() => onPointerUp(i)}
               className={cn(
-                'relative aspect-square touch-none select-none overflow-hidden rounded-[13px] bg-[#EDEBE8] transition-all duration-150',
+                'relative aspect-square touch-none select-none overflow-hidden rounded-[13px] bg-[#F4F4F3] transition-all duration-150',
                 dragging ? 'opacity-25 scale-95 ring-2 ring-[rgba(28,25,23,0.2)]' : 'opacity-100 scale-100',
               )}
             >
@@ -1072,7 +1072,7 @@ export function PhotoUploader({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[rgba(28,25,23,0.16)] text-[#A8A29E] transition-all duration-150 hover:border-[rgba(28,25,23,0.28)] hover:text-[#78716C] active:bg-[#F5F3F0]"
+            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
           >
             <Plus size={20} strokeWidth={2} />
             <span className="text-[9px] font-bold uppercase tracking-[0.08em]">Adicionar</span>
@@ -1102,7 +1102,7 @@ export function PhotoUploader({
       )}
 
       {photos.length > 1 && (
-        <p className="mt-3 text-center text-[10.5px] font-semibold text-[#A8A29E]">
+        <p className="mt-3 text-center text-[10.5px] font-semibold text-[#71717A]">
           Arraste para reordenar · Toque para editar
         </p>
       )}
