@@ -1,12 +1,11 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 /*
-  Tokens ported from Marketplace-main/app/globals.css (see architecture
-  doc §9.1) so the Dashboard shares the exact same brand color and type
-  scale as the public site, instead of re-deriving its own palette.
-  --ink / --ink-soft are a Dashboard-only addition: the legacy dashboard's
-  navy (#0F172A) reads better for dense data screens than plain slate, so
-  it's kept as a named semantic token rather than a one-off hardcoded hex.
+  Design system tokens — Shopyump premium refinement.
+  --ink / --ink-* : paleta quente sem azul-acinzentado.
+  --brand         : acento laranja-tijolo da marca.
+  Todas as superfícies e bordas derivam destes tokens.
 */
 @theme inline {
   --color-brand: var(--brand);
@@ -14,43 +13,64 @@
   --color-brand-soft: var(--brand-soft);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    'Manrope', ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --brand: oklch(0.68 0.2 35);
+  /* Marca */
+  --brand:          oklch(0.62 0.19 35);
   --brand-foreground: oklch(0.99 0 0);
-  --brand-soft: oklch(0.95 0.05 50);
-  --ink: #0f172a;
-  --ink-soft: #1e293b;
+  --brand-soft:     oklch(0.95 0.05 45);
+
+  /* Ink — carvão quente, sem tonalidade azul */
+  --ink:       #1C1917;
+  --ink-soft:  #3D3A36;
+  --ink-muted: #78716C;
+  --ink-faint: #A8A29E;
+
+  /* Superfícies neutras quentes */
+  --surface-page:   #FAFAF9;
+  --surface-raised: #FFFFFF;
+  --surface-recessed: #F5F3F0;
+
+  /* Bordas */
+  --border-subtle:  rgba(28,25,23,0.07);
+  --border-default: rgba(28,25,23,0.11);
+  --border-strong:  rgba(28,25,23,0.16);
+
+  /* Raios */
+  --radius-sm:  10px;
+  --radius-md:  13px;
+  --radius-lg:  18px;
+  --radius-xl:  22px;
 }
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
-  html {
-    scroll-behavior: smooth;
-  }
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
   body {
     @apply antialiased;
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    background-color: var(--surface-page);
+    color: var(--ink);
   }
 }
 
 @layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  /* Scrollbar hidden */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
 
+  /* Skeleton */
   .skeleton-shimmer {
     position: relative;
     overflow: hidden;
-    background-color: #eef2f7;
+    background-color: var(--surface-recessed);
   }
   .skeleton-shimmer::after {
     content: '';
@@ -59,126 +79,82 @@
     transform: translateX(-100%);
     background-image: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.65) 50%,
-      rgba(255, 255, 255, 0) 100%
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0.6) 50%,
+      rgba(255,255,255,0) 100%
     );
     animation: skeleton-shimmer 1.6s ease-in-out infinite;
   }
   @keyframes skeleton-shimmer {
-    100% {
-      transform: translateX(100%);
-    }
+    100% { transform: translateX(100%); }
   }
 }
 
-/* Bottom-sheet drag-to-dismiss (ported interaction from the legacy
-   modal-desc pattern — see architecture doc §9.2). Class-based hooks only;
-   the drag physics live in components/ui/Sheet.tsx. */
+/* Sheet / drawer */
 @keyframes sheet-slide-up {
   from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  to   { transform: translateY(0); }
 }
 .animate-sheet-in {
   animation: sheet-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Toast */
 @keyframes toast-in {
   from { transform: translateY(-150%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 .animate-toast-in {
   animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Product preview card — editorial swap between rotating products.
-   The two phases run back-to-back (never overlapping), so only one
-   product is ever on screen: it eases up and out, then the next one
-   eases up into place from just below. Reads as deliberate motion
-   instead of a cross-fade flicker between two busy product photos. */
+/* Product card transitions */
 @keyframes product-card-exit {
   from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 0; transform: translateY(-12px); }
 }
 @keyframes product-card-enter {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.animate-product-exit {
-  animation: product-card-exit 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.animate-product-enter {
-  animation: product-card-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
+.animate-product-exit  { animation: product-card-exit  0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-product-enter { animation: product-card-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-/* Hides the scrollbar on horizontally-scrollable filter chip rows while
-   keeping the element natively scrollable (touch/trackpad/keyboard). */
-.scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-
-/* Image editor — background-removal processing animation.
-   A slow, elegant sweep across the image preview that reads as
-   "something subtle is happening" without screaming "loading". */
+/* BG-remove animations */
 @keyframes bg-remove-sweep {
   0%   { transform: translateX(-100%) skewX(-8deg); opacity: 0; }
   10%  { opacity: 1; }
   90%  { opacity: 1; }
   100% { transform: translateX(200%) skewX(-8deg); opacity: 0; }
 }
-.animate-bg-remove-sweep {
-  animation: bg-remove-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
+.animate-bg-remove-sweep { animation: bg-remove-sweep 1.8s cubic-bezier(0.4,0,0.2,1) infinite; }
 
-/* Fade-in for result reveal */
 @keyframes fade-up-in {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-up-in {
-  animation: fade-up-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
+.animate-fade-up-in { animation: fade-up-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-/* Drag float — thumbnail lifts while being dragged */
-@keyframes thumb-lift {
-  to { transform: scale(1.08) rotate(1.5deg); }
-}
-
-/* ── Animações premium de remoção de fundo (portadas do reference) ─── */
-
-/* Brilho das estrelas douradas durante processamento */
 @keyframes twinkle {
   0%, 100% { opacity: 0; transform: scale(0.3); filter: blur(2px); }
   50%       { opacity: 1; transform: scale(1.1); filter: blur(0px); }
 }
 .animate-twinkle { animation: twinkle 1.8s infinite ease-in-out; }
 
-/* Laser — percorre da direita para a esquerda */
 @keyframes scan-laser-rl {
   0%   { left: 100%; opacity: 0; }
   10%  { opacity: 1; }
   90%  { opacity: 1; }
-  100% { left: 0%;   opacity: 0; }
+  100% { left: 0%; opacity: 0; }
 }
-.animate-laser-rl {
-  display: block !important;
-  animation: scan-laser-rl 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+.animate-laser-rl { display: block !important; animation: scan-laser-rl 2s cubic-bezier(0.4,0,0.2,1) forwards; }
 
-/* Wipe — a imagem original recua enquanto o laser passa */
 @keyframes wipe-image-rl {
   0%   { clip-path: inset(0 0%   0 0); }
   100% { clip-path: inset(0 100% 0 0); }
 }
-.animate-wipe-rl {
-  animation: wipe-image-rl 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+.animate-wipe-rl { animation: wipe-image-rl 2s cubic-bezier(0.4,0,0.2,1) forwards; }
 
-/* Texto de status pulsante durante o processamento */
 .status-premium {
   color: #1e40af !important;
   font-weight: 900 !important;
