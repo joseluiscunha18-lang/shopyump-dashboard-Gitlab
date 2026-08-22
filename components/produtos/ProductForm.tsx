@@ -21,7 +21,7 @@ import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 /* ── Primitivos de layout ──────────────────────────────────────────────────── */
 
 function SectionDivider() {
-  return <div className="h-px bg-[rgba(28,25,23,0.07)]" />;
+  return <div className="h-px bg-[#E5E3E0]" />;
 }
 
 function SectionHeader({
@@ -33,10 +33,10 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <h3 className="text-[11px] font-black uppercase tracking-[0.07em] text-[#78716C]">
+      <h3 className="text-[11px] font-black uppercase tracking-[0.07em] text-[#52525B]">
         {title}
       </h3>
-      {right && <div className="text-[11.5px] font-semibold text-[#A8A29E]">{right}</div>}
+      {right && <div className="text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
     </div>
   );
 }
@@ -63,14 +63,14 @@ function ConfigBlock({
       className={[
         'rounded-[18px] border px-4 py-4 flex flex-col gap-4 transition-colors duration-150',
         checked
-          ? 'border-[rgba(28,25,23,0.14)] bg-white'
-          : 'border-[rgba(28,25,23,0.07)] bg-[#FAFAF9]',
+          ? 'border-[#D4D2CF] bg-white'
+          : 'border-[#E5E3E0] bg-[#FAFAF9]',
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[14px] font-bold text-[#1C1917]">{title}</span>
-          <span className="text-[12px] font-medium leading-snug text-[#A8A29E]">{description}</span>
+          <span className="text-[14px] font-bold text-[#111110]">{title}</span>
+          <span className="text-[12px] font-medium leading-snug text-[#71717A]">{description}</span>
         </div>
         <Switch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} size="sm" />
       </div>
@@ -84,11 +84,11 @@ function ConfigBlock({
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
     <div className="flex items-center gap-2 pl-0.5">
-      <span className="text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]">
+      <span className="text-[11px] font-black uppercase tracking-[0.06em] text-[#27272A]">
         {label}
       </span>
       {optional && (
-        <span className="text-[10px] font-semibold normal-case tracking-normal text-[#A8A29E]">
+        <span className="text-[10px] font-semibold normal-case tracking-normal text-[#71717A]">
           opcional
         </span>
       )}
@@ -267,7 +267,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
               required
               className="text-[22px] font-extrabold tracking-tight pr-14"
             />
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#78716C]">
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
               MT
             </span>
           </div>
@@ -285,7 +285,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
               placeholder="0"
               className="pr-14"
             />
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#78716C]">
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
               MT
             </span>
           </div>
@@ -319,7 +319,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
             />
           )}
           {controlarEstoque && hasVariants && (
-            <p className="text-[12px] font-medium text-[#A8A29E]">
+            <p className="text-[12px] font-medium text-[#71717A]">
               Define o estoque de cada combinação em &ldquo;Opções do produto&rdquo;.
             </p>
           )}
@@ -408,7 +408,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
       {/* ── 11. Ação — fixa no mobile ── */}
-      <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-[rgba(28,25,23,0.07)] bg-[rgba(250,250,249,0.94)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-3.5 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+      <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-[#E5E3E0] bg-[rgba(255,255,255,0.95)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-3.5 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
         </Button>
