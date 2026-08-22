@@ -124,11 +124,11 @@ export function ProductFormGuardProvider({ children }: { children: ReactNode }) 
 
       {copy && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          className="animate-modal-overlay fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
           onClick={handleCancel}
         >
           <div
-            className="w-full max-w-sm rounded-[20px] bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
+            className="animate-modal-card w-full max-w-sm rounded-md bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[16px] font-extrabold text-[#111110]">{copy.title}</h3>
@@ -139,14 +139,14 @@ export function ProductFormGuardProvider({ children }: { children: ReactNode }) 
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="w-full rounded-[12px] bg-[#B91C1C] px-4 py-2.5 text-[13.5px] font-bold text-white transition-colors hover:bg-[#991B1B] active:scale-[0.99]"
+                className="w-full rounded-md bg-[#B91C1C] px-4 py-2.5 text-[13.5px] font-bold text-white transition-colors hover:bg-[#991B1B] active:scale-[0.99]"
               >
                 {copy.confirm}
               </button>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="w-full rounded-[12px] border border-[#E5E3E0] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#3F3F46] transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
+                className="w-full rounded-md border border-[#E5E3E0] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#3F3F46] transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
               >
                 {copy.cancel}
               </button>
