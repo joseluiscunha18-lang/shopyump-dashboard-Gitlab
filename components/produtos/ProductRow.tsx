@@ -108,8 +108,14 @@ export function ProductRow({
           {preco.toLocaleString('pt-MZ')} MT · {produto.categoria}
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
-          <span className={cn('h-[6px] w-[6px] rounded-full', ativo ? 'bg-emerald-500' : 'bg-slate-300')} />
-          {ativo ? 'Ativo' : 'Inativo'}
+          {ativo ? (
+            <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
+          ) : produto.rascunho ? (
+            <span className="h-[6px] w-[6px] rounded-full bg-amber-400" />
+          ) : (
+            <span className="h-[6px] w-[6px] rounded-full bg-slate-300" />
+          )}
+          {ativo ? 'Ativo' : produto.rascunho ? 'Rascunho' : 'Inativo'}
           {temEstoque && <span className="text-slate-400">· Estoque: {produto.estoque}</span>}
         </p>
       </div>
