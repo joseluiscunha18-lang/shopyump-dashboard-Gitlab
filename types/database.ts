@@ -242,6 +242,12 @@ export interface Produto {
   fotos: string[];
   variantes: ProdutoVariantes | null;
   ativo: boolean;
+  /**
+   * true = produto ainda não publicado (criado via "Guardar como rascunho").
+   * Diferente de `ativo: false` — um produto inativo já foi publicado, mas
+   * está temporariamente oculto da loja. Um rascunho nunca foi publicado.
+   */
+  rascunho?: boolean | null;
   /** Estoque total. Sem variantes: valor editável directamente. Com
    *  variantes: soma calculada automaticamente a partir das combinações
    *  (mantido aqui também para a listagem de produtos não precisar de
