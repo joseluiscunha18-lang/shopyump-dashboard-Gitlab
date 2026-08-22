@@ -222,6 +222,14 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const draftAppliedRef = useRef(false);
   const [draftPendente, setDraftPendente] = useState<ProdutoDraft | null>(null);
 
+  // Bloqueia o scroll do body enquanto o modal de rascunho está aberto.
+  useEffect(() => {
+    if (!draftPendente) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [draftPendente]);
+
   useEffect(() => {
     if (produto || draftAppliedRef.current) return;
     draftAppliedRef.current = true;
