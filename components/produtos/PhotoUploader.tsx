@@ -1035,11 +1035,11 @@ export function PhotoUploader({
           onClick={() => inputRef.current?.click()}
           className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-[16px] border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-6 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
-            <ImagePlus size={17} strokeWidth={2} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
+            <ImagePlus size={17} strokeWidth={2} className="text-[#52525B]" />
           </span>
           <span className="text-[12.5px] font-medium text-[#71717A]">
-            Carregue imagens para apresentar o produto na sua loja.
+            Adicione imagens do produto
           </span>
           <span className="mt-1 rounded-[8px] bg-[#1C1917] px-3 py-1.5 text-[11.5px] font-bold text-white">
             Carregar imagens
