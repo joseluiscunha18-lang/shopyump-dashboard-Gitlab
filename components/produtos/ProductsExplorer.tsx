@@ -36,17 +36,20 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
 
     let list = produtos.filter((p) => {
       if (status === 'ativos' && !p.ativo) return false;
-      if (status === 'inativos' && p.ativo) return false;
+      // "Inativo" exclui rascunhos — são conceitos distintos.
+      if (status === 'inativos' && (p.ativo || p.rascunho)) return false;
+      if (status === 'rascunhos' && !p.rascunho) return false;
       if (categoria !== 'todas' && p.categoria !== categoria) return false;
       if (q) {
         // A pesquisa cobre tudo o que é mostrado na página de produtos —
         // não só o nome, mas categoria, preço, estoque e status.
+        const statusLabel = p.ativo ? 'ativo' : p.rascunho ? 'rascunho' : 'inativo';
         const haystack = [
           p.nome,
           p.categoria,
           String(p.preco),
           p.preco_promo ? String(p.preco_promo) : '',
-          p.ativo ? 'ativo' : 'inativo',
+          statusLabel,
           typeof p.estoque === 'number' ? String(p.estoque) : '',
         ]
           .join(' ')
