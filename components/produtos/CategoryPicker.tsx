@@ -55,30 +55,30 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]">
+      <label className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#27272A]">
         Categoria
       </label>
 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between gap-3 rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white px-4 py-3.5 text-left transition-all duration-150 hover:border-[rgba(28,25,23,0.2)] focus:outline-none focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
+        className="flex w-full items-center justify-between gap-3 rounded-[13px] border border-[#D4D2CF] bg-white px-4 py-3.5 text-left transition-all duration-150 hover:border-[rgba(28,25,23,0.2)] focus:outline-none focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
       >
         {segmentosValor.length > 0 ? (
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             {segmentosValor.length > 1 && (
-              <span className="truncate text-[11px] font-semibold text-[#A8A29E]">
+              <span className="truncate text-[11px] font-semibold text-[#71717A]">
                 {segmentosValor.slice(0, -1).join(' › ')}
               </span>
             )}
-            <span className="truncate text-[15px] font-bold text-[#1C1917]">
+            <span className="truncate text-[15px] font-bold text-[#111110]">
               {segmentosValor[segmentosValor.length - 1]}
             </span>
           </span>
         ) : (
-          <span className="text-[15px] font-medium text-[#A8A29E]">Escolher categoria</span>
+          <span className="text-[15px] font-medium text-[#71717A]">Escolher categoria</span>
         )}
-        <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-[#78716C]" />
+        <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-[#52525B]" />
       </button>
 
       <Sheet
@@ -91,7 +91,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
           <div className="relative">
             <Search
               size={15}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A8A29E]"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]"
             />
             <input
               ref={inputRef}
@@ -99,7 +99,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
               onChange={(e) => setTermo(e.target.value)}
               onPointerDown={(e) => e.stopPropagation()}
               placeholder="Pesquisar categoria…"
-              className="w-full touch-auto rounded-[13px] border border-[rgba(28,25,23,0.14)] bg-white py-3 pl-10 pr-4 font-[Manrope,sans-serif] text-[13px] font-semibold text-[#1C1917] outline-none placeholder:font-medium placeholder:text-[#A8A29E] focus:border-[#1C1917]"
+              className="w-full touch-auto rounded-[13px] border border-[#D4D2CF] bg-white py-3 pl-10 pr-4 font-[Manrope,sans-serif] text-[13px] font-semibold text-[#111110] outline-none placeholder:font-medium placeholder:text-[#71717A] focus:border-[#1C1917]"
             />
           </div>
         }
@@ -107,7 +107,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
         {termo.trim() ? (
           <div className="flex flex-col pb-3">
             {resultados.length === 0 && (
-              <p className="px-1 py-6 text-[13px] font-medium text-[#A8A29E]">
+              <p className="px-1 py-6 text-[13px] font-medium text-[#71717A]">
                 Nenhuma categoria encontrada para &ldquo;{termo.trim()}&rdquo;.
               </p>
             )}
@@ -116,22 +116,22 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
                 key={r.texto}
                 type="button"
                 onClick={() => selecionar(r.texto)}
-                className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 text-left transition-colors active:bg-[#F5F3F0]"
+                className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 text-left transition-colors active:bg-[#F4F4F3]"
               >
                 <span className="flex min-w-0 flex-1 items-baseline gap-2">
-                  <span className="truncate text-[14px] font-bold text-[#1C1917]">
+                  <span className="truncate text-[14px] font-bold text-[#111110]">
                     {r.caminho[r.caminho.length - 1]}
                   </span>
                   {r.caminho.length > 1 && (
-                    <span className="shrink-0 text-[11.5px] font-semibold text-[#A8A29E]">
+                    <span className="shrink-0 text-[11.5px] font-semibold text-[#71717A]">
                       {r.topo}
                     </span>
                   )}
                 </span>
                 {value === r.texto ? (
-                  <Check size={17} className="shrink-0 text-[#1C1917]" />
+                  <Check size={17} className="shrink-0 text-[#111110]" />
                 ) : (
-                  <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-[#A8A29E]" />
+                  <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-[#71717A]" />
                 )}
               </button>
             ))}
@@ -142,7 +142,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
               <button
                 type="button"
                 onClick={voltar}
-                className="mb-2 flex items-center gap-1 self-start rounded-[8px] px-1 py-2 text-[12px] font-bold text-[#78716C] transition-colors active:text-[#1C1917]"
+                className="mb-2 flex items-center gap-1 self-start rounded-[8px] px-1 py-2 text-[12px] font-bold text-[#52525B] transition-colors active:text-[#111110]"
               >
                 <ChevronLeft size={14} strokeWidth={2.5} />
                 {caminho[caminho.length - 1]}
@@ -158,13 +158,13 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
                     key={nome}
                     type="button"
                     onClick={() => tocarOpcao(nome)}
-                    className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 text-left transition-colors active:bg-[#F5F3F0]"
+                    className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 text-left transition-colors active:bg-[#F4F4F3]"
                   >
-                    <span className="truncate text-[14px] font-bold text-[#1C1917]">{nome}</span>
+                    <span className="truncate text-[14px] font-bold text-[#111110]">{nome}</span>
                     {selecionavel ? (
-                      value === textoOpcao && <Check size={17} className="shrink-0 text-[#1C1917]" />
+                      value === textoOpcao && <Check size={17} className="shrink-0 text-[#111110]" />
                     ) : (
-                      <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-[#A8A29E]" />
+                      <ChevronRight size={17} strokeWidth={2} className="shrink-0 text-[#71717A]" />
                     )}
                   </button>
                 );
