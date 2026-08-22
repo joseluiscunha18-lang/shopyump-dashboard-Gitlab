@@ -24,20 +24,20 @@
   --brand-soft:     oklch(0.95 0.05 45);
 
   /* Ink — carvão quente, sem tonalidade azul */
-  --ink:       #1C1917;
-  --ink-soft:  #3D3A36;
-  --ink-muted: #78716C;
-  --ink-faint: #A8A29E;
+  --ink:       #111110;
+  --ink-soft:  #27272A;
+  --ink-muted: #52525B;
+  --ink-faint: #71717A;
 
   /* Superfícies neutras quentes */
-  --surface-page:   #FAFAF9;
+  --surface-page:   #FFFFFF;
   --surface-raised: #FFFFFF;
-  --surface-recessed: #F5F3F0;
+  --surface-recessed: #F4F4F3;
 
   /* Bordas */
-  --border-subtle:  rgba(28,25,23,0.07);
-  --border-default: rgba(28,25,23,0.11);
-  --border-strong:  rgba(28,25,23,0.16);
+  --border-subtle:  #E5E3E0;
+  --border-default: #D4D2CF;
+  --border-strong:  #B8B5B1;
 
   /* Raios */
   --radius-sm:  10px;
