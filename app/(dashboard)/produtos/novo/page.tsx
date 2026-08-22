@@ -9,10 +9,14 @@ export default async function NovoProdutoPage() {
   if (!ctx.loja) return null;
 
   return (
-    <div className="flex flex-col gap-6 pt-2">
-      <div>
-        <h2 className="text-lg font-black text-ink tracking-tight">Novo produto</h2>
-        <p className="text-[12px] font-medium text-slate-400">Adiciona um produto ao teu catálogo</p>
+    <div className="flex flex-col gap-8 pt-2">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[26px] font-extrabold leading-tight tracking-tight text-[#1C1917]">
+          Novo produto
+        </h2>
+        <p className="text-[13px] font-medium text-[#A8A29E]">
+          Adiciona um produto ao teu catálogo
+        </p>
       </div>
       <ProductForm lojaId={ctx.loja.id} />
     </div>
