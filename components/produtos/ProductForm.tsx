@@ -407,8 +407,8 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* ── 10. Mais opções ── */}
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
-      {/* ── 11. Ação — fixa no mobile ── */}
-      <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-[#E5E3E0] bg-[rgba(255,255,255,0.95)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-3.5 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+      {/* ── 11. Ação ── */}
+      <div className="flex gap-3 pb-6 pt-2">
         <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
         </Button>
