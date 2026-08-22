@@ -1038,14 +1038,14 @@ export function PhotoUploader({
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
             <ImagePlus size={17} strokeWidth={2} className="text-[#52525B]" />
           </span>
-          <span className="text-[12.5px] font-medium text-[#71717A]">
+          <span className="text-[12.5px] font-semibold text-[#3F3F46]">
             Adicione imagens do produto
+          </span>
+          <span className="text-[10.5px] font-medium text-[#A1A1AA]">
+            Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
           </span>
           <span className="mt-1 rounded-[8px] border border-[#D6D3D1] bg-white px-3 py-1.5 text-[11.5px] font-bold text-[#3F3F46]">
             Carregar imagens
-          </span>
-          <span className="mt-1 text-[10.5px] font-medium text-[#A1A1AA]">
-            Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
           </span>
         </button>
       )}
