@@ -33,7 +33,7 @@ export function TopBar({
   const { menuOpen, openMenu, closeMenu } = useMobileNav();
   const pathname = usePathname();
   const router = useRouter();
-  const { requestExit } = useProductFormGuard();
+  const { requestExit, mode, triggerSaveAsDraft, triggerDiscard } = useProductFormGuard();
   const [actionsOpen, setActionsOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -107,25 +107,48 @@ export function TopBar({
 
             {actionsOpen && (
               <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-[16px] border border-[#E5E3E0] bg-white py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.18)]">
-                <button
-                  type="button"
-                  onClick={() => setActionsOpen(false)}
-                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
-                >
-                  <FileText size={16} strokeWidth={2} />
-                  Guardar como rascunho
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActionsOpen(false);
-                    requestExit(() => router.push('/produtos'));
-                  }}
-                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
-                >
-                  <Trash2 size={16} strokeWidth={2} />
-                  Descartar alterações
-                </button>
+                {mode === 'criar' ? (
+                  <>
+                    {/* Criar produto: guardar como rascunho + descartar produto */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setActionsOpen(false);
+                        await triggerSaveAsDraft();
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
+                    >
+                      <FileText size={16} strokeWidth={2} />
+                      Guardar como rascunho
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        triggerDiscard();
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
+                    >
+                      <Trash2 size={16} strokeWidth={2} />
+                      Descartar produto
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Editar produto: só descartar alterações (guardar é o botão principal) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        requestExit(() => router.push('/produtos'));
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
+                    >
+                      <Trash2 size={16} strokeWidth={2} />
+                      Descartar alterações
+                    </button>
+                  </>
+                )}
                 <div className="my-1 h-px bg-[#E5E3E0]" />
                 <button
                   type="button"
