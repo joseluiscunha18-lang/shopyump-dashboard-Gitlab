@@ -27,7 +27,7 @@ export function TopBar({
   /** Controls the small dot on the bell — only shown while there's something unread. */
   hasUnreadNotifications?: boolean;
 }) {
-  const { menuOpen, openMenu, closeMenu } = useMobileNav();
+  const { menuOpen, openMenu, closeMenu, topBarHidden } = useMobileNav();
 
   // Merges with the page at rest; picks up a soft blurred surface once the
   // user actually scrolls, so the header never competes with page content.
@@ -44,8 +44,9 @@ export function TopBar({
     <>
       <header
         className={cn(
-          'sticky top-0 z-30 flex h-16 items-center gap-3 px-3 sm:px-8',
+          'sticky top-0 z-30 items-center gap-3 px-3 sm:px-8',
           'transition-[background-color,backdrop-filter,box-shadow,border-color] duration-200 ease-out',
+          topBarHidden ? 'hidden' : 'flex h-16',
           scrolled
             ? 'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] shadow-[0_1px_0_rgba(28,25,23,0.04),0_8px_20px_-16px_rgba(28,25,23,0.12)] backdrop-blur-md'
             : 'border-b border-transparent bg-transparent shadow-none backdrop-blur-none',
