@@ -93,13 +93,13 @@ export function ProductRow({
         />
       )}
 
-      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+      <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
         {produto.fotos?.[0] && (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
         )}
         {/* Contorno "fundido" à imagem (inset, não uma borda por fora) — a
         mesma técnica usada no card animado da tela de login/onboarding. */}
-        <div className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_0_0_1px_rgba(26,18,16,0.14)]" />
+        <div className="pointer-events-none absolute inset-0 rounded-lg shadow-[inset_0_0_0_1px_rgba(26,18,16,0.14)]" />
       </div>
 
       <div className="min-w-0 flex-1">
