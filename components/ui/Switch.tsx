@@ -13,9 +13,10 @@ export function Switch({
   ariaLabel?: string;
   size?: 'sm' | 'md';
 }) {
-  const track = size === 'sm' ? 'h-5 w-9' : 'h-6 w-11';
-  const knob = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
-  const translate = size === 'sm' ? 'translate-x-4' : 'translate-x-5';
+  const track     = size === 'sm' ? 'h-[22px] w-[38px]' : 'h-[26px] w-[46px]';
+  const knob      = size === 'sm' ? 'h-[16px] w-[16px]' : 'h-[20px] w-[20px]';
+  const translate = size === 'sm' ? 'translate-x-[17px]' : 'translate-x-[21px]';
+  const offset    = 'translate-x-[3px]';
 
   return (
     <button
@@ -25,16 +26,20 @@ export function Switch({
       aria-label={ariaLabel}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex shrink-0 items-center rounded-full transition-colors shadow-inner',
+        'relative inline-flex shrink-0 items-center rounded-full',
+        'transition-colors duration-200',
         track,
-        checked ? 'bg-ink' : 'bg-slate-200'
+        checked
+          ? 'bg-[#1C1917]'
+          : 'bg-[#D6D1CB]'
       )}
     >
       <span
         className={cn(
-          'inline-block transform rounded-full bg-white shadow transition-transform',
+          'inline-block transform rounded-full bg-white',
+          'shadow-[0_1px_4px_rgba(0,0,0,0.18)] transition-transform duration-200',
           knob,
-          checked ? translate : 'translate-x-[3px]'
+          checked ? translate : offset
         )}
       />
     </button>
