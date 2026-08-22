@@ -23,13 +23,13 @@ const items: NavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { menuOpen } = useMobileNav();
+  const { menuOpen, bottomBarHidden } = useMobileNav();
 
   return (
     <nav
       className={cn(
         'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-200',
-        menuOpen ? 'translate-y-[130%]' : 'translate-y-0'
+        menuOpen || bottomBarHidden ? 'translate-y-[130%]' : 'translate-y-0'
       )}
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
     >
