@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ArrowUpDown, Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-export type StatusFilter = 'todos' | 'ativos' | 'inativos';
+export type StatusFilter = 'todos' | 'ativos' | 'inativos' | 'rascunhos';
 export type SortOption = 'recentes' | 'antigos' | 'preco-asc' | 'preco-desc' | 'nome-az';
 
 const STATUS_LABELS: Record<StatusFilter, string> = {
   todos: 'Todos',
   ativos: 'Ativos',
   inativos: 'Inativos',
+  rascunhos: 'Rascunhos',
 };
 
 const SORT_LABELS: Record<SortOption, string> = {
@@ -123,7 +124,7 @@ export function ProductFilterBar({
       <FilterDropdown
         label="Status"
         value={status}
-        options={['todos', 'ativos', 'inativos'] as StatusFilter[]}
+        options={['todos', 'ativos', 'inativos', 'rascunhos'] as StatusFilter[]}
         labels={STATUS_LABELS}
         onChange={onStatusChange}
         isActive={status !== 'todos'}
