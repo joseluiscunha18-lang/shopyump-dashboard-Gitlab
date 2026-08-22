@@ -22,6 +22,7 @@ import {
   writeProdutoDraft,
   clearProdutoDraft,
   isDraftMeaningful,
+  type ProdutoDraft,
 } from '@/lib/produtos/draft';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
@@ -68,7 +69,7 @@ function ConfigBlock({
   return (
     <div
       className={[
-        'rounded-[18px] border px-4 py-4 flex flex-col gap-4 transition-colors duration-150',
+        'rounded-md border px-4 py-4 flex flex-col gap-4 transition-colors duration-150',
         checked
           ? 'border-[#D4D2CF] bg-white'
           : 'border-[#E5E3E0] bg-[#FAFAF9]',
@@ -219,35 +220,39 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   // ── Rascunho automático (só ao criar um produto novo) ─────────────────────
   const draftAppliedRef = useRef(false);
+  const [draftPendente, setDraftPendente] = useState<ProdutoDraft | null>(null);
 
   useEffect(() => {
     if (produto || draftAppliedRef.current) return;
     draftAppliedRef.current = true;
     const draft = readProdutoDraft(lojaId);
     if (!isDraftMeaningful(draft)) return;
-
-    const aceitar = window.confirm(
-      'Você tem um produto não finalizado.\n\nContinuar de onde parou?'
-    );
-    if (aceitar) {
-      setNome(draft.nome);
-      setDescricao(draft.descricao);
-      setCategoria(draft.categoria);
-      setPreco(draft.preco);
-      setPrecoPromo(draft.precoPromo);
-      initialSnapshotRef.current = JSON.stringify({
-        nome: draft.nome,
-        descricao: draft.descricao,
-        categoria: draft.categoria,
-        preco: draft.preco,
-        precoPromo: draft.precoPromo,
-      });
-      setDirty(false);
-    } else {
-      clearProdutoDraft(lojaId);
-    }
+    setDraftPendente(draft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleAceitarDraft() {
+    if (!draftPendente) return;
+    setNome(draftPendente.nome);
+    setDescricao(draftPendente.descricao);
+    setCategoria(draftPendente.categoria);
+    setPreco(draftPendente.preco);
+    setPrecoPromo(draftPendente.precoPromo);
+    initialSnapshotRef.current = JSON.stringify({
+      nome: draftPendente.nome,
+      descricao: draftPendente.descricao,
+      categoria: draftPendente.categoria,
+      preco: draftPendente.preco,
+      precoPromo: draftPendente.precoPromo,
+    });
+    setDirty(false);
+    setDraftPendente(null);
+  }
+
+  function handleRejeitarDraft() {
+    clearProdutoDraft(lojaId);
+    setDraftPendente(null);
+  }
 
   useEffect(() => {
     if (produto) return; // rascunho é só para criação
@@ -337,6 +342,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-8 pb-28">
 
       {/* ── 1. Imagens ── */}
@@ -544,5 +550,53 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         </Button>
       </div>
     </form>
+
+    {/* ── Modal de rascunho pendente ── */}
+    {draftPendente && (
+      <div
+        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        onClick={handleRejeitarDraft}
+      >
+        <div
+          className="w-full max-w-sm rounded-[20px] bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Ícone */}
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F4F4F3]">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 13.5V15h1.5l8.83-8.83-1.5-1.5L3 13.5zm10.71-9.21a.996.996 0 0 0 0-1.41l-1.09-1.09a.996.996 0 0 0-1.41 0l-1.06 1.06 2.5 2.5 1.06-1.06z" fill="#52525B"/>
+            </svg>
+          </div>
+
+          <h3 className="text-[16px] font-extrabold text-[#111110]">
+            Continuar produto?
+          </h3>
+          <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-[#71717A]">
+            {draftPendente.nome
+              ? <>Tens um produto não finalizado — <span className="font-semibold text-[#3F3F46]">{draftPendente.nome}</span>. Desejas continuar de onde paraste?</>
+              : 'Tens um produto não finalizado. Desejas continuar de onde paraste?'
+            }
+          </p>
+
+          <div className="mt-5 flex flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={handleAceitarDraft}
+              className="w-full rounded-[12px] bg-[#111110] px-4 py-2.5 text-[13.5px] font-bold text-white transition-colors hover:bg-[#27272A] active:scale-[0.99]"
+            >
+              Continuar
+            </button>
+            <button
+              type="button"
+              onClick={handleRejeitarDraft}
+              className="w-full rounded-[12px] border border-[#E5E3E0] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#3F3F46] transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
+            >
+              Começar novo
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
