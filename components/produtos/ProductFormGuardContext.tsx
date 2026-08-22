@@ -58,6 +58,14 @@ export function ProductFormGuardProvider({ children }: { children: ReactNode }) 
   const [dialogMode, setDialogMode] = useState<FlowMode | null>(null);
   const [mode, setModeState] = useState<FlowMode>('criar');
 
+  // Bloqueia o scroll do body enquanto o modal está aberto.
+  useEffect(() => {
+    if (!dialogMode) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [dialogMode]);
+
   const saveAsDraftRef = useRef<(() => Promise<void>) | null>(null);
   const discardRef = useRef<(() => void) | null>(null);
 
