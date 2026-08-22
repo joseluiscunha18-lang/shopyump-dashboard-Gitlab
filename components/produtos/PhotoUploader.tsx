@@ -9,6 +9,7 @@ import {
   Trash2,
   RotateCcw,
   RefreshCw,
+  ImagePlus,
 } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { cn } from '@/lib/cn';
@@ -1022,32 +1023,29 @@ export function PhotoUploader({
     <div data-loja-id={lojaId}>
       {/* Cabeçalho da secção */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-black uppercase tracking-[0.07em] text-[#52525B]">
-            Imagens
-          </span>
-          <span className="text-[11.5px] font-medium text-[#71717A]">
-            A primeira imagem é a capa do produto.
-          </span>
-        </div>
-        <span className="rounded-[8px] bg-[#F4F4F3] px-2.5 py-1 text-[11px] font-bold text-[#52525B]">
-          {photos.length}/{MAX_FOTOS}
+        <span className="text-[11px] font-black uppercase tracking-[0.07em] text-[#52525B]">
+          Imagens
         </span>
       </div>
 
-      {/* Container de upload maior — só quando ainda não há fotos */}
+      {/* Container de upload — só quando ainda não há fotos */}
       {photos.length === 0 && (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="group flex w-full flex-col items-center justify-center gap-2.5 rounded-[20px] border-2 border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-10 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-[16px] border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-6 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
-            <Plus size={22} strokeWidth={2.25} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
+            <ImagePlus size={17} strokeWidth={2} />
           </span>
-          <span className="text-[13px] font-bold text-[#3F3F46]">Adicionar imagens</span>
-          <span className="text-[11px] font-medium text-[#A1A1AA]">
-            Toque para escolher ou arraste até {MAX_FOTOS} fotos
+          <span className="text-[12.5px] font-medium text-[#71717A]">
+            Carregue imagens para apresentar o produto na sua loja.
+          </span>
+          <span className="mt-1 rounded-[8px] bg-[#1C1917] px-3 py-1.5 text-[11.5px] font-bold text-white">
+            Carregar imagens
+          </span>
+          <span className="mt-1 text-[10.5px] font-medium text-[#A1A1AA]">
+            Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
           </span>
         </button>
       )}
