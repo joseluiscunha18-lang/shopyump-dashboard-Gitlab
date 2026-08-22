@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Package, Plus, ClipboardList, BarChart3, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useMobileNav } from './MobileNavContext';
+import { isProductFormFlowPath } from '@/lib/nav/productFormFlow';
 
 interface NavItem {
   href: string;
@@ -23,13 +24,18 @@ const items: NavItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { menuOpen, bottomBarHidden } = useMobileNav();
+  const { menuOpen } = useMobileNav();
+  const inFlow = isProductFormFlowPath(pathname);
 
+  // `inFlow` vem do pathname (disponível já na primeira renderização), por
+  // isso a barra nasce escondida nessas rotas em vez de aparecer e só
+  // depois recolher — sem flash.
   return (
     <nav
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform transition-transform duration-200',
-        menuOpen || bottomBarHidden ? 'translate-y-[130%]' : 'translate-y-0'
+        'fixed inset-x-0 bottom-0 z-40 sm:hidden transform-gpu will-change-transform',
+        !inFlow && 'transition-transform duration-200',
+        menuOpen || inFlow ? 'translate-y-[130%]' : 'translate-y-0'
       )}
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
     >
