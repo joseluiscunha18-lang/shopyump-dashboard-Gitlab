@@ -47,7 +47,7 @@ export function TopBar({
           'sticky top-0 z-30 flex h-16 items-center gap-3 px-3 sm:px-8',
           'transition-[background-color,backdrop-filter,box-shadow,border-color] duration-200 ease-out',
           scrolled
-            ? 'border-b border-slate-200/60 bg-white/75 shadow-[0_1px_0_rgba(15,23,42,0.02),0_10px_24px_-18px_rgba(15,23,42,0.14)] backdrop-blur-md'
+            ? 'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] shadow-[0_1px_0_rgba(28,25,23,0.04),0_8px_20px_-16px_rgba(28,25,23,0.12)] backdrop-blur-md'
             : 'border-b border-transparent bg-transparent shadow-none backdrop-blur-none',
         )}
       >
