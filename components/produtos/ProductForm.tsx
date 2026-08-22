@@ -227,7 +227,8 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     draftAppliedRef.current = true;
     const draft = readProdutoDraft(lojaId);
     if (!isDraftMeaningful(draft)) return;
-    setDraftPendente(draft);
+    const t = setTimeout(() => setDraftPendente(draft), 400);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -554,11 +555,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     {/* ── Modal de rascunho pendente ── */}
     {draftPendente && (
       <div
-        className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+        className="animate-modal-overlay fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
         onClick={handleRejeitarDraft}
       >
         <div
-          className="w-full max-w-sm rounded-[20px] bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
+          className="animate-modal-card w-full max-w-sm rounded-[20px] bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Ícone */}
