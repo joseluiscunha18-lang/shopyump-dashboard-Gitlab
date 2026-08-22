@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Bell, ArrowLeft, MoreVertical, FileText, Trash2, HelpCircle } from 'lucide-react';
+import { Menu, Bell, ChevronLeft, MoreVertical, FileText, Trash2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { MobileSidebarDrawer, type Plano } from './MobileSidebarDrawer';
 import { useMobileNav } from './MobileNavContext';
+import { useProductFormGuard } from '@/components/produtos/ProductFormGuardContext';
 import { isProductFormFlowPath, productFormFlowTitle } from '@/lib/nav/productFormFlow';
 
 function initials(name: string) {
@@ -32,6 +33,7 @@ export function TopBar({
   const { menuOpen, openMenu, closeMenu } = useMobileNav();
   const pathname = usePathname();
   const router = useRouter();
+  const { requestExit } = useProductFormGuard();
   const [actionsOpen, setActionsOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -70,66 +72,72 @@ export function TopBar({
     return (
       <header
         className={cn(
-          'sticky top-0 z-30 flex h-16 items-center gap-2.5 px-3 sm:px-8',
+          'sticky top-0 z-30 flex h-16 items-center px-3 sm:px-8',
           'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] backdrop-blur-md',
         )}
       >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          aria-label="Voltar"
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
-        >
-          <ArrowLeft size={20} strokeWidth={2.2} />
-        </button>
+        {/* Zona esquerda — mesma largura que a direita, para o título ficar
+            realmente centrado entre as duas (3 zonas simétricas). */}
+        <div className="flex flex-1 items-center justify-start">
+          <button
+            type="button"
+            onClick={() => requestExit(() => router.back())}
+            aria-label="Voltar"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
+          >
+            <ChevronLeft size={22} strokeWidth={2.2} />
+          </button>
+        </div>
 
-        <h1 className="truncate text-[16px] font-extrabold tracking-tight text-ink sm:text-[17px]">
+        <h1 className="flex-shrink-0 truncate px-2 text-center text-[16px] font-extrabold tracking-tight text-ink sm:text-[17px]">
           {productFormFlowTitle(pathname)}
         </h1>
 
-        <div className="relative ml-auto flex-shrink-0" ref={actionsRef}>
-          <button
-            type="button"
-            onClick={() => setActionsOpen((v) => !v)}
-            aria-label="Mais ações"
-            aria-expanded={actionsOpen}
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
-          >
-            <MoreVertical size={19} strokeWidth={2.2} />
-          </button>
+        <div className="flex flex-1 items-center justify-end">
+          <div className="relative flex-shrink-0" ref={actionsRef}>
+            <button
+              type="button"
+              onClick={() => setActionsOpen((v) => !v)}
+              aria-label="Mais ações"
+              aria-expanded={actionsOpen}
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
+            >
+              <MoreVertical size={19} strokeWidth={2.2} />
+            </button>
 
-          {actionsOpen && (
-            <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-[16px] border border-[#E5E3E0] bg-white py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.18)]">
-              <button
-                type="button"
-                onClick={() => setActionsOpen(false)}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
-              >
-                <FileText size={16} strokeWidth={2} />
-                Guardar como rascunho
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActionsOpen(false);
-                  router.push('/produtos');
-                }}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
-              >
-                <Trash2 size={16} strokeWidth={2} />
-                Descartar alterações
-              </button>
-              <div className="my-1 h-px bg-[#E5E3E0]" />
-              <button
-                type="button"
-                onClick={() => setActionsOpen(false)}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
-              >
-                <HelpCircle size={16} strokeWidth={2} />
-                Ajuda
-              </button>
-            </div>
-          )}
+            {actionsOpen && (
+              <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-[16px] border border-[#E5E3E0] bg-white py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.18)]">
+                <button
+                  type="button"
+                  onClick={() => setActionsOpen(false)}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
+                >
+                  <FileText size={16} strokeWidth={2} />
+                  Guardar como rascunho
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    requestExit(() => router.push('/produtos'));
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
+                >
+                  <Trash2 size={16} strokeWidth={2} />
+                  Descartar alterações
+                </button>
+                <div className="my-1 h-px bg-[#E5E3E0]" />
+                <button
+                  type="button"
+                  onClick={() => setActionsOpen(false)}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
+                >
+                  <HelpCircle size={16} strokeWidth={2} />
+                  Ajuda
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
     );
