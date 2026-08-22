@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Settings2 } from 'lucide-react';
+import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import type { ProdutoMaisOpcoes } from '@/types/database';
 import { cn } from '@/lib/cn';
 
-/** Peso padrão saiu daqui — vive agora antes de "Opções do produto"
- *  (PesoPadraoInput), porque é usado logo por todas as variantes e não
- *  faz sentido ficar escondido em "Mais opções". */
 export function MoreOptions({
   value,
   onChange,
@@ -23,20 +20,25 @@ export function MoreOptions({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-100">
+    <div className="overflow-hidden rounded-[18px] border border-[rgba(28,25,23,0.1)]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3.5"
+        className="flex w-full items-center justify-between px-4 py-4 transition-colors hover:bg-[#FAFAF9]"
       >
-        <span className="flex items-center gap-2 text-[13px] font-black text-ink">
-          <Settings2 size={15} className="text-slate-400" /> Mais opções
+        <span className="flex items-center gap-2.5 text-[14px] font-bold text-[#1C1917]">
+          <SlidersHorizontal size={15} strokeWidth={2} className="text-[#A8A29E]" />
+          Mais opções
         </span>
-        <ChevronDown size={16} className={cn('text-slate-400 transition-transform', open && 'rotate-180')} />
+        <ChevronDown
+          size={16}
+          strokeWidth={2}
+          className={cn('text-[#A8A29E] transition-transform duration-200', open && 'rotate-180')}
+        />
       </button>
 
       {open && (
-        <div className="flex flex-col gap-4 border-t border-slate-100 px-4 py-4">
+        <div className="flex flex-col gap-5 border-t border-[rgba(28,25,23,0.07)] bg-white px-4 py-5">
           <Input
             label="SKU"
             value={value.sku ?? ''}
@@ -48,7 +50,7 @@ export function MoreOptions({
             rows={3}
             value={value.infoEntrega ?? ''}
             onChange={(e) => set('infoEntrega', e.target.value)}
-            placeholder="Ex: Envio em 2-3 dias úteis"
+            placeholder="Ex: Envio em 2–3 dias úteis"
           />
         </div>
       )}
