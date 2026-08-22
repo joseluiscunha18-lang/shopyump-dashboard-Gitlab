@@ -78,8 +78,14 @@ export function ProductFormGuardProvider({ children }: { children: ReactNode }) 
       {children}
 
       {copy && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-[20px] bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]">
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={handleCancel}
+        >
+          <div
+            className="w-full max-w-sm rounded-[20px] bg-white p-5 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-[16px] font-extrabold text-[#111110]">{copy.title}</h3>
             <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-[#71717A]">
               {copy.description}
