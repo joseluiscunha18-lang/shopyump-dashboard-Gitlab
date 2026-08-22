@@ -2,13 +2,28 @@
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 
-type FlowMode = 'criar' | 'editar';
+export type FlowMode = 'criar' | 'editar';
 
 interface ProductFormGuardContextValue {
   /** Chamado pelo ProductForm sempre que o "sujo" do formulário muda. */
   setDirty: (dirty: boolean) => void;
   /** Chamado pelo ProductForm ao montar, para saber que texto usar no diálogo. */
   setMode: (mode: FlowMode) => void;
+  /** Modo atual — exposto para a TopBar adaptar as ações do ⋮. */
+  mode: FlowMode;
+  /**
+   * Regista o callback de "Guardar como rascunho" vindo do ProductForm.
+   * A TopBar chama-o sem saber nada do formulário.
+   */
+  registerSaveAsDraft: (fn: () => Promise<void>) => void;
+  /**
+   * Regista o callback de "Descartar produto/alterações" vindo do ProductForm.
+   */
+  registerDiscard: (fn: () => void) => void;
+  /** Invoca o callback de guardar como rascunho (criar produto). */
+  triggerSaveAsDraft: () => Promise<void>;
+  /** Invoca o callback de descartar. */
+  triggerDiscard: () => void;
   /**
    * Pede para sair do fluxo (voltar, cancelar, descartar…). Se não há
    * alterações por guardar, executa `action` imediatamente — sem diálogo,
@@ -41,13 +56,34 @@ export function ProductFormGuardProvider({ children }: { children: ReactNode }) 
   const modeRef = useRef<FlowMode>('criar');
   const pendingActionRef = useRef<(() => void) | null>(null);
   const [dialogMode, setDialogMode] = useState<FlowMode | null>(null);
+  const [mode, setModeState] = useState<FlowMode>('criar');
+
+  const saveAsDraftRef = useRef<(() => Promise<void>) | null>(null);
+  const discardRef = useRef<(() => void) | null>(null);
 
   const setDirty = useCallback((dirty: boolean) => {
     dirtyRef.current = dirty;
   }, []);
 
-  const setMode = useCallback((mode: FlowMode) => {
-    modeRef.current = mode;
+  const setMode = useCallback((m: FlowMode) => {
+    modeRef.current = m;
+    setModeState(m);
+  }, []);
+
+  const registerSaveAsDraft = useCallback((fn: () => Promise<void>) => {
+    saveAsDraftRef.current = fn;
+  }, []);
+
+  const registerDiscard = useCallback((fn: () => void) => {
+    discardRef.current = fn;
+  }, []);
+
+  const triggerSaveAsDraft = useCallback(async () => {
+    await saveAsDraftRef.current?.();
+  }, []);
+
+  const triggerDiscard = useCallback(() => {
+    discardRef.current?.();
   }, []);
 
   const requestExit = useCallback((action: () => void) => {
@@ -74,7 +110,16 @@ export function ProductFormGuardProvider({ children }: { children: ReactNode }) 
   const copy = dialogMode ? COPY[dialogMode] : null;
 
   return (
-    <ProductFormGuardContext.Provider value={{ setDirty, setMode, requestExit }}>
+    <ProductFormGuardContext.Provider value={{
+      setDirty,
+      setMode,
+      mode,
+      registerSaveAsDraft,
+      registerDiscard,
+      triggerSaveAsDraft,
+      triggerDiscard,
+      requestExit,
+    }}>
       {children}
 
       {copy && (
