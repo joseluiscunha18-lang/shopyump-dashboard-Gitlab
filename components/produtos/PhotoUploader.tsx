@@ -1020,18 +1020,22 @@ export function PhotoUploader({
 
   return (
     <div data-loja-id={lojaId}>
-      <div className="mb-2 flex items-center justify-between pl-1">
-        <div>
-          <h3 className="text-[13px] font-black text-ink">Imagens</h3>
-          <p className="text-[11px] font-medium text-slate-400">
+      {/* Cabeçalho da secção */}
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[11px] font-black uppercase tracking-[0.07em] text-[#78716C]">
+            Imagens
+          </span>
+          <span className="text-[11.5px] font-medium text-[#A8A29E]">
             A primeira imagem é a capa do produto.
-          </p>
+          </span>
         </div>
-        <span className="rounded-lg bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-400">
+        <span className="rounded-[8px] bg-[#F5F3F0] px-2.5 py-1 text-[11px] font-bold text-[#78716C]">
           {photos.length}/{MAX_FOTOS}
         </span>
       </div>
 
+      {/* Grelha de imagens */}
       <div className="grid grid-cols-4 gap-2.5">
         {photos.map((url, i) => {
           const dragging = dragIndex === i;
@@ -1043,8 +1047,8 @@ export function PhotoUploader({
               onPointerMove={onPointerMove}
               onPointerUp={() => onPointerUp(i)}
               className={cn(
-                'relative aspect-square touch-none select-none overflow-hidden rounded-2xl bg-slate-100 shadow-sm transition-all duration-150',
-                dragging ? 'opacity-25 scale-95 ring-2 ring-ink/20' : 'opacity-100 scale-100',
+                'relative aspect-square touch-none select-none overflow-hidden rounded-[13px] bg-[#EDEBE8] transition-all duration-150',
+                dragging ? 'opacity-25 scale-95 ring-2 ring-[rgba(28,25,23,0.2)]' : 'opacity-100 scale-100',
               )}
             >
               <Image
@@ -1056,11 +1060,10 @@ export function PhotoUploader({
                 unoptimized={url.startsWith('blob:')}
               />
               {i === 0 && (
-                <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full bg-ink/85 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
-                  <Star size={9} className="fill-white" /> Capa
+                <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-[7px] bg-[rgba(28,25,23,0.82)] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white backdrop-blur-sm">
+                  <Star size={8} className="fill-white" /> Capa
                 </span>
               )}
-
             </div>
           );
         })}
@@ -1069,17 +1072,18 @@ export function PhotoUploader({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-500 active:bg-slate-50"
+            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[rgba(28,25,23,0.16)] text-[#A8A29E] transition-all duration-150 hover:border-[rgba(28,25,23,0.28)] hover:text-[#78716C] active:bg-[#F5F3F0]"
           >
-            <Plus size={20} />
-            <span className="text-[9px] font-bold uppercase tracking-wider">Adicionar</span>
+            <Plus size={20} strokeWidth={2} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.08em]">Adicionar</span>
           </button>
         )}
       </div>
 
+      {/* Float ghost durante drag */}
       {dragIndex !== null && floatPos && photos[dragIndex] && (
         <div
-          className="pointer-events-none fixed z-[200] h-16 w-16 overflow-hidden rounded-2xl shadow-2xl ring-2 ring-ink/20"
+          className="pointer-events-none fixed z-[200] h-16 w-16 overflow-hidden rounded-[13px] shadow-2xl ring-2 ring-[rgba(28,25,23,0.2)]"
           style={{
             left: floatPos.x - 32,
             top: floatPos.y - 32,
@@ -1098,7 +1102,7 @@ export function PhotoUploader({
       )}
 
       {photos.length > 1 && (
-        <p className="mt-2.5 text-center text-[10px] font-semibold text-slate-400">
+        <p className="mt-3 text-center text-[10.5px] font-semibold text-[#A8A29E]">
           Arraste para reordenar · Toque para editar
         </p>
       )}
