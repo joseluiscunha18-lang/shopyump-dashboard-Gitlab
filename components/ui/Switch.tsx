@@ -30,8 +30,8 @@ export function Switch({
         'transition-colors duration-200',
         track,
         checked
-          ? 'bg-[#1C1917]'
-          : 'bg-[#D6D1CB]'
+          ? 'bg-[#111110]'
+          : 'bg-[#D4D2CF]'
       )}
     >
       <span
