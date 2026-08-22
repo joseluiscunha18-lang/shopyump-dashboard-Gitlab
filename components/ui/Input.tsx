@@ -15,57 +15,76 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-[11px] font-black uppercase tracking-widest text-slate-500 pl-1">
+          <label
+            htmlFor={inputId}
+            className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]"
+          >
             {label}
           </label>
         )}
         <div className="relative flex items-center">
-          {icon && <div className="absolute left-4 text-slate-400 pointer-events-none">{icon}</div>}
+          {icon && (
+            <div className="pointer-events-none absolute left-4 text-[#A8A29E]">{icon}</div>
+          )}
           <input
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full bg-slate-50 border border-transparent rounded-2xl py-3.5 text-[13px] font-semibold text-ink outline-none transition-all shadow-sm',
-              'focus:bg-white focus:border-ink focus:ring-4 focus:ring-ink/5',
-              icon ? 'pl-11 pr-4' : 'px-4',
-              suffix ? 'pr-11' : '',
-              error && 'border-red-300 focus:border-red-400 focus:ring-red-100',
+              'w-full rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white',
+              'px-4 py-3.5 text-[15px] font-semibold text-[#1C1917] outline-none',
+              'placeholder:font-medium placeholder:text-[#A8A29E]',
+              'transition-all duration-150',
+              'focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]',
+              icon   ? 'pl-11 pr-4' : '',
+              suffix ? 'pr-12'      : '',
+              error  ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : '',
               className
             )}
             {...props}
           />
-          {suffix && <div className="absolute right-4 text-slate-400">{suffix}</div>}
+          {suffix && (
+            <div className="pointer-events-none absolute right-4 text-[12px] font-bold text-[#78716C]">
+              {suffix}
+            </div>
+          )}
         </div>
-        {hint && !error && <p className="text-[11px] font-medium text-slate-400 pl-1">{hint}</p>}
-        {error && <p className="text-[11px] font-bold text-red-500 pl-1">{error}</p>}
+        {hint  && !error && <p className="pl-0.5 text-[11.5px] font-medium text-[#A8A29E]">{hint}</p>}
+        {error &&           <p className="pl-0.5 text-[11.5px] font-bold text-red-500">{error}</p>}
       </div>
     );
   }
 );
 Input.displayName = 'Input';
 
-export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }>(
-  ({ className, label, id, ...props }, ref) => {
-    const inputId = id ?? props.name;
-    return (
-      <div className="flex flex-col gap-1.5">
-        {label && (
-          <label htmlFor={inputId} className="text-[11px] font-black uppercase tracking-widest text-slate-500 pl-1">
-            {label}
-          </label>
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }
+>(({ className, label, id, ...props }, ref) => {
+  const inputId = id ?? props.name;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {label && (
+        <label
+          htmlFor={inputId}
+          className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]"
+        >
+          {label}
+        </label>
+      )}
+      <textarea
+        ref={ref}
+        id={inputId}
+        className={cn(
+          'w-full resize-none rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white',
+          'px-4 py-3.5 text-[15px] font-medium leading-relaxed text-[#1C1917] outline-none',
+          'placeholder:font-medium placeholder:text-[#A8A29E]',
+          'transition-all duration-150',
+          'focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]',
+          className
         )}
-        <textarea
-          ref={ref}
-          id={inputId}
-          className={cn(
-            'w-full bg-slate-50 border border-transparent rounded-2xl px-4 py-3.5 text-[13px] font-medium text-ink outline-none transition-all shadow-sm resize-none',
-            'focus:bg-white focus:border-ink focus:ring-4 focus:ring-ink/5',
-            className
-          )}
-          {...props}
-        />
-      </div>
-    );
-  }
-);
+        {...props}
+      />
+    </div>
+  );
+});
 Textarea.displayName = 'Textarea';
