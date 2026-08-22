@@ -1035,50 +1035,69 @@ export function PhotoUploader({
         </span>
       </div>
 
-      {/* Grelha de imagens */}
-      <div className="grid grid-cols-4 gap-2.5">
-        {photos.map((url, i) => {
-          const dragging = dragIndex === i;
-          return (
-            <div
-              key={url + i}
-              data-photo-index={i}
-              onPointerDown={(e) => onPointerDown(e, i)}
-              onPointerMove={onPointerMove}
-              onPointerUp={() => onPointerUp(i)}
-              className={cn(
-                'relative aspect-square touch-none select-none overflow-hidden rounded-[13px] bg-[#F4F4F3] transition-all duration-150',
-                dragging ? 'opacity-25 scale-95 ring-2 ring-[rgba(28,25,23,0.2)]' : 'opacity-100 scale-100',
-              )}
-            >
-              <Image
-                src={url}
-                alt=""
-                fill
-                className="pointer-events-none object-cover"
-                sizes="120px"
-                unoptimized={url.startsWith('blob:')}
-              />
-              {i === 0 && (
-                <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-[7px] bg-[rgba(28,25,23,0.82)] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white backdrop-blur-sm">
-                  <Star size={8} className="fill-white" /> Capa
-                </span>
-              )}
-            </div>
-          );
-        })}
+      {/* Container de upload maior — só quando ainda não há fotos */}
+      {photos.length === 0 && (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="group flex w-full flex-col items-center justify-center gap-2.5 rounded-[20px] border-2 border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-10 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
+            <Plus size={22} strokeWidth={2.25} />
+          </span>
+          <span className="text-[13px] font-bold text-[#3F3F46]">Adicionar imagens</span>
+          <span className="text-[11px] font-medium text-[#A1A1AA]">
+            Toque para escolher ou arraste até {MAX_FOTOS} fotos
+          </span>
+        </button>
+      )}
 
-        {photos.length < MAX_FOTOS && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
-          >
-            <Plus size={20} strokeWidth={2} />
-            <span className="text-[9px] font-bold uppercase tracking-[0.08em]">Adicionar</span>
-          </button>
-        )}
-      </div>
+      {/* Grelha de imagens */}
+      {photos.length > 0 && (
+        <div className="grid grid-cols-4 gap-2.5">
+          {photos.map((url, i) => {
+            const dragging = dragIndex === i;
+            return (
+              <div
+                key={url + i}
+                data-photo-index={i}
+                onPointerDown={(e) => onPointerDown(e, i)}
+                onPointerMove={onPointerMove}
+                onPointerUp={() => onPointerUp(i)}
+                className={cn(
+                  'relative aspect-square touch-none select-none overflow-hidden rounded-[13px] bg-[#F4F4F3] transition-all duration-150',
+                  dragging ? 'opacity-25 scale-95 ring-2 ring-[rgba(28,25,23,0.2)]' : 'opacity-100 scale-100',
+                )}
+              >
+                <Image
+                  src={url}
+                  alt=""
+                  fill
+                  className="pointer-events-none object-cover"
+                  sizes="120px"
+                  unoptimized={url.startsWith('blob:')}
+                />
+                {i === 0 && (
+                  <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-[7px] bg-[rgba(28,25,23,0.82)] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white backdrop-blur-sm">
+                    <Star size={8} className="fill-white" /> Capa
+                  </span>
+                )}
+              </div>
+            );
+          })}
+
+          {photos.length < MAX_FOTOS && (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
+            >
+              <Plus size={20} strokeWidth={2} />
+              <span className="text-[9px] font-bold uppercase tracking-[0.08em]">Adicionar</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Float ghost durante drag */}
       {dragIndex !== null && floatPos && photos[dragIndex] && (
