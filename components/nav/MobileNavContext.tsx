@@ -9,6 +9,9 @@ interface MobileNavContextValue {
   bottomBarHidden: boolean;
   hideBottomBar: () => void;
   showBottomBar: () => void;
+  topBarHidden: boolean;
+  hideTopBar: () => void;
+  showTopBar: () => void;
 }
 
 const MobileNavContext = createContext<MobileNavContextValue | null>(null);
@@ -18,13 +21,15 @@ const MobileNavContext = createContext<MobileNavContextValue | null>(null);
  * hamburger trigger) and BottomNav (which needs to slide out of the way
  * while the sidebar is open, so the two surfaces never visually clash).
  *
- * Also shares `bottomBarHidden`, used by focused full-screen flows (e.g. the
- * product form) to tuck the bottom nav away while the flow is active. The
- * flow's own header owns the back/cancel action in its place.
+ * Also shares `bottomBarHidden`/`topBarHidden`, used by focused full-screen
+ * flows (e.g. the product form) to tuck the standard chrome away while the
+ * flow is active. The flow's own header owns back/cancel and any secondary
+ * actions in its place.
  */
 export function MobileNavProvider({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [bottomBarHidden, setBottomBarHidden] = useState(false);
+  const [topBarHidden, setTopBarHidden] = useState(false);
 
   return (
     <MobileNavContext.Provider
@@ -35,6 +40,9 @@ export function MobileNavProvider({ children }: { children: ReactNode }) {
         bottomBarHidden,
         hideBottomBar: () => setBottomBarHidden(true),
         showBottomBar: () => setBottomBarHidden(false),
+        topBarHidden,
+        hideTopBar: () => setTopBarHidden(true),
+        showTopBar: () => setTopBarHidden(false),
       }}
     >
       {children}
