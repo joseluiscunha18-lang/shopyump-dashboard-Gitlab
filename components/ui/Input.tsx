@@ -17,38 +17,38 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]"
+            className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#44403C]"
           >
             {label}
           </label>
         )}
         <div className="relative flex items-center">
           {icon && (
-            <div className="pointer-events-none absolute left-4 text-[#A8A29E]">{icon}</div>
+            <div className="pointer-events-none absolute left-4 text-[#9CA3AF]">{icon}</div>
           )}
           <input
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white',
-              'px-4 py-3.5 text-[15px] font-semibold text-[#1C1917] outline-none',
-              'placeholder:font-medium placeholder:text-[#A8A29E]',
+              'w-full rounded-[13px] border border-[#D4D2CF] bg-[#F4F4F3]',
+              'px-4 py-3.5 text-[15px] font-semibold text-[#111110] outline-none',
+              'placeholder:font-normal placeholder:text-[#9CA3AF]',
               'transition-all duration-150',
-              'focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]',
+              'focus:border-[#111110] focus:bg-white focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
               icon   ? 'pl-11 pr-4' : '',
-              suffix ? 'pr-12'      : '',
+              suffix ? 'pr-14'      : '',
               error  ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : '',
               className
             )}
             {...props}
           />
           {suffix && (
-            <div className="pointer-events-none absolute right-4 text-[12px] font-bold text-[#78716C]">
+            <div className="pointer-events-none absolute right-4 text-[13px] font-bold text-[#6B7280]">
               {suffix}
             </div>
           )}
         </div>
-        {hint  && !error && <p className="pl-0.5 text-[11.5px] font-medium text-[#A8A29E]">{hint}</p>}
+        {hint  && !error && <p className="pl-0.5 text-[11.5px] font-medium text-[#9CA3AF]">{hint}</p>}
         {error &&           <p className="pl-0.5 text-[11.5px] font-bold text-red-500">{error}</p>}
       </div>
     );
@@ -66,7 +66,7 @@ export const Textarea = forwardRef<
       {label && (
         <label
           htmlFor={inputId}
-          className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]"
+          className="pl-0.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#44403C]"
         >
           {label}
         </label>
@@ -75,11 +75,11 @@ export const Textarea = forwardRef<
         ref={ref}
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white',
-          'px-4 py-3.5 text-[15px] font-medium leading-relaxed text-[#1C1917] outline-none',
-          'placeholder:font-medium placeholder:text-[#A8A29E]',
+          'w-full resize-none rounded-[13px] border border-[#D4D2CF] bg-[#F4F4F3]',
+          'px-4 py-3.5 text-[15px] font-normal leading-relaxed text-[#111110] outline-none',
+          'placeholder:font-normal placeholder:text-[#9CA3AF]',
           'transition-all duration-150',
-          'focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]',
+          'focus:border-[#111110] focus:bg-white focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
           className
         )}
         {...props}
