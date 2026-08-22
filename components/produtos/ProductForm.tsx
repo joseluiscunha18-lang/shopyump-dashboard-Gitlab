@@ -143,7 +143,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   const router      = useRouter();
   const { show }    = useToast();
-  const { setDirty, setMode, requestExit } = useProductFormGuard();
+  const { setDirty, setMode, requestExit, registerSaveAsDraft, registerDiscard } = useProductFormGuard();
   const hasVariants = !!variantes.raiz || !!variantes.filha || !!variantes.neta;
 
   // ── Descartar alterações ao sair (editar) / sair sem guardar (criar) ──────
@@ -158,6 +158,59 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     setMode(produto ? 'editar' : 'criar');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Registar callbacks no contexto para a TopBar os invocar ─────────────
+  useEffect(() => {
+    // "Guardar como rascunho" — só disponível no fluxo de criação.
+    // Guarda o produto com ativo=false e rascunho=true, depois sai.
+    registerSaveAsDraft(async () => {
+      if (produto) return; // edição não usa este callback
+      setSaving(true);
+      const payload = {
+        loja_id:     lojaId,
+        nome:        nome.trim() || 'Produto sem nome',
+        preco:       Number(preco) || 0,
+        preco_promo: precoPromo ? Number(precoPromo) : null,
+        categoria:   categoria.trim() || '',
+        descricao:   descricao.trim() || null,
+        genero,
+        fotos:       fotos.filter((f) => !f.startsWith('blob:')), // exclui blobs não enviados
+        variantes:   hasVariants
+          ? {
+              raiz:    variantes.raiz,
+              filha:   variantes.filha,
+              neta:    variantes.neta,
+              versoes: variantes.versoes,
+              imagensPorCaracteristica: variantes.imagensPorCaracteristica,
+            }
+          : null,
+        estoque:     null,
+        mais_opcoes: null,
+        ativo:       false,
+        rascunho:    true,
+      };
+      const res = await createProduto(payload);
+      setSaving(false);
+      if (!res.ok) return show(res.error ?? 'Não foi possível guardar o rascunho.', 'error');
+      show('Rascunho guardado.');
+      clearProdutoDraft(lojaId);
+      setDirty(false);
+      router.push('/produtos');
+      router.refresh();
+    });
+
+    // "Descartar" — comportamento difere por modo.
+    // Criar: apaga rascunho local e sai.
+    // Editar: restaura estado inicial e sai (ou apenas sai — o guard já cobre).
+    registerDiscard(() => {
+      if (!produto) {
+        clearProdutoDraft(lojaId);
+      }
+      setDirty(false);
+      router.push('/produtos');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nome, descricao, categoria, preco, precoPromo, fotos, variantes, hasVariants, genero]);
 
   useEffect(() => {
     const current = JSON.stringify({ nome, descricao, categoria, preco, precoPromo });
