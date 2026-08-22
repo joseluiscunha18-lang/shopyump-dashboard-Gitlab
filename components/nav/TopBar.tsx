@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Menu, Bell } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, Bell, ArrowLeft, MoreVertical, FileText, Trash2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { MobileSidebarDrawer, type Plano } from './MobileSidebarDrawer';
 import { useMobileNav } from './MobileNavContext';
+import { isProductFormFlowPath, productFormFlowTitle } from '@/lib/nav/productFormFlow';
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -27,7 +29,17 @@ export function TopBar({
   /** Controls the small dot on the bell — only shown while there's something unread. */
   hasUnreadNotifications?: boolean;
 }) {
-  const { menuOpen, openMenu, closeMenu, topBarHidden } = useMobileNav();
+  const { menuOpen, openMenu, closeMenu } = useMobileNav();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
+
+  // Rotas de criar/editar produto: a TopBar deixa de ser a barra padrão e
+  // vira o cabeçalho do fluxo (seta + título + ⋮). `inFlow` vem do pathname,
+  // já disponível na primeira renderização — nunca aparece a barra padrão
+  // antes de trocar, evitando qualquer flash.
+  const inFlow = isProductFormFlowPath(pathname);
 
   // Merges with the page at rest; picks up a soft blurred surface once the
   // user actually scrolls, so the header never competes with page content.
@@ -40,13 +52,95 @@ export function TopBar({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!actionsOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setActionsOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [actionsOpen]);
+
+  // Fecha o menu de ações se a rota mudar (ex.: seta/voltar navegou).
+  useEffect(() => {
+    setActionsOpen(false);
+  }, [pathname]);
+
+  if (inFlow) {
+    return (
+      <header
+        className={cn(
+          'sticky top-0 z-30 flex h-16 items-center gap-2.5 px-3 sm:px-8',
+          'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] backdrop-blur-md',
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="Voltar"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
+        >
+          <ArrowLeft size={20} strokeWidth={2.2} />
+        </button>
+
+        <h1 className="truncate text-[16px] font-extrabold tracking-tight text-ink sm:text-[17px]">
+          {productFormFlowTitle(pathname)}
+        </h1>
+
+        <div className="relative ml-auto flex-shrink-0" ref={actionsRef}>
+          <button
+            type="button"
+            onClick={() => setActionsOpen((v) => !v)}
+            aria-label="Mais ações"
+            aria-expanded={actionsOpen}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
+          >
+            <MoreVertical size={19} strokeWidth={2.2} />
+          </button>
+
+          {actionsOpen && (
+            <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-[16px] border border-[#E5E3E0] bg-white py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.18)]">
+              <button
+                type="button"
+                onClick={() => setActionsOpen(false)}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
+              >
+                <FileText size={16} strokeWidth={2} />
+                Guardar como rascunho
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActionsOpen(false);
+                  router.push('/produtos');
+                }}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
+              >
+                <Trash2 size={16} strokeWidth={2} />
+                Descartar alterações
+              </button>
+              <div className="my-1 h-px bg-[#E5E3E0]" />
+              <button
+                type="button"
+                onClick={() => setActionsOpen(false)}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
+              >
+                <HelpCircle size={16} strokeWidth={2} />
+                Ajuda
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+    );
+  }
+
   return (
     <>
       <header
         className={cn(
-          'sticky top-0 z-30 items-center gap-3 px-3 sm:px-8',
+          'sticky top-0 z-30 flex h-16 items-center gap-3 px-3 sm:px-8',
           'transition-[background-color,backdrop-filter,box-shadow,border-color] duration-200 ease-out',
-          topBarHidden ? 'hidden' : 'flex h-16',
           scrolled
             ? 'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] shadow-[0_1px_0_rgba(28,25,23,0.04),0_8px_20px_-16px_rgba(28,25,23,0.12)] backdrop-blur-md'
             : 'border-b border-transparent bg-transparent shadow-none backdrop-blur-none',
