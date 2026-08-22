@@ -51,7 +51,7 @@ export function PesoPadraoInput({
           value={valor}
           onChange={(e) => onChangeValor(e.target.value)}
           placeholder="0"
-          className="h-12 min-w-0 flex-1 rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white px-4 text-[15px] font-semibold text-[#1C1917] outline-none placeholder:text-[#A8A29E] transition-all duration-150 focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
+          className="h-12 min-w-0 flex-1 rounded-[13px] border border-[#D4D2CF] bg-white px-4 text-[15px] font-semibold text-[#111110] outline-none placeholder:text-[#71717A] transition-all duration-150 focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
         />
 
         {/* Unidade */}
@@ -60,13 +60,13 @@ export function PesoPadraoInput({
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Escolher unidade de peso"
-            className="flex h-12 items-center gap-1.5 rounded-[13px] border border-[rgba(28,25,23,0.11)] bg-white px-4 text-[13px] font-bold text-[#1C1917] transition-all duration-150 hover:border-[rgba(28,25,23,0.2)]"
+            className="flex h-12 items-center gap-1.5 rounded-[13px] border border-[#D4D2CF] bg-white px-4 text-[13px] font-bold text-[#111110] transition-all duration-150 hover:border-[#B8B5B1]"
           >
             {unidade}
             <ChevronDown
               size={13}
               strokeWidth={2.5}
-              className={cn('text-[#A8A29E] transition-transform duration-150', open && 'rotate-180')}
+              className={cn('text-[#71717A] transition-transform duration-150', open && 'rotate-180')}
             />
           </button>
 
@@ -81,7 +81,7 @@ export function PesoPadraoInput({
                     'flex w-full items-center justify-center rounded-[10px] px-2 py-2 text-[13px] font-bold transition-colors',
                     unidade === u
                       ? 'bg-[#1C1917] text-white'
-                      : 'text-[#1C1917] hover:bg-[#F5F3F0]'
+                      : 'text-[#111110] hover:bg-[#F4F4F3]'
                   )}
                 >
                   {u}
@@ -91,7 +91,7 @@ export function PesoPadraoInput({
           )}
         </div>
       </div>
-      <p className="text-[11.5px] font-medium leading-snug text-[#A8A29E]">
+      <p className="text-[11.5px] font-medium leading-snug text-[#71717A]">
         Usado por todas as versões. Dentro de uma versão podes definir um peso diferente.
       </p>
     </div>
