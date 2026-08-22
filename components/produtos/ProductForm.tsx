@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -12,10 +12,17 @@ import { PesoPadraoInput } from '@/components/produtos/PesoPadraoInput';
 import { StockSection } from '@/components/produtos/StockSection';
 import { MoreOptions } from '@/components/produtos/MoreOptions';
 import { useToast } from '@/components/ui/Toast';
+import { useProductFormGuard } from '@/components/produtos/ProductFormGuardContext';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
 import { uploadImage, BUCKETS } from '@/lib/storage';
 import { totalEstoque } from '@/lib/variantes';
 import { pesoParaKg, type UnidadePeso } from '@/lib/peso';
+import {
+  readProdutoDraft,
+  writeProdutoDraft,
+  clearProdutoDraft,
+  isDraftMeaningful,
+} from '@/lib/produtos/draft';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 /* ── Primitivos de layout ──────────────────────────────────────────────────── */
@@ -136,7 +143,68 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   const router      = useRouter();
   const { show }    = useToast();
+  const { setDirty, setMode, requestExit } = useProductFormGuard();
   const hasVariants = !!variantes.raiz || !!variantes.filha || !!variantes.neta;
+
+  // ── Descartar alterações ao sair (editar) / sair sem guardar (criar) ──────
+  // Compara os campos "leves" do formulário com o estado inicial. Fotos e
+  // variantes ficam de fora do "sujo" propositalmente simples — o essencial
+  // é não deixar o lojista perder texto/preço escritos por um toque errado.
+  const initialSnapshotRef = useRef(
+    JSON.stringify({ nome, descricao, categoria, preco, precoPromo })
+  );
+
+  useEffect(() => {
+    setMode(produto ? 'editar' : 'criar');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const current = JSON.stringify({ nome, descricao, categoria, preco, precoPromo });
+    setDirty(current !== initialSnapshotRef.current);
+  }, [nome, descricao, categoria, preco, precoPromo, setDirty]);
+
+  // ── Rascunho automático (só ao criar um produto novo) ─────────────────────
+  const draftAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (produto || draftAppliedRef.current) return;
+    draftAppliedRef.current = true;
+    const draft = readProdutoDraft(lojaId);
+    if (!isDraftMeaningful(draft)) return;
+
+    const aceitar = window.confirm(
+      'Você tem um produto não finalizado.\n\nContinuar de onde parou?'
+    );
+    if (aceitar) {
+      setNome(draft.nome);
+      setDescricao(draft.descricao);
+      setCategoria(draft.categoria);
+      setPreco(draft.preco);
+      setPrecoPromo(draft.precoPromo);
+      initialSnapshotRef.current = JSON.stringify({
+        nome: draft.nome,
+        descricao: draft.descricao,
+        categoria: draft.categoria,
+        preco: draft.preco,
+        precoPromo: draft.precoPromo,
+      });
+      setDirty(false);
+    } else {
+      clearProdutoDraft(lojaId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (produto) return; // rascunho é só para criação
+    const semConteudo = !nome.trim() && !descricao.trim() && !categoria.trim() && !preco.trim();
+    if (semConteudo) return;
+    const id = setTimeout(() => {
+      writeProdutoDraft(lojaId, { nome, descricao, categoria, preco, precoPromo });
+    }, 500);
+    return () => clearTimeout(id);
+  }, [produto, lojaId, nome, descricao, categoria, preco, precoPromo]);
 
   const valid = useMemo(
     () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
@@ -209,6 +277,8 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     setSaving(false);
     if (!res.ok) return show(res.error ?? 'Não foi possível guardar o produto.', 'error');
     show(produto ? 'Produto atualizado.' : 'Produto criado.');
+    if (!produto) clearProdutoDraft(lojaId);
+    setDirty(false);
     router.push('/produtos');
     router.refresh();
   }
@@ -412,7 +482,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.push('/produtos')}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => requestExit(() => router.push('/produtos'))}
+        >
           Cancelar
         </Button>
       </div>
