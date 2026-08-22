@@ -18,42 +18,112 @@ import { totalEstoque } from '@/lib/variantes';
 import { pesoParaKg, type UnidadePeso } from '@/lib/peso';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
+/* ── Primitivos de layout ──────────────────────────────────────────────────── */
+
+function SectionDivider() {
+  return <div className="h-px bg-[rgba(28,25,23,0.07)]" />;
+}
+
+function SectionHeader({
+  title,
+  right,
+}: {
+  title: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <h3 className="text-[11px] font-black uppercase tracking-[0.07em] text-[#78716C]">
+        {title}
+      </h3>
+      {right && <div className="text-[11.5px] font-semibold text-[#A8A29E]">{right}</div>}
+    </div>
+  );
+}
+
+/* ── Bloco de controlo (Estoque / Peso) ────────────────────────────────────── */
+
+function ConfigBlock({
+  title,
+  description,
+  checked,
+  onToggle,
+  ariaLabel,
+  children,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onToggle: (v: boolean) => void;
+  ariaLabel: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={[
+        'rounded-[18px] border px-4 py-4 flex flex-col gap-4 transition-colors duration-150',
+        checked
+          ? 'border-[rgba(28,25,23,0.14)] bg-white'
+          : 'border-[rgba(28,25,23,0.07)] bg-[#FAFAF9]',
+      ].join(' ')}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[14px] font-bold text-[#1C1917]">{title}</span>
+          <span className="text-[12px] font-medium leading-snug text-[#A8A29E]">{description}</span>
+        </div>
+        <Switch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} size="sm" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── Rótulo com tag "opcional" ─────────────────────────────────────────────── */
+
+function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 pl-0.5">
+      <span className="text-[11px] font-black uppercase tracking-[0.06em] text-[#3D3A36]">
+        {label}
+      </span>
+      {optional && (
+        <span className="text-[10px] font-semibold normal-case tracking-normal text-[#A8A29E]">
+          opcional
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ── ProductForm ───────────────────────────────────────────────────────────── */
+
 export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
-  const [nome, setNome] = useState(produto?.nome ?? '');
-  const [descricao, setDescricao] = useState(produto?.descricao ?? '');
-  const [categoria, setCategoria] = useState(produto?.categoria ?? '');
-  const [preco, setPreco] = useState(produto ? String(produto.preco) : '');
-  const [precoPromo, setPrecoPromo] = useState(produto?.preco_promo ? String(produto.preco_promo) : '');
-  const [fotos, setFotos] = useState<string[]>(produto?.fotos ?? []);
+  const [nome, setNome]               = useState(produto?.nome ?? '');
+  const [descricao, setDescricao]     = useState(produto?.descricao ?? '');
+  const [categoria, setCategoria]     = useState(produto?.categoria ?? '');
+  const [preco, setPreco]             = useState(produto ? String(produto.preco) : '');
+  const [precoPromo, setPrecoPromo]   = useState(produto?.preco_promo ? String(produto.preco_promo) : '');
+  const [fotos, setFotos]             = useState<string[]>(produto?.fotos ?? []);
 
   const [variantes, setVariantes] = useState<VariantesState>({
-    raiz: produto?.variantes?.raiz ?? null,
-    filha: produto?.variantes?.filha ?? null,
-    neta: produto?.variantes?.neta ?? null,
-    versoes: produto?.variantes?.versoes ?? [],
+    raiz:                     produto?.variantes?.raiz                     ?? null,
+    filha:                    produto?.variantes?.filha                    ?? null,
+    neta:                     produto?.variantes?.neta                     ?? null,
+    versoes:                  produto?.variantes?.versoes                  ?? [],
     imagensPorCaracteristica: produto?.variantes?.imagensPorCaracteristica ?? undefined,
   });
 
-  // "Para quem é este produto?" foi removido do formulário — o campo
-  // continua a existir no registo (e em `Genero` como opção de variante,
-  // que é uma coisa diferente), mas deixou de ser editável aqui. Preserva
-  // o valor já gravado em vez de o apagar silenciosamente ao guardar.
   const genero = produto?.genero ?? null;
 
   const [controlarEstoque, setControlarEstoque] = useState(typeof produto?.estoque === 'number');
-  const [estoqueSimples, setEstoqueSimples] = useState(
+  const [estoqueSimples, setEstoqueSimples]     = useState(
     typeof produto?.estoque === 'number' ? String(produto.estoque) : ''
   );
 
-  // Peso padrão — vive antes de "Opções do produto" porque é usado
-  // automaticamente por todas as variantes. Guardado sempre em kg
-  // (`mais_opcoes.peso`), mas o vendedor pode digitar em g, kg, lb ou oz.
-  // "Controlar peso" segue a mesma lógica do interruptor de estoque: quando
-  // desligado, o campo fica escondido e o valor gravado passa a null, mas
-  // nada já digitado é apagado da tela enquanto o formulário está aberto.
-  const [controlarPeso, setControlarPeso] = useState(true);
+  const [controlarPeso, setControlarPeso]         = useState(true);
   const [pesoPadraoUnidade, setPesoPadraoUnidade] = useState<UnidadePeso>('kg');
-  const [pesoPadraoValor, setPesoPadraoValor] = useState(
+  const [pesoPadraoValor, setPesoPadraoValor]     = useState(
     typeof produto?.mais_opcoes?.peso === 'number' ? String(produto.mais_opcoes.peso) : ''
   );
   const pesoPadraoKg = useMemo(() => {
@@ -62,11 +132,10 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   }, [pesoPadraoValor, pesoPadraoUnidade]);
 
   const [maisOpcoes, setMaisOpcoes] = useState<Omit<ProdutoMaisOpcoes, 'peso'>>(produto?.mais_opcoes ?? {});
+  const [saving, setSaving]         = useState(false);
 
-  const [saving, setSaving] = useState(false);
-  const router = useRouter();
-  const { show } = useToast();
-
+  const router      = useRouter();
+  const { show }    = useToast();
   const hasVariants = !!variantes.raiz || !!variantes.filha || !!variantes.neta;
 
   const valid = useMemo(
@@ -79,11 +148,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     if (!valid) return;
     setSaving(true);
 
-    // "Controlar estoque" é um interruptor único, definido antes de "Opções
-    // do produto": quando desligado, o produto fica sempre disponível
-    // (estoque null), quer tenha variantes ou não. Os valores já digitados
-    // por combinação continuam guardados em `variantes.versoes` mesmo
-    // desligado — só deixam de contar para o total.
     const estoque = !controlarEstoque
       ? null
       : hasVariants
@@ -92,27 +156,20 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           ? null
           : Number(estoqueSimples);
 
-    const maisOpcoesFinal: ProdutoMaisOpcoes = { ...maisOpcoes, peso: controlarPeso ? pesoPadraoKg : null };
+    const maisOpcoesFinal: ProdutoMaisOpcoes = {
+      ...maisOpcoes,
+      peso: controlarPeso ? pesoPadraoKg : null,
+    };
 
-    // As fotos novas (adicionadas/recortadas no PhotoUploader) existem só
-    // como blob: local no browser — têm de ser enviadas para o Supabase
-    // Storage aqui, antes de gravar, para virarem URLs públicas permanentes.
-    // Fotos que já eram https:// (já guardadas antes) não são reenviadas.
     const fotosFinais: string[] = [];
     for (const foto of fotos) {
-      if (!foto.startsWith('blob:')) {
-        fotosFinais.push(foto);
-        continue;
-      }
+      if (!foto.startsWith('blob:')) { fotosFinais.push(foto); continue; }
       try {
-        const res = await fetch(foto);
+        const res  = await fetch(foto);
         const blob = await res.blob();
         const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
         const { url, error } = await uploadImage(BUCKETS.produtos, file, lojaId);
-        if (error || !url) {
-          setSaving(false);
-          return show(error ?? 'Não foi possível enviar uma das imagens.', 'error');
-        }
+        if (error || !url) { setSaving(false); return show(error ?? 'Não foi possível enviar uma das imagens.', 'error'); }
         fotosFinais.push(url);
       } catch {
         setSaving(false);
@@ -121,29 +178,33 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     }
 
     const payload = {
-      loja_id: lojaId,
-      nome: nome.trim(),
-      preco: Number(preco),
+      loja_id:    lojaId,
+      nome:       nome.trim(),
+      preco:      Number(preco),
       preco_promo: precoPromo ? Number(precoPromo) : null,
       categoria,
-      descricao: descricao.trim() || null,
+      descricao:  descricao.trim() || null,
       genero,
-      fotos: fotosFinais,
-      variantes: hasVariants
+      fotos:      fotosFinais,
+      variantes:  hasVariants
         ? {
-            raiz: variantes.raiz,
+            raiz:  variantes.raiz,
             filha: variantes.filha,
-            neta: variantes.neta,
+            neta:  variantes.neta,
             versoes: variantes.versoes,
             imagensPorCaracteristica: variantes.imagensPorCaracteristica,
           }
         : null,
       estoque,
-      mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '') ? maisOpcoesFinal : null,
+      mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '')
+        ? maisOpcoesFinal
+        : null,
       ativo: produto?.ativo ?? true,
     };
 
-    const res = produto ? await updateProduto(produto.id, payload) : await createProduto(payload);
+    const res = produto
+      ? await updateProduto(produto.id, payload)
+      : await createProduto(payload);
 
     setSaving(false);
     if (!res.ok) return show(res.error ?? 'Não foi possível guardar o produto.', 'error');
@@ -153,149 +214,201 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-7 pb-24">
-      {/* 1. Imagens */}
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-8 pb-28">
+
+      {/* ── 1. Imagens ── */}
       <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
 
-      {/* 2. Nome do produto */}
-      <Input
-        label="Nome do produto"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
-        placeholder="Ex: Tênis Nike Air Max"
-        required
-      />
+      <SectionDivider />
 
-      {/* 3. Descrição */}
-      <Textarea
-        label="Descrição"
-        rows={4}
-        value={descricao}
-        onChange={(e) => setDescricao(e.target.value)}
-        placeholder="Descreve o produto…"
-      />
-
-      {/* 4. Categoria */}
-      <CategoryPicker value={categoria} onChange={setCategoria} />
-
-      {/* 5. Preço */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* ── 2. Nome ── */}
+      <div className="flex flex-col gap-1.5">
+        <FieldLabel label="Nome do produto" />
         <Input
-          label="Preço (MT)"
-          type="number"
-          min={0}
-          value={preco}
-          onChange={(e) => setPreco(e.target.value)}
-          placeholder="0"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          placeholder="Ex: Tênis Nike Air Max"
           required
         />
-        <Input
-          label="Preço promocional"
-          hint="Opcional"
-          type="number"
-          min={0}
-          value={precoPromo}
-          onChange={(e) => setPrecoPromo(e.target.value)}
-          placeholder="0"
+      </div>
+
+      {/* ── 3. Descrição ── */}
+      <div className="flex flex-col gap-1.5">
+        <FieldLabel label="Descrição" optional />
+        <Textarea
+          rows={4}
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          placeholder="Descreve o produto…"
         />
       </div>
 
-      {/* 6. Estoque — interruptor único, antes de "Opções do produto" para
-      quem publica um produto simples nem precisar de pensar em estoque. */}
-      <div>
-        <div className="mb-2 flex items-center justify-between pl-1">
-          <h3 className="text-[13px] font-black text-ink">Estoque</h3>
-          <label className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-400">Controlar estoque</span>
-            <Switch checked={controlarEstoque} onChange={setControlarEstoque} ariaLabel="Controlar estoque" size="sm" />
-          </label>
+      <SectionDivider />
+
+      {/* ── 4. Categoria ── */}
+      <CategoryPicker value={categoria} onChange={setCategoria} />
+
+      <SectionDivider />
+
+      {/* ── 5. Preço ── */}
+      <div className="flex flex-col gap-4">
+        <SectionHeader title="Preço" />
+
+        {/* Preço principal — destaque visual */}
+        <div className="flex flex-col gap-1.5">
+          <FieldLabel label="Preço base" />
+          <div className="relative">
+            <Input
+              type="number"
+              min={0}
+              value={preco}
+              onChange={(e) => setPreco(e.target.value)}
+              placeholder="0"
+              required
+              className="text-[22px] font-extrabold tracking-tight pr-14"
+            />
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#78716C]">
+              MT
+            </span>
+          </div>
         </div>
 
-        {controlarEstoque && !hasVariants && (
-          <Input
-            type="number"
-            min={0}
-            value={estoqueSimples}
-            onChange={(e) => setEstoqueSimples(e.target.value)}
-            placeholder="0"
-          />
-        )}
-
-        {controlarEstoque && hasVariants && (
-          <p className="pl-1 text-[11px] font-medium text-slate-400">
-            Define o estoque de cada combinação mais abaixo, em "Opções do produto".
-          </p>
-        )}
-
-        {!controlarEstoque && (
-          <p className="pl-1 text-[11px] font-medium text-slate-400">
-            O produto fica sempre disponível, sem limite de quantidade.
-          </p>
-        )}
-      </div>
-
-      {/* 7. Peso — mesmo padrão do interruptor de Estoque acima: quando
-      desligado, o produto fica sem peso definido (não entra no cálculo de
-      envio), mas o valor já digitado continua guardado na tela. */}
-      <div>
-        <div className="mb-2 flex items-center justify-between pl-1">
-          <h3 className="text-[13px] font-black text-ink">Peso</h3>
-          <label className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-400">Controlar peso</span>
-            <Switch checked={controlarPeso} onChange={setControlarPeso} ariaLabel="Controlar peso" size="sm" />
-          </label>
+        {/* Preço promocional — secundário */}
+        <div className="flex flex-col gap-1.5">
+          <FieldLabel label="Preço promocional" optional />
+          <div className="relative">
+            <Input
+              type="number"
+              min={0}
+              value={precoPromo}
+              onChange={(e) => setPrecoPromo(e.target.value)}
+              placeholder="0"
+              className="pr-14"
+            />
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#78716C]">
+              MT
+            </span>
+          </div>
         </div>
-
-        {controlarPeso ? (
-          <PesoPadraoInput
-            valor={pesoPadraoValor}
-            unidade={pesoPadraoUnidade}
-            onChangeValor={setPesoPadraoValor}
-            onChangeUnidade={setPesoPadraoUnidade}
-          />
-        ) : (
-          <p className="pl-1 text-[11px] font-medium text-slate-400">
-            O peso não entra no cálculo de envio deste produto.
-          </p>
-        )}
       </div>
 
-      {/* 8. Opções do produto */}
-      <VariantEditor state={variantes} onChange={setVariantes} />
+      <SectionDivider />
 
-      {/* 9. Versões disponíveis / Estoque por combinação — só faz sentido com opções definidas */}
-      {hasVariants && (
-        <StockSection
-          raiz={variantes.raiz}
-          filha={variantes.filha}
-          neta={variantes.neta}
-          versoes={variantes.versoes}
-          onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
-          controlarEstoque={controlarEstoque}
-          controlarPeso={controlarPeso}
-          precoBase={Number(preco) || 0}
-          pesoPadrao={pesoPadraoKg}
-          fotos={fotos}
-          onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
-          lojaId={lojaId}
-          imagensPorCaracteristica={variantes.imagensPorCaracteristica}
-          onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
-            setVariantes((v) => ({
-              ...v,
-              imagensPorCaracteristica: {
-                ...(v.imagensPorCaracteristica ?? {}),
-                [nomeCaracteristica]: { ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}), [valor]: urls },
-              },
-            }))
+      {/* ── 6. Estoque ── */}
+      <div className="flex flex-col gap-3">
+        <SectionHeader title="Estoque" />
+        <ConfigBlock
+          title="Controlar estoque"
+          description={
+            controlarEstoque
+              ? 'Define a quantidade disponível.'
+              : 'O produto fica sempre disponível, sem limite de quantidade.'
           }
-        />
+          checked={controlarEstoque}
+          onToggle={setControlarEstoque}
+          ariaLabel="Controlar estoque"
+        >
+          {controlarEstoque && !hasVariants && (
+            <Input
+              type="number"
+              min={0}
+              value={estoqueSimples}
+              onChange={(e) => setEstoqueSimples(e.target.value)}
+              placeholder="0"
+              label="Quantidade"
+            />
+          )}
+          {controlarEstoque && hasVariants && (
+            <p className="text-[12px] font-medium text-[#A8A29E]">
+              Define o estoque de cada combinação em &ldquo;Opções do produto&rdquo;.
+            </p>
+          )}
+        </ConfigBlock>
+      </div>
+
+      <SectionDivider />
+
+      {/* ── 7. Peso ── */}
+      <div className="flex flex-col gap-3">
+        <SectionHeader title="Peso" />
+        <ConfigBlock
+          title="Controlar peso"
+          description={
+            controlarPeso
+              ? 'O peso entra no cálculo de envio deste produto.'
+              : 'O peso não entra no cálculo de envio deste produto.'
+          }
+          checked={controlarPeso}
+          onToggle={setControlarPeso}
+          ariaLabel="Controlar peso"
+        >
+          {controlarPeso && (
+            <PesoPadraoInput
+              valor={pesoPadraoValor}
+              unidade={pesoPadraoUnidade}
+              onChangeValor={setPesoPadraoValor}
+              onChangeUnidade={setPesoPadraoUnidade}
+            />
+          )}
+        </ConfigBlock>
+      </div>
+
+      <SectionDivider />
+
+      {/* ── 8. Opções do produto ── */}
+      <div className="flex flex-col gap-3">
+        <SectionHeader title="Opções do produto" />
+        <VariantEditor state={variantes} onChange={setVariantes} />
+      </div>
+
+      {/* ── 9. Versões / Estoque por combinação ── */}
+      {hasVariants && (
+        <div className="flex flex-col gap-3">
+          <SectionHeader
+            title="Versões disponíveis"
+            right={
+              controlarEstoque
+                ? `${totalEstoque(variantes.versoes)} unidades`
+                : undefined
+            }
+          />
+          <StockSection
+            raiz={variantes.raiz}
+            filha={variantes.filha}
+            neta={variantes.neta}
+            versoes={variantes.versoes}
+            onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
+            controlarEstoque={controlarEstoque}
+            controlarPeso={controlarPeso}
+            precoBase={Number(preco) || 0}
+            pesoPadrao={pesoPadraoKg}
+            fotos={fotos}
+            onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
+            lojaId={lojaId}
+            imagensPorCaracteristica={variantes.imagensPorCaracteristica}
+            onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
+              setVariantes((v) => ({
+                ...v,
+                imagensPorCaracteristica: {
+                  ...(v.imagensPorCaracteristica ?? {}),
+                  [nomeCaracteristica]: {
+                    ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}),
+                    [valor]: urls,
+                  },
+                },
+              }))
+            }
+          />
+        </div>
       )}
 
-      {/* 10. Mais opções */}
+      <SectionDivider />
+
+      {/* ── 10. Mais opções ── */}
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
-      {/* 11. Publicar / Guardar — fixo e acessível no mobile */}
-      <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-slate-100 bg-white/90 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+      {/* ── 11. Ação — fixa no mobile ── */}
+      <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-[rgba(28,25,23,0.07)] bg-[rgba(250,250,249,0.94)] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-3.5 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
           {produto ? 'Guardar alterações' : 'Publicar produto'}
         </Button>
