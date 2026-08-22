@@ -14,9 +14,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variants: Record<Variant, string> = {
   /* Ação principal — carvão quente, nunca branco genérico */
   primary:
-    'bg-[#1C1917] text-white border border-[#1C1917] shadow-[0_4px_16px_-6px_rgba(28,25,23,0.35)] hover:bg-[#3D3A36] hover:border-[#3D3A36]',
+    'bg-[#111110] text-white border border-[#111110] shadow-[0_4px_16px_-6px_rgba(28,25,23,0.35)] hover:bg-[#27272A] hover:border-[#3D3A36]',
   secondary:
-    'bg-white text-[#1C1917] border border-[rgba(28,25,23,0.14)] hover:bg-[#F5F3F0] shadow-sm',
+    'bg-white text-[#1C1917] border border-[#D4D2CF] hover:bg-[#F4F4F3] shadow-sm',
   ghost:
     'bg-transparent text-[#1C1917] hover:bg-[rgba(28,25,23,0.05)]',
   danger:
@@ -24,7 +24,7 @@ const variants: Record<Variant, string> = {
   whatsapp:
     'bg-[#25D366] text-white hover:bg-[#20bd5a] shadow-lg shadow-[#25D366]/25',
   dark:
-    'bg-[#1C1917] text-white border border-[#1C1917] shadow-[0_10px_24px_-10px_rgba(28,25,23,0.5)] hover:bg-[#3D3A36]',
+    'bg-[#111110] text-white border border-[#111110] shadow-[0_10px_24px_-10px_rgba(28,25,23,0.5)] hover:bg-[#27272A]',
 };
 
 const sizes: Record<Size, string> = {
