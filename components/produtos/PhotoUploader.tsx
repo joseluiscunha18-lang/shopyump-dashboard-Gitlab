@@ -1041,7 +1041,7 @@ export function PhotoUploader({
           <span className="text-[12.5px] font-medium text-[#71717A]">
             Adicione imagens do produto
           </span>
-          <span className="mt-1 rounded-[8px] bg-[#1C1917] px-3 py-1.5 text-[11.5px] font-bold text-white">
+          <span className="mt-1 rounded-[8px] border border-[#D6D3D1] bg-white px-3 py-1.5 text-[11.5px] font-bold text-[#3F3F46]">
             Carregar imagens
           </span>
           <span className="mt-1 text-[10.5px] font-medium text-[#A1A1AA]">
