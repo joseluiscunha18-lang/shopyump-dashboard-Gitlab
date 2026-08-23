@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft, Check, Search } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
+import { cn } from '@/lib/cn';
 import {
   CATEGORIAS_TOPO,
   SEPARADOR_CATEGORIA,
@@ -13,7 +14,16 @@ import {
   type CategoriaFolha,
 } from '@/lib/categorias';
 
-export function CategoryPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function CategoryPicker({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  /** Estado de erro (ex: publicar sem categoria escolhida). */
+  error?: boolean;
+}) {
   const [open, setOpen]   = useState(false);
   const [termo, setTermo] = useState('');
   const [caminho, setCaminho] = useState<string[]>([]);
@@ -62,7 +72,12 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between gap-3 rounded-[13px] border border-[#D4D2CF] bg-white px-4 py-3.5 text-left transition-all duration-150 hover:border-[rgba(28,25,23,0.2)] focus:outline-none focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
+        className={cn(
+          'flex w-full items-center justify-between gap-3 rounded-md border bg-white px-4 py-3.5 text-left transition-all duration-150 focus:outline-none',
+          error
+            ? 'border-red-400 focus:ring-3 focus:ring-red-100'
+            : 'border-[#D4D2CF] hover:border-[rgba(28,25,23,0.2)] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]'
+        )}
       >
         {segmentosValor.length > 0 ? (
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -76,10 +91,15 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
             </span>
           </span>
         ) : (
-          <span className="text-[15px] font-medium text-[#71717A]">Escolher categoria</span>
+          <span className={cn('text-[15px] font-medium', error ? 'text-red-400' : 'text-[#71717A]')}>
+            Escolher categoria
+          </span>
         )}
         <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-[#52525B]" />
       </button>
+      {error && (
+        <p className="pl-0.5 text-[11.5px] font-bold text-red-500">Campo obrigatório</p>
+      )}
 
       <Sheet
         open={open}
@@ -99,7 +119,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
               onChange={(e) => setTermo(e.target.value)}
               onPointerDown={(e) => e.stopPropagation()}
               placeholder="Pesquisar categoria…"
-              className="w-full touch-auto rounded-[13px] border border-[#D4D2CF] bg-white py-3 pl-10 pr-4 font-[Manrope,sans-serif] text-[13px] font-semibold text-[#111110] outline-none placeholder:font-medium placeholder:text-[#71717A] focus:border-[#1C1917]"
+              className="w-full touch-auto rounded-md border border-[#D4D2CF] bg-white py-3 pl-10 pr-4 font-[Manrope,sans-serif] text-[13px] font-semibold text-[#111110] outline-none placeholder:font-medium placeholder:text-[#71717A] focus:border-[#1C1917]"
             />
           </div>
         }
@@ -116,7 +136,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
                 key={r.texto}
                 type="button"
                 onClick={() => selecionar(r.texto)}
-                className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 text-left transition-colors active:bg-[#F4F4F3]"
+                className="flex items-center justify-between gap-3 rounded-md px-2 py-3 text-left transition-colors active:bg-[#F4F4F3]"
               >
                 <span className="flex min-w-0 flex-1 items-baseline gap-2">
                   <span className="truncate text-[14px] font-bold text-[#111110]">
@@ -142,7 +162,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
               <button
                 type="button"
                 onClick={voltar}
-                className="mb-2 flex items-center gap-1 self-start rounded-[8px] px-1 py-2 text-[12px] font-bold text-[#52525B] transition-colors active:text-[#111110]"
+                className="mb-2 flex items-center gap-1 self-start rounded-md px-1 py-2 text-[12px] font-bold text-[#52525B] transition-colors active:text-[#111110]"
               >
                 <ChevronLeft size={14} strokeWidth={2.5} />
                 {caminho[caminho.length - 1]}
@@ -158,7 +178,7 @@ export function CategoryPicker({ value, onChange }: { value: string; onChange: (
                     key={nome}
                     type="button"
                     onClick={() => tocarOpcao(nome)}
-                    className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 text-left transition-colors active:bg-[#F4F4F3]"
+                    className="flex items-center justify-between gap-3 rounded-md px-2 py-3 text-left transition-colors active:bg-[#F4F4F3]"
                   >
                     <span className="truncate text-[14px] font-bold text-[#111110]">{nome}</span>
                     {selecionavel ? (
