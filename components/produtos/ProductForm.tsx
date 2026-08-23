@@ -95,7 +95,7 @@ function ConfigRow({
         <div className="flex flex-col gap-0.5">
           <span className="text-[14px] font-bold text-[#111110]">{title}</span>
           {description && (
-            <span className="text-[12px] font-medium leading-snug text-[#71717A]">{description}</span>
+            <span className="text-[13px] font-medium leading-snug text-[#71717A]">{description}</span>
           )}
         </div>
         <Switch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} size="sm" />
