@@ -65,7 +65,7 @@ export function CategoryPicker({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="pl-0.5 text-[13.5px] font-black tracking-[0.02em] text-[#27272A]">
+      <label className="pl-0.5 text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
         Categoria
       </label>
 
