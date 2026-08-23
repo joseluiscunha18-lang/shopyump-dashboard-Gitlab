@@ -453,11 +453,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           porque são dois interruptores distintos a partilhar um cartão. */}
       <FormSection title="Inventário">
         <ConfigRow
-          title="Controlar estoque"
+          title="Controlar stock"
           description={controlarEstoque ? undefined : 'Sem limite de quantidade'}
           checked={controlarEstoque}
           onToggle={setControlarEstoque}
-          ariaLabel="Controlar estoque"
+          ariaLabel="Controlar stock"
         >
           {controlarEstoque && !hasVariants && (
             <Input
@@ -471,7 +471,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           )}
           {controlarEstoque && hasVariants && (
             <p className="text-[12px] font-medium text-[#71717A]">
-              Define o estoque de cada combinação em &ldquo;Variações&rdquo;.
+              Define o stock de cada combinação em &ldquo;Variantes&rdquo;.
             </p>
           )}
         </ConfigRow>
@@ -495,8 +495,8 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         </ConfigRow>
       </FormSection>
 
-      {/* ── 8–9. Variações: Opções do produto + Versões geradas ── */}
-      <FormSection title="Variações">
+      {/* ── 8–9. Variantes: Opções do produto + Versões geradas ── */}
+      <FormSection title="Variantes">
         <VariantEditor state={variantes} onChange={setVariantes} />
 
         {hasVariants && (
