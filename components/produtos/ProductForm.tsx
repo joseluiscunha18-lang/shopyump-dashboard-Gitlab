@@ -542,16 +542,24 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
       {/* ── 11. Ação ── */}
       <div className="flex gap-3 pb-6 pt-2">
-        <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
-          {produto ? 'Guardar alterações' : 'Publicar produto'}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => requestExit(() => router.push('/produtos'))}
-        >
-          Cancelar
-        </Button>
+        {produto ? (
+          <Button type="submit" loading={saving} disabled={!valid} className="w-full">
+            Guardar
+          </Button>
+        ) : (
+          <>
+            <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
+              Publicar produto
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => requestExit(() => router.push('/produtos'))}
+            >
+              Cancelar
+            </Button>
+          </>
+        )}
       </div>
     </form>
 
