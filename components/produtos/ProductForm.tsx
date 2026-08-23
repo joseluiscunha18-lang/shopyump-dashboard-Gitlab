@@ -160,6 +160,15 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
   const [maisOpcoes, setMaisOpcoes] = useState<Omit<ProdutoMaisOpcoes, 'peso'>>(produto?.mais_opcoes ?? {});
   const [saving, setSaving]         = useState(false);
 
+  // ── Validação ao publicar ──────────────────────────────────────────────
+  // Sem lista de erros antes de o lojista tentar — só depois de um "Publicar
+  // produto" falhado é que os campos em falta ganham estado de erro visível.
+  const [showErrors, setShowErrors] = useState(false);
+  const fotosSectionRef = useRef<HTMLDivElement>(null);
+  const nomeInputRef    = useRef<HTMLInputElement>(null);
+  const categoriaRef    = useRef<HTMLDivElement>(null);
+  const precoInputRef   = useRef<HTMLInputElement>(null);
+
   const router      = useRouter();
   const { show }    = useToast();
   const { setDirty, setMode, requestExit, registerSaveAsDraft, registerDiscard } = useProductFormGuard();
@@ -291,14 +300,60 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     return () => clearTimeout(id);
   }, [produto, lojaId, nome, descricao, categoria, preco, precoPromo]);
 
-  const valid = useMemo(
-    () => nome.trim().length > 1 && Number(preco) > 0 && fotos.length > 0 && categoria.trim().length > 0,
-    [nome, preco, fotos, categoria]
-  );
+  // Só o mínimo indispensável para uma loja visual: imagem, nome, categoria
+  // e preço. Tudo o resto (descrição, estoque, peso, variantes, SKU…) fica
+  // opcional de propósito — cada produto é diferente e obrigar campos que
+  // talvez não sejam relevantes só cria fricção.
+  const fotosValidas     = fotos.length > 0;
+  const nomeValido       = nome.trim().length > 1;
+  const categoriaValida  = categoria.trim().length > 0;
+  const precoValido      = Number(preco) > 0;
+
+  const valid = fotosValidas && nomeValido && categoriaValida && precoValido;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!valid) return;
+
+    if (!valid) {
+      setShowErrors(true);
+
+      const emFalta: { chave: 'fotos' | 'nome' | 'categoria' | 'preco'; label: string }[] = [];
+      if (!fotosValidas)    emFalta.push({ chave: 'fotos',     label: 'Imagem' });
+      if (!nomeValido)      emFalta.push({ chave: 'nome',      label: 'Nome' });
+      if (!categoriaValida) emFalta.push({ chave: 'categoria', label: 'Categoria' });
+      if (!precoValido)     emFalta.push({ chave: 'preco',     label: 'Preço base' });
+
+      // Mensagem específica quando só falta imagem — mais útil do que um
+      // genérico "preencha os campos obrigatórios" para o caso mais comum.
+      if (emFalta.length === 1 && emFalta[0].chave === 'fotos') {
+        show('Adicione pelo menos uma imagem do produto.', 'error');
+      } else {
+        show(
+          `Não foi possível publicar\nComplete os campos obrigatórios para continuar.\n\n${emFalta
+            .map((f) => `• ${f.label}`)
+            .join('\n')}`,
+          'error'
+        );
+      }
+
+      // Leva o lojista direto ao primeiro campo em falta, na ordem em que
+      // aparecem no ecrã.
+      const primeiro = emFalta[0];
+      if (primeiro?.chave === 'fotos') {
+        fotosSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (primeiro?.chave === 'nome') {
+        nomeInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        nomeInputRef.current?.focus();
+      } else if (primeiro?.chave === 'categoria') {
+        categoriaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (primeiro?.chave === 'preco') {
+        precoInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        precoInputRef.current?.focus();
+      }
+
+      return;
+    }
+
     setSaving(true);
 
     const estoque = !controlarEstoque
@@ -375,11 +430,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* ── 1. Imagens — sem cartão externo, a imagem fica logo no topo,
           é a primeira associação que o lojista faz com o produto. Só a
           área de upload em si tem contorno tracejado; a secção não. ── */}
-      <div className="flex flex-col gap-3">
+      <div ref={fotosSectionRef} className="flex flex-col gap-3">
         <h2 className="pl-0.5 text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
           Imagens
         </h2>
-        <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
+        <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} error={showErrors && !fotosValidas} />
       </div>
 
       {/* ── 2–4. Nome, Descrição, Categoria — sem título de cartão: os
@@ -388,10 +443,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         <div className="flex flex-col gap-1.5">
           <FieldLabel label="Nome" />
           <Input
+            ref={nomeInputRef}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: Tênis Nike Air Max"
-            required
+            error={showErrors && !nomeValido ? 'Campo obrigatório' : undefined}
           />
         </div>
 
@@ -405,7 +461,9 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           />
         </div>
 
-        <CategoryPicker value={categoria} onChange={setCategoria} />
+        <div ref={categoriaRef}>
+          <CategoryPicker value={categoria} onChange={setCategoria} error={showErrors && !categoriaValida} />
+        </div>
       </FormSection>
 
       {/* ── 5. Preço ── */}
@@ -415,12 +473,13 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           <FieldLabel label="Preço regular" />
           <div className="relative">
             <Input
+              ref={precoInputRef}
               type="number"
               min={0}
               value={preco}
               onChange={(e) => setPreco(e.target.value)}
               placeholder="0"
-              required
+              error={showErrors && !precoValido ? 'Campo obrigatório' : undefined}
               className="text-[17px] font-extrabold tracking-tight pr-14"
             />
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
@@ -543,12 +602,12 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* ── 11. Ação ── */}
       <div className="flex gap-3 pb-6 pt-2">
         {produto ? (
-          <Button type="submit" loading={saving} disabled={!valid} className="w-full">
+          <Button type="submit" loading={saving} className="w-full">
             Guardar
           </Button>
         ) : (
           <>
-            <Button type="submit" loading={saving} disabled={!valid} className="flex-1 sm:flex-none">
+            <Button type="submit" loading={saving} className="flex-1 sm:flex-none">
               Publicar produto
             </Button>
             <Button
