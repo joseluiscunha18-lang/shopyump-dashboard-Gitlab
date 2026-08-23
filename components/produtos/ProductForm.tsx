@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FileEdit } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
@@ -572,13 +573,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         >
           {/* Ícone */}
           <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F4F4F3]">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 13.5V15h1.5l8.83-8.83-1.5-1.5L3 13.5zm10.71-9.21a.996.996 0 0 0 0-1.41l-1.09-1.09a.996.996 0 0 0-1.41 0l-1.06 1.06 2.5 2.5 1.06-1.06z" fill="#52525B"/>
-            </svg>
+            <FileEdit size={18} strokeWidth={2} className="text-[#52525B]" />
           </div>
 
           <h3 className="text-[16px] font-extrabold text-[#111110]">
-            Continuar produto?
+            Continuar rascunho?
           </h3>
           <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-[#71717A]">
             {draftPendente.nome
