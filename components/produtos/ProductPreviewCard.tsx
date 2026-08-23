@@ -20,7 +20,7 @@ const ITEMS: PreviewItem[] = [
     image: 'https://i.ibb.co/0y1j5TZJ/a438689f26504d23aa559eeb1123f70f.png',
     bg: 'from-[#F0E2DA] to-[#E3CDC3]',
     name: 'Bolsa Siena',
-    price: '3.200 MT',
+    price: '3.200 MZN',
     imageClassName: 'scale-[1.18]',
   },
   {
@@ -28,14 +28,14 @@ const ITEMS: PreviewItem[] = [
     image: 'https://i.ibb.co/FbC8CZS8/jr-r-90-Hd-Ol-Gbjck-unsplash.jpg',
     bg: 'from-[#F6EAD2] to-[#EDDBB2]',
     name: 'Cupcake de Chocolate',
-    price: '450 MT',
+    price: '450 MZN',
   },
   {
     id: 'nike-air-force-1',
     image: 'https://i.ibb.co/0y2zq6VQ/peter-albanese-w-FNTf-Yo9-Vnc-unsplash.jpg',
     bg: 'from-[#F2EDE6] to-[#E4D9CB]',
     name: 'Nike Air Force 1',
-    price: '2.850 MT',
+    price: '2.850 MZN',
     imageClassName: 'object-[22%_center] scale-[1.16]',
   },
   {
@@ -43,7 +43,7 @@ const ITEMS: PreviewItem[] = [
     image: 'https://i.ibb.co/qF2G1zYm/natallia-photo-26nn-S5-I05-U-unsplash.jpg',
     bg: 'from-[#F3E4D6] to-[#E8D2BC]',
     name: 'Creme Antirrugas',
-    price: '3.500 MT',
+    price: '3.500 MZN',
     imageClassName: 'scale-[1.14]',
   },
 ];
@@ -129,13 +129,13 @@ export function ProductPreviewCard() {
       <div
         key={item.id}
         className={cn(
-          'relative w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_16px_30px_-14px_rgba(15,23,42,0.24)]',
+          'relative w-full overflow-hidden rounded-md bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_16px_30px_-14px_rgba(15,23,42,0.24)]',
           phase === 'exiting' && 'animate-product-exit',
           phase === 'entering' && 'animate-product-enter',
         )}
       >
         <ProductFace item={item} />
-        <div className="pointer-events-none absolute inset-0 z-20 rounded-[18px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
+        <div className="pointer-events-none absolute inset-0 z-20 rounded-md shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
       </div>
     </div>
   );
