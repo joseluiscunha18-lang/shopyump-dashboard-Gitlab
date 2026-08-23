@@ -69,7 +69,7 @@ export function OrdersList({ lojaId, initialPedidos }: { lojaId: string; initial
                 <p className="text-[13px] font-bold text-ink truncate">{p.cliente_nome}</p>
                 <p className="text-[11px] font-medium text-slate-400">
                   {new Date(p.created_at).toLocaleDateString('pt-MZ', { day: 'numeric', month: 'short' })} ·{' '}
-                  {p.total.toLocaleString('pt-MZ')} MT
+                  {p.total.toLocaleString('pt-MZ')} MZN
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
