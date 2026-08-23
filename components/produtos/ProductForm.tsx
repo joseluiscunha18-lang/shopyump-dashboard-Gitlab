@@ -54,7 +54,7 @@ function FormSection({
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             {title && (
-              <h2 className="text-[13.5px] font-black tracking-[0.02em] text-[#111110]">
+              <h2 className="text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
                 {title}
               </h2>
             )}
@@ -111,7 +111,7 @@ function ConfigRow({
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
     <div className="flex items-center gap-2 pl-0.5">
-      <span className="text-[13.5px] font-black tracking-[0.02em] text-[#27272A]">
+      <span className="text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
         {label}
       </span>
       {optional && (
@@ -432,7 +432,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           é a primeira associação que o lojista faz com o produto. Só a
           área de upload em si tem contorno tracejado; a secção não. ── */}
       <div ref={fotosSectionRef} className="flex flex-col gap-3">
-        <h2 className="pl-0.5 text-[13.5px] font-black tracking-[0.02em] text-[#111110]">
+        <h2 className="pl-0.5 text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
           Imagens
         </h2>
         <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} error={showErrors && !fotosValidas} />
@@ -447,7 +447,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
             ref={nomeInputRef}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Nome do produto"
+            placeholder="Ex: Camisola de linho bege"
             error={showErrors && !nomeValido ? 'Campo obrigatório' : undefined}
           />
         </div>
