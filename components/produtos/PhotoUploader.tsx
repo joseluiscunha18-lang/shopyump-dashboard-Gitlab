@@ -1021,13 +1021,6 @@ export function PhotoUploader({
 
   return (
     <div data-loja-id={lojaId}>
-      {/* Cabeçalho da secção */}
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[11px] font-black uppercase tracking-[0.07em] text-[#52525B]">
-          Imagens
-        </span>
-      </div>
-
       {/* Container de upload — só quando ainda não há fotos */}
       {photos.length === 0 && (
         <button
