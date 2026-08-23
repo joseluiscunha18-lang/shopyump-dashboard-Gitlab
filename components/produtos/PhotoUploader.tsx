@@ -1026,10 +1026,10 @@ export function PhotoUploader({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-6 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
+          className="group flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-4 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
-            <ImagePlus size={17} strokeWidth={2} className="text-[#52525B]" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
+            <ImagePlus size={15} strokeWidth={2} className="text-[#52525B]" />
           </span>
           <span className="text-[12.5px] font-semibold text-[#3F3F46]">
             Adicione imagens do produto
@@ -1037,7 +1037,7 @@ export function PhotoUploader({
           <span className="text-[10.5px] font-medium text-[#A1A1AA]">
             Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
           </span>
-          <span className="mt-1 rounded-md border border-[#D6D3D1] bg-white px-3 py-1.5 text-[11.5px] font-bold text-[#3F3F46]">
+          <span className="mt-1 rounded-md border border-[#D6D3D1] bg-white px-3 py-1 text-[11.5px] font-bold text-[#3F3F46]">
             Carregar imagens
           </span>
         </button>
