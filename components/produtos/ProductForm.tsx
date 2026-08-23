@@ -421,7 +421,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
               onChange={(e) => setPreco(e.target.value)}
               placeholder="0"
               required
-              className="text-[22px] font-extrabold tracking-tight pr-14"
+              className="text-[17px] font-extrabold tracking-tight pr-14"
             />
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
               MT
@@ -496,49 +496,39 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       </FormSection>
 
       {/* ── 8–9. Variações: Opções do produto + Versões geradas ── */}
-      <FormSection title="Variações" description="Opcional — só se este produto tiver mais de uma versão.">
+      <FormSection title="Variações">
         <VariantEditor state={variantes} onChange={setVariantes} />
 
         {hasVariants && (
           <>
             <div className="h-px bg-[#F0EEEB]" />
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between pl-1">
-                <h3 className="text-[13px] font-black text-ink">Versões disponíveis</h3>
-                {controlarEstoque && (
-                  <span className="text-[11px] font-bold text-[#8A8681]">
-                    {totalEstoque(variantes.versoes)} unidades
-                  </span>
-                )}
-              </div>
-              <StockSection
-                raiz={variantes.raiz}
-                filha={variantes.filha}
-                neta={variantes.neta}
-                versoes={variantes.versoes}
-                onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
-                controlarEstoque={controlarEstoque}
-                controlarPeso={controlarPeso}
-                precoBase={Number(preco) || 0}
-                pesoPadrao={pesoPadraoKg}
-                fotos={fotos}
-                onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
-                lojaId={lojaId}
-                imagensPorCaracteristica={variantes.imagensPorCaracteristica}
-                onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
-                  setVariantes((v) => ({
-                    ...v,
-                    imagensPorCaracteristica: {
-                      ...(v.imagensPorCaracteristica ?? {}),
-                      [nomeCaracteristica]: {
-                        ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}),
-                        [valor]: urls,
-                      },
+            <StockSection
+              raiz={variantes.raiz}
+              filha={variantes.filha}
+              neta={variantes.neta}
+              versoes={variantes.versoes}
+              onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
+              controlarEstoque={controlarEstoque}
+              controlarPeso={controlarPeso}
+              precoBase={Number(preco) || 0}
+              pesoPadrao={pesoPadraoKg}
+              fotos={fotos}
+              onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
+              lojaId={lojaId}
+              imagensPorCaracteristica={variantes.imagensPorCaracteristica}
+              onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
+                setVariantes((v) => ({
+                  ...v,
+                  imagensPorCaracteristica: {
+                    ...(v.imagensPorCaracteristica ?? {}),
+                    [nomeCaracteristica]: {
+                      ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}),
+                      [valor]: urls,
                     },
-                  }))
-                }
-              />
-            </div>
+                  },
+                }))
+              }
+            />
           </>
         )}
       </FormSection>
