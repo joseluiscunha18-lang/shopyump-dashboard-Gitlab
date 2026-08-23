@@ -29,10 +29,6 @@ import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 /* ── Primitivos de layout ──────────────────────────────────────────────────── */
 
-function SectionDivider() {
-  return <div className="h-px bg-[#E5E3E0]" />;
-}
-
 function SectionHeader({
   title,
   right,
@@ -353,41 +349,37 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-8 pb-28">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-10 pb-28">
 
       {/* ── 1. Imagens ── */}
       <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
 
-      <SectionDivider />
+      {/* ── 2–4. Informação básica: Nome, Descrição, Categoria ──
+          Mesmo nível hierárquico — sem divisórias nem cartões entre si,
+          só ritmo vertical. Cada campo já tem o seu próprio label. */}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1.5">
+          <FieldLabel label="Nome do produto" />
+          <Input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Ex: Tênis Nike Air Max"
+            required
+          />
+        </div>
 
-      {/* ── 2. Nome ── */}
-      <div className="flex flex-col gap-1.5">
-        <FieldLabel label="Nome do produto" />
-        <Input
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Ex: Tênis Nike Air Max"
-          required
-        />
+        <div className="flex flex-col gap-1.5">
+          <FieldLabel label="Descrição" optional />
+          <Textarea
+            rows={4}
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder="Descreve o produto…"
+          />
+        </div>
+
+        <CategoryPicker value={categoria} onChange={setCategoria} />
       </div>
-
-      {/* ── 3. Descrição ── */}
-      <div className="flex flex-col gap-1.5">
-        <FieldLabel label="Descrição" optional />
-        <Textarea
-          rows={4}
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          placeholder="Descreve o produto…"
-        />
-      </div>
-
-      <SectionDivider />
-
-      {/* ── 4. Categoria ── */}
-      <CategoryPicker value={categoria} onChange={setCategoria} />
-
-      <SectionDivider />
 
       {/* ── 5. Preço ── */}
       <div className="flex flex-col gap-4">
@@ -431,8 +423,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         </div>
       </div>
 
-      <SectionDivider />
-
       {/* ── 6. Estoque ── */}
       <div className="flex flex-col gap-3">
         <SectionHeader title="Estoque" />
@@ -465,8 +455,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         </ConfigBlock>
       </div>
 
-      <SectionDivider />
-
       {/* ── 7. Peso ── */}
       <div className="flex flex-col gap-3">
         <SectionHeader title="Peso" />
@@ -491,8 +479,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           )}
         </ConfigBlock>
       </div>
-
-      <SectionDivider />
 
       {/* ── 8. Opções do produto ── */}
       <div className="flex flex-col gap-3">
@@ -540,8 +526,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           />
         </div>
       )}
-
-      <SectionDivider />
 
       {/* ── 10. Mais opções ── */}
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
