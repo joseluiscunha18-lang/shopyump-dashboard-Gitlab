@@ -111,11 +111,11 @@ function ConfigRow({
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
     <div className="flex items-center gap-2 pl-0.5">
-      <span className="text-[12.5px] font-black tracking-[0.02em] text-[#27272A]">
+      <span className="text-[13.5px] font-black tracking-[0.02em] text-[#27272A]">
         {label}
       </span>
       {optional && (
-        <span className="text-[11px] font-semibold normal-case tracking-normal text-[#71717A]">
+        <span className="text-[11.5px] font-semibold normal-case tracking-normal text-[#71717A]">
           opcional
         </span>
       )}
@@ -447,7 +447,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
             ref={nomeInputRef}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Ex: Tênis Nike Air Max"
+            placeholder="Nome do produto"
             error={showErrors && !nomeValido ? 'Campo obrigatório' : undefined}
           />
         </div>
