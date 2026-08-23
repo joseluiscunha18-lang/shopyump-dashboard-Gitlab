@@ -250,7 +250,7 @@ function RaizGroup({
                     {filha.nome === 'Cor' && (
                       <ColorDot hex={resolverHexCor(grupo.filhaValor, filha.cores)} />
                     )}
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#8A8681]">
+                    <span className="text-[10px] font-black tracking-wide text-[#8A8681]">
                       {grupo.filhaValor}
                     </span>
                   </div>
