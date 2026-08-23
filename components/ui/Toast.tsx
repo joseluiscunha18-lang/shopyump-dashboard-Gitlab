@@ -36,12 +36,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ show }}>
       {children}
-      <div className="fixed top-5 left-5 right-5 sm:left-auto sm:right-5 sm:w-[340px] z-[200] flex flex-col gap-2 pointer-events-none">
+      {/* Fixo no fundo do ecrã, nunca no topo: no formulário de produto o
+      campo em falta é sempre trazido para a vista com scrollIntoView, o
+      que o deixa perto do topo — um toast lá em cima ficava por cima
+      exatamente do que o utilizador precisa de ver e editar. Em baixo, o
+      toast fica visível sem tapar o conteúdo em foco. */}
+      <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[200] flex flex-col-reverse items-center gap-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[340px] sm:items-stretch">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              'animate-toast-in pointer-events-auto bg-white/95 backdrop-blur-xl border shadow-2xl rounded-md p-3.5 flex items-start gap-3',
+              'animate-toast-in pointer-events-auto max-h-[45vh] w-full max-w-[420px] overflow-y-auto bg-white/95 backdrop-blur-xl border shadow-2xl rounded-md p-3.5 flex items-start gap-3',
               t.tone === 'success' ? 'border-emerald-100' : 'border-red-100'
             )}
           >
