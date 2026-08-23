@@ -334,7 +334,7 @@ export function VariantEditor({
   return (
     <div>
       {!state.raiz && (
-        <p className="mb-3 pl-1 text-[13px] font-normal leading-snug text-[#52525B]">
+        <p className="mb-3 pl-1 text-[13px] font-medium leading-snug text-[#71717A]">
           Adiciona opções como cor ou tamanho se este produto tiver diferentes versões.
         </p>
       )}
