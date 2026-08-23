@@ -98,7 +98,7 @@ export function ProductRow({
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <ImageIcon size={22} strokeWidth={1.5} className="text-slate-400" />
+            <ImageIcon size={22} strokeWidth={1.5} style={{ color: 'rgba(26,18,16,0.22)' }} />
           </div>
         )}
         <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
