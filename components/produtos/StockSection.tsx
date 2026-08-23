@@ -61,7 +61,7 @@ export function StockSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between pl-1">
-        <h3 className="text-[13px] font-black text-ink">Preços e stock por variante</h3>
+        <h3 className="text-[13px] font-black text-ink">Lista de variantes</h3>
         {controlarEstoque && (
           <span className="text-[11px] font-bold text-[#8A8681]">{totalEstoque(versoes)} unidades no total</span>
         )}
@@ -147,12 +147,12 @@ function GroupThumbnail({ imagens, onClick }: { imagens: string[]; onClick: () =
         e.stopPropagation();
         onClick();
       }}
-      className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-[6px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+      className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
     >
       {imagens[0] ? (
-        <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
+        <Image src={imagens[0]} alt="" fill className="object-cover" sizes="36px" />
       ) : (
-        <ImagePlus size={12} className="text-[#B8B5B1]" />
+        <ImagePlus size={16} className="text-[#71717A]" />
       )}
     </button>
   );
@@ -427,11 +427,11 @@ function VersaoRow({
                 ? 'A herdar a galeria geral do produto'
                 : 'Definir imagem'
         }
-        className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-[6px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
       >
         {imagens[0] ? (
           <>
-            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
+            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="36px" />
             {imagemPropria && imagens.length > 1 && (
               <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
                 {imagens.length}
@@ -439,7 +439,7 @@ function VersaoRow({
             )}
           </>
         ) : (
-          <ImagePlus size={13} className="text-[#B8B5B1]" />
+          <ImagePlus size={16} className="text-[#71717A]" />
         )}
       </button>
 
