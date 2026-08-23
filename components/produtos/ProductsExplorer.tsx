@@ -8,6 +8,7 @@ import { ProductRow } from '@/components/produtos/ProductRow';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
 import { ProductFilterBar, type StatusFilter, type SortOption } from '@/components/produtos/ProductFilterBar';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import type { Produto } from '@/types/database';
@@ -22,6 +23,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmBulkExcluirOpen, setConfirmBulkExcluirOpen] = useState(false);
   const [bulkPending, startBulkTransition] = useTransition();
   const router = useRouter();
   const { show } = useToast();
@@ -134,7 +136,10 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   }
 
   function handleBulkExcluir() {
-    if (!confirm(`Remover ${selectedIds.size} produto(s)? Esta ação não pode ser desfeita.`)) return;
+    setConfirmBulkExcluirOpen(true);
+  }
+
+  function confirmarBulkExcluir() {
     runBulk((id) => deleteProduto(id), 'Produtos removidos.', 'Não foram removidos.');
   }
 
@@ -170,7 +175,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       ultrapassar os limites do card sem serem cortados. Cartão sólido (sem
       blur/translucidez) com sombra mais forte, para se destacar claramente
       do fundo cinza da página em vez de se misturar com ele. */}
-      <div className="rounded-[28px] border border-[#1A1210]/8 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
+      <div className="rounded-md border border-[#1A1210]/8 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
         <div className="px-4 pb-3 pt-4">
           <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
 
@@ -297,6 +302,16 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmBulkExcluirOpen}
+        onClose={() => setConfirmBulkExcluirOpen(false)}
+        onConfirm={confirmarBulkExcluir}
+        title={`Remover ${selectedIds.size} produto(s)?`}
+        description="Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        danger
+      />
     </>
   );
 }
