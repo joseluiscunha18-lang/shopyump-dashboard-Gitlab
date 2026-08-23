@@ -60,13 +60,13 @@ export default async function PedidoDetailPage({ params }: { params: Promise<{ i
               )}
             </div>
             <p className="text-[13px] font-black text-ink flex-shrink-0">
-              {(item.preco * item.quantidade).toLocaleString('pt-MZ')} MT
+              {(item.preco * item.quantidade).toLocaleString('pt-MZ')} MZN
             </p>
           </div>
         ))}
         <div className="flex items-center justify-between p-4">
           <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Total</p>
-          <p className="text-lg font-black text-ink">{pedido.total.toLocaleString('pt-MZ')} MT</p>
+          <p className="text-lg font-black text-ink">{pedido.total.toLocaleString('pt-MZ')} MZN</p>
         </div>
       </Card>
 
