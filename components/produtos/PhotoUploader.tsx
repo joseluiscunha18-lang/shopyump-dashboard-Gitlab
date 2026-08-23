@@ -1035,7 +1035,7 @@ export function PhotoUploader({
               'group relative w-full overflow-hidden rounded-2xl border transition-all duration-200 active:scale-[0.985]',
               error
                 ? 'border-red-200 bg-red-50/60'
-                : 'border-[#E5E3E0] bg-[#FAFAF9] hover:border-[#D4D2CF] hover:bg-[#F4F4F3]'
+                : 'border-[#D4D2CF] bg-[#F4F4F3] hover:border-[#B8B5B1] hover:bg-[#EDEBE8]'
             )}
             style={{
               boxShadow: error
