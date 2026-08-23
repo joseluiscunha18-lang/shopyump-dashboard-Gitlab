@@ -42,24 +42,28 @@ function FormSection({
   right,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   right?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-md border border-[#EDEBE8] bg-white p-5 sm:p-6">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
-            {title}
-          </h2>
-          {description && (
-            <p className="text-[12px] font-medium text-[#8A8681]">{description}</p>
-          )}
+      {(title || right) && (
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            {title && (
+              <h2 className="text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="text-[12px] font-medium text-[#8A8681]">{description}</p>
+            )}
+          </div>
+          {right && <div className="shrink-0 text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
         </div>
-        {right && <div className="shrink-0 text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
-      </div>
+      )}
       <div className="flex flex-col gap-5">{children}</div>
     </section>
   );
@@ -79,7 +83,7 @@ function ConfigRow({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   checked: boolean;
   onToggle: (v: boolean) => void;
   ariaLabel: string;
@@ -90,7 +94,9 @@ function ConfigRow({
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[14px] font-bold text-[#111110]">{title}</span>
-          <span className="text-[12px] font-medium leading-snug text-[#71717A]">{description}</span>
+          {description && (
+            <span className="text-[12px] font-medium leading-snug text-[#71717A]">{description}</span>
+          )}
         </div>
         <Switch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} size="sm" />
       </div>
@@ -376,8 +382,9 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
       </div>
 
-      {/* ── 2–4. Informações do produto: Nome, Descrição, Categoria ── */}
-      <FormSection title="Informações do produto">
+      {/* ── 2–4. Nome, Descrição, Categoria — sem título de cartão: os
+          campos já se autoexplicam, o título só ocupava espaço. ── */}
+      <FormSection>
         <div className="flex flex-col gap-1.5">
           <FieldLabel label="Nome do produto" />
           <Input
@@ -405,7 +412,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       <FormSection title="Preço">
         {/* Preço principal — destaque visual */}
         <div className="flex flex-col gap-1.5">
-          <FieldLabel label="Preço base" />
+          <FieldLabel label="Preço regular" />
           <div className="relative">
             <Input
               type="number"
@@ -447,11 +454,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       <FormSection title="Inventário">
         <ConfigRow
           title="Controlar estoque"
-          description={
-            controlarEstoque
-              ? 'Define a quantidade disponível.'
-              : 'O produto fica sempre disponível, sem limite de quantidade.'
-          }
+          description={controlarEstoque ? undefined : 'Sem limite de quantidade'}
           checked={controlarEstoque}
           onToggle={setControlarEstoque}
           ariaLabel="Controlar estoque"
@@ -477,11 +480,6 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
         <ConfigRow
           title="Controlar peso"
-          description={
-            controlarPeso
-              ? 'O peso entra no cálculo de envio deste produto.'
-              : 'O peso não entra no cálculo de envio deste produto.'
-          }
           checked={controlarPeso}
           onToggle={setControlarPeso}
           ariaLabel="Controlar peso"
