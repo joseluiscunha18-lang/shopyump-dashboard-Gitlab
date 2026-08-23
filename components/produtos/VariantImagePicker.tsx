@@ -81,7 +81,7 @@ export function VariantImagePicker({
               type="button"
               onClick={() => toggle(url)}
               className={cn(
-                'relative aspect-square overflow-hidden rounded-2xl bg-slate-100 ring-2 transition-all',
+                'relative aspect-square overflow-hidden rounded-md bg-[#F4F4F3] ring-2 transition-all',
                 active ? 'ring-ink' : 'ring-transparent'
               )}
             >
@@ -100,7 +100,7 @@ export function VariantImagePicker({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400"
+          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#D4D2CF] text-[#8A8681]"
         >
           {uploading ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
           <span className="text-[8px] font-bold uppercase tracking-wider">Nova</span>
