@@ -480,14 +480,14 @@ function VersaoRow({
 
       {/* Preço */}
       <div className={cn('flex w-[92px] shrink-0 items-center gap-1', esmaecidaQuandoInativa)}>
-        <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">MT</span>
+        <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">MZN</span>
         <input
           type="number"
           min={0}
           value={versao.preco ?? ''}
           onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
           placeholder={String(precoBase || 0)}
-          title={`Preço de ${label} (MT)`}
+          title={`Preço de ${label} (MZN)`}
           aria-label={`Preço de ${label}`}
           className="h-8 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
         />
