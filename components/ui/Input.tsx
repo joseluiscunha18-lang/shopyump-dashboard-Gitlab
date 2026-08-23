@@ -30,11 +30,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-[13px] border border-[#D4D2CF] bg-[#F4F4F3]',
+              'w-full rounded-md border border-[#E5E3E0] bg-white',
               'px-4 py-3.5 text-[15px] font-semibold text-[#111110] outline-none',
               'placeholder:font-normal placeholder:text-[#9CA3AF]',
               'transition-all duration-150',
-              'focus:border-[#111110] focus:bg-white focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
+              'hover:border-[#D4D2CF]',
+              'focus:border-[#111110] focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
               icon   ? 'pl-11 pr-4' : '',
               suffix ? 'pr-14'      : '',
               error  ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : '',
@@ -75,11 +76,12 @@ export const Textarea = forwardRef<
         ref={ref}
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-[13px] border border-[#D4D2CF] bg-[#F4F4F3]',
+          'w-full resize-none rounded-md border border-[#E5E3E0] bg-white',
           'px-4 py-3.5 text-[15px] font-normal leading-relaxed text-[#111110] outline-none',
           'placeholder:font-normal placeholder:text-[#9CA3AF]',
           'transition-all duration-150',
-          'focus:border-[#111110] focus:bg-white focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
+          'hover:border-[#D4D2CF]',
+          'focus:border-[#111110] focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
           className
         )}
         {...props}
