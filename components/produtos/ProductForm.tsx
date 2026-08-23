@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FileEdit } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/cn';
 import { Switch } from '@/components/ui/Switch';
 import { PhotoUploader } from '@/components/produtos/PhotoUploader';
 import { CategoryPicker } from '@/components/produtos/CategoryPicker';
@@ -53,7 +54,7 @@ function FormSection({
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             {title && (
-              <h2 className="text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
+              <h2 className="text-[12px] font-black tracking-[0.02em] text-[#111110]">
                 {title}
               </h2>
             )}
@@ -110,7 +111,7 @@ function ConfigRow({
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
     <div className="flex items-center gap-2 pl-0.5">
-      <span className="text-[11px] font-black uppercase tracking-[0.06em] text-[#27272A]">
+      <span className="text-[11px] font-black tracking-[0.02em] text-[#27272A]">
         {label}
       </span>
       {optional && (
@@ -431,7 +432,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           é a primeira associação que o lojista faz com o produto. Só a
           área de upload em si tem contorno tracejado; a secção não. ── */}
       <div ref={fotosSectionRef} className="flex flex-col gap-3">
-        <h2 className="pl-0.5 text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
+        <h2 className="pl-0.5 text-[12px] font-black tracking-[0.02em] text-[#111110]">
           Imagens
         </h2>
         <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} error={showErrors && !fotosValidas} />
@@ -599,15 +600,27 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       {/* ── 10. Mais opções ── */}
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
 
-      {/* ── 11. Ação ── */}
+      {/* ── 11. Ação ──
+      O CTA nunca fica realmente "disabled": parece acinzentado quando
+      faltam campos obrigatórios, mas continua clicável — um clique aqui
+      dispara sempre a validação atual (toast + campo em erro), em vez de
+      simplesmente não fazer nada. */}
       <div className="flex gap-3 pb-6 pt-2">
         {produto ? (
-          <Button type="submit" loading={saving} className="w-full">
+          <Button
+            type="submit"
+            loading={saving}
+            className={cn('w-full', !valid && !saving && 'opacity-50 hover:opacity-50')}
+          >
             Guardar
           </Button>
         ) : (
           <>
-            <Button type="submit" loading={saving} className="flex-1 sm:flex-none">
+            <Button
+              type="submit"
+              loading={saving}
+              className={cn('flex-1 sm:flex-none', !valid && !saving && 'opacity-50 hover:opacity-50')}
+            >
               Publicar produto
             </Button>
             <Button
