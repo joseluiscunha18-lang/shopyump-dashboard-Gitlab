@@ -138,7 +138,7 @@ export function SuggestInput({
           >
             {colorMode && <ColorDot hex={resolverHexCor(v, coresPersonalizadas)} />}
             {v}
-            <button type="button" onClick={() => remover(v)} className="text-slate-400 hover:text-slate-700">
+            <button type="button" onClick={() => remover(v)} className="text-[#8A8681] hover:text-[#3F3F46]">
               <X size={12} />
             </button>
           </span>
@@ -162,7 +162,7 @@ export function SuggestInput({
             if (e.key === 'Escape') setOpen(false);
           }}
           placeholder={placeholder}
-          className="h-9 w-28 rounded-full bg-white px-3.5 text-[12px] font-semibold text-ink shadow-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-ink/10"
+          className="h-9 w-28 rounded-full bg-white px-3.5 text-[12px] font-semibold text-ink shadow-sm outline-none placeholder:text-[#8A8681] focus:ring-2 focus:ring-ink/10"
         />
       </div>
 
@@ -170,12 +170,12 @@ export function SuggestInput({
         <div
           onMouseDown={(e) => e.stopPropagation()}
           className={cn(
-            'absolute left-0 z-30 max-h-60 w-72 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.16)]',
+            'absolute left-0 z-30 max-h-60 w-72 overflow-y-auto rounded-md border border-[#E5E3E0] bg-white p-2 shadow-[0_12px_30px_rgba(28,25,23,0.16)]',
             abrirParaCima ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+6px)]'
           )}
         >
           {!colorMode && sugestoes.length === 0 && !draft.trim() && biblioteca.length === 0 && (
-            <p className="px-2 py-2 text-[11px] font-medium text-slate-400">Começa a escrever para criar um valor.</p>
+            <p className="px-2 py-2 text-[11px] font-medium text-[#8A8681]">Começa a escrever para criar um valor.</p>
           )}
 
           {colorMode ? (
@@ -188,8 +188,8 @@ export function SuggestInput({
                     type="button"
                     onClick={() => alternar(nome, resolverHexCor(nome, coresPersonalizadas))}
                     className={cn(
-                      'flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-slate-50 active:bg-slate-100',
-                      marcada && 'bg-slate-50'
+                      'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2.5 text-left transition-colors hover:bg-[#F4F4F3] active:bg-[#F4F4F3]',
+                      marcada && 'bg-[#F4F4F3]'
                     )}
                   >
                     {/* Só o clique na linha inteira marca/desmarca — o
@@ -199,7 +199,7 @@ export function SuggestInput({
                     <span
                       className={cn(
                         'flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors',
-                        marcada ? 'border-ink bg-ink text-white' : 'border-slate-300 bg-white text-transparent'
+                        marcada ? 'border-ink bg-ink text-white' : 'border-[#B8B5B1] bg-white text-transparent'
                       )}
                     >
                       <Check size={11} strokeWidth={3} />
@@ -218,7 +218,7 @@ export function SuggestInput({
                     key={nome}
                     type="button"
                     onClick={() => adicionar(nome)}
-                    className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50 active:bg-slate-100"
+                    className="flex w-full items-center rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3] active:bg-[#F4F4F3]"
                   >
                     {nome}
                   </button>
@@ -228,22 +228,22 @@ export function SuggestInput({
           )}
 
           {draft.trim() && !correspondeExata && (
-            <div className="mt-0.5 flex items-center gap-1.5 border-t border-slate-100 p-1.5 pt-1.5">
+            <div className="mt-0.5 flex items-center gap-1.5 border-t border-[#E5E3E0] p-1.5 pt-1.5">
               {colorMode && (
                 <input
                   type="color"
                   value={novaCorHex}
                   onChange={(e) => setNovaCorHex(e.target.value)}
-                  className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-transparent p-0.5"
+                  className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-[#D4D2CF] bg-transparent p-0.5"
                   title="Escolher cor"
                 />
               )}
               <button
                 type="button"
                 onClick={() => adicionar(draft, colorMode ? novaCorHex : undefined)}
-                className="flex flex-1 items-center gap-1.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-bold text-ink transition-colors hover:bg-slate-50 active:bg-slate-100"
+                className="flex flex-1 items-center gap-1.5 rounded-md px-3 py-2.5 text-left text-[13px] font-bold text-ink transition-colors hover:bg-[#F4F4F3] active:bg-[#F4F4F3]"
               >
-                <Plus size={14} className="shrink-0 text-slate-400" />
+                <Plus size={14} className="shrink-0 text-[#8A8681]" />
                 Usar &ldquo;{draft.trim()}&rdquo;
               </button>
             </div>
