@@ -1032,28 +1032,72 @@ export function PhotoUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             className={cn(
-              'group flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed py-4 transition-all duration-150 active:scale-[0.99]',
+              'group relative w-full overflow-hidden rounded-2xl transition-all duration-200 active:scale-[0.985]',
               error
-                ? 'border-red-300 bg-red-50/40 text-red-500 hover:border-red-400 hover:bg-red-50'
-                : 'border-[#B8B5B1] bg-[#FAFAF9] text-[#71717A] hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B]'
+                ? 'ring-2 ring-red-300 ring-offset-0'
+                : ''
             )}
+            style={{
+              background: error
+                ? 'linear-gradient(145deg, #fff5f5 0%, #fef2f2 100%)'
+                : 'linear-gradient(145deg, #1c1917 0%, #292524 50%, #1c1917 100%)',
+              boxShadow: error
+                ? '0 2px 12px -2px rgba(239,68,68,0.18)'
+                : '0 4px 24px -4px rgba(0,0,0,0.38), 0 1px 3px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
           >
-            <span
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 group-hover:scale-105',
-                error ? 'bg-red-100' : 'bg-[#E7E5E4]'
-              )}
-            >
-              <ImagePlus size={15} strokeWidth={2} className={error ? 'text-red-500' : 'text-[#52525B]'} />
-            </span>
-            <span className={cn('text-[12.5px] font-semibold', error ? 'text-red-600' : 'text-[#3F3F46]')}>
-              Adicione imagens do produto
-            </span>
-            <span className={cn('text-[10.5px] font-medium', error ? 'text-red-400' : 'text-[#A1A1AA]')}>
-              Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
-            </span>
-            <span className="mt-1 rounded-md border border-[#D6D3D1] bg-white px-3 py-1 text-[11.5px] font-bold text-[#3F3F46]">
-              Carregar imagens
+            {/* Subtle grain texture overlay */}
+            {!error && (
+              <span
+                className="pointer-events-none absolute inset-0 opacity-[0.03]"
+                style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.75\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+                  backgroundSize: '180px 180px',
+                }}
+              />
+            )}
+            {/* Glow pulse on hover */}
+            {!error && (
+              <span
+                className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{
+                  background: 'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.07) 0%, transparent 70%)',
+                }}
+              />
+            )}
+
+            <span className="relative flex flex-col items-center justify-center gap-2.5 py-9 px-6">
+              {/* Icon container */}
+              <span
+                className={cn(
+                  'flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 group-active:scale-95',
+                  error
+                    ? 'bg-red-100'
+                    : 'bg-white/10 ring-1 ring-white/20'
+                )}
+              >
+                <ImagePlus
+                  size={20}
+                  strokeWidth={1.8}
+                  className={error ? 'text-red-500' : 'text-white/90'}
+                />
+              </span>
+
+              {/* Primary action text */}
+              <span className={cn(
+                'text-[15px] font-bold tracking-[-0.01em]',
+                error ? 'text-red-600' : 'text-white'
+              )}>
+                Toque para carregar imagem
+              </span>
+
+              {/* Caption */}
+              <span className={cn(
+                'text-[11.5px] font-medium',
+                error ? 'text-red-400' : 'text-white/45'
+              )}>
+                Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
+              </span>
             </span>
           </button>
           {error && (
