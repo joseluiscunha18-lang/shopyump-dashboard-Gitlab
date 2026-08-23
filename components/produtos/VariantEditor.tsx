@@ -333,14 +333,11 @@ export function VariantEditor({
 
   return (
     <div>
-      <div className="mb-1 pl-1">
-        <h3 className="text-[13px] font-black text-ink">Opções do produto</h3>
-        <p className="text-[11px] font-medium text-[#8A8681]">
-          Diz quais versões deste produto vendes — nenhuma opção é obrigatória.
-        </p>
-      </div>
+      <p className="mb-3 pl-1 text-[12px] font-medium text-[#8A8681]">
+        Diz quais versões deste produto vendes — nenhuma opção é obrigatória.
+      </p>
 
-      <div className="mt-3 flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         {gruposParaFundir.length > 0 && assinaturaFundir !== fusaoDispensada && (
           <div className="rounded-md border border-amber-200 bg-amber-50 p-3.5">
             <div className="mb-2.5 flex items-start gap-2">
