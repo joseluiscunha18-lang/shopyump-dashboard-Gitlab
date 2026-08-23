@@ -29,7 +29,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback((title: string, tone: 'success' | 'error' = 'success') => {
     const id = Date.now();
     setToasts((t) => [...t, { id, title, tone }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2800);
+    const duration = tone === 'error' ? 4500 : 2800;
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), duration);
   }, []);
 
   return (
@@ -40,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              'animate-toast-in pointer-events-auto bg-white/95 backdrop-blur-xl border shadow-2xl rounded-2xl p-3.5 flex items-center gap-3',
+              'animate-toast-in pointer-events-auto bg-white/95 backdrop-blur-xl border shadow-2xl rounded-md p-3.5 flex items-start gap-3',
               t.tone === 'success' ? 'border-emerald-100' : 'border-red-100'
             )}
           >
@@ -52,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               {t.tone === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
             </div>
-            <p className="flex-1 text-[12px] font-bold text-ink leading-tight">{t.title}</p>
+            <p className="flex-1 whitespace-pre-line text-[12px] font-bold text-ink leading-tight">{t.title}</p>
             <button
               onClick={() => setToasts((ts) => ts.filter((x) => x.id !== t.id))}
               className="text-slate-300 hover:text-slate-500"
