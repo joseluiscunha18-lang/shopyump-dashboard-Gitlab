@@ -472,7 +472,7 @@ function VersaoRow({
           <span className="truncate text-[13px] font-bold text-ink">{label}</span>
         </span>
         {!ativa && (
-          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-800 ring-1 ring-inset ring-amber-200">
+          <span className="shrink-0 rounded-full bg-[#D8D6D2] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#292524] ring-1 ring-inset ring-[#C4C1BC]">
             Indisponível
           </span>
         )}
