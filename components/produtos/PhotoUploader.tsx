@@ -1032,58 +1032,34 @@ export function PhotoUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             className={cn(
-              'group relative w-full overflow-hidden rounded-2xl border transition-all duration-200 active:scale-[0.985]',
+              'group relative w-full overflow-hidden rounded-xl border transition-all duration-150 active:scale-[0.985]',
               error
                 ? 'border-red-200 bg-red-50/60'
-                : 'border-[#D4D2CF] bg-[#F4F4F3] hover:border-[#B8B5B1] hover:bg-[#EDEBE8]'
+                : 'border-[#EDEBE8] bg-white hover:border-[#D4D2CF] hover:bg-[#FAFAF9]'
             )}
-            style={{
-              boxShadow: error
-                ? '0 1px 6px -1px rgba(239,68,68,0.10)'
-                : '0 1px 4px -1px rgba(28,25,23,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
-            }}
           >
-            {/* Brand gradient shimmer on hover */}
-            {!error && (
-              <span
-                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background: 'radial-gradient(ellipse at 50% 110%, oklch(0.95 0.05 45) 0%, transparent 65%)',
-                }}
+            <span className="relative flex flex-row items-center justify-center gap-3 py-4 px-5">
+              {/* Icon */}
+              <ImagePlus
+                size={16}
+                strokeWidth={2}
+                className={error ? 'text-red-400' : 'text-[#71717A]'}
               />
-            )}
 
-            <span className="relative flex flex-col items-center justify-center gap-3 py-10 px-6">
-              {/* Icon container */}
-              <span
-                className={cn(
-                  'flex h-12 w-12 items-center justify-center rounded-full border transition-transform duration-200 group-hover:scale-110 group-active:scale-95',
-                  error
-                    ? 'border-red-100 bg-red-50'
-                    : 'border-[#E5E3E0] bg-white shadow-sm'
-                )}
-              >
-                <ImagePlus
-                  size={20}
-                  strokeWidth={1.8}
-                  className={error ? 'text-red-400' : 'text-[#52525B]'}
-                />
-              </span>
-
-              {/* Primary action text */}
-              <span className={cn(
-                'text-[15px] font-bold tracking-[-0.01em]',
-                error ? 'text-red-600' : 'text-[#111110]'
-              )}>
-                Toque para carregar imagem
-              </span>
-
-              {/* Caption */}
-              <span className={cn(
-                'text-[11.5px] font-medium',
-                error ? 'text-red-400' : 'text-[#A1A1AA]'
-              )}>
-                Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
+              {/* Text stack */}
+              <span className="flex flex-col items-start gap-0.5">
+                <span className={cn(
+                  'text-[13px] font-bold leading-tight',
+                  error ? 'text-red-600' : 'text-[#3F3F46]'
+                )}>
+                  Toque para carregar imagem
+                </span>
+                <span className={cn(
+                  'text-[11px] font-medium',
+                  error ? 'text-red-400' : 'text-[#A1A1AA]'
+                )}>
+                  Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
+                </span>
               </span>
             </span>
           </button>
