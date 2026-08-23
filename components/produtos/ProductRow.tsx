@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2, ImageOff } from 'lucide-react';
+import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { useToast } from '@/components/ui/Toast';
@@ -93,15 +93,15 @@ export function ProductRow({
         />
       )}
 
-      <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
+      <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {produto.fotos?.[0] ? (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <ImageOff size={20} strokeWidth={1.5} className="text-slate-300" />
+            <ImageIcon size={20} strokeWidth={1.5} className="text-slate-300" />
           </div>
         )}
-        <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.14)]" />
+        <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
       </div>
 
       <div className="min-w-0 flex-1">
