@@ -68,7 +68,7 @@ export default async function DashboardHomePage() {
           icon={<Wallet size={20} />}
           label="Receita total"
           value={stats.receitaTotal.toLocaleString('pt-MZ')}
-          sub="MT"
+          sub="MZN"
         />
       </div>
 
