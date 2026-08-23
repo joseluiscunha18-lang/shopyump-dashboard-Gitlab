@@ -333,9 +333,11 @@ export function VariantEditor({
 
   return (
     <div>
-      <p className="mb-3 pl-1 text-[12px] font-medium text-[#8A8681]">
-        Diz quais versões deste produto vendes — nenhuma opção é obrigatória.
-      </p>
+      {!state.raiz && (
+        <p className="mb-3 pl-1 text-[12px] font-medium text-[#8A8681]">
+          Adiciona opções como cor ou tamanho se este produto tiver diferentes versões.
+        </p>
+      )}
 
       <div className="flex flex-col gap-3">
         {gruposParaFundir.length > 0 && assinaturaFundir !== fusaoDispensada && (
@@ -373,15 +375,15 @@ export function VariantEditor({
           <button
             type="button"
             onClick={() => setPickerAlvo('raiz')}
-            className="flex items-center justify-center gap-2 rounded-md border-2 border-dashed border-[#D4D2CF] py-3.5 text-[12px] font-bold text-[#71717A] transition-colors hover:border-[#B8B5B1] hover:text-ink active:scale-[0.99]"
+            className="self-start rounded-md border border-[#D4D2CF] bg-white px-4 py-2.5 text-[13px] font-bold text-ink transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
           >
-            <Plus size={15} /> Adicionar opção
+            + Adicionar opções
           </button>
         )}
 
         {state.raiz && (
-          <div className="rounded-md border border-[#E5E3E0] bg-[#F4F4F3]/70 p-3.5">
-            <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
               <span className="text-[11px] font-black uppercase tracking-widest text-[#71717A]">{state.raiz.nome}</span>
               <button type="button" onClick={removerRaiz} className="text-[11px] font-bold text-[#8A8681] hover:text-red-500">
                 Remover
@@ -404,15 +406,15 @@ export function VariantEditor({
           <button
             type="button"
             onClick={() => setPickerAlvo('filha')}
-            className="flex items-center justify-center gap-2 rounded-md border-2 border-dashed border-[#D4D2CF] py-3.5 text-[12px] font-bold text-[#71717A] transition-colors hover:border-[#B8B5B1] hover:text-ink active:scale-[0.99]"
+            className="flex w-fit items-center gap-1.5 text-[12px] font-bold text-[#71717A] transition-colors hover:text-ink"
           >
-            <Plus size={15} /> Adicionar outra característica (opcional)
+            <Plus size={13} /> Adicionar outro atributo
           </button>
         )}
 
         {state.filha && (
-          <div className="rounded-md border border-[#E5E3E0] bg-[#F4F4F3]/70 p-3.5">
-            <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
               <span className="text-[11px] font-black uppercase tracking-widest text-[#71717A]">{state.filha.nome}</span>
               <button type="button" onClick={removerFilha} className="text-[11px] font-bold text-[#8A8681] hover:text-red-500">
                 Remover
@@ -420,14 +422,14 @@ export function VariantEditor({
             </div>
 
             {state.filha.nome === 'Género' && (
-              <p className="mb-2.5 text-[10px] font-medium text-amber-600">
+              <p className="text-[10px] font-medium text-amber-600">
                 Normalmente o género é definido em "Para quem é este produto?" acima e não cria versões — só usa
                 isto se este produto tiver mesmo versões diferentes por género.
               </p>
             )}
 
             {podeMostrarToggleFilha && (
-              <div className="mb-3">
+              <div>
                 <p className="mb-1.5 text-[11px] font-semibold text-[#71717A]">
                   Os valores de {state.filha.nome} são iguais para todas as {state.raiz?.nome}?
                 </p>
@@ -490,15 +492,15 @@ export function VariantEditor({
           <button
             type="button"
             onClick={() => setPickerAlvo('neta')}
-            className="flex items-center justify-center gap-2 rounded-md border-2 border-dashed border-[#D4D2CF] py-3.5 text-[12px] font-bold text-[#71717A] transition-colors hover:border-[#B8B5B1] hover:text-ink active:scale-[0.99]"
+            className="flex w-fit items-center gap-1.5 text-[12px] font-bold text-[#71717A] transition-colors hover:text-ink"
           >
-            <Plus size={15} /> Adicionar mais uma característica (opcional)
+            <Plus size={13} /> Adicionar outro atributo
           </button>
         )}
 
         {state.neta && (
-          <div className="rounded-md border border-[#E5E3E0] bg-[#F4F4F3]/70 p-3.5">
-            <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
               <span className="text-[11px] font-black uppercase tracking-widest text-[#71717A]">{state.neta.nome}</span>
               <button type="button" onClick={removerNeta} className="text-[11px] font-bold text-[#8A8681] hover:text-red-500">
                 Remover
@@ -506,7 +508,7 @@ export function VariantEditor({
             </div>
 
             {podeMostrarToggleNeta && (
-              <div className="mb-3">
+              <div>
                 <p className="mb-1.5 text-[11px] font-semibold text-[#71717A]">
                   Os valores de {state.neta.nome} são iguais para todas as combinações de {state.raiz?.nome} +{' '}
                   {state.filha?.nome}?
