@@ -112,7 +112,7 @@ export function ProductRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-bold text-ink">{produto.nome}</p>
         <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-600">
-          {preco.toLocaleString('pt-MZ')} MT · {produto.categoria}
+          {preco.toLocaleString('pt-MZ')} MZN · {produto.categoria}
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
           {ativo ? (
