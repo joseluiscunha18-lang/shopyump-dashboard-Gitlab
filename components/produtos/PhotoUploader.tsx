@@ -1032,61 +1032,48 @@ export function PhotoUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             className={cn(
-              'group relative w-full overflow-hidden rounded-2xl transition-all duration-200 active:scale-[0.985]',
+              'group relative w-full overflow-hidden rounded-2xl border transition-all duration-200 active:scale-[0.985]',
               error
-                ? 'ring-2 ring-red-300 ring-offset-0'
-                : ''
+                ? 'border-red-200 bg-red-50/60'
+                : 'border-[#E5E3E0] bg-[#FAFAF9] hover:border-[#D4D2CF] hover:bg-[#F4F4F3]'
             )}
             style={{
-              background: error
-                ? 'linear-gradient(145deg, #fff5f5 0%, #fef2f2 100%)'
-                : 'linear-gradient(145deg, #1c1917 0%, #292524 50%, #1c1917 100%)',
               boxShadow: error
-                ? '0 2px 12px -2px rgba(239,68,68,0.18)'
-                : '0 4px 24px -4px rgba(0,0,0,0.38), 0 1px 3px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+                ? '0 1px 6px -1px rgba(239,68,68,0.10)'
+                : '0 1px 4px -1px rgba(28,25,23,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
             }}
           >
-            {/* Subtle grain texture overlay */}
+            {/* Brand gradient shimmer on hover */}
             {!error && (
               <span
-                className="pointer-events-none absolute inset-0 opacity-[0.03]"
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 style={{
-                  backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.75\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
-                  backgroundSize: '180px 180px',
-                }}
-              />
-            )}
-            {/* Glow pulse on hover */}
-            {!error && (
-              <span
-                className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background: 'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.07) 0%, transparent 70%)',
+                  background: 'radial-gradient(ellipse at 50% 110%, oklch(0.95 0.05 45) 0%, transparent 65%)',
                 }}
               />
             )}
 
-            <span className="relative flex flex-col items-center justify-center gap-2.5 py-9 px-6">
+            <span className="relative flex flex-col items-center justify-center gap-3 py-10 px-6">
               {/* Icon container */}
               <span
                 className={cn(
-                  'flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 group-active:scale-95',
+                  'flex h-12 w-12 items-center justify-center rounded-full border transition-transform duration-200 group-hover:scale-110 group-active:scale-95',
                   error
-                    ? 'bg-red-100'
-                    : 'bg-white/10 ring-1 ring-white/20'
+                    ? 'border-red-100 bg-red-50'
+                    : 'border-[#E5E3E0] bg-white shadow-sm'
                 )}
               >
                 <ImagePlus
                   size={20}
                   strokeWidth={1.8}
-                  className={error ? 'text-red-500' : 'text-white/90'}
+                  className={error ? 'text-red-400' : 'text-[#52525B]'}
                 />
               </span>
 
               {/* Primary action text */}
               <span className={cn(
                 'text-[15px] font-bold tracking-[-0.01em]',
-                error ? 'text-red-600' : 'text-white'
+                error ? 'text-red-600' : 'text-[#111110]'
               )}>
                 Toque para carregar imagem
               </span>
@@ -1094,7 +1081,7 @@ export function PhotoUploader({
               {/* Caption */}
               <span className={cn(
                 'text-[11.5px] font-medium',
-                error ? 'text-red-400' : 'text-white/45'
+                error ? 'text-red-400' : 'text-[#A1A1AA]'
               )}>
                 Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
               </span>
