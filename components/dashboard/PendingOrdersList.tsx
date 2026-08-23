@@ -55,7 +55,7 @@ export function PendingOrdersList({ lojaId, initialPedidos }: { lojaId: string; 
           <div className="min-w-0">
             <p className="text-[13px] font-bold text-ink truncate">{p.cliente_nome}</p>
             <p className="text-[11px] font-medium text-slate-400">
-              {p.itens.length} {p.itens.length === 1 ? 'item' : 'itens'} · {p.total.toLocaleString('pt-MZ')} MT
+              {p.itens.length} {p.itens.length === 1 ? 'item' : 'itens'} · {p.total.toLocaleString('pt-MZ')} MZN
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
