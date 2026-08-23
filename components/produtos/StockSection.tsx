@@ -94,40 +94,33 @@ export function StockSection({
           ))}
         </div>
       ) : (
-        <div>
-          {versoes.length === 0 && (
-            <p className="rounded-md bg-[#F4F4F3] px-3.5 py-3 text-center text-[11px] font-semibold text-[#8A8681]">
-              Adiciona valores em "Opções do produto" acima para gerar as versões.
-            </p>
-          )}
-          {versoes.length > 0 && (
-            <div className="divide-y divide-[#EDEBE8]">
-              {versoes.map((v, i) => (
-                <VersaoRow
-                  key={v.chave}
-                  label={v.chave}
-                  corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
-                  versao={v}
-                  controlarEstoque={controlarEstoque}
-                  controlarPeso={controlarPeso}
-                  precoBase={precoBase}
-                  pesoPadrao={pesoPadrao}
-                  fotos={fotos}
-                  onAddFoto={onAddFoto}
-                  lojaId={lojaId}
-                  imagensPorCaracteristica={imagensPorCaracteristica}
-                  onChange={(next) => {
-                    const copy = [...versoes];
-                    copy[i] = next;
-                    onVersoesChange(copy);
-                  }}
-                  onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
-                  mostrarAplicarATodas={versoes.length > 1}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        versoes.length > 0 && (
+          <div className="divide-y divide-[#EDEBE8]">
+            {versoes.map((v, i) => (
+              <VersaoRow
+                key={v.chave}
+                label={v.chave}
+                corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
+                versao={v}
+                controlarEstoque={controlarEstoque}
+                controlarPeso={controlarPeso}
+                precoBase={precoBase}
+                pesoPadrao={pesoPadrao}
+                fotos={fotos}
+                onAddFoto={onAddFoto}
+                lojaId={lojaId}
+                imagensPorCaracteristica={imagensPorCaracteristica}
+                onChange={(next) => {
+                  const copy = [...versoes];
+                  copy[i] = next;
+                  onVersoesChange(copy);
+                }}
+                onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
+                mostrarAplicarATodas={versoes.length > 1}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
@@ -154,7 +147,7 @@ function GroupThumbnail({ imagens, onClick }: { imagens: string[]; onClick: () =
         e.stopPropagation();
         onClick();
       }}
-      className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+      className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-[6px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
     >
       {imagens[0] ? (
         <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
@@ -241,7 +234,7 @@ function RaizGroup({
       {expanded && (
         <div className="mt-2 flex flex-col gap-2 pl-[19px]">
           {versoes.length === 0 && (
-            <p className="text-[11px] font-medium text-[#8A8681]">
+            <p className="text-[12px] font-normal text-[#52525B]">
               Ainda sem {filha.nome.toLowerCase()}s para "{raizValor}" — adiciona em "Opções do produto" acima.
             </p>
           )}
@@ -262,7 +255,7 @@ function RaizGroup({
                     </span>
                   </div>
                   {grupo.versoes.length === 0 ? (
-                    <p className="text-[10.5px] font-medium text-[#8A8681]">
+                    <p className="text-[11.5px] font-normal text-[#52525B]">
                       Ainda sem {neta.nome.toLowerCase()}s — adiciona em "Opções do produto" acima.
                     </p>
                   ) : (
@@ -434,7 +427,7 @@ function VersaoRow({
                 ? 'A herdar a galeria geral do produto'
                 : 'Definir imagem'
         }
-        className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+        className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-[6px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
       >
         {imagens[0] ? (
           <>
@@ -538,7 +531,7 @@ function VersaoRow({
             value={versao.estoque ?? ''}
             onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
             placeholder="0"
-            aria-label={`Estoque de ${label}`}
+            aria-label={`Stock de ${label}`}
             className="h-8 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
           />
         </div>
