@@ -141,7 +141,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     typeof produto?.estoque === 'number' ? String(produto.estoque) : ''
   );
 
-  const [controlarPeso, setControlarPeso]         = useState(true);
+  const [controlarPeso, setControlarPeso]         = useState(typeof produto?.mais_opcoes?.peso === 'number');
   const [pesoPadraoUnidade, setPesoPadraoUnidade] = useState<UnidadePeso>('kg');
   const [pesoPadraoValor, setPesoPadraoValor]     = useState(
     typeof produto?.mais_opcoes?.peso === 'number' ? String(produto.mais_opcoes.peso) : ''
