@@ -386,7 +386,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           campos já se autoexplicam, o título só ocupava espaço. ── */}
       <FormSection>
         <div className="flex flex-col gap-1.5">
-          <FieldLabel label="Nome do produto" />
+          <FieldLabel label="Nome" />
           <Input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
