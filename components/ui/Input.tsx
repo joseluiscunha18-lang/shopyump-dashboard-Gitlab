@@ -30,11 +30,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-md border border-[#E5E3E0] bg-white',
+              'w-full rounded-md border border-[#D6D3CE] bg-white',
               'px-4 py-3.5 text-[15px] font-semibold text-[#111110] outline-none',
               'placeholder:font-normal placeholder:text-[#9CA3AF]',
               'transition-all duration-150',
-              'hover:border-[#D4D2CF]',
+              'hover:border-[#C7C4BF]',
               'focus:border-[#111110] focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
               icon   ? 'pl-11 pr-4' : '',
               suffix ? 'pr-14'      : '',
@@ -76,11 +76,11 @@ export const Textarea = forwardRef<
         ref={ref}
         id={inputId}
         className={cn(
-          'w-full resize-none rounded-md border border-[#E5E3E0] bg-white',
+          'w-full resize-none rounded-md border border-[#D6D3CE] bg-white',
           'px-4 py-3.5 text-[15px] font-normal leading-relaxed text-[#111110] outline-none',
           'placeholder:font-normal placeholder:text-[#9CA3AF]',
           'transition-all duration-150',
-          'hover:border-[#D4D2CF]',
+          'hover:border-[#C7C4BF]',
           'focus:border-[#111110] focus:ring-3 focus:ring-[rgba(17,17,16,0.08)]',
           className
         )}
