@@ -134,11 +134,11 @@ export function SuggestInput({
         {valores.map((v) => (
           <span
             key={v}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white pl-2.5 pr-2 text-[12px] font-bold text-ink shadow-sm"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#F4F4F5] pl-2.5 pr-2 text-[12px] font-bold text-ink"
           >
             {colorMode && <ColorDot hex={resolverHexCor(v, coresPersonalizadas)} />}
             {v}
-            <button type="button" onClick={() => remover(v)} className="text-[#8A8681] hover:text-[#3F3F46]">
+            <button type="button" onClick={() => remover(v)} className="text-[#A1A1AA] hover:text-[#3F3F46]">
               <X size={12} />
             </button>
           </span>
@@ -162,7 +162,7 @@ export function SuggestInput({
             if (e.key === 'Escape') setOpen(false);
           }}
           placeholder={placeholder}
-          className="h-9 w-28 rounded-full bg-white px-3.5 text-[12px] font-semibold text-ink shadow-sm outline-none placeholder:text-[#8A8681] focus:ring-2 focus:ring-ink/10"
+          className="h-9 w-28 rounded-full border border-[#E5E3E0] bg-white px-3.5 text-[12px] font-semibold text-ink outline-none placeholder:text-[#8A8681] focus:border-ink focus:ring-2 focus:ring-ink/10"
         />
       </div>
 
