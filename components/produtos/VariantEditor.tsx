@@ -334,7 +334,7 @@ export function VariantEditor({
   return (
     <div>
       {!state.raiz && (
-        <p className="mb-3 pl-1 text-[12px] font-medium text-[#8A8681]">
+        <p className="mb-3 pl-1 text-[13px] font-normal leading-snug text-[#52525B]">
           Adiciona opções como cor ou tamanho se este produto tiver diferentes versões.
         </p>
       )}
@@ -377,7 +377,7 @@ export function VariantEditor({
             onClick={() => setPickerAlvo('raiz')}
             className="self-start rounded-md border border-[#D4D2CF] bg-white px-4 py-2.5 text-[13px] font-bold text-ink transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
           >
-            + Adicionar opções
+            + Adicionar variante
           </button>
         )}
 
