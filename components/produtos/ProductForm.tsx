@@ -366,10 +366,15 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     <>
     <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6 pb-28">
 
-      {/* ── 1. Imagens ── */}
-      <FormSection title="Imagens">
+      {/* ── 1. Imagens — sem cartão externo, a imagem fica logo no topo,
+          é a primeira associação que o lojista faz com o produto. Só a
+          área de upload em si tem contorno tracejado; a secção não. ── */}
+      <div className="flex flex-col gap-3">
+        <h2 className="pl-0.5 text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
+          Imagens
+        </h2>
         <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
-      </FormSection>
+      </div>
 
       {/* ── 2–4. Informações do produto: Nome, Descrição, Categoria ── */}
       <FormSection title="Informações do produto">
