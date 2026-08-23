@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { useToast } from '@/components/ui/Toast';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { Produto } from '@/types/database';
 
 export function ProductRow({
@@ -22,6 +23,7 @@ export function ProductRow({
 }) {
   const [ativo, setAtivo] = useState(produto.ativo);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const { show } = useToast();
   const router = useRouter();
@@ -60,7 +62,10 @@ export function ProductRow({
 
   function handleDelete() {
     setMenuOpen(false);
-    if (!confirm(`Remover "${produto.nome}"? Esta ação não pode ser desfeita.`)) return;
+    setConfirmDeleteOpen(true);
+  }
+
+  function confirmarDelete() {
     startTransition(async () => {
       const res = await deleteProduto(produto.id);
       if (!res.ok) show(res.error ?? 'Não foi possível remover o produto.', 'error');
@@ -174,6 +179,16 @@ export function ProductRow({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={confirmarDelete}
+        title={`Remover "${produto.nome}"?`}
+        description="Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        danger
+      />
     </div>
   );
 }
