@@ -384,7 +384,7 @@ export function VariantEditor({
         {state.raiz && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#71717A]">{state.raiz.nome}</span>
+              <span className="text-[11px] font-black tracking-wide text-[#71717A]">{state.raiz.nome}</span>
               <button type="button" onClick={removerRaiz} className="text-[11px] font-bold text-[#8A8681] hover:text-red-500">
                 Remover
               </button>
@@ -415,7 +415,7 @@ export function VariantEditor({
         {state.filha && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#71717A]">{state.filha.nome}</span>
+              <span className="text-[11px] font-black tracking-wide text-[#71717A]">{state.filha.nome}</span>
               <button type="button" onClick={removerFilha} className="text-[11px] font-bold text-[#8A8681] hover:text-red-500">
                 Remover
               </button>
@@ -467,7 +467,7 @@ export function VariantEditor({
               <div className="flex flex-col gap-2.5">
                 {(state.raiz?.valores ?? []).map((raizValor) => (
                   <div key={raizValor}>
-                    <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#8A8681]">
+                    <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black tracking-wide text-[#8A8681]">
                       {raizECor && <ColorDot hex={resolverHexCor(raizValor, state.raiz?.cores)} />}
                       {raizValor}
                     </p>
@@ -501,7 +501,7 @@ export function VariantEditor({
         {state.neta && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#71717A]">{state.neta.nome}</span>
+              <span className="text-[11px] font-black tracking-wide text-[#71717A]">{state.neta.nome}</span>
               <button type="button" onClick={removerNeta} className="text-[11px] font-bold text-[#8A8681] hover:text-red-500">
                 Remover
               </button>
@@ -543,7 +543,7 @@ export function VariantEditor({
               <div className="flex flex-col gap-2.5">
                 {combosRaizFilha.map((combo) => (
                   <div key={combo.chave}>
-                    <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#8A8681]">
+                    <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black tracking-wide text-[#8A8681]">
                       {raizECor && <ColorDot hex={resolverHexCor(combo.raizValor, state.raiz?.cores)} />}
                       {filhaECor && <ColorDot hex={resolverHexCor(combo.filhaValor, state.filha?.cores)} />}
                       {combo.raizValor} · {combo.filhaValor}
