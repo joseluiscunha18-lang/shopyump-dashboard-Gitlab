@@ -58,7 +58,7 @@ function FormSection({
               </h2>
             )}
             {description && (
-              <p className="text-[12px] font-medium text-[#8A8681]">{description}</p>
+              <p className="text-[13px] font-normal text-[#52525B]">{description}</p>
             )}
           </div>
           {right && <div className="shrink-0 text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
@@ -499,7 +499,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       <FormSection title="Variantes">
         <VariantEditor state={variantes} onChange={setVariantes} />
 
-        {hasVariants && (
+        {/* Só aparece quando já existem valores reais (ex: "Vermelho" em
+        "COR") — com a característica criada mas ainda vazia, "versoes"
+        continua [] e esta secção fica escondida para não mostrar uma
+        caixa vazia sem préço/estoque para preencher. */}
+        {variantes.versoes.length > 0 && (
           <>
             <div className="h-px bg-[#F0EEEB]" />
             <StockSection
