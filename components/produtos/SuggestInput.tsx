@@ -175,7 +175,7 @@ export function SuggestInput({
           )}
         >
           {!colorMode && sugestoes.length === 0 && !draft.trim() && biblioteca.length === 0 && (
-            <p className="px-2 py-2 text-[11px] font-medium text-[#8A8681]">Começa a escrever para criar um valor.</p>
+            <p className="px-2 py-2 text-[12px] font-normal text-[#52525B]">Começa a escrever para criar um valor.</p>
           )}
 
           {colorMode ? (
