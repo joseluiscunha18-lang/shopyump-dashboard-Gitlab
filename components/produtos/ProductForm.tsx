@@ -484,7 +484,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
               className="text-[17px] font-extrabold tracking-tight pr-14"
             />
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
-              MT
+              MZN
             </span>
           </div>
         </div>
@@ -502,7 +502,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
               className="pr-14"
             />
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
-              MT
+              MZN
             </span>
           </div>
         </div>
