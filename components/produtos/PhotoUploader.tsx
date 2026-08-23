@@ -775,10 +775,14 @@ export function PhotoUploader({
   photos,
   onChange,
   lojaId,
+  error,
 }: {
   photos: string[];
   onChange: (photos: string[]) => void;
   lojaId?: string;
+  /** Estado de erro (ex: publicar sem nenhuma imagem) — só afeta a área de
+   *  upload vazia; a grelha com fotos já resolvida não precisa de aviso. */
+  error?: boolean;
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null);
@@ -1023,24 +1027,41 @@ export function PhotoUploader({
     <div data-loja-id={lojaId}>
       {/* Container de upload — só quando ainda não há fotos */}
       {photos.length === 0 && (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="group flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-4 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
-            <ImagePlus size={15} strokeWidth={2} className="text-[#52525B]" />
-          </span>
-          <span className="text-[12.5px] font-semibold text-[#3F3F46]">
-            Adicione imagens do produto
-          </span>
-          <span className="text-[10.5px] font-medium text-[#A1A1AA]">
-            Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
-          </span>
-          <span className="mt-1 rounded-md border border-[#D6D3D1] bg-white px-3 py-1 text-[11.5px] font-bold text-[#3F3F46]">
-            Carregar imagens
-          </span>
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              'group flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed py-4 transition-all duration-150 active:scale-[0.99]',
+              error
+                ? 'border-red-300 bg-red-50/40 text-red-500 hover:border-red-400 hover:bg-red-50'
+                : 'border-[#B8B5B1] bg-[#FAFAF9] text-[#71717A] hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B]'
+            )}
+          >
+            <span
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 group-hover:scale-105',
+                error ? 'bg-red-100' : 'bg-[#E7E5E4]'
+              )}
+            >
+              <ImagePlus size={15} strokeWidth={2} className={error ? 'text-red-500' : 'text-[#52525B]'} />
+            </span>
+            <span className={cn('text-[12.5px] font-semibold', error ? 'text-red-600' : 'text-[#3F3F46]')}>
+              Adicione imagens do produto
+            </span>
+            <span className={cn('text-[10.5px] font-medium', error ? 'text-red-400' : 'text-[#A1A1AA]')}>
+              Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
+            </span>
+            <span className="mt-1 rounded-md border border-[#D6D3D1] bg-white px-3 py-1 text-[11.5px] font-bold text-[#3F3F46]">
+              Carregar imagens
+            </span>
+          </button>
+          {error && (
+            <p className="mt-1.5 pl-0.5 text-[11.5px] font-bold text-red-500">
+              Adicione pelo menos uma imagem do produto.
+            </p>
+          )}
+        </>
       )}
 
       {/* Grelha de imagens */}
