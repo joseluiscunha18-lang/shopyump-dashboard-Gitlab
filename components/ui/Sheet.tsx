@@ -152,7 +152,7 @@ export function Sheet({
           {(title || subtitle) && (
             <div className="px-6 pb-2 pt-1">
               {title && <h3 className="text-[16px] font-black tracking-tight text-ink">{title}</h3>}
-              {subtitle && <p className="mt-0.5 text-[12px] font-medium text-[#8A8681]">{subtitle}</p>}
+              {subtitle && <p className="mt-0.5 text-[13px] font-normal text-[#52525B]">{subtitle}</p>}
             </div>
           )}
           {headerExtra && <div className="px-6 pb-3">{headerExtra}</div>}
