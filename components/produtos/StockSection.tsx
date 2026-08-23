@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronDown, ImagePlus, MoreVertical, RotateCcw, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { VariantImagePicker } from '@/components/produtos/VariantImagePicker';
 import { ColorDot } from '@/components/produtos/SuggestInput';
 import { agruparPorFilha, agruparPorRaiz, aplicarPesoATodas, imagensParaVersao, totalEstoque } from '@/lib/variantes';
@@ -360,6 +361,7 @@ function VersaoRow({
 }) {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmRemoverOpen, setConfirmRemoverOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Unidade de exibição do campo de peso — só afeta o que aparece no
@@ -403,7 +405,10 @@ function VersaoRow({
 
   function handleRemover() {
     setMenuOpen(false);
-    if (!confirm(`Remover a versão "${label}"? Fica escondida na loja — dá para reativar depois.`)) return;
+    setConfirmRemoverOpen(true);
+  }
+
+  function confirmarRemover() {
     onChange({ ...versao, ativa: false });
   }
 
@@ -412,8 +417,17 @@ function VersaoRow({
     onChange({ ...versao, ativa: true });
   }
 
+  // Só a miniatura e os campos de valor (preço/peso/estoque) esmaecem
+  // quando a versão está inativa. O badge "Indisponível" e o menu "⋮"
+  // (com o dropdown de ações) ficam sempre fora desta classe: `opacity`
+  // aplicada a um elemento afeta sempre todos os seus descendentes em
+  // conjunto — não dava para "devolver" opacidade total só ao dropdown
+  // com opacity-100 nele, por isso cada peça que deve continuar 100%
+  // legível recebe a classe individualmente, em vez de um wrapper único.
+  const esmaecidaQuandoInativa = cn('transition-opacity', !ativa && 'opacity-50');
+
   return (
-    <div className={cn('flex flex-wrap items-center gap-x-2 gap-y-1.5 py-2.5 transition-opacity', !ativa && 'opacity-50')}>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 py-2.5">
       {/* Miniatura de imagem — sempre visível, clicar abre o editor */}
       <button
         type="button"
@@ -427,7 +441,10 @@ function VersaoRow({
                 ? 'A herdar a galeria geral do produto'
                 : 'Definir imagem'
         }
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+        className={cn(
+          'relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90',
+          esmaecidaQuandoInativa
+        )}
       >
         {imagens[0] ? (
           <>
@@ -443,19 +460,26 @@ function VersaoRow({
         )}
       </button>
 
-      {/* Nome — largura flexível, mas nunca menor que ~64px para não colidir com os campos ao lado. */}
+      {/* Nome — largura flexível, mas nunca menor que ~64px para não colidir com os campos ao lado.
+      Só o nome (e a bolinha de cor) esmaecem quando inativa; o badge
+      "Indisponível" fica sempre a 100% de opacidade, com cores próprias
+      de alto contraste (âmbar), em vez de herdar o cinza apagado do
+      texto ao lado — senão fica ilegível exatamente no estado em que
+      mais precisa de chamar atenção. */}
       <div className="flex min-w-[64px] flex-1 items-center gap-1.5">
-        {corHex && <ColorDot hex={corHex} />}
-        <span className="truncate text-[13px] font-bold text-ink">{label}</span>
+        <span className={cn('flex min-w-0 items-center gap-1.5', esmaecidaQuandoInativa)}>
+          {corHex && <ColorDot hex={corHex} />}
+          <span className="truncate text-[13px] font-bold text-ink">{label}</span>
+        </span>
         {!ativa && (
-          <span className="shrink-0 rounded-full bg-[#E5E3E0] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#52525B]">
+          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-800 ring-1 ring-inset ring-amber-200">
             Indisponível
           </span>
         )}
       </div>
 
       {/* Preço */}
-      <div className="flex w-[92px] shrink-0 items-center gap-1">
+      <div className={cn('flex w-[92px] shrink-0 items-center gap-1', esmaecidaQuandoInativa)}>
         <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">MT</span>
         <input
           type="number"
@@ -473,7 +497,7 @@ function VersaoRow({
       ("kg", "g", "lb", "oz") é clicável e abre um seletor; o valor
       continua sempre guardado em kg, só a exibição muda de unidade. */}
       {controlarPeso && (
-        <div className="flex w-[84px] shrink-0 items-center gap-1">
+        <div className={cn('flex w-[84px] shrink-0 items-center gap-1', esmaecidaQuandoInativa)}>
           <div ref={unidadeRef} className="relative shrink-0">
             <button
               type="button"
@@ -522,7 +546,7 @@ function VersaoRow({
 
       {/* Estoque — visível quando "Controlar estoque" está ligado */}
       {controlarEstoque && (
-        <div className="flex w-[64px] shrink-0 items-center gap-1">
+        <div className={cn('flex w-[64px] shrink-0 items-center gap-1', esmaecidaQuandoInativa)}>
           <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">un.</span>
           <input
             type="number"
@@ -624,6 +648,16 @@ function VersaoRow({
           onSave={(urls) => onChange({ ...versao, imagens: urls })}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmRemoverOpen}
+        onClose={() => setConfirmRemoverOpen(false)}
+        onConfirm={confirmarRemover}
+        title={`Remover a versão "${label}"?`}
+        description="Fica escondida na loja — dá para reativar depois."
+        confirmLabel="Remover"
+        danger
+      />
     </div>
   );
 }
