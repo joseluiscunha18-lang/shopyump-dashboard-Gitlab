@@ -1049,13 +1049,13 @@ export function PhotoUploader({
               {/* Text stack */}
               <span className="flex flex-col items-start gap-1">
                 <span className={cn(
-                  'text-[14.5px] font-bold leading-tight',
+                  'text-[13px] font-bold leading-tight',
                   error ? 'text-red-600' : 'text-[#3F3F46]'
                 )}>
                   Toque para carregar imagem
                 </span>
                 <span className={cn(
-                  'text-[12px] font-medium',
+                  'text-[11px] font-medium',
                   error ? 'text-red-400' : 'text-[#A1A1AA]'
                 )}>
                   Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
