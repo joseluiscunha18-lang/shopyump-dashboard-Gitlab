@@ -51,7 +51,7 @@ export function PesoPadraoInput({
           value={valor}
           onChange={(e) => onChangeValor(e.target.value)}
           placeholder="0"
-          className="h-12 min-w-0 flex-1 rounded-md border border-[#D4D2CF] bg-white px-4 text-[15px] font-semibold text-[#111110] outline-none placeholder:text-[#71717A] transition-all duration-150 focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
+          className="h-12 min-w-0 flex-1 rounded-md border border-[#C7C4BF] bg-white px-4 text-[15px] font-semibold text-[#111110] outline-none placeholder:text-[#71717A] transition-all duration-150 focus:border-[#1C1917] focus:ring-3 focus:ring-[rgba(28,25,23,0.06)]"
         />
 
         {/* Unidade */}
@@ -60,7 +60,7 @@ export function PesoPadraoInput({
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Escolher unidade de peso"
-            className="flex h-12 items-center gap-1.5 rounded-md border border-[#D4D2CF] bg-white px-4 text-[13px] font-bold text-[#111110] transition-all duration-150 hover:border-[#B8B5B1]"
+            className="flex h-12 items-center gap-1.5 rounded-md border border-[#C7C4BF] bg-white px-4 text-[13px] font-bold text-[#111110] transition-all duration-150 hover:border-[#A9A6A1]"
           >
             {unidade}
             <ChevronDown
