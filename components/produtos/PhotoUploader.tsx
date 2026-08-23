@@ -1038,24 +1038,24 @@ export function PhotoUploader({
                 : 'border-[#C8C5C1] bg-white hover:border-[#A8A5A1] hover:bg-[#FAFAF9]'
             )}
           >
-            <span className="relative flex flex-row items-center justify-center gap-3 py-5 px-5">
+            <span className="relative flex flex-row items-center justify-center gap-4 py-7 px-5">
               {/* Icon */}
               <ImagePlus
-                size={18}
+                size={22}
                 strokeWidth={1.75}
                 className={error ? 'text-red-400' : 'text-[#71717A]'}
               />
 
               {/* Text stack */}
-              <span className="flex flex-col items-start gap-0.5">
+              <span className="flex flex-col items-start gap-1">
                 <span className={cn(
-                  'text-[13.5px] font-bold leading-tight',
+                  'text-[14.5px] font-bold leading-tight',
                   error ? 'text-red-600' : 'text-[#3F3F46]'
                 )}>
                   Toque para carregar imagem
                 </span>
                 <span className={cn(
-                  'text-[11.5px] font-medium',
+                  'text-[12px] font-medium',
                   error ? 'text-red-400' : 'text-[#A1A1AA]'
                 )}>
                   Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
