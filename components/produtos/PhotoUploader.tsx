@@ -111,7 +111,7 @@ function ImagePreviewWithBg({
 
   return (
     <div
-      className="relative w-full rounded-[32px] overflow-hidden bg-[#F8FAFC] border border-gray-50 shadow-inner"
+      className="relative w-full rounded-md overflow-hidden bg-[#FAFAF9] border border-[#EDEBE8] shadow-inner"
       style={{ paddingBottom: '100%' }}
     >
       {done && (
@@ -119,7 +119,7 @@ function ImagePreviewWithBg({
           className="absolute inset-0 z-0"
           style={{
             backgroundImage:
-              'repeating-conic-gradient(#e2e8f0 0% 25%, white 0% 50%)',
+              'repeating-conic-gradient(#E5E3E0 0% 25%, white 0% 50%)',
             backgroundSize: '16px 16px',
           }}
         />
@@ -337,7 +337,7 @@ function Cropper({
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden rounded-2xl bg-black/80 mx-auto touch-none select-none"
+      className="relative overflow-hidden rounded-md bg-black/80 mx-auto touch-none select-none"
       style={{ width: CONTAINER, height: CONTAINER }}
     >
       {/* Imagem fixa — nunca se move */}
@@ -566,7 +566,7 @@ function CropAndEditSheet({
           ) : bgDone ? (
             // Depois de remover o fundo: sem crop box, imagem a 100% do quadrado 1:1.
             <div
-              className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm mx-auto"
+              className="relative overflow-hidden rounded-md bg-[#F4F4F3] shadow-sm mx-auto"
               style={{ width: 315, height: 315 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -600,12 +600,12 @@ function CropAndEditSheet({
             type="button"
             onClick={onBgRemove}
             disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-[#D4D2CF] bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
           >
             {busy ? (
-              <Loader2 size={15} className="animate-spin text-slate-400" />
+              <Loader2 size={15} className="animate-spin text-[#8A8681]" />
             ) : (
-              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[#8A8681]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
             )}
@@ -617,9 +617,9 @@ function CropAndEditSheet({
           <button
             type="button"
             onClick={onBgUndo}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-[#D4D2CF] bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform"
           >
-            <RotateCcw size={15} className="text-slate-400" />
+            <RotateCcw size={15} className="text-[#8A8681]" />
             Desfazer remoção
           </button>
         )}
@@ -629,7 +629,7 @@ function CropAndEditSheet({
             <button
               type="button"
               onClick={onBgRemove}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 border border-red-100 py-3.5 text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-red-50 border border-red-100 py-3.5 text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
             >
               <RefreshCw size={15} />
               Tentar novamente
@@ -645,7 +645,7 @@ function CropAndEditSheet({
           type="button"
           disabled={busy}
           onClick={handleConfirm}
-          className="w-full py-4 rounded-2xl bg-[#0F172A] text-white text-[14px] font-bold shadow-lg active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
+          className="w-full py-4 rounded-md bg-[#111110] text-white text-[14px] font-bold shadow-[0_10px_24px_-10px_rgba(28,25,23,0.5)] hover:bg-[#27272A] active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
         >
           Usar imagem
         </button>
@@ -697,14 +697,14 @@ function ImageActionSheet({
           />
         </button>
 
-        <div className="h-px bg-slate-100 my-1" />
+        <div className="h-px bg-[#F4F4F3] my-1" />
 
         <button
           type="button"
           onClick={onEdit}
-          className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
+          className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
         >
-          <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[#8A8681] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
           </svg>
           Ajustar enquadramento
@@ -714,9 +714,9 @@ function ImageActionSheet({
           <button
             type="button"
             onClick={onBgRemove}
-            className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
+            className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
           >
-            <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[#8A8681] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
             Remover fundo
@@ -727,9 +727,9 @@ function ImageActionSheet({
           <button
             type="button"
             onClick={onBgUndo}
-            className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
+            className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
           >
-            <RotateCcw size={16} className="text-slate-400" />
+            <RotateCcw size={16} className="text-[#8A8681]" />
             Desfazer remoção
           </button>
         )}
@@ -738,7 +738,7 @@ function ImageActionSheet({
           <button
             type="button"
             onClick={onBgRemove}
-            className="flex items-center gap-3 rounded-2xl bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
+            className="flex items-center gap-3 rounded-md bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
           >
             <RefreshCw size={16} />
             Tentar novamente
@@ -749,9 +749,9 @@ function ImageActionSheet({
           <button
             type="button"
             onClick={onMakeCover}
-            className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
+            className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
           >
-            <Star size={16} className="text-slate-400" />
+            <Star size={16} className="text-[#8A8681]" />
             Tornar imagem de capa
           </button>
         )}
@@ -759,7 +759,7 @@ function ImageActionSheet({
         <button
           type="button"
           onClick={onRemove}
-          className="flex items-center gap-3 rounded-2xl bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
+          className="flex items-center gap-3 rounded-md bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
         >
           <Trash2 size={16} />
           Remover imagem
@@ -1033,7 +1033,7 @@ export function PhotoUploader({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-[16px] border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-6 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
+          className="group flex w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-[#B8B5B1] bg-[#FAFAF9] py-6 text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:bg-[#F4F4F3] hover:text-[#52525B] active:scale-[0.99]"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E7E5E4] transition-transform duration-150 group-hover:scale-105">
             <ImagePlus size={17} strokeWidth={2} className="text-[#52525B]" />
@@ -1044,7 +1044,7 @@ export function PhotoUploader({
           <span className="text-[10.5px] font-medium text-[#A1A1AA]">
             Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
           </span>
-          <span className="mt-1 rounded-[8px] border border-[#D6D3D1] bg-white px-3 py-1.5 text-[11.5px] font-bold text-[#3F3F46]">
+          <span className="mt-1 rounded-md border border-[#D6D3D1] bg-white px-3 py-1.5 text-[11.5px] font-bold text-[#3F3F46]">
             Carregar imagens
           </span>
         </button>
@@ -1063,7 +1063,7 @@ export function PhotoUploader({
                 onPointerMove={onPointerMove}
                 onPointerUp={() => onPointerUp(i)}
                 className={cn(
-                  'relative aspect-square touch-none select-none overflow-hidden rounded-[13px] bg-[#F4F4F3] transition-all duration-150',
+                  'relative aspect-square touch-none select-none overflow-hidden rounded-md bg-[#F4F4F3] transition-all duration-150',
                   dragging ? 'opacity-25 scale-95 ring-2 ring-[rgba(28,25,23,0.2)]' : 'opacity-100 scale-100',
                 )}
               >
@@ -1088,7 +1088,7 @@ export function PhotoUploader({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[13px] border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
+              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-md border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
             >
               <Plus size={20} strokeWidth={2} />
               <span className="text-[9px] font-bold uppercase tracking-[0.08em]">Adicionar</span>
@@ -1100,7 +1100,7 @@ export function PhotoUploader({
       {/* Float ghost durante drag */}
       {dragIndex !== null && floatPos && photos[dragIndex] && (
         <div
-          className="pointer-events-none fixed z-[200] h-16 w-16 overflow-hidden rounded-[13px] shadow-2xl ring-2 ring-[rgba(28,25,23,0.2)]"
+          className="pointer-events-none fixed z-[200] h-16 w-16 overflow-hidden rounded-md shadow-2xl ring-2 ring-[rgba(28,25,23,0.2)]"
           style={{
             left: floatPos.x - 32,
             top: floatPos.y - 32,
