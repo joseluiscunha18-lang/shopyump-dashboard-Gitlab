@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2 } from 'lucide-react';
+import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2, ImageOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { useToast } from '@/components/ui/Toast';
@@ -94,8 +94,12 @@ export function ProductRow({
       )}
 
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
-        {produto.fotos?.[0] && (
+        {produto.fotos?.[0] ? (
           <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <ImageOff size={20} strokeWidth={1.5} className="text-slate-300" />
+          </div>
         )}
         <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.14)]" />
       </div>
@@ -123,17 +127,17 @@ export function ProductRow({
           onClick={() => setMenuOpen((v) => !v)}
           disabled={pending}
           aria-label="Ações do produto"
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
         >
           <MoreVertical size={17} strokeWidth={2.3} />
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-2xl border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+          <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
             <Link
               href={`/produtos/${produto.id}`}
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              className="flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
               <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />
               Editar
@@ -141,7 +145,7 @@ export function ProductRow({
             <button
               onClick={handleDuplicate}
               disabled={pending}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
               <Copy size={15} strokeWidth={2.3} className="text-slate-500" />
               Duplicar
@@ -149,7 +153,7 @@ export function ProductRow({
             <button
               onClick={handleToggleAtivo}
               disabled={pending}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
             >
               {ativo ? (
                 <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
@@ -162,7 +166,7 @@ export function ProductRow({
             <button
               onClick={handleDelete}
               disabled={pending}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
             >
               <Trash2 size={15} strokeWidth={2.3} />
               Excluir
