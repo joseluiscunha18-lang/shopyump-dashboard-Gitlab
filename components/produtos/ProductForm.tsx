@@ -29,26 +29,48 @@ import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
 /* ── Primitivos de layout ──────────────────────────────────────────────────── */
 
-function SectionHeader({
+/**
+ * Superfície de secção — o único nível de "cartão" da página. Agrupa vários
+ * campos relacionados (ex: Nome + Descrição + Categoria) numa única
+ * superfície branca com borda extremamente discreta. Os campos lá dentro
+ * nunca ganham a sua própria caixa — só um título e o espaçamento vertical
+ * fazem a hierarquia dentro da secção.
+ */
+function FormSection({
   title,
+  description,
   right,
+  children,
 }: {
   title: string;
+  description?: string;
   right?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <h3 className="text-[11px] font-black uppercase tracking-[0.07em] text-[#52525B]">
-        {title}
-      </h3>
-      {right && <div className="text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
-    </div>
+    <section className="rounded-md border border-[#EDEBE8] bg-white p-5 sm:p-6">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-[12px] font-black uppercase tracking-[0.07em] text-[#111110]">
+            {title}
+          </h2>
+          {description && (
+            <p className="text-[12px] font-medium text-[#8A8681]">{description}</p>
+          )}
+        </div>
+        {right && <div className="shrink-0 text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
+      </div>
+      <div className="flex flex-col gap-5">{children}</div>
+    </section>
   );
 }
 
-/* ── Bloco de controlo (Estoque / Peso) ────────────────────────────────────── */
+/* ── Linha de controlo leve (Estoque / Peso) ───────────────────────────────
+   Vive dentro de uma FormSection — por isso nunca tem borda ou fundo
+   próprios; é só um título + descrição + switch, com o campo condicional
+   a aparecer por baixo. A secção-mãe já define os limites do grupo. */
 
-function ConfigBlock({
+function ConfigRow({
   title,
   description,
   checked,
@@ -64,14 +86,7 @@ function ConfigBlock({
   children?: React.ReactNode;
 }) {
   return (
-    <div
-      className={[
-        'rounded-md border px-4 py-4 flex flex-col gap-4 transition-colors duration-150',
-        checked
-          ? 'border-[#D4D2CF] bg-white'
-          : 'border-[#E5E3E0] bg-[#FAFAF9]',
-      ].join(' ')}
-    >
+    <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[14px] font-bold text-[#111110]">{title}</span>
@@ -349,15 +364,15 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-10 pb-28">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6 pb-28">
 
       {/* ── 1. Imagens ── */}
-      <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
+      <FormSection title="Imagens">
+        <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} />
+      </FormSection>
 
-      {/* ── 2–4. Informação básica: Nome, Descrição, Categoria ──
-          Mesmo nível hierárquico — sem divisórias nem cartões entre si,
-          só ritmo vertical. Cada campo já tem o seu próprio label. */}
-      <div className="flex flex-col gap-6">
+      {/* ── 2–4. Informações do produto: Nome, Descrição, Categoria ── */}
+      <FormSection title="Informações do produto">
         <div className="flex flex-col gap-1.5">
           <FieldLabel label="Nome do produto" />
           <Input
@@ -379,12 +394,10 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
         </div>
 
         <CategoryPicker value={categoria} onChange={setCategoria} />
-      </div>
+      </FormSection>
 
       {/* ── 5. Preço ── */}
-      <div className="flex flex-col gap-4">
-        <SectionHeader title="Preço" />
-
+      <FormSection title="Preço">
         {/* Preço principal — destaque visual */}
         <div className="flex flex-col gap-1.5">
           <FieldLabel label="Preço base" />
@@ -421,12 +434,13 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
             </span>
           </div>
         </div>
-      </div>
+      </FormSection>
 
-      {/* ── 6. Estoque ── */}
-      <div className="flex flex-col gap-3">
-        <SectionHeader title="Estoque" />
-        <ConfigBlock
+      {/* ── 6–7. Inventário: Estoque + Peso — duas configurações relacionadas,
+          na mesma superfície. Uma divisória subtil entre as duas ajuda aqui
+          porque são dois interruptores distintos a partilhar um cartão. */}
+      <FormSection title="Inventário">
+        <ConfigRow
           title="Controlar estoque"
           description={
             controlarEstoque
@@ -449,16 +463,14 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
           )}
           {controlarEstoque && hasVariants && (
             <p className="text-[12px] font-medium text-[#71717A]">
-              Define o estoque de cada combinação em &ldquo;Opções do produto&rdquo;.
+              Define o estoque de cada combinação em &ldquo;Variações&rdquo;.
             </p>
           )}
-        </ConfigBlock>
-      </div>
+        </ConfigRow>
 
-      {/* ── 7. Peso ── */}
-      <div className="flex flex-col gap-3">
-        <SectionHeader title="Peso" />
-        <ConfigBlock
+        <div className="h-px bg-[#F0EEEB]" />
+
+        <ConfigRow
           title="Controlar peso"
           description={
             controlarPeso
@@ -477,55 +489,56 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
               onChangeUnidade={setPesoPadraoUnidade}
             />
           )}
-        </ConfigBlock>
-      </div>
+        </ConfigRow>
+      </FormSection>
 
-      {/* ── 8. Opções do produto ── */}
-      <div className="flex flex-col gap-3">
-        <SectionHeader title="Opções do produto" />
+      {/* ── 8–9. Variações: Opções do produto + Versões geradas ── */}
+      <FormSection title="Variações" description="Opcional — só se este produto tiver mais de uma versão.">
         <VariantEditor state={variantes} onChange={setVariantes} />
-      </div>
 
-      {/* ── 9. Versões / Estoque por combinação ── */}
-      {hasVariants && (
-        <div className="flex flex-col gap-3">
-          <SectionHeader
-            title="Versões disponíveis"
-            right={
-              controlarEstoque
-                ? `${totalEstoque(variantes.versoes)} unidades`
-                : undefined
-            }
-          />
-          <StockSection
-            raiz={variantes.raiz}
-            filha={variantes.filha}
-            neta={variantes.neta}
-            versoes={variantes.versoes}
-            onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
-            controlarEstoque={controlarEstoque}
-            controlarPeso={controlarPeso}
-            precoBase={Number(preco) || 0}
-            pesoPadrao={pesoPadraoKg}
-            fotos={fotos}
-            onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
-            lojaId={lojaId}
-            imagensPorCaracteristica={variantes.imagensPorCaracteristica}
-            onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
-              setVariantes((v) => ({
-                ...v,
-                imagensPorCaracteristica: {
-                  ...(v.imagensPorCaracteristica ?? {}),
-                  [nomeCaracteristica]: {
-                    ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}),
-                    [valor]: urls,
-                  },
-                },
-              }))
-            }
-          />
-        </div>
-      )}
+        {hasVariants && (
+          <>
+            <div className="h-px bg-[#F0EEEB]" />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between pl-1">
+                <h3 className="text-[13px] font-black text-ink">Versões disponíveis</h3>
+                {controlarEstoque && (
+                  <span className="text-[11px] font-bold text-[#8A8681]">
+                    {totalEstoque(variantes.versoes)} unidades
+                  </span>
+                )}
+              </div>
+              <StockSection
+                raiz={variantes.raiz}
+                filha={variantes.filha}
+                neta={variantes.neta}
+                versoes={variantes.versoes}
+                onVersoesChange={(versoes) => setVariantes((v) => ({ ...v, versoes }))}
+                controlarEstoque={controlarEstoque}
+                controlarPeso={controlarPeso}
+                precoBase={Number(preco) || 0}
+                pesoPadrao={pesoPadraoKg}
+                fotos={fotos}
+                onAddFoto={(url) => setFotos((f) => (f.includes(url) ? f : [...f, url]))}
+                lojaId={lojaId}
+                imagensPorCaracteristica={variantes.imagensPorCaracteristica}
+                onChangeImagensCaracteristica={(nomeCaracteristica, valor, urls) =>
+                  setVariantes((v) => ({
+                    ...v,
+                    imagensPorCaracteristica: {
+                      ...(v.imagensPorCaracteristica ?? {}),
+                      [nomeCaracteristica]: {
+                        ...(v.imagensPorCaracteristica?.[nomeCaracteristica] ?? {}),
+                        [valor]: urls,
+                      },
+                    },
+                  }))
+                }
+              />
+            </div>
+          </>
+        )}
+      </FormSection>
 
       {/* ── 10. Mais opções ── */}
       <MoreOptions value={maisOpcoes} onChange={setMaisOpcoes} />
