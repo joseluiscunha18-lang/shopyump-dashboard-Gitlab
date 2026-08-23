@@ -1032,30 +1032,30 @@ export function PhotoUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             className={cn(
-              'group relative w-full overflow-hidden rounded-xl border transition-all duration-150 active:scale-[0.985]',
+              'group relative w-full overflow-hidden rounded-xl border border-dashed transition-all duration-150 active:scale-[0.985]',
               error
                 ? 'border-red-200 bg-red-50/60'
-                : 'border-[#EDEBE8] bg-white hover:border-[#D4D2CF] hover:bg-[#FAFAF9]'
+                : 'border-[#C8C5C1] bg-white hover:border-[#A8A5A1] hover:bg-[#FAFAF9]'
             )}
           >
-            <span className="relative flex flex-row items-center justify-center gap-3 py-4 px-5">
+            <span className="relative flex flex-row items-center justify-center gap-3 py-5 px-5">
               {/* Icon */}
               <ImagePlus
-                size={16}
-                strokeWidth={2}
+                size={18}
+                strokeWidth={1.75}
                 className={error ? 'text-red-400' : 'text-[#71717A]'}
               />
 
               {/* Text stack */}
               <span className="flex flex-col items-start gap-0.5">
                 <span className={cn(
-                  'text-[13px] font-bold leading-tight',
+                  'text-[13.5px] font-bold leading-tight',
                   error ? 'text-red-600' : 'text-[#3F3F46]'
                 )}>
                   Toque para carregar imagem
                 </span>
                 <span className={cn(
-                  'text-[11px] font-medium',
+                  'text-[11.5px] font-medium',
                   error ? 'text-red-400' : 'text-[#A1A1AA]'
                 )}>
                   Até {MAX_FOTOS} imagens · JPG, PNG ou WEBP
