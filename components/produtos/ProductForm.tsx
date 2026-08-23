@@ -447,7 +447,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
             ref={nomeInputRef}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Ex: Camisola de linho bege"
+            placeholder="Camisola de linho bege"
             error={showErrors && !nomeValido ? 'Campo obrigatório' : undefined}
           />
         </div>
