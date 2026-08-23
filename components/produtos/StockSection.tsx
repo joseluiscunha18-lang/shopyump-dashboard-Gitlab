@@ -61,14 +61,14 @@ export function StockSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between pl-1">
-        <h3 className="text-[13px] font-black text-ink">Versões disponíveis</h3>
+        <h3 className="text-[13px] font-black text-ink">Preços e stock por variante</h3>
         {controlarEstoque && (
           <span className="text-[11px] font-bold text-[#8A8681]">{totalEstoque(versoes)} unidades no total</span>
         )}
       </div>
 
       {arvore ? (
-        <div className="flex flex-col gap-2">
+        <div className="divide-y divide-[#EDEBE8]">
           {arvore.map((grupo) => (
             <RaizGroup
               key={grupo.raizValor}
@@ -94,35 +94,39 @@ export function StockSection({
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div>
           {versoes.length === 0 && (
             <p className="rounded-md bg-[#F4F4F3] px-3.5 py-3 text-center text-[11px] font-semibold text-[#8A8681]">
               Adiciona valores em "Opções do produto" acima para gerar as versões.
             </p>
           )}
-          {versoes.map((v, i) => (
-            <VersaoRow
-              key={v.chave}
-              label={v.chave}
-              corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
-              versao={v}
-              controlarEstoque={controlarEstoque}
-              controlarPeso={controlarPeso}
-              precoBase={precoBase}
-              pesoPadrao={pesoPadrao}
-              fotos={fotos}
-              onAddFoto={onAddFoto}
-              lojaId={lojaId}
-              imagensPorCaracteristica={imagensPorCaracteristica}
-              onChange={(next) => {
-                const copy = [...versoes];
-                copy[i] = next;
-                onVersoesChange(copy);
-              }}
-              onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
-              mostrarAplicarATodas={versoes.length > 1}
-            />
-          ))}
+          {versoes.length > 0 && (
+            <div className="divide-y divide-[#EDEBE8]">
+              {versoes.map((v, i) => (
+                <VersaoRow
+                  key={v.chave}
+                  label={v.chave}
+                  corHex={(raiz?.nome === 'Cor' || filha?.nome === 'Cor') ? resolverHexCor(v.chave, raiz?.cores ?? filha?.cores) : undefined}
+                  versao={v}
+                  controlarEstoque={controlarEstoque}
+                  controlarPeso={controlarPeso}
+                  precoBase={precoBase}
+                  pesoPadrao={pesoPadrao}
+                  fotos={fotos}
+                  onAddFoto={onAddFoto}
+                  lojaId={lojaId}
+                  imagensPorCaracteristica={imagensPorCaracteristica}
+                  onChange={(next) => {
+                    const copy = [...versoes];
+                    copy[i] = next;
+                    onVersoesChange(copy);
+                  }}
+                  onAplicarPesoATodas={(peso) => onVersoesChange(aplicarPesoATodas(versoes, peso))}
+                  mostrarAplicarATodas={versoes.length > 1}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -216,12 +220,12 @@ function RaizGroup({
   const imagensExibidas = imagensDoGrupo.length > 0 ? imagensDoGrupo : fotos;
 
   return (
-    <div className="rounded-md bg-[#F4F4F3]/70 px-3.5 py-2.5">
+    <div className="py-2.5">
       <div className="flex w-full items-center justify-between gap-2">
         <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           <ChevronDown size={13} className={cn('shrink-0 text-[#8A8681] transition-transform', expanded && 'rotate-180')} />
           {ehCor && <ColorDot hex={resolverHexCor(raizValor, raizCores)} />}
-          <span className="truncate text-[12px] font-bold text-ink">{raizValor}</span>
+          <span className="truncate text-[13px] font-bold text-ink">{raizValor}</span>
         </button>
         <span className="shrink-0 text-[11px] font-semibold text-[#8A8681]">
           {versoes.length === 0
@@ -235,7 +239,7 @@ function RaizGroup({
       </div>
 
       {expanded && (
-        <div className="mt-2.5 flex flex-col gap-2 border-t border-[#D4D2CF]/70 pt-2.5">
+        <div className="mt-2 flex flex-col gap-2 pl-[19px]">
           {versoes.length === 0 && (
             <p className="text-[11px] font-medium text-[#8A8681]">
               Ainda sem {filha.nome.toLowerCase()}s para "{raizValor}" — adiciona em "Opções do produto" acima.
@@ -248,8 +252,8 @@ function RaizGroup({
                 // separador visual — não é um accordion clicável. O utilizador
                 // abre a cor e vê imediatamente todas as versões finais agrupadas
                 // visualmente por tamanho/filha, sem clique extra.
-                <div key={grupo.filhaValor} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5 px-0.5 pb-0.5 pt-1">
+                <div key={grupo.filhaValor} className="flex flex-col">
+                  <div className="flex items-center gap-1.5 pb-0.5 pt-1">
                     {filha.nome === 'Cor' && (
                       <ColorDot hex={resolverHexCor(grupo.filhaValor, filha.cores)} />
                     )}
@@ -258,49 +262,55 @@ function RaizGroup({
                     </span>
                   </div>
                   {grupo.versoes.length === 0 ? (
-                    <p className="text-[10.5px] font-medium text-[#8A8681] px-1">
+                    <p className="text-[10.5px] font-medium text-[#8A8681]">
                       Ainda sem {neta.nome.toLowerCase()}s — adiciona em "Opções do produto" acima.
                     </p>
                   ) : (
-                    grupo.versoes.map((v) => (
-                      <VersaoRow
-                        key={v.chave}
-                        label={v.valores[neta.nome] ?? v.chave}
-                        versao={v}
-                        controlarEstoque={controlarEstoque}
-                        controlarPeso={controlarPeso}
-                        precoBase={precoBase}
-                        pesoPadrao={pesoPadrao}
-                        fotos={fotos}
-                        onAddFoto={onAddFoto}
-                        lojaId={lojaId}
-                        imagensPorCaracteristica={imagensPorCaracteristica}
-                        onChange={(next) => onChangeVersao(v.chave, next)}
-                        onAplicarPesoATodas={onAplicarPesoATodas}
-                        mostrarAplicarATodas={mostrarAplicarATodas}
-                      />
-                    ))
+                    <div className="divide-y divide-[#EDEBE8]">
+                      {grupo.versoes.map((v) => (
+                        <VersaoRow
+                          key={v.chave}
+                          label={v.valores[neta.nome] ?? v.chave}
+                          versao={v}
+                          controlarEstoque={controlarEstoque}
+                          controlarPeso={controlarPeso}
+                          precoBase={precoBase}
+                          pesoPadrao={pesoPadrao}
+                          fotos={fotos}
+                          onAddFoto={onAddFoto}
+                          lojaId={lojaId}
+                          imagensPorCaracteristica={imagensPorCaracteristica}
+                          onChange={(next) => onChangeVersao(v.chave, next)}
+                          onAplicarPesoATodas={onAplicarPesoATodas}
+                          mostrarAplicarATodas={mostrarAplicarATodas}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               ))
-            : versoes.map((v) => (
-                <VersaoRow
-                  key={v.chave}
-                  label={v.valores[filha.nome] ?? v.chave}
-                  versao={v}
-                  controlarEstoque={controlarEstoque}
-                  controlarPeso={controlarPeso}
-                  precoBase={precoBase}
-                  pesoPadrao={pesoPadrao}
-                  fotos={fotos}
-                  onAddFoto={onAddFoto}
-                  lojaId={lojaId}
-                  imagensPorCaracteristica={imagensPorCaracteristica}
-                  onChange={(next) => onChangeVersao(v.chave, next)}
-                  onAplicarPesoATodas={onAplicarPesoATodas}
-                  mostrarAplicarATodas={mostrarAplicarATodas}
-                />
-              ))}
+            : (
+              <div className="divide-y divide-[#EDEBE8]">
+                {versoes.map((v) => (
+                  <VersaoRow
+                    key={v.chave}
+                    label={v.valores[filha.nome] ?? v.chave}
+                    versao={v}
+                    controlarEstoque={controlarEstoque}
+                    controlarPeso={controlarPeso}
+                    precoBase={precoBase}
+                    pesoPadrao={pesoPadrao}
+                    fotos={fotos}
+                    onAddFoto={onAddFoto}
+                    lojaId={lojaId}
+                    imagensPorCaracteristica={imagensPorCaracteristica}
+                    onChange={(next) => onChangeVersao(v.chave, next)}
+                    onAplicarPesoATodas={onAplicarPesoATodas}
+                    mostrarAplicarATodas={mostrarAplicarATodas}
+                  />
+                ))}
+              </div>
+            )}
         </div>
       )}
 
@@ -410,208 +420,201 @@ function VersaoRow({
   }
 
   return (
-    <div className={cn('rounded-md bg-white px-4 py-3 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
-      {/* Linha 1 — identidade da versão: nome com largura total (nunca
-      corta), miniatura de imagem e menu de ações. */}
-      <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          {corHex && <ColorDot hex={corHex} />}
-          <span className="truncate text-[13px] font-bold text-ink">{label}</span>
-          {!ativa && (
-            <span className="shrink-0 rounded-full bg-[#E5E3E0] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#52525B]">
-              Indisponível
-            </span>
-          )}
-        </div>
+    <div className={cn('flex flex-wrap items-center gap-x-2 gap-y-1.5 py-2.5 transition-opacity', !ativa && 'opacity-50')}>
+      {/* Miniatura de imagem — sempre visível, clicar abre o editor */}
+      <button
+        type="button"
+        onClick={() => setImagePickerOpen(true)}
+        title={
+          imagemPropria
+            ? `${imagens.length} imagem(ns) própria(s) desta versão`
+            : resolvido.origem === 'caracteristica'
+              ? `A herdar imagem de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"`
+              : imagens.length > 0
+                ? 'A herdar a galeria geral do produto'
+                : 'Definir imagem'
+        }
+        className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+      >
+        {imagens[0] ? (
+          <>
+            <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
+            {imagemPropria && imagens.length > 1 && (
+              <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
+                {imagens.length}
+              </span>
+            )}
+          </>
+        ) : (
+          <ImagePlus size={13} className="text-[#B8B5B1]" />
+        )}
+      </button>
 
-        {/* Miniatura de imagem — sempre visível, clicar abre o editor */}
+      {/* Nome — largura flexível, mas nunca menor que ~64px para não colidir com os campos ao lado. */}
+      <div className="flex min-w-[64px] flex-1 items-center gap-1.5">
+        {corHex && <ColorDot hex={corHex} />}
+        <span className="truncate text-[13px] font-bold text-ink">{label}</span>
+        {!ativa && (
+          <span className="shrink-0 rounded-full bg-[#E5E3E0] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#52525B]">
+            Indisponível
+          </span>
+        )}
+      </div>
+
+      {/* Preço */}
+      <div className="flex w-[92px] shrink-0 items-center gap-1">
+        <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">MT</span>
+        <input
+          type="number"
+          min={0}
+          value={versao.preco ?? ''}
+          onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
+          placeholder={String(precoBase || 0)}
+          title={`Preço de ${label} (MT)`}
+          aria-label={`Preço de ${label}`}
+          className="h-8 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+        />
+      </div>
+
+      {/* Peso — visível quando "Controlar peso" está ligado. A unidade
+      ("kg", "g", "lb", "oz") é clicável e abre um seletor; o valor
+      continua sempre guardado em kg, só a exibição muda de unidade. */}
+      {controlarPeso && (
+        <div className="flex w-[84px] shrink-0 items-center gap-1">
+          <div ref={unidadeRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setUnidadePickerOpen((v) => !v)}
+              aria-label={`Escolher unidade de peso de ${label}`}
+              className="rounded px-1 text-[9px] font-black uppercase tracking-widest text-[#8A8681] transition-colors hover:bg-[#F4F4F3] hover:text-ink"
+            >
+              {pesoUnidade}
+            </button>
+            {unidadePickerOpen && (
+              <div className="absolute left-0 top-full z-20 mt-1.5 w-14 overflow-hidden rounded-md border border-[#E5E3E0] bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(28,25,23,0.22)]">
+                {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => trocarUnidadePeso(u)}
+                    className={cn(
+                      'flex w-full items-center justify-center rounded-md px-2 py-1.5 text-[11px] font-bold transition-colors',
+                      pesoUnidade === u ? 'bg-ink text-white' : 'text-ink hover:bg-[#F4F4F3]'
+                    )}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={typeof versao.peso === 'number' ? kgParaUnidade(versao.peso, pesoUnidade) : ''}
+            onChange={(e) =>
+              onChange({
+                ...versao,
+                peso: e.target.value === '' ? null : pesoParaKg(Number(e.target.value), pesoUnidade),
+              })
+            }
+            placeholder={typeof pesoPadrao === 'number' ? String(kgParaUnidade(pesoPadrao, pesoUnidade)) : '0'}
+            title={`Peso de ${label} (${pesoUnidade})`}
+            aria-label={`Peso de ${label}`}
+            className="h-8 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+          />
+        </div>
+      )}
+
+      {/* Estoque — visível quando "Controlar estoque" está ligado */}
+      {controlarEstoque && (
+        <div className="flex w-[64px] shrink-0 items-center gap-1">
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">un.</span>
+          <input
+            type="number"
+            min={0}
+            disabled={!ativa}
+            value={versao.estoque ?? ''}
+            onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder="0"
+            aria-label={`Estoque de ${label}`}
+            className="h-8 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+          />
+        </div>
+      )}
+
+      {/* "⋮" — ações menos frequentes (imagem própria / remover versão). */}
+      <div ref={menuRef} className="relative shrink-0">
         <button
           type="button"
-          onClick={() => setImagePickerOpen(true)}
-          title={
-            imagemPropria
-              ? `${imagens.length} imagem(ns) própria(s) desta versão`
-              : resolvido.origem === 'caracteristica'
-                ? `A herdar imagem de "${resolvido.caracteristica ? versao.valores[resolvido.caracteristica] : ''}"`
-                : imagens.length > 0
-                  ? 'A herdar a galeria geral do produto'
-                  : 'Definir imagem'
-          }
-          className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Ações da versão"
+          className="flex h-8 w-7 items-center justify-center rounded-md text-[#8A8681] transition-colors hover:bg-[#F4F4F3] hover:text-ink"
         >
-          {imagens[0] ? (
-            <>
-              <Image src={imagens[0]} alt="" fill className="object-cover" sizes="28px" />
-              {imagemPropria && imagens.length > 1 && (
-                <span className="absolute bottom-0 right-0 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-ink px-0.5 text-[8px] font-black text-white">
-                  {imagens.length}
-                </span>
-              )}
-            </>
-          ) : (
-            <ImagePlus size={13} className="text-[#B8B5B1]" />
-          )}
+          <MoreVertical size={15} strokeWidth={2.3} />
         </button>
 
-        {/* "⋯" — ações menos frequentes (imagem própria / remover versão). */}
-        <div ref={menuRef} className="relative shrink-0">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Ações da versão"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[#8A8681] transition-colors hover:bg-[#F4F4F3] hover:text-ink"
-          >
-            <MoreVertical size={15} strokeWidth={2.3} />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1.5 w-[168px] overflow-hidden rounded-md border border-[#E5E3E0] bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(28,25,23,0.22)]">
+        {menuOpen && (
+          <div className="absolute right-0 top-full z-20 mt-1.5 w-[168px] overflow-hidden rounded-md border border-[#E5E3E0] bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(28,25,23,0.22)]">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setImagePickerOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
+            >
+              <ImagePlus size={14} strokeWidth={2.3} className="text-[#71717A]" />
+              Imagem desta versão
+            </button>
+            {imagemPropria && (
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  setImagePickerOpen(true);
+                  onChange({ ...versao, imagens: [] });
                 }}
                 className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
               >
-                <ImagePlus size={14} strokeWidth={2.3} className="text-[#71717A]" />
-                Imagem desta versão
+                <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
+                Usar imagem herdada
               </button>
-              {imagemPropria && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onChange({ ...versao, imagens: [] });
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
-                >
-                  <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
-                  Usar imagem herdada
-                </button>
-              )}
+            )}
 
-              {controlarPeso && mostrarAplicarATodas && typeof versao.peso === 'number' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onAplicarPesoATodas(versao.peso ?? null);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
-                >
-                  <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
-                  Usar este peso em todas
-                </button>
-              )}
-
-              {ativa ? (
-                <button
-                  type="button"
-                  onClick={handleRemover}
-                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-red-500 transition-colors hover:bg-red-50"
-                >
-                  <Trash2 size={14} strokeWidth={2.3} />
-                  Remover versão
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleReativar}
-                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
-                >
-                  <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
-                  Reativar versão
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Linha 2 — preço, peso e estoque, editáveis direto, sem disputar
-      espaço com o nome. */}
-      <div className="mt-2 flex items-center gap-2 border-t border-[#E5E3E0] pt-2">
-        {/* Preço */}
-        <div className="flex flex-1 items-center gap-1.5">
-          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">MT</span>
-          <input
-            type="number"
-            min={0}
-            value={versao.preco ?? ''}
-            onChange={(e) => onChange({ ...versao, preco: e.target.value === '' ? null : Number(e.target.value) })}
-            placeholder={String(precoBase || 0)}
-            title={`Preço de ${label} (MT)`}
-            aria-label={`Preço de ${label}`}
-            className="h-7 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-          />
-        </div>
-
-        {/* Peso — visível quando "Controlar peso" está ligado. A unidade
-        ("kg", "g", "lb", "oz") é clicável e abre um seletor; o valor
-        continua sempre guardado em kg, só a exibição muda de unidade. */}
-        {controlarPeso && (
-          <div className="flex flex-1 items-center gap-1">
-            <div ref={unidadeRef} className="relative shrink-0">
+            {controlarPeso && mostrarAplicarATodas && typeof versao.peso === 'number' && (
               <button
                 type="button"
-                onClick={() => setUnidadePickerOpen((v) => !v)}
-                aria-label={`Escolher unidade de peso de ${label}`}
-                className="rounded px-1 text-[9px] font-black uppercase tracking-widest text-[#8A8681] transition-colors hover:bg-[#F4F4F3] hover:text-ink"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onAplicarPesoATodas(versao.peso ?? null);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
               >
-                {pesoUnidade}
+                <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
+                Usar este peso em todas
               </button>
-              {unidadePickerOpen && (
-                <div className="absolute left-0 top-full z-20 mt-1.5 w-14 overflow-hidden rounded-md border border-[#E5E3E0] bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(28,25,23,0.22)]">
-                  {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
-                    <button
-                      key={u}
-                      type="button"
-                      onClick={() => trocarUnidadePeso(u)}
-                      className={cn(
-                        'flex w-full items-center justify-center rounded-md px-2 py-1.5 text-[11px] font-bold transition-colors',
-                        pesoUnidade === u ? 'bg-ink text-white' : 'text-ink hover:bg-[#F4F4F3]'
-                      )}
-                    >
-                      {u}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={typeof versao.peso === 'number' ? kgParaUnidade(versao.peso, pesoUnidade) : ''}
-              onChange={(e) =>
-                onChange({
-                  ...versao,
-                  peso: e.target.value === '' ? null : pesoParaKg(Number(e.target.value), pesoUnidade),
-                })
-              }
-              placeholder={typeof pesoPadrao === 'number' ? String(kgParaUnidade(pesoPadrao, pesoUnidade)) : '0'}
-              title={`Peso de ${label} (${pesoUnidade})`}
-              aria-label={`Peso de ${label}`}
-              className="h-7 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-            />
-          </div>
-        )}
+            )}
 
-        {/* Estoque — visível quando "Controlar estoque" está ligado */}
-        {controlarEstoque && (
-          <div className="flex flex-1 items-center gap-1.5">
-            <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">un.</span>
-            <input
-              type="number"
-              min={0}
-              disabled={!ativa}
-              value={versao.estoque ?? ''}
-              onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
-              placeholder="0"
-              aria-label={`Estoque de ${label}`}
-              className="h-7 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
-            />
+            {ativa ? (
+              <button
+                type="button"
+                onClick={handleRemover}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+              >
+                <Trash2 size={14} strokeWidth={2.3} />
+                Remover versão
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleReativar}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
+              >
+                <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
+                Reativar versão
+              </button>
+            )}
           </div>
         )}
       </div>
