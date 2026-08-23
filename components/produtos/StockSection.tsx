@@ -63,7 +63,7 @@ export function StockSection({
       <div className="mb-2 flex items-center justify-between pl-1">
         <h3 className="text-[13px] font-black text-ink">Versões disponíveis</h3>
         {controlarEstoque && (
-          <span className="text-[11px] font-bold text-slate-400">{totalEstoque(versoes)} unidades no total</span>
+          <span className="text-[11px] font-bold text-[#8A8681]">{totalEstoque(versoes)} unidades no total</span>
         )}
       </div>
 
@@ -96,7 +96,7 @@ export function StockSection({
       ) : (
         <div className="flex flex-col gap-2">
           {versoes.length === 0 && (
-            <p className="rounded-xl bg-slate-50 px-3.5 py-3 text-center text-[11px] font-semibold text-slate-400">
+            <p className="rounded-md bg-[#F4F4F3] px-3.5 py-3 text-center text-[11px] font-semibold text-[#8A8681]">
               Adiciona valores em "Opções do produto" acima para gerar as versões.
             </p>
           )}
@@ -150,12 +150,12 @@ function GroupThumbnail({ imagens, onClick }: { imagens: string[]; onClick: () =
         e.stopPropagation();
         onClick();
       }}
-      className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
+      className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
     >
       {imagens[0] ? (
         <Image src={imagens[0]} alt="" fill className="object-cover" sizes="24px" />
       ) : (
-        <ImagePlus size={12} className="text-slate-300" />
+        <ImagePlus size={12} className="text-[#B8B5B1]" />
       )}
     </button>
   );
@@ -216,14 +216,14 @@ function RaizGroup({
   const imagensExibidas = imagensDoGrupo.length > 0 ? imagensDoGrupo : fotos;
 
   return (
-    <div className="rounded-2xl bg-slate-50/70 px-3.5 py-2.5">
+    <div className="rounded-md bg-[#F4F4F3]/70 px-3.5 py-2.5">
       <div className="flex w-full items-center justify-between gap-2">
         <button type="button" onClick={() => setExpanded((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-          <ChevronDown size={13} className={cn('shrink-0 text-slate-400 transition-transform', expanded && 'rotate-180')} />
+          <ChevronDown size={13} className={cn('shrink-0 text-[#8A8681] transition-transform', expanded && 'rotate-180')} />
           {ehCor && <ColorDot hex={resolverHexCor(raizValor, raizCores)} />}
           <span className="truncate text-[12px] font-bold text-ink">{raizValor}</span>
         </button>
-        <span className="shrink-0 text-[11px] font-semibold text-slate-400">
+        <span className="shrink-0 text-[11px] font-semibold text-[#8A8681]">
           {versoes.length === 0
             ? `sem ${filha.nome.toLowerCase()}s ainda`
             : `${ativos} ${filha.nome.toLowerCase()}${ativos === 1 ? '' : 's'}`}
@@ -235,9 +235,9 @@ function RaizGroup({
       </div>
 
       {expanded && (
-        <div className="mt-2.5 flex flex-col gap-2 border-t border-slate-200/70 pt-2.5">
+        <div className="mt-2.5 flex flex-col gap-2 border-t border-[#D4D2CF]/70 pt-2.5">
           {versoes.length === 0 && (
-            <p className="text-[11px] font-medium text-slate-400">
+            <p className="text-[11px] font-medium text-[#8A8681]">
               Ainda sem {filha.nome.toLowerCase()}s para "{raizValor}" — adiciona em "Opções do produto" acima.
             </p>
           )}
@@ -253,12 +253,12 @@ function RaizGroup({
                     {filha.nome === 'Cor' && (
                       <ColorDot hex={resolverHexCor(grupo.filhaValor, filha.cores)} />
                     )}
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#8A8681]">
                       {grupo.filhaValor}
                     </span>
                   </div>
                   {grupo.versoes.length === 0 ? (
-                    <p className="text-[10.5px] font-medium text-slate-400 px-1">
+                    <p className="text-[10.5px] font-medium text-[#8A8681] px-1">
                       Ainda sem {neta.nome.toLowerCase()}s — adiciona em "Opções do produto" acima.
                     </p>
                   ) : (
@@ -410,7 +410,7 @@ function VersaoRow({
   }
 
   return (
-    <div className={cn('rounded-xl bg-white px-4 py-3 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
+    <div className={cn('rounded-md bg-white px-4 py-3 shadow-sm transition-opacity', !ativa && 'opacity-50')}>
       {/* Linha 1 — identidade da versão: nome com largura total (nunca
       corta), miniatura de imagem e menu de ações. */}
       <div className="flex items-center gap-2">
@@ -418,7 +418,7 @@ function VersaoRow({
           {corHex && <ColorDot hex={corHex} />}
           <span className="truncate text-[13px] font-bold text-ink">{label}</span>
           {!ativa && (
-            <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-500">
+            <span className="shrink-0 rounded-full bg-[#E5E3E0] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#52525B]">
               Indisponível
             </span>
           )}
@@ -437,7 +437,7 @@ function VersaoRow({
                   ? 'A herdar a galeria geral do produto'
                   : 'Definir imagem'
           }
-          className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-inset ring-slate-200 transition-transform active:scale-90"
+          className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-inset ring-[#D4D2CF] transition-transform active:scale-90"
         >
           {imagens[0] ? (
             <>
@@ -449,7 +449,7 @@ function VersaoRow({
               )}
             </>
           ) : (
-            <ImagePlus size={13} className="text-slate-300" />
+            <ImagePlus size={13} className="text-[#B8B5B1]" />
           )}
         </button>
 
@@ -459,22 +459,22 @@ function VersaoRow({
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Ações da versão"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[#8A8681] transition-colors hover:bg-[#F4F4F3] hover:text-ink"
           >
             <MoreVertical size={15} strokeWidth={2.3} />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1.5 w-[168px] overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+            <div className="absolute right-0 top-full z-20 mt-1.5 w-[168px] overflow-hidden rounded-md border border-[#E5E3E0] bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(28,25,23,0.22)]">
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   setImagePickerOpen(true);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
               >
-                <ImagePlus size={14} strokeWidth={2.3} className="text-slate-500" />
+                <ImagePlus size={14} strokeWidth={2.3} className="text-[#71717A]" />
                 Imagem desta versão
               </button>
               {imagemPropria && (
@@ -484,9 +484,9 @@ function VersaoRow({
                     setMenuOpen(false);
                     onChange({ ...versao, imagens: [] });
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
                 >
-                  <RotateCcw size={14} strokeWidth={2.3} className="text-slate-500" />
+                  <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
                   Usar imagem herdada
                 </button>
               )}
@@ -498,9 +498,9 @@ function VersaoRow({
                     setMenuOpen(false);
                     onAplicarPesoATodas(versao.peso ?? null);
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
                 >
-                  <RotateCcw size={14} strokeWidth={2.3} className="text-slate-500" />
+                  <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
                   Usar este peso em todas
                 </button>
               )}
@@ -509,7 +509,7 @@ function VersaoRow({
                 <button
                   type="button"
                   onClick={handleRemover}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-red-500 transition-colors hover:bg-red-50"
                 >
                   <Trash2 size={14} strokeWidth={2.3} />
                   Remover versão
@@ -518,9 +518,9 @@ function VersaoRow({
                 <button
                   type="button"
                   onClick={handleReativar}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[12px] font-semibold text-ink transition-colors hover:bg-[#F4F4F3]"
                 >
-                  <RotateCcw size={14} strokeWidth={2.3} className="text-slate-500" />
+                  <RotateCcw size={14} strokeWidth={2.3} className="text-[#71717A]" />
                   Reativar versão
                 </button>
               )}
@@ -531,10 +531,10 @@ function VersaoRow({
 
       {/* Linha 2 — preço, peso e estoque, editáveis direto, sem disputar
       espaço com o nome. */}
-      <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-2">
+      <div className="mt-2 flex items-center gap-2 border-t border-[#E5E3E0] pt-2">
         {/* Preço */}
         <div className="flex flex-1 items-center gap-1.5">
-          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">MT</span>
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">MT</span>
           <input
             type="number"
             min={0}
@@ -543,7 +543,7 @@ function VersaoRow({
             placeholder={String(precoBase || 0)}
             title={`Preço de ${label} (MT)`}
             aria-label={`Preço de ${label}`}
-            className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+            className="h-7 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
           />
         </div>
 
@@ -557,20 +557,20 @@ function VersaoRow({
                 type="button"
                 onClick={() => setUnidadePickerOpen((v) => !v)}
                 aria-label={`Escolher unidade de peso de ${label}`}
-                className="rounded px-1 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+                className="rounded px-1 text-[9px] font-black uppercase tracking-widest text-[#8A8681] transition-colors hover:bg-[#F4F4F3] hover:text-ink"
               >
                 {pesoUnidade}
               </button>
               {unidadePickerOpen && (
-                <div className="absolute left-0 top-full z-20 mt-1.5 w-14 overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+                <div className="absolute left-0 top-full z-20 mt-1.5 w-14 overflow-hidden rounded-md border border-[#E5E3E0] bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(28,25,23,0.22)]">
                   {(['g', 'kg', 'lb', 'oz'] as const).map((u) => (
                     <button
                       key={u}
                       type="button"
                       onClick={() => trocarUnidadePeso(u)}
                       className={cn(
-                        'flex w-full items-center justify-center rounded-xl px-2 py-1.5 text-[11px] font-bold transition-colors',
-                        pesoUnidade === u ? 'bg-ink text-white' : 'text-ink hover:bg-slate-50'
+                        'flex w-full items-center justify-center rounded-md px-2 py-1.5 text-[11px] font-bold transition-colors',
+                        pesoUnidade === u ? 'bg-ink text-white' : 'text-ink hover:bg-[#F4F4F3]'
                       )}
                     >
                       {u}
@@ -593,7 +593,7 @@ function VersaoRow({
               placeholder={typeof pesoPadrao === 'number' ? String(kgParaUnidade(pesoPadrao, pesoUnidade)) : '0'}
               title={`Peso de ${label} (${pesoUnidade})`}
               aria-label={`Peso de ${label}`}
-              className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
+              className="h-7 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
             />
           </div>
         )}
@@ -601,7 +601,7 @@ function VersaoRow({
         {/* Estoque — visível quando "Controlar estoque" está ligado */}
         {controlarEstoque && (
           <div className="flex flex-1 items-center gap-1.5">
-            <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400">un.</span>
+            <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8A8681]">un.</span>
             <input
               type="number"
               min={0}
@@ -610,7 +610,7 @@ function VersaoRow({
               onChange={(e) => onChange({ ...versao, estoque: e.target.value === '' ? null : Number(e.target.value) })}
               placeholder="0"
               aria-label={`Estoque de ${label}`}
-              className="h-7 w-full min-w-0 rounded-lg border border-transparent bg-slate-50 px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
+              className="h-7 w-full min-w-0 rounded-md border border-transparent bg-[#F4F4F3] px-2 text-[12px] font-bold text-ink outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed"
             />
           </div>
         )}
