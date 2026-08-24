@@ -426,7 +426,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6 pb-12">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6 pb-4">
 
       {/* ── 1. Imagens — sem cartão externo, a imagem fica logo no topo,
           é a primeira associação que o lojista faz com o produto. Só a
@@ -605,7 +605,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       faltam campos obrigatórios, mas continua clicável — um clique aqui
       dispara sempre a validação atual (toast + campo em erro), em vez de
       simplesmente não fazer nada. */}
-      <div className="flex gap-3 pb-2 pt-1">
+      <div className="flex gap-3">
         {produto ? (
           <Button
             type="submit"
