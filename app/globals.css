@@ -49,7 +49,15 @@
 @layer base {
   * { box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  /* Propositalmente SEM "scroll-behavior: smooth" aqui. Um valor global
+     faz o próprio scroll-to-top automático do Next.js (ao navegar com
+     router.push) animar em vez de saltar direto — e enquanto essa
+     animação decorre, conteúdo assíncrono (imagens, o banner da página
+     Produtos) que ainda está a carregar por cima altera a posição a meio
+     do gesto. O resultado é a página "assentar" scrollada, cortando o
+     cartão do banner. Os sítios que já querem scroll suave (ex.: levar o
+     lojista até um campo em falta) chamam scrollIntoView({ behavior:
+     'smooth' }) explicitamente — ver ProductForm.tsx. */
 
   body {
     @apply antialiased;
