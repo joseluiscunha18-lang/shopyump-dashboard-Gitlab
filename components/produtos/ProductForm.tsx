@@ -188,6 +188,16 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Aquece a rota /produtos assim que o formulário monta — o bundle e o
+  // layout ficam prontos em segundo plano, para que o router.push() no
+  // fim da submissão não tenha de esperar por isso também. Não resolve a
+  // espera do upload/insert em si, mas remove a parcela de "trocar de
+  // página" desse tempo total.
+  useEffect(() => {
+    router.prefetch('/produtos');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Registar callbacks no contexto para a TopBar os invocar ─────────────
   useEffect(() => {
     // "Guardar como rascunho" — só disponível no fluxo de criação.
@@ -434,8 +444,12 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       const foto = fotosFinais[0];
       const params = new URLSearchParams({ publicado: produtoId });
       if (foto) params.set('foto', foto);
+      // Sem router.refresh() aqui de propósito: createProduto() já chama
+      // revalidatePath('/produtos') no servidor, e a query string
+      // ?publicado=<id> é sempre nova, por isso o push abaixo já busca a
+      // lista fresca sozinho. Um refresh() a seguir disparava um segundo
+      // pedido redundante — era essa a "pausa extra" ao mudar de página.
       router.push(`/produtos?${params.toString()}`);
-      router.refresh();
     }
   }
 
