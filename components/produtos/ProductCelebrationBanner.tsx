@@ -2,7 +2,7 @@
 
 import NextImage from 'next/image';
 import { X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 
 const DURATION_MS = 400;
@@ -45,6 +45,7 @@ const EASE = 'cubic-bezier(0.22,1,0.36,1)';
 export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   const { celebration, clearCelebration } = usePublishing();
   const [open, setOpen] = useState(false); // controla a animação (altura + fade)
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const produtoId = celebration?.produtoId ?? null;
   const foto = celebration?.foto ?? null;
@@ -52,7 +53,17 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   useEffect(() => {
     if (!produtoId) return;
     // Espera a página "assentar" antes de animar a entrada.
-    const t = setTimeout(() => setOpen(true), REVEAL_DELAY_MS);
+    const t = setTimeout(() => {
+      setOpen(true);
+      // O banner nasce como o primeiro elemento do conteúdo da página — se
+      // o lojista já tiver rolado a lista de produtos para baixo, ele
+      // apareceria fora do ecrã ou cortado no topo. Rola a própria janela
+      // até o topo (onde o banner sempre fica) em vez de scrollIntoView no
+      // próprio banner, porque a sua altura ainda está a animar de 0 até o
+      // tamanho final neste instante — calcular a posição a partir de uma
+      // caixa que ainda está a crescer dava uma rolagem incompleta.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, REVEAL_DELAY_MS);
     return () => clearTimeout(t);
   }, [produtoId]);
 
@@ -67,6 +78,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
 
   return (
     <div
+      ref={containerRef}
       style={{
         display: 'grid',
         gridTemplateRows: open ? '1fr' : '0fr',
