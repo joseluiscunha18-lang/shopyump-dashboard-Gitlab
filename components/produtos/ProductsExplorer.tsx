@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Loader2, SearchX, Eye, EyeOff, Copy, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductRow } from '@/components/produtos/ProductRow';
+import { PendingProductRow } from '@/components/produtos/PendingProductRow';
+import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
 import { ProductFilterBar, type StatusFilter, type SortOption } from '@/components/produtos/ProductFilterBar';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -27,6 +29,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [bulkPending, startBulkTransition] = useTransition();
   const router = useRouter();
   const { show } = useToast();
+  const { pending } = usePublishing();
 
   const categorias = useMemo(
     () => Array.from(new Set(produtos.map((p) => p.categoria).filter(Boolean))).sort(),
@@ -193,17 +196,26 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
-              <SearchX size={20} strokeWidth={2.3} />
+          <>
+            {pending.length > 0 && (
+              <div className="divide-y divide-[#1A1210]/8 border-b border-[#1A1210]/8">
+                {pending.map((p) => (
+                  <PendingProductRow key={p.tempId} produto={p} />
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
+                <SearchX size={20} strokeWidth={2.3} />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold text-ink">Nenhum produto encontrado</p>
+                <p className="mt-1 max-w-[240px] text-[12px] font-medium text-slate-400">
+                  Tenta ajustar a pesquisa ou os filtros.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-[13px] font-bold text-ink">Nenhum produto encontrado</p>
-              <p className="mt-1 max-w-[240px] text-[12px] font-medium text-slate-400">
-                Tenta ajustar a pesquisa ou os filtros.
-              </p>
-            </div>
-          </div>
+          </>
         ) : (
           <>
             {/* Cor igual à da página (não branco) + a mesma linha acastanhada
@@ -230,6 +242,9 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
             </div>
 
             <div className="divide-y divide-[#1A1210]/8">
+              {pending.map((p) => (
+                <PendingProductRow key={p.tempId} produto={p} />
+              ))}
               {visible.map((p) => (
                 <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
               ))}
