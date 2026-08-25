@@ -615,22 +615,13 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
             Guardar
           </Button>
         ) : (
-          <>
-            <Button
+          <Button
               type="submit"
               loading={saving}
-              className={cn('flex-1 sm:flex-none', !valid && !saving && 'opacity-50 hover:opacity-50')}
+              className={cn('w-full', !valid && !saving && 'opacity-50 hover:opacity-50')}
             >
               Publicar produto
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => requestExit(() => router.push('/produtos'))}
-            >
-              Cancelar
-            </Button>
-          </>
         )}
       </div>
     </form>
