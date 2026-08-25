@@ -370,20 +370,25 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       peso: controlarPeso ? pesoPadraoKg : null,
     };
 
-    const fotosFinais: string[] = [];
-    for (const foto of fotos) {
-      if (!foto.startsWith('blob:')) { fotosFinais.push(foto); continue; }
-      try {
-        const res  = await fetch(foto);
-        const blob = await res.blob();
-        const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
-        const { url, error } = await uploadImage(BUCKETS.produtos, file, lojaId);
-        if (error || !url) { setSaving(false); return show(error ?? 'Não foi possível enviar uma das imagens.', 'error'); }
-        fotosFinais.push(url);
-      } catch {
-        setSaving(false);
-        return show('Não foi possível enviar uma das imagens.', 'error');
-      }
+    // Uploads em paralelo — antes era um por um (await dentro do for),
+    // o que multiplicava a espera pelo número de fotos. Agora todas sobem
+    // ao mesmo tempo e a ordem final é preservada.
+    let fotosFinais: string[];
+    try {
+      fotosFinais = await Promise.all(
+        fotos.map(async (foto) => {
+          if (!foto.startsWith('blob:')) return foto;
+          const res  = await fetch(foto);
+          const blob = await res.blob();
+          const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
+          const { url, error } = await uploadImage(BUCKETS.produtos, file, lojaId);
+          if (error || !url) throw new Error(error ?? 'Não foi possível enviar uma das imagens.');
+          return url;
+        })
+      );
+    } catch (err) {
+      setSaving(false);
+      return show(err instanceof Error ? err.message : 'Não foi possível enviar uma das imagens.', 'error');
     }
 
     const payload = {
