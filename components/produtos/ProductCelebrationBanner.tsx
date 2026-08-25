@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import NextImage from 'next/image';
 import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { usePublishing } from '@/components/produtos/PublishingContext';
 
 const DURATION_MS = 400;
 // Tempo de "respiro" antes do banner começar a entrar — dá ao lojista um
@@ -15,38 +15,39 @@ const EASE = 'cubic-bezier(0.22,1,0.36,1)';
 
 /**
  * Banner discreto no topo da página Produtos, exibido logo após a primeira
- * publicação. Fica visível junto à lista (nunca por cima dela) e confirma,
- * de forma neutra e profissional, que o produto está ativo na loja.
+ * publicação (ou qualquer publicação) terminar com sucesso. Fica visível
+ * junto à lista (nunca por cima dela) e confirma, de forma neutra e
+ * profissional, que o produto está ativo na loja.
+ *
+ * A fonte da verdade é o PublishingContext (`celebration`), não a URL —
+ * antes usava ?publicado=ID&foto=URL, mas isso dependia do redirect
+ * acontecer só depois do upload/insert terminarem. Agora que a publicação
+ * é otimista (o ProductForm navega logo e o upload/insert continuam em
+ * segundo plano), é o próprio contexto que acende este banner quando o
+ * trabalho em fundo resolve — independentemente de que página o lojista
+ * estava a ver nesse momento.
  *
  * Sequência de entrada:
- * 1. A página "Produtos" carrega e renderiza normalmente, com o banner já
- *    montado no DOM mas com altura 0 e opacidade 0 — não ocupa espaço nem
- *    é visível.
- * 2. Passados REVEAL_DELAY_MS (tempo para o utilizador reconhecer o ecrã
- *    primeiro), a altura expande e o conteúdo entra com fade + slide,
- *    empurrando a lista para baixo de forma fluida ao longo de
- *    DURATION_MS.
+ * 1. Assim que `celebration` aparece, o banner monta no DOM com altura 0
+ *    e opacidade 0 — não ocupa espaço nem é visível.
+ * 2. Passados REVEAL_DELAY_MS, a altura expande e o conteúdo entra com
+ *    fade + slide, empurrando a lista para baixo de forma fluida ao longo
+ *    de DURATION_MS.
  *
  * O fecho (X) faz o percurso inverso — colapsa e desvanece antes de
- * remover o banner do URL — usando DURATION_MS e a mesma curva, para que
+ * limpar `celebration` — usando DURATION_MS e a mesma curva, para que
  * entrada e saída pareçam espelhadas (a saída não precisa do respiro
  * inicial, só a entrada).
- *
- * Entra via query params (?publicado=ID&foto=URL) definidos pelo
- * ProductForm no redirect.
  */
 export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
-  const router       = useRouter();
-  const searchParams = useSearchParams();
-  const produtoId     = searchParams.get('publicado');
-  const foto          = searchParams.get('foto');
+  const { celebration, clearCelebration } = usePublishing();
+  const [open, setOpen] = useState(false); // controla a animação (altura + fade)
 
-  const [visible, setVisible] = useState(false); // presente no DOM
-  const [open, setOpen]       = useState(false); // controla a animação (altura + fade)
+  const produtoId = celebration?.produtoId ?? null;
+  const foto = celebration?.foto ?? null;
 
   useEffect(() => {
     if (!produtoId) return;
-    setVisible(true);
     // Espera a página "assentar" antes de animar a entrada.
     const t = setTimeout(() => setOpen(true), REVEAL_DELAY_MS);
     return () => clearTimeout(t);
@@ -55,15 +56,11 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   function fechar() {
     setOpen(false); // dispara a animação de saída (colapso + fade)
     setTimeout(() => {
-      setVisible(false);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('publicado');
-      url.searchParams.delete('foto');
-      router.replace(url.pathname + url.search);
+      clearCelebration();
     }, DURATION_MS);
   }
 
-  if (!visible || !produtoId) return null;
+  if (!celebration) return null;
 
   return (
     <div
