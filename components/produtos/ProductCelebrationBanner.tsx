@@ -46,22 +46,22 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   return (
     <div
       className={
-        'relative flex flex-col gap-3 overflow-hidden rounded-[16px] border border-[#EDEBE8] bg-white p-3.5 pr-11 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.10)] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12 ' +
+        'relative flex flex-col gap-3 overflow-hidden rounded-[16px] border border-[#F0DCC8] bg-brand-soft/60 p-3.5 pr-11 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12 ' +
         (open ? 'animate-celebration-banner' : '-translate-y-2.5 opacity-0')
       }
     >
-      {/* Faixa de destaque à esquerda */}
-      <span className="absolute inset-y-0 left-0 w-1 bg-[#111110]" />
+      {/* Faixa de destaque à esquerda — cor da marca, não preto (reservado à navegação) */}
+      <span className="absolute inset-y-0 left-0 w-1 bg-brand" />
 
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Thumbnail */}
         {foto ? (
-          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-[#EDEBE8] sm:h-12 sm:w-12">
+          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-white/80 shadow-sm sm:h-12 sm:w-12">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={foto} alt="" className="h-full w-full object-cover" />
           </div>
         ) : (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#F4F4F3] text-xl sm:h-12 sm:w-12">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white text-xl shadow-sm sm:h-12 sm:w-12">
             🎉
           </div>
         )}
@@ -71,19 +71,19 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           <p className="truncate text-[13.5px] font-extrabold leading-tight text-[#111110]">
             Seu produto já está na sua loja 🎉
           </p>
-          <p className="mt-0.5 truncate text-[12px] font-medium text-[#71717A]">
+          <p className="mt-0.5 truncate text-[12px] font-medium text-[#6B5A4C]">
             Veja como seus clientes vão encontrar.
           </p>
         </div>
       </div>
 
-      {/* CTA */}
+      {/* CTA — cor da marca em vez de preto, para não competir com o botão + da navegação inferior */}
       {lojaSlug ? (
         <a
           href={`https://${lojaSlug}.shopyump.com/p/${produtoId}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 whitespace-nowrap rounded-[10px] bg-[#111110] px-3.5 py-2 text-center text-[12.5px] font-bold text-white transition-colors hover:bg-[#27272A] active:scale-[0.98] sm:ml-auto"
+          className="shrink-0 whitespace-nowrap rounded-[10px] bg-brand px-3.5 py-2 text-center text-[12.5px] font-bold text-brand-foreground shadow-sm transition-colors hover:brightness-95 active:scale-[0.98] sm:ml-auto"
         >
           Ver produto na loja
         </a>
@@ -91,7 +91,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
         <button
           type="button"
           onClick={fechar}
-          className="shrink-0 whitespace-nowrap rounded-[10px] bg-[#111110] px-3.5 py-2 text-center text-[12.5px] font-bold text-white transition-colors hover:bg-[#27272A] active:scale-[0.98] sm:ml-auto"
+          className="shrink-0 whitespace-nowrap rounded-[10px] bg-brand px-3.5 py-2 text-center text-[12.5px] font-bold text-brand-foreground shadow-sm transition-colors hover:brightness-95 active:scale-[0.98] sm:ml-auto"
         >
           Ver produto na loja
         </button>
@@ -101,7 +101,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
         type="button"
         onClick={fechar}
         aria-label="Fechar"
-        className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#A1A1AA] transition-colors hover:bg-[#F4F4F3] hover:text-[#52525B]"
+        className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#8A7A6C] transition-colors hover:bg-white/70 hover:text-[#5A4B3D]"
       >
         <X size={15} strokeWidth={2} />
       </button>
