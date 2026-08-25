@@ -6,6 +6,11 @@ import NextImage from 'next/image';
 import { X } from 'lucide-react';
 
 const DURATION_MS = 400;
+// Tempo de "respiro" antes do banner começar a entrar — dá ao lojista um
+// instante para reconhecer que chegou à página Produtos antes de qualquer
+// coisa nova aparecer. Sem isto, o banner surge colado à navegação e o
+// utilizador nunca chega a assimilar que o produto foi mesmo criado.
+const REVEAL_DELAY_MS = 900;
 const EASE = 'cubic-bezier(0.22,1,0.36,1)';
 
 /**
@@ -17,13 +22,15 @@ const EASE = 'cubic-bezier(0.22,1,0.36,1)';
  * 1. A página "Produtos" carrega e renderiza normalmente, com o banner já
  *    montado no DOM mas com altura 0 e opacidade 0 — não ocupa espaço nem
  *    é visível.
- * 2. Passados 400ms (tempo para o utilizador reconhecer o ecrã), a altura
- *    expande e o conteúdo entra com fade + slide, empurrando a lista para
- *    baixo de forma fluida.
+ * 2. Passados REVEAL_DELAY_MS (tempo para o utilizador reconhecer o ecrã
+ *    primeiro), a altura expande e o conteúdo entra com fade + slide,
+ *    empurrando a lista para baixo de forma fluida ao longo de
+ *    DURATION_MS.
  *
  * O fecho (X) faz o percurso inverso — colapsa e desvanece antes de
- * remover o banner do URL — usando a mesma duração e curva, para que
- * entrada e saída pareçam espelhadas.
+ * remover o banner do URL — usando DURATION_MS e a mesma curva, para que
+ * entrada e saída pareçam espelhadas (a saída não precisa do respiro
+ * inicial, só a entrada).
  *
  * Entra via query params (?publicado=ID&foto=URL) definidos pelo
  * ProductForm no redirect.
@@ -41,7 +48,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
     if (!produtoId) return;
     setVisible(true);
     // Espera a página "assentar" antes de animar a entrada.
-    const t = setTimeout(() => setOpen(true), DURATION_MS);
+    const t = setTimeout(() => setOpen(true), REVEAL_DELAY_MS);
     return () => clearTimeout(t);
   }, [produtoId]);
 
