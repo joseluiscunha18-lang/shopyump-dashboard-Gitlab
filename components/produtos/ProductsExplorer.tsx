@@ -29,7 +29,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [bulkPending, startBulkTransition] = useTransition();
   const router = useRouter();
   const { show } = useToast();
-  const { pending } = usePublishing();
+  const { pending, celebration } = usePublishing();
 
   const categorias = useMemo(
     () => Array.from(new Set(produtos.map((p) => p.categoria).filter(Boolean))).sort(),
@@ -195,7 +195,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
         </div>
 
-        {filtered.length === 0 && pending.length === 0 ? (
+        {filtered.length === 0 && pending.length === 0 && !celebration ? (
           <>
             <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
@@ -209,6 +209,23 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               </div>
             </div>
           </>
+        ) : filtered.length === 0 && pending.length === 0 && celebration ? (
+          // Janela curtíssima entre a navegação para /produtos e o
+          // router.refresh() trazer o produto recém-publicado: já há uma
+          // `celebration` pronta para o banner, mas os `produtos` vindos
+          // do servidor ainda não foram atualizados. Mostrar aqui "Nenhum
+          // produto encontrado" seria enganador (o produto existe, só a
+          // lista é que ainda não chegou) — um esqueleto comunica melhor
+          // "a atualizar" do que uma mensagem de busca vazia.
+          <div className="divide-y divide-[#1A1210]/8">
+            <div className="flex animate-pulse items-center gap-3 p-4">
+              <div className="h-14 w-14 flex-shrink-0 rounded-md bg-slate-100" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="h-3 w-2/5 rounded bg-slate-100" />
+                <div className="h-2.5 w-1/3 rounded bg-slate-100" />
+              </div>
+            </div>
+          </div>
         ) : (
           <>
             {/* Cor igual à da página (não branco) + a mesma linha acastanhada
