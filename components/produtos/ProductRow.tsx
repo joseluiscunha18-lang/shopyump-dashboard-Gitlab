@@ -180,15 +180,17 @@ export function ProductRow({
         )}
       </div>
 
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        onClose={() => setConfirmDeleteOpen(false)}
-        onConfirm={confirmarDelete}
-        title={`Remover "${produto.nome}"?`}
-        description="Esta ação não pode ser desfeita."
-        confirmLabel="Remover"
-        danger
-      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <ConfirmDialog
+          open={confirmDeleteOpen}
+          onClose={() => setConfirmDeleteOpen(false)}
+          onConfirm={confirmarDelete}
+          title={`Remover "${produto.nome}"?`}
+          description="Esta ação não pode ser desfeita."
+          confirmLabel="Remover"
+          danger
+        />
+      </div>
     </div>
   );
 }
