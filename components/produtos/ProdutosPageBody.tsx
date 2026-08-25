@@ -15,10 +15,20 @@ import type { Produto } from '@/types/database';
  * ainda em curso — o primeiro produto de uma loja pode estar "a publicar"
  * mesmo antes de existir na base de dados, e nesse caso já não faz
  * sentido mostrar o ecrã vazio.
+ *
+ * `celebration` entra nesta conta pela mesma razão: quando o upload+insert
+ * em segundo plano termina antes da navegação para esta página, o
+ * `pending` já foi limpo e a `celebration` já está pronta — mas os
+ * `produtos` vindos do servidor (por trás de um router.push que ainda usa
+ * cache do prefetch) podem chegar vazios por mais um instante, até o
+ * router.refresh() que se segue trazer os dados atualizados. Sem este
+ * terceiro sinal, esse instante mostraria "Adicione seu primeiro
+ * produto" a piscar antes do produto (e do banner) aparecerem — mesmo
+ * havendo, de facto, um produto recém-publicado.
  */
 export function ProdutosPageBody({ produtos, lojaSlug }: { produtos: Produto[]; lojaSlug?: string }) {
-  const { pending } = usePublishing();
-  const temAlgumaCoisa = produtos.length > 0 || pending.length > 0;
+  const { pending, celebration } = usePublishing();
+  const temAlgumaCoisa = produtos.length > 0 || pending.length > 0 || celebration !== null;
 
   return (
     <div className="flex flex-col gap-6 pt-2">
