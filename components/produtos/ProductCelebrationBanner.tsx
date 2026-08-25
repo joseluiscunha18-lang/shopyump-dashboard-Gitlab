@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import NextImage from 'next/image';
 import { X } from 'lucide-react';
 
 const DURATION_MS = 400;
@@ -75,11 +76,12 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 pr-11 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Thumbnail */}
+            {/* Thumbnail — mesmo tamanho (56px) e sizes que a lista de produtos usa,
+                para reaproveitar a imagem já otimizada e em cache pelo Next.js
+                em vez de a carregar de novo aqui. */}
             {foto ? (
-              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 sm:h-12 sm:w-12">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={foto} alt="" className="h-full w-full object-cover" />
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 sm:h-12 sm:w-12">
+                <NextImage src={foto} alt="" fill sizes="56px" className="object-cover" />
               </div>
             ) : (
               <div className="h-11 w-11 shrink-0 rounded-[10px] border border-zinc-200 bg-zinc-100 sm:h-12 sm:w-12" />
