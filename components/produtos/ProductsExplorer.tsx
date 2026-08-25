@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, SearchX, Eye, EyeOff, Copy, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductRow } from '@/components/produtos/ProductRow';
-import { PendingProductRow } from '@/components/produtos/PendingProductRow';
+import { PendingProductRow, ProductRowSkeleton } from '@/components/produtos/PendingProductRow';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
 import { ProductFilterBar, type StatusFilter, type SortOption } from '@/components/produtos/ProductFilterBar';
@@ -213,18 +213,11 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           // Janela curtíssima entre a navegação para /produtos e o
           // router.refresh() trazer o produto recém-publicado: já há uma
           // `celebration` pronta para o banner, mas os `produtos` vindos
-          // do servidor ainda não foram atualizados. Mostrar aqui "Nenhum
-          // produto encontrado" seria enganador (o produto existe, só a
-          // lista é que ainda não chegou) — um esqueleto comunica melhor
-          // "a atualizar" do que uma mensagem de busca vazia.
+          // do servidor ainda não foram atualizados. Mesmo esqueleto de
+          // sempre — nunca "Nenhum produto encontrado" (seria enganoso,
+          // o produto existe) nem a linha de "a publicar" (já resolveu).
           <div className="divide-y divide-[#1A1210]/8">
-            <div className="flex animate-pulse items-center gap-3 p-4">
-              <div className="h-14 w-14 flex-shrink-0 rounded-md bg-slate-100" />
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="h-3 w-2/5 rounded bg-slate-100" />
-                <div className="h-2.5 w-1/3 rounded bg-slate-100" />
-              </div>
-            </div>
+            <ProductRowSkeleton />
           </div>
         ) : (
           <>
