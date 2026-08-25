@@ -6,7 +6,7 @@ import { getProdutosByLoja } from '@/lib/queries/produtos';
 import { Button } from '@/components/ui/Button';
 import { ProductsExplorer } from '@/components/produtos/ProductsExplorer';
 import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
-import { ProductCelebrationModal } from '@/components/produtos/ProductCelebrationModal';
+import { ProductCelebrationBanner } from '@/components/produtos/ProductCelebrationBanner';
 
 export const metadata: Metadata = { title: 'Produtos | Shopyump' };
 
@@ -19,6 +19,10 @@ export default async function ProdutosPage() {
   if (produtos.length === 0) {
     return (
       <div className="flex flex-col gap-6 pt-2">
+        <Suspense fallback={null}>
+          <ProductCelebrationBanner lojaSlug={ctx.loja.slug} />
+        </Suspense>
+
         <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
         <div className="relative w-full overflow-hidden rounded-md bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_4px_10px_-6px_rgba(15,23,42,0.08),0_12px_20px_-16px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03]">
@@ -41,16 +45,16 @@ export default async function ProdutosPage() {
             </Link>
           </div>
         </div>
-
-        <Suspense fallback={null}>
-          <ProductCelebrationModal lojaSlug={ctx.loja.slug} />
-        </Suspense>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-6 pt-2">
+      <Suspense fallback={null}>
+        <ProductCelebrationBanner lojaSlug={ctx.loja.slug} />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
         <Link href="/produtos/novo">
@@ -61,10 +65,6 @@ export default async function ProdutosPage() {
       </div>
 
       <ProductsExplorer produtos={produtos} />
-
-      <Suspense fallback={null}>
-        <ProductCelebrationModal lojaSlug={ctx.loja.slug} />
-      </Suspense>
     </div>
   );
 }
