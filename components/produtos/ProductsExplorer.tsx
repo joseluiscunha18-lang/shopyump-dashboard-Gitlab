@@ -195,15 +195,8 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && pending.length === 0 ? (
           <>
-            {pending.length > 0 && (
-              <div className="divide-y divide-[#1A1210]/8 border-b border-[#1A1210]/8">
-                {pending.map((p) => (
-                  <PendingProductRow key={p.tempId} produto={p} />
-                ))}
-              </div>
-            )}
             <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
                 <SearchX size={20} strokeWidth={2.3} />
@@ -236,7 +229,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                 </span>
               ) : (
                 <span className="text-[12px] font-bold text-[#1A1210]/75">
-                  {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
+                  {filtered.length + pending.length} {filtered.length + pending.length === 1 ? 'produto' : 'produtos'}
                 </span>
               )}
             </div>
