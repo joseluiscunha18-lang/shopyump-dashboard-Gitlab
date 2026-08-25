@@ -44,7 +44,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   return (
     <div
       className={
-        'relative flex flex-col gap-3 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-3.5 pr-11 sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12 ' +
+        'relative flex flex-col gap-3 overflow-hidden rounded-xl border border-zinc-200 bg-white p-3.5 pr-11 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12 ' +
         (open ? 'animate-celebration-banner' : '-translate-y-2.5 opacity-0')
       }
     >
@@ -61,7 +61,8 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
 
         {/* Texto */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13.5px] font-bold leading-tight text-zinc-900">
+          <p className="flex items-center gap-1.5 truncate text-[13.5px] font-bold leading-tight text-zinc-900">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
             Seu produto já está na sua loja
           </p>
           <p className="mt-0.5 truncate text-[12px] font-medium text-zinc-500">
@@ -90,13 +91,16 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
         </button>
       )}
 
+      {/* X — fixo no canto superior direito, com área de toque ampliada */}
       <button
         type="button"
         onClick={fechar}
         aria-label="Fechar"
-        className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-200/70 hover:text-zinc-600"
+        className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center text-zinc-400 transition-colors hover:text-zinc-600"
       >
-        <X size={15} strokeWidth={2} />
+        <span className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-zinc-100">
+          <X size={15} strokeWidth={2} />
+        </span>
       </button>
     </div>
   );
