@@ -10,7 +10,7 @@ export default async function NovoProdutoPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <ProductForm lojaId={ctx.loja.id} lojaSlug={ctx.loja.slug} />
+      <ProductForm lojaId={ctx.loja.id} />
     </div>
   );
 }
