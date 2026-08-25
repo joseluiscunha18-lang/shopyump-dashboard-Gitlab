@@ -55,14 +55,7 @@ export default async function ProdutosPage() {
         <ProductCelebrationBanner lojaSlug={ctx.loja.slug} />
       </Suspense>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
-        <Link href="/produtos/novo">
-          <Button variant="dark" size="sm">
-            Adicionar produto
-          </Button>
-        </Link>
-      </div>
+      <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
       <ProductsExplorer produtos={produtos} />
     </div>
