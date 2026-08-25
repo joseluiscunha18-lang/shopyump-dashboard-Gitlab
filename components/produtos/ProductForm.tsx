@@ -471,7 +471,13 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
     const MIN_BOTAO_PUBLICAR_MS = 3000;
     setTimeout(() => {
-      setSaving(false);
+      // Sem setSaving(false) aqui de propósito: se o resetássemos antes do
+      // router.push, o botão voltava a "Publicar produto" por um instante
+      // (a navegação não é instantânea) antes de a página trocar — o
+      // lojista chegava a ver o CTA normal a piscar entre o processamento
+      // e a saída do ecrã. O formulário vai desmontar assim que a
+      // navegação completar, por isso não há necessidade de repor
+      // `saving`: o botão fica a processar até ao redirecionamento em si.
       router.push('/produtos');
       // O prefetch de '/produtos' feito ao montar este formulário guardou
       // em cache a página ainda vazia. Se o upload+insert em segundo plano
