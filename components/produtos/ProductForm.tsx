@@ -441,14 +441,18 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     }
 
     // ── Criação: publicação otimista ────────────────────────────────────
-    // Regista já o produto (com a foto ainda local, em blob:) e navega de
-    // imediato — o lojista não fica parado a olhar para o formulário à
-    // espera do upload + insert. Esse trabalho continua abaixo, fora do
-    // "await" que bloquearia a navegação, e só comunica o resultado via
-    // toast/PublishingContext, nunca via estado local do formulário — ele
-    // já vai ter desmontado quando este código terminar. O blob: URL
-    // continua válido porque a navegação do Next.js aqui é client-side
-    // (sem recarregar o documento).
+    // Regista já o produto (com a foto ainda local, em blob:) — o upload +
+    // insert seguem em segundo plano, fora do "await" que bloquearia a
+    // navegação, e só comunicam o resultado via toast/PublishingContext,
+    // nunca via estado local do formulário — ele já vai ter desmontado
+    // quando esse trabalho terminar. O blob: URL continua válido porque a
+    // navegação do Next.js aqui é client-side (sem recarregar o documento).
+    //
+    // A navegação em si, porém, é propositadamente segurada por
+    // MIN_BOTAO_PUBLICAR_MS: sem isso o botão "Publicar produto" mal chega
+    // a mostrar o spinner antes de a página trocar, e o lojista nunca vê a
+    // confirmação de que o clique foi registado. Este atraso não bloqueia
+    // o trabalho em fundo (que já começou), só a troca de ecrã.
     const tempId = crypto.randomUUID();
     const precoNum      = Number(preco) || 0;
     const precoPromoNum = precoPromo ? Number(precoPromo) : 0;
@@ -464,8 +468,12 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
 
     clearProdutoDraft(lojaId);
     setDirty(false);
-    setSaving(false);
-    router.push('/produtos');
+
+    const MIN_BOTAO_PUBLICAR_MS = 3000;
+    setTimeout(() => {
+      setSaving(false);
+      router.push('/produtos');
+    }, MIN_BOTAO_PUBLICAR_MS);
 
     (async () => {
       let fotosFinais: string[];
