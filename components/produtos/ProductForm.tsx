@@ -473,6 +473,14 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     setTimeout(() => {
       setSaving(false);
       router.push('/produtos');
+      // O prefetch de '/produtos' feito ao montar este formulário guardou
+      // em cache a página ainda vazia. Se o upload+insert em segundo plano
+      // já tiver terminado neste ponto, o resolvePublish já chamou
+      // router.refresh() — mas nessa altura ainda estávamos nesta rota,
+      // por isso não teve efeito nenhum sobre /produtos. Este refresh()
+      // extra, já depois do push, garante que a lista mostrada vem sempre
+      // fresca da base de dados, nunca do cache pré-publicação.
+      router.refresh();
     }, MIN_BOTAO_PUBLICAR_MS);
 
     (async () => {
