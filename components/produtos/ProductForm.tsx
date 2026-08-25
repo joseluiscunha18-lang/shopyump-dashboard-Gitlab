@@ -125,7 +125,7 @@ function FieldLabel({ label, optional }: { label: string; optional?: boolean }) 
 
 /* ── ProductForm ───────────────────────────────────────────────────────────── */
 
-export function ProductForm({ lojaId, lojaSlug, produto }: { lojaId: string; lojaSlug?: string; produto?: Produto }) {
+export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
   const [nome, setNome]               = useState(produto?.nome ?? '');
   const [descricao, setDescricao]     = useState(produto?.descricao ?? '');
   const [categoria, setCategoria]     = useState(produto?.categoria ?? '');
@@ -160,7 +160,6 @@ export function ProductForm({ lojaId, lojaSlug, produto }: { lojaId: string; loj
 
   const [maisOpcoes, setMaisOpcoes] = useState<Omit<ProdutoMaisOpcoes, 'peso'>>(produto?.mais_opcoes ?? {});
   const [saving, setSaving]         = useState(false);
-  const [celebracao, setCelebracao] = useState<{ produtoId: string; foto?: string } | null>(null);
 
   // ── Validação ao publicar ──────────────────────────────────────────────
   // Sem lista de erros antes de o lojista tentar — só depois de um "Publicar
@@ -427,7 +426,11 @@ export function ProductForm({ lojaId, lojaSlug, produto }: { lojaId: string; loj
       clearProdutoDraft(lojaId);
       setDirty(false);
       const produtoId = (res as { id?: string }).id ?? '';
-      setCelebracao({ produtoId, foto: fotosFinais[0] });
+      const foto = fotosFinais[0];
+      const params = new URLSearchParams({ publicado: produtoId });
+      if (foto) params.set('foto', foto);
+      router.push(`/produtos?${params.toString()}`);
+      router.refresh();
     }
   }
 
@@ -672,61 +675,6 @@ export function ProductForm({ lojaId, lojaSlug, produto }: { lojaId: string; loj
               className="w-full rounded-[12px] border border-[#E5E3E0] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#3F3F46] transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
             >
               Começar novo
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-    {/* ── Modal de celebração — primeira publicação ── */}
-    {celebracao && (
-      <div className="animate-modal-overlay fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center">
-        <div
-          className="animate-modal-card w-full max-w-sm rounded-[24px] bg-white p-6 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.35)]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Thumbnail + emoji */}
-          <div className="mb-5 flex items-center gap-4">
-            {celebracao.foto ? (
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[14px] border border-[#EDEBE8]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={celebracao.foto} alt="" className="h-full w-full object-cover" />
-              </div>
-            ) : (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[14px] bg-[#F4F4F3] text-3xl">
-                🎉
-              </div>
-            )}
-            <div>
-              <p className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#A1A1AA]">
-                Publicado agora
-              </p>
-              <h3 className="mt-0.5 text-[18px] font-extrabold leading-tight text-[#111110]">
-                O teu produto já<br />está na loja 🎉
-              </h3>
-            </div>
-          </div>
-
-          <p className="text-[13.5px] font-medium leading-relaxed text-[#71717A]">
-            Vê como os teus clientes irão encontrar e visualizar este produto.
-          </p>
-
-          <div className="mt-5 flex flex-col gap-2.5">
-            {lojaSlug && (
-              <a
-                href={`https://${lojaSlug}.shopyump.com/p/${celebracao.produtoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#111110] px-4 py-2.5 text-[13.5px] font-bold text-white transition-colors hover:bg-[#27272A] active:scale-[0.99]"
-              >
-                Ver produto na loja
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={() => { router.push('/produtos'); router.refresh(); }}
-              className="w-full rounded-[12px] border border-[#E5E3E0] bg-white px-4 py-2.5 text-[13.5px] font-bold text-[#3F3F46] transition-colors hover:bg-[#F4F4F3] active:scale-[0.99]"
-            >
-              Ir para os meus produtos
             </button>
           </div>
         </div>
