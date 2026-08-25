@@ -7,10 +7,13 @@ import { usePublishing } from '@/components/produtos/PublishingContext';
 
 const DURATION_MS = 400;
 // Tempo de "respiro" antes do banner começar a entrar — dá ao lojista um
-// instante para reconhecer que chegou à página Produtos antes de qualquer
-// coisa nova aparecer. Sem isto, o banner surge colado à navegação e o
-// utilizador nunca chega a assimilar que o produto foi mesmo criado.
-const REVEAL_DELAY_MS = 900;
+// instante para reconhecer que chegou à página Produtos, ver o produto já
+// na lista (ainda que como card "a publicar" ou já resolvido) antes de
+// qualquer confirmação extra aparecer. Sem isto, o banner surge colado à
+// navegação e o utilizador nunca chega a assimilar que o produto foi mesmo
+// criado — o valor de 1400ms garante alguns segundos de "assentar" mesmo
+// em conexões rápidas, sem parecer uma demora artificial.
+const REVEAL_DELAY_MS = 1400;
 const EASE = 'cubic-bezier(0.22,1,0.36,1)';
 
 /**
