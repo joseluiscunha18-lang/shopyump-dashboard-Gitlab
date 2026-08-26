@@ -92,19 +92,25 @@ export function PendingProductRow({
   }, [showSkeleton, comErro, produto.produtoId, confirmado, produto.tempId, finalizePublish]);
 
   // Checkbox e botão "⋮" — a ProductRow real MOSTRA SEMPRE os dois (a
-  // ProductsExplorer passa onToggleSelect incondicionalmente). Se esta
-  // linha otimista os omitisse, a troca por ProductRow (em finalizePublish)
-  // deslocaria bruscamente a imagem/texto para a direita/esquerda — é
-  // esse salto de layout que o lojista vê como um "piscar", não uma
-  // diferença nos dados em si. Por isso mantemos os dois aqui, em todos
-  // os estados (esqueleto, normal e erro), inertes (não clicáveis: ainda
-  // não há produto real para selecionar ou editar), só para reservar
-  // exactamente o mesmo espaço.
+  // ProductsExplorer passa onToggleSelect incondicionalmente). Por isso
+  // mostramo-los aqui também, em todos os estados (esqueleto, normal e
+  // erro), com a MESMA aparência visual da linha real (opacidade normal,
+  // não opacity-0) — só inertes (pointer-events-none: ainda não há
+  // produto real para selecionar ou editar).
+  //
+  // Anteriormente estes placeholders reservavam o espaço mas ficavam
+  // invisíveis (opacity-0), e só ganhavam opacidade ao trocar para a
+  // ProductRow real. Isso evitava o salto de LAYOUT mas não o salto
+  // VISUAL: a checkbox e os "⋮" apareciam do nada, e é exactamente esse
+  // "pop" que o lojista nota como "a interface mudou". Ao ficarem visíveis
+  // desde o primeiro instante (skeleton incluído), a troca para a linha
+  // real passa a ser 100% impercetível — literalmente nenhum pixel muda,
+  // só o pointer-events deixa de ser bloqueado.
   const checkboxPlaceholder = (
-    <Checkbox checked={false} onChange={() => {}} ariaLabel="" className="pointer-events-none ml-0.5 mr-2 opacity-0" />
+    <Checkbox checked={false} onChange={() => {}} ariaLabel="" className="pointer-events-none ml-0.5 mr-2" />
   );
   const menuPlaceholder = (
-    <div className="pointer-events-none flex h-8 w-8 flex-shrink-0 items-center justify-center opacity-0">
+    <div className="pointer-events-none flex h-8 w-8 flex-shrink-0 items-center justify-center text-slate-500">
       <MoreVertical size={17} strokeWidth={2.3} />
     </div>
   );
