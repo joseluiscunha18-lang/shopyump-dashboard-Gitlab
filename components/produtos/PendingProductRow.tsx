@@ -212,10 +212,18 @@ export function PendingProductRow({
       <div className="flex items-center gap-3 p-4">
         {checkboxEl}
         <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
-        <div className="min-w-0 flex-1 flex flex-col gap-2">
+        {/* Alturas E margens espelham 1:1 as 3 linhas de texto reais logo
+        abaixo (leading-[13px]/[12px]/[11px] + mt-0.5/mt-1) — não só o total,
+        mas cada bloco individualmente. Um "gap" uniforme aqui (como havia
+        antes) até fecha a MESMA altura total, mas distribui o espaço de
+        forma diferente do conteúdo real; ao trocar de esqueleto para
+        conteúdo, o "⋮", o checkbox e os pontos (indicador de estado, "·"
+        separador) ainda saltavam alguns pixels porque a proporção interna
+        das margens não coincidia. Espelhar mt a mt elimina isso de vez. */}
+        <div className="min-w-0 flex-1">
           <Skeleton className="h-[13px] w-2/5" />
-          <Skeleton className="h-[12px] w-1/3" />
-          <Skeleton className="h-[11px] w-1/4" />
+          <Skeleton className="mt-0.5 h-[12px] w-1/3" />
+          <Skeleton className="mt-1 h-[11px] w-1/4" />
         </div>
         {menuEl}
       </div>
@@ -241,17 +249,17 @@ export function PendingProductRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-ink">{produto.nome}</p>
-        <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-600">
+        <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
+        <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
           {produto.precoLabel} MZN · {categoriaEspecifica}
         </p>
         {comErro ? (
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
             <AlertTriangle size={11} className="text-red-500" />
             <span className="text-red-500">{produto.errorMessage ?? 'Não foi possível publicar.'}</span>
           </p>
         ) : (
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
             <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
             Ativo
           </p>
