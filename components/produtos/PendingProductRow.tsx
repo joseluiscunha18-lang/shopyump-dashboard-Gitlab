@@ -1,27 +1,69 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AlertTriangle, RotateCcw, X, Image as ImageIcon } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
+import { Skeleton } from '@/components/ui/Surfaces';
 
 /**
  * Enquanto a publicação está a decorrer (ou já terminou mas ainda à
  * espera de o `produtos` do servidor confirmar), mostra a MESMA aparência
  * de uma linha de produto real — foto local (blob:, é a mesma imagem que
- * vai ficar guardada), nome e preço já digitados. Nada de "esqueleto"
- * genérico nem de "A publicar…": como já temos tudo o que é preciso para
- * mostrar um resultado com aparência definitiva, mostramo-lo já assim.
- * Isso faz a troca por ProductRow (quando os dados reais chegam) ser
- * impercetível — mesmo layout, mesma foto, sem qualquer estado intermédio
- * "a piscar" pelo meio.
+ * vai ficar guardada), nome e preço já digitados. Isso faz a troca por
+ * ProductRow (quando os dados reais chegam) ser impercetível — mesmo
+ * layout, mesma foto, sem qualquer estado intermédio "a piscar" pelo meio.
  *
- * Em caso de erro, porém, o lojista precisa de contexto para decidir se
- * tenta de novo ou descarta — por isso só aí mostramos a mensagem e ações.
+ * Ao MONTAR — ou seja, exatamente quando se chega à página Produtos —
+ * esta linha (e só esta, as restantes já existentes na lista ficam
+ * intactas) passa primeiro por um breve esqueleto (skeleton-shimmer, o
+ * mesmo usado no resto do dashboard) antes de revelar a foto/nome/preço.
+ * O botão "Publicar produto" já segura a navegação por
+ * MIN_BOTAO_PUBLICAR_MS (ver ProductForm) só o suficiente para o clique
+ * se sentir registado — o resto do "a processar" acontece aqui, já na
+ * lista, como um carregamento rápido em vez de continuar preso ao ecrã do
+ * formulário.
+ *
+ * Em caso de erro, o lojista precisa de contexto para decidir se tenta de
+ * novo ou descarta — por isso, se `status` já vier (ou passar a) 'erro',
+ * salta-se o esqueleto e mostra-se logo a mensagem e as ações.
  */
+const SKELETON_MIN_MS = 1500;
+const SKELETON_MAX_MS = 2000;
+
 export function PendingProductRow({ produto }: { produto: PendingProduto }) {
   const { dismissPending } = usePublishing();
   const comErro = produto.status === 'erro';
+
+  // Duração sorteada uma única vez por linha (não a cada re-render), para
+  // não parecer sempre o mesmo tempo cronometrado ao segundo.
+  const skeletonMsRef = useRef(SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS));
+  const [showSkeleton, setShowSkeleton] = useState(!comErro);
+
+  useEffect(() => {
+    // Erro chegado a meio do esqueleto (ex: falhou o upload enquanto ainda
+    // se mostrava a animar) — não faz sentido continuar a "carregar" algo
+    // que já se sabe ter falhado.
+    if (comErro) {
+      setShowSkeleton(false);
+      return;
+    }
+    const t = setTimeout(() => setShowSkeleton(false), skeletonMsRef.current);
+    return () => clearTimeout(t);
+  }, [comErro]);
+
+  if (showSkeleton) {
+    return (
+      <div className="flex items-center gap-3 p-4">
+        <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
+        <div className="min-w-0 flex-1 flex flex-col gap-2">
+          <Skeleton className="h-[13px] w-2/5" />
+          <Skeleton className="h-[12px] w-1/3" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3 p-4">
