@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AlertTriangle, RotateCcw, X, Image as ImageIcon } from 'lucide-react';
+import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { Skeleton } from '@/components/ui/Surfaces';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 /**
  * Enquanto a publicação está a decorrer (ou já terminou mas ainda à
@@ -90,20 +91,41 @@ export function PendingProductRow({
     if (produto.produtoId && confirmado) finalizePublish(produto.tempId);
   }, [showSkeleton, comErro, produto.produtoId, confirmado, produto.tempId, finalizePublish]);
 
+  // Checkbox e botão "⋮" — a ProductRow real MOSTRA SEMPRE os dois (a
+  // ProductsExplorer passa onToggleSelect incondicionalmente). Se esta
+  // linha otimista os omitisse, a troca por ProductRow (em finalizePublish)
+  // deslocaria bruscamente a imagem/texto para a direita/esquerda — é
+  // esse salto de layout que o lojista vê como um "piscar", não uma
+  // diferença nos dados em si. Por isso mantemos os dois aqui, em todos
+  // os estados (esqueleto, normal e erro), inertes (não clicáveis: ainda
+  // não há produto real para selecionar ou editar), só para reservar
+  // exactamente o mesmo espaço.
+  const checkboxPlaceholder = (
+    <Checkbox checked={false} onChange={() => {}} ariaLabel="" className="pointer-events-none ml-0.5 mr-2 opacity-0" />
+  );
+  const menuPlaceholder = (
+    <div className="pointer-events-none flex h-8 w-8 flex-shrink-0 items-center justify-center opacity-0">
+      <MoreVertical size={17} strokeWidth={2.3} />
+    </div>
+  );
+
   if (showSkeleton) {
     return (
       <div className="flex items-center gap-3 p-4">
+        {checkboxPlaceholder}
         <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
         <div className="min-w-0 flex-1 flex flex-col gap-2">
           <Skeleton className="h-[13px] w-2/5" />
           <Skeleton className="h-[12px] w-1/3" />
         </div>
+        {menuPlaceholder}
       </div>
     );
   }
 
   return (
     <div className="flex items-center gap-3 p-4">
+      {checkboxPlaceholder}
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {comErro ? (
           <div className="flex h-full w-full items-center justify-center">
@@ -137,7 +159,7 @@ export function PendingProductRow({
         )}
       </div>
 
-      {comErro && (
+      {comErro ? (
         <div className="flex flex-shrink-0 items-center gap-1">
           <Link
             href="/produtos/novo"
@@ -157,6 +179,8 @@ export function PendingProductRow({
             <X size={16} strokeWidth={2.2} />
           </button>
         </div>
+      ) : (
+        menuPlaceholder
       )}
     </div>
   );
