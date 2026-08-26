@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
-import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
 import { Skeleton } from '@/components/ui/Surfaces';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { useToast } from '@/components/ui/Toast';
@@ -61,11 +60,6 @@ export function PendingProductRow({
   const { dismissPending, finalizePublish } = usePublishing();
   const { show } = useToast();
   const comErro = produto.status === 'erro';
-
-  // Mesma regra da ProductRow real: mostra só o segmento mais específico
-  // do caminho de categoria, não a cadeia inteira — ver ProductRow.tsx.
-  const segmentosPendente = segmentosCategoria(produto.categoria);
-  const categoriaEspecifica = segmentosPendente[segmentosPendente.length - 1] ?? produto.categoria;
 
   // Duração sorteada uma única vez por linha (não a cada re-render), para
   // não parecer sempre o mesmo tempo cronometrado ao segundo.
@@ -243,7 +237,7 @@ export function PendingProductRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-bold text-ink">{produto.nome}</p>
         <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-600">
-          {produto.precoLabel} MZN · {categoriaEspecifica}
+          {produto.precoLabel} MZN · {produto.categoria}
         </p>
         {comErro ? (
           <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
