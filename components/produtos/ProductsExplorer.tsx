@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, SearchX, Eye, EyeOff, Copy, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductRow } from '@/components/produtos/ProductRow';
-import { PendingProductRow, ProductRowSkeleton } from '@/components/produtos/PendingProductRow';
+import { PendingProductRow } from '@/components/produtos/PendingProductRow';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
 import { ProductFilterBar, type StatusFilter, type SortOption } from '@/components/produtos/ProductFilterBar';
@@ -29,12 +29,30 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [bulkPending, startBulkTransition] = useTransition();
   const router = useRouter();
   const { show } = useToast();
-  const { pending, celebration } = usePublishing();
+  const { pending, finalizePublish } = usePublishing();
 
   const categorias = useMemo(
     () => Array.from(new Set(produtos.map((p) => p.categoria).filter(Boolean))).sort(),
     [produtos],
   );
+
+  // Um pendente 'publicado' fica no contexto até o `produtos` vindo do
+  // servidor (depois do router.refresh() em resolvePublish) confirmar que
+  // já existe de verdade — só então deixa de fazer sentido mostrá-lo em
+  // duplicado. `pendingVisivel` protege visualmente contra qualquer corrida
+  // (produtos já atualizado mas o context ainda não limpou); o efeito a
+  // seguir trata de limpar o context para não ficar lixo acumulado.
+  const idsReais = useMemo(() => new Set(produtos.map((p) => p.id)), [produtos]);
+  const pendingVisivel = useMemo(
+    () => pending.filter((p) => !(p.produtoId && idsReais.has(p.produtoId))),
+    [pending, idsReais],
+  );
+
+  useEffect(() => {
+    for (const p of pending) {
+      if (p.produtoId && idsReais.has(p.produtoId)) finalizePublish(p.tempId);
+    }
+  }, [pending, idsReais, finalizePublish]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -195,7 +213,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
           </div>
         </div>
 
-        {filtered.length === 0 && pending.length === 0 && !celebration ? (
+        {filtered.length === 0 && pendingVisivel.length === 0 ? (
           <>
             <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
@@ -209,16 +227,6 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               </div>
             </div>
           </>
-        ) : filtered.length === 0 && pending.length === 0 && celebration ? (
-          // Janela curtíssima entre a navegação para /produtos e o
-          // router.refresh() trazer o produto recém-publicado: já há uma
-          // `celebration` pronta para o banner, mas os `produtos` vindos
-          // do servidor ainda não foram atualizados. Mesmo esqueleto de
-          // sempre — nunca "Nenhum produto encontrado" (seria enganoso,
-          // o produto existe) nem a linha de "a publicar" (já resolveu).
-          <div className="divide-y divide-[#1A1210]/8">
-            <ProductRowSkeleton />
-          </div>
         ) : (
           <>
             {/* Cor igual à da página (não branco) + a mesma linha acastanhada
@@ -239,13 +247,13 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                 </span>
               ) : (
                 <span className="text-[12px] font-bold text-[#1A1210]/75">
-                  {filtered.length + pending.length} {filtered.length + pending.length === 1 ? 'produto' : 'produtos'}
+                  {filtered.length + pendingVisivel.length} {filtered.length + pendingVisivel.length === 1 ? 'produto' : 'produtos'}
                 </span>
               )}
             </div>
 
             <div className="divide-y divide-[#1A1210]/8">
-              {pending.map((p) => (
+              {pendingVisivel.map((p) => (
                 <PendingProductRow key={p.tempId} produto={p} />
               ))}
               {visible.map((p) => (
