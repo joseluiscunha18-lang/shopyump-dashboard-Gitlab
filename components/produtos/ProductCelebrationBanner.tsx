@@ -47,11 +47,20 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   const [open, setOpen] = useState(false); // controla a animação (altura + fade)
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const produtoId = celebration?.produtoId ?? null;
-  const foto = celebration?.foto ?? null;
+  // Dados imediatos — disponíveis desde startPublish, sem esperar rede.
+  const nome       = celebration?.nome       ?? null;
+  const precoLabel = celebration?.precoLabel ?? null;
+  const fotoBlob   = celebration?.fotoPreview ?? null;
+  // Foto CDN — só disponível após resolvePublish; enquanto não chega usa o blob local.
+  const fotoCdn    = celebration?.foto        ?? null;
+  const foto       = fotoCdn ?? fotoBlob;
+  // produtoId — null enquanto upload/insert decorrem; link só aparece quando estiver pronto.
+  const produtoId  = celebration?.produtoId  ?? null;
 
   useEffect(() => {
-    if (!produtoId) return;
+    // O banner acende assim que celebration existe (desde startPublish),
+    // não é preciso esperar produtoId. tempId é a âncora estável.
+    if (!celebration?.tempId) return;
     // Espera a página "assentar" antes de animar a entrada.
     const t = setTimeout(() => {
       setOpen(true);
@@ -65,7 +74,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, REVEAL_DELAY_MS);
     return () => clearTimeout(t);
-  }, [produtoId]);
+  }, [celebration?.tempId]);
 
   function fechar() {
     setOpen(false); // dispara a animação de saída (colapso + fade)
@@ -100,26 +109,36 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
                 em vez de a carregar de novo aqui. */}
             {foto ? (
               <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 sm:h-12 sm:w-12">
-                <NextImage src={foto} alt="" fill sizes="56px" className="object-cover" />
+                {/* blob: URLs não passam pelo optimizador do Next.js — usa <img> directamente.
+                    Quando resolvePublish trouxer a URL CDN, fotoCdn substitui o blob e
+                    NextImage volta a ser usado. A troca é imperceptível porque é a mesma foto. */}
+                {fotoCdn ? (
+                  <NextImage src={fotoCdn} alt="" fill sizes="56px" className="object-cover" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={foto} alt="" className="h-full w-full object-cover" />
+                )}
               </div>
             ) : (
               <div className="h-11 w-11 shrink-0 rounded-[10px] border border-zinc-200 bg-zinc-100 sm:h-12 sm:w-12" />
             )}
 
-            {/* Texto */}
+            {/* Texto — usa dados optimistas disponíveis desde startPublish */}
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 truncate text-[13.5px] font-bold leading-tight text-zinc-900">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                Seu produto já está na sua loja
+                {nome ?? 'Produto publicado'}
               </p>
               <p className="mt-0.5 truncate text-[12px] font-medium text-zinc-500">
-                Veja como seus clientes vão encontrar.
+                {precoLabel ? `${precoLabel} MZN · ` : ''}Já está na sua loja
               </p>
             </div>
           </div>
 
-          {/* CTA — secundário, neutro; não compete com o botão + da navegação inferior */}
-          {lojaSlug ? (
+          {/* CTA — só aparece como link quando produtoId estiver disponível (após resolvePublish).
+              Enquanto o upload/insert decorrem mostra o botão de fechar no lugar, para não
+              bloquear o banner nem deixar um link quebrado. */}
+          {lojaSlug && produtoId ? (
             <a
               href={`https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`}
               target="_blank"
@@ -134,7 +153,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
               onClick={fechar}
               className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
             >
-              Ver produto na loja
+              {produtoId ? 'Ver produto na loja' : 'OK'}
             </button>
           )}
 
