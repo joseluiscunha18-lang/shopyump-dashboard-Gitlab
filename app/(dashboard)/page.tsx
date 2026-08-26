@@ -30,7 +30,7 @@ export default async function DashboardHomePage() {
   const hasActivity = stats.pedidosTotal > 0;
 
   if (!hasActivity) {
-    const storeUrl = ctx.loja.slug ? `${process.env.NEXT_PUBLIC_WEB_URL ?? ''}/loja/${ctx.loja.slug}` : null;
+    const storeUrl = ctx.loja.slug ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
     const hasCustomized = Boolean(
       ctx.loja.descricao?.trim() || ctx.loja.banner_url || ctx.loja.instagram || ctx.loja.facebook || ctx.loja.email
     );
