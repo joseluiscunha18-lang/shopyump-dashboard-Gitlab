@@ -391,7 +391,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     // aparece — via toast, que sobrevive à troca de página porque o
     // ToastProvider vive no layout raiz — só que já não impede a saída.
     if (produto) {
-      const MIN_GUARDAR_MS = 1000;
+      const MIN_GUARDAR_MS = 2500;
       setTimeout(() => {
         // Sem router.refresh() aqui: é ele que obriga a troca de página a
         // esperar por uma resposta nova do Supabase (o atraso variável
@@ -485,7 +485,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     clearProdutoDraft(lojaId);
     setDirty(false);
 
-    const MIN_BOTAO_PUBLICAR_MS = 1000;
+    const MIN_BOTAO_PUBLICAR_MS = 2500;
     setTimeout(() => {
       // Sem setSaving(false) aqui de propósito: se o resetássemos antes do
       // router.push, o botão voltava a "Publicar produto" por um instante
