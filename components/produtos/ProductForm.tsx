@@ -391,10 +391,15 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     // aparece — via toast, que sobrevive à troca de página porque o
     // ToastProvider vive no layout raiz — só que já não impede a saída.
     if (produto) {
-      const MIN_GUARDAR_MS = 1500;
+      const MIN_GUARDAR_MS = 1000;
       setTimeout(() => {
+        // Sem router.refresh() aqui: é ele que obriga a troca de página a
+        // esperar por uma resposta nova do Supabase (o atraso variável
+        // que não queríamos) e é também a causa do "piscar" para lista
+        // vazia — a atualização real dos dados já é feita mais abaixo,
+        // pelo router.refresh() chamado quando o update em segundo plano
+        // termina de facto (nunca antes disso).
         router.push('/produtos');
-        router.refresh();
       }, MIN_GUARDAR_MS);
 
       (async () => {
@@ -480,7 +485,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     clearProdutoDraft(lojaId);
     setDirty(false);
 
-    const MIN_BOTAO_PUBLICAR_MS = 1500;
+    const MIN_BOTAO_PUBLICAR_MS = 1000;
     setTimeout(() => {
       // Sem setSaving(false) aqui de propósito: se o resetássemos antes do
       // router.push, o botão voltava a "Publicar produto" por um instante
@@ -489,15 +494,15 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       // e a saída do ecrã. O formulário vai desmontar assim que a
       // navegação completar, por isso não há necessidade de repor
       // `saving`: o botão fica a processar até ao redirecionamento em si.
+      //
+      // SEM router.refresh() aqui: obrigava a troca de ecrã a esperar por
+      // uma resposta nova do Supabase (o atraso variável que não
+      // queremos) e era também a causa do "piscar" para lista vazia
+      // logo a seguir a chegar à página. A lista fica correta sozinha
+      // quando o upload+insert em segundo plano terminar de facto —
+      // resolvePublish já chama router.refresh() nesse momento, via
+      // PublishingContext.
       router.push('/produtos');
-      // O prefetch de '/produtos' feito ao montar este formulário guardou
-      // em cache a página ainda vazia. Se o upload+insert em segundo plano
-      // já tiver terminado neste ponto, o resolvePublish já chamou
-      // router.refresh() — mas nessa altura ainda estávamos nesta rota,
-      // por isso não teve efeito nenhum sobre /produtos. Este refresh()
-      // extra, já depois do push, garante que a lista mostrada vem sempre
-      // fresca da base de dados, nunca do cache pré-publicação.
-      router.refresh();
     }, MIN_BOTAO_PUBLICAR_MS);
 
     (async () => {
