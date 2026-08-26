@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { MoreVertical, Pencil, Copy, EyeOff, Eye, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
+import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
 import { useToast } from '@/components/ui/Toast';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -74,6 +75,13 @@ export function ProductRow({
   }
 
   const preco = produto.preco_promo && produto.preco_promo > 0 ? produto.preco_promo : produto.preco;
+  // `produto.categoria` guarda o caminho completo ("Moda › Calçados ›
+  // Ténis"), mas mostrar a cadeia inteira nesta linha estreita é o que
+  // fazia o texto cortar. A última parte já é a mais específica da
+  // hierarquia — é ela que identifica o produto, o resto ("Moda", etc.) é
+  // implícito e não faz falta aqui.
+  const segmentos = segmentosCategoria(produto.categoria);
+  const categoriaEspecifica = segmentos[segmentos.length - 1] ?? produto.categoria;
   const temEstoque = typeof produto.estoque === 'number';
 
   return (
@@ -112,7 +120,7 @@ export function ProductRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-bold text-ink">{produto.nome}</p>
         <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-600">
-          {preco.toLocaleString('pt-MZ')} MZN · {produto.categoria}
+          {preco.toLocaleString('pt-MZ')} MZN · {categoriaEspecifica}
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
           {ativo ? (
