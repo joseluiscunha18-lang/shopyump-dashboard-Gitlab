@@ -259,7 +259,11 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
 
             <div className="divide-y divide-[#1A1210]/8">
               {pendingVisivel.map((p) => (
-                <PendingProductRow key={p.tempId} produto={p} />
+                <PendingProductRow
+                  key={p.tempId}
+                  produto={p}
+                  confirmado={!!p.produtoId && produtos.some((real) => real.id === p.produtoId)}
+                />
               ))}
               {visible.map((p) => (
                 <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
