@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical } from 'lucide-react';
+import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Ban } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { Skeleton } from '@/components/ui/Surfaces';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -57,6 +57,24 @@ export function PendingProductRow({
   const skeletonMsRef = useRef(SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS));
   const [showSkeleton, setShowSkeleton] = useState(!comErro);
 
+  // Checkbox e menu "⋮" respondem ao toque desde o primeiro instante (ver
+  // nota mais abaixo) — precisam do seu próprio estado local, já que ainda
+  // não existe um `produto.id` real para participar na seleção em massa da
+  // ProductsExplorer nem num menu de ações que dependa de mutações no
+  // servidor.
+  const [selecionado, setSelecionado] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [menuOpen]);
+
   useEffect(() => {
     // Erro chegado a meio do esqueleto (ex: falhou o upload enquanto ainda
     // se mostrava a animar) — não faz sentido continuar a "carregar" algo
@@ -94,44 +112,69 @@ export function PendingProductRow({
   // Checkbox e botão "⋮" — a ProductRow real MOSTRA SEMPRE os dois (a
   // ProductsExplorer passa onToggleSelect incondicionalmente). Por isso
   // mostramo-los aqui também, em todos os estados (esqueleto, normal e
-  // erro), com a MESMA aparência visual da linha real (opacidade normal,
-  // não opacity-0) — só inertes (pointer-events-none: ainda não há
-  // produto real para selecionar ou editar).
-  //
-  // Anteriormente estes placeholders reservavam o espaço mas ficavam
-  // invisíveis (opacity-0), e só ganhavam opacidade ao trocar para a
-  // ProductRow real. Isso evitava o salto de LAYOUT mas não o salto
-  // VISUAL: a checkbox e os "⋮" apareciam do nada, e é exactamente esse
-  // "pop" que o lojista nota como "a interface mudou". Ao ficarem visíveis
-  // desde o primeiro instante (skeleton incluído), a troca para a linha
-  // real passa a ser 100% impercetível — literalmente nenhum pixel muda,
-  // só o pointer-events deixa de ser bloqueado.
-  const checkboxPlaceholder = (
-    <Checkbox checked={false} onChange={() => {}} ariaLabel="" className="pointer-events-none ml-0.5 mr-2" />
+  // erro), com a MESMA aparência visual da linha real — e AGORA também com
+  // a mesma resposta ao toque. Enquanto o produto ainda está a publicar,
+  // ainda não há `id` real para participar na seleção em massa nem em
+  // mutações no servidor, mas isso não é motivo para o botão ficar morto:
+  // a checkbox marca-se localmente (dá o mesmo feedback imediato que o
+  // lojista já conhece do resto da lista) e o "⋮" abre um menu real com a
+  // única ação que já faz sentido nesta fase — cancelar a publicação.
+  const checkboxEl = (
+    <Checkbox
+      checked={selecionado}
+      onChange={setSelecionado}
+      ariaLabel="Selecionar produto"
+      className="ml-0.5 mr-2"
+    />
   );
-  const menuPlaceholder = (
-    <div className="pointer-events-none flex h-8 w-8 flex-shrink-0 items-center justify-center text-slate-500">
-      <MoreVertical size={17} strokeWidth={2.3} />
+
+  const menuEl = (
+    <div ref={menuRef} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-label="Ações do produto"
+        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+      >
+        <MoreVertical size={17} strokeWidth={2.3} />
+      </button>
+
+      {menuOpen && (
+        <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              dismissPending(produto.tempId);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+          >
+            <Ban size={15} strokeWidth={2.3} />
+            Cancelar publicação
+          </button>
+        </div>
+      )}
     </div>
   );
 
   if (showSkeleton) {
     return (
       <div className="flex items-center gap-3 p-4">
-        {checkboxPlaceholder}
+        {checkboxEl}
         <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
         <div className="min-w-0 flex-1 flex flex-col gap-2">
           <Skeleton className="h-[13px] w-2/5" />
           <Skeleton className="h-[12px] w-1/3" />
+          <Skeleton className="h-[11px] w-1/4" />
         </div>
-        {menuPlaceholder}
+        {menuEl}
       </div>
     );
   }
 
   return (
     <div className="flex items-center gap-3 p-4">
-      {checkboxPlaceholder}
+      {checkboxEl}
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {comErro ? (
           <div className="flex h-full w-full items-center justify-center">
@@ -186,7 +229,7 @@ export function PendingProductRow({
           </button>
         </div>
       ) : (
-        menuPlaceholder
+        menuEl
       )}
     </div>
   );
