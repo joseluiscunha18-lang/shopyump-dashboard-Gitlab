@@ -31,8 +31,18 @@ export interface PendingProduto {
   categoria: string;
   /** blob: URL local — só válido enquanto o documento não recarrega. */
   fotoPreview: string | null;
-  status: 'a-publicar' | 'erro';
+  /**
+   * 'a-publicar': upload/insert ainda a decorrer.
+   * 'publicado': já terminou com sucesso, mas ainda à espera de o
+   *   `produtos` vindo do servidor (após router.refresh()) confirmar —
+   *   mantém-se visível com a MESMA aparência de um produto real (ver
+   *   PendingProductRow) para a troca pelo dado real ser impercetível.
+   * 'erro': falhou — mostra nome/preço + motivo + ações.
+   */
+  status: 'a-publicar' | 'publicado' | 'erro';
   errorMessage?: string;
+  /** Preenchido quando `status` passa a 'publicado'. */
+  produtoId?: string;
 }
 
 export interface Celebration {
@@ -44,13 +54,15 @@ interface PublishingContextValue {
   pending: PendingProduto[];
   celebration: Celebration | null;
   /** Regista um produto otimista e mostra-o de imediato na lista. */
-  startPublish: (p: Omit<PendingProduto, 'status' | 'errorMessage'>) => void;
-  /** Publicação concluída com sucesso — remove o otimista e acende a celebração. */
+  startPublish: (p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>) => void;
+  /** Publicação concluída com sucesso — marca como 'publicado' e acende a celebração. */
   resolvePublish: (tempId: string, result: Celebration) => void;
   /** Publicação falhou — o card fica com estado de erro em vez de desaparecer em silêncio. */
   failPublish: (tempId: string, message: string) => void;
   /** O lojista dispensa um card de erro. */
   dismissPending: (tempId: string) => void;
+  /** O `produtoId` já apareceu nos `produtos` reais — o otimista deixa de ser necessário. */
+  finalizePublish: (tempId: string) => void;
   clearCelebration: () => void;
 }
 
@@ -61,18 +73,21 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const router = useRouter();
 
-  const startPublish = useCallback((p: Omit<PendingProduto, 'status' | 'errorMessage'>) => {
+  const startPublish = useCallback((p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>) => {
     setPending((prev) => [...prev, { ...p, status: 'a-publicar' }]);
   }, []);
 
   const resolvePublish = useCallback((tempId: string, result: Celebration) => {
-    setPending((prev) => prev.filter((p) => p.tempId !== tempId));
+    // Fica em `pending` (agora 'publicado') em vez de ser removido de
+    // imediato: a lista que a página Produtos recebeu do servidor (no
+    // momento em que se navegou para lá, ainda antes do insert terminar)
+    // não sabe deste produto. Se limpássemos aqui, haveria uma janela sem
+    // nem o otimista nem o real para mostrar — exatamente o "esqueleto a
+    // aparecer sozinho" que queremos evitar. Mantém-se visível, com a
+    // mesma foto local, até `finalizePublish` confirmar que já existe nos
+    // dados reais.
+    setPending((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: 'publicado', produtoId: result.produtoId } : p)));
     setCelebration(result);
-    // O produto acabou de entrar na base de dados — a lista que a página
-    // Produtos recebeu do servidor (no momento em que se navegou para lá,
-    // ainda antes do insert terminar) não sabe disto. Um refresh() aqui,
-    // feito a partir deste provider que nunca desmonta, busca-a de novo já
-    // com o produto real, substituindo o card otimista sem sobressalto.
     router.refresh();
   }, [router]);
 
@@ -84,11 +99,15 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
     setPending((prev) => prev.filter((p) => p.tempId !== tempId));
   }, []);
 
+  const finalizePublish = useCallback((tempId: string) => {
+    setPending((prev) => prev.filter((p) => p.tempId !== tempId));
+  }, []);
+
   const clearCelebration = useCallback(() => setCelebration(null), []);
 
   const value = useMemo(
-    () => ({ pending, celebration, startPublish, resolvePublish, failPublish, dismissPending, clearCelebration }),
-    [pending, celebration, startPublish, resolvePublish, failPublish, dismissPending, clearCelebration],
+    () => ({ pending, celebration, startPublish, resolvePublish, failPublish, dismissPending, finalizePublish, clearCelebration }),
+    [pending, celebration, startPublish, resolvePublish, failPublish, dismissPending, finalizePublish, clearCelebration],
   );
 
   return <PublishingContext.Provider value={value}>{children}</PublishingContext.Provider>;
