@@ -382,61 +382,72 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       peso: controlarPeso ? pesoPadraoKg : null,
     };
 
-    // ── Edição: mantém-se síncrona — é um fluxo já rápido (sem o salto
-    // "processar → mudar de página" que a criação tinha) e o lojista está
-    // a olhar para um produto que já existe, por isso faz sentido esperar
-    // pela confirmação antes de sair do formulário. ──────────────────────
+    // ── Edição: mesma lógica de navegação garantida da criação. ───────────
+    // Antes esperava a rede (upload + update) por inteiro antes de sair do
+    // formulário — daí a variação 4-8s conforme a ligação. Agora o upload
+    // e o update seguem em segundo plano (fora do "await" que bloquearia a
+    // navegação) e a saída para /produtos é sempre disparada aos 3
+    // segundos exatos, sucesso ou erro. Um erro em segundo plano ainda
+    // aparece — via toast, que sobrevive à troca de página porque o
+    // ToastProvider vive no layout raiz — só que já não impede a saída.
     if (produto) {
-      let fotosFinais: string[];
-      try {
-        fotosFinais = await Promise.all(
-          fotos.map(async (foto) => {
-            if (!foto.startsWith('blob:')) return foto;
-            const res  = await fetch(foto);
-            const blob = await res.blob();
-            const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
-            const { url, error } = await uploadImage(BUCKETS.produtos, file, lojaId);
-            if (error || !url) throw new Error(error ?? 'Não foi possível enviar uma das imagens.');
-            return url;
-          })
-        );
-      } catch (err) {
-        setSaving(false);
-        return show(err instanceof Error ? err.message : 'Não foi possível enviar uma das imagens.', 'error');
-      }
+      const MIN_GUARDAR_MS = 3000;
+      setTimeout(() => {
+        router.push('/produtos');
+        router.refresh();
+      }, MIN_GUARDAR_MS);
 
-      const payload = {
-        loja_id:    lojaId,
-        nome:       nome.trim(),
-        preco:      Number(preco),
-        preco_promo: precoPromo ? Number(precoPromo) : null,
-        categoria,
-        descricao:  descricao.trim() || null,
-        genero,
-        fotos:      fotosFinais,
-        variantes:  hasVariants
-          ? {
-              raiz:  variantes.raiz,
-              filha: variantes.filha,
-              neta:  variantes.neta,
-              versoes: variantes.versoes,
-              imagensPorCaracteristica: variantes.imagensPorCaracteristica,
-            }
-          : null,
-        estoque,
-        mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '')
-          ? maisOpcoesFinal
-          : null,
-        ativo: produto.ativo,
-      };
+      (async () => {
+        let fotosFinais: string[];
+        try {
+          fotosFinais = await Promise.all(
+            fotos.map(async (foto) => {
+              if (!foto.startsWith('blob:')) return foto;
+              const res  = await fetch(foto);
+              const blob = await res.blob();
+              const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
+              const { url, error } = await uploadImage(BUCKETS.produtos, file, lojaId);
+              if (error || !url) throw new Error(error ?? 'Não foi possível enviar uma das imagens.');
+              return url;
+            })
+          );
+        } catch (err) {
+          show(err instanceof Error ? err.message : 'Não foi possível enviar uma das imagens.', 'error');
+          return;
+        }
 
-      const res = await updateProduto(produto.id, payload);
-      setSaving(false);
-      if (!res.ok) return show(res.error ?? 'Não foi possível guardar o produto.', 'error');
-      show('Produto atualizado.');
+        const payload = {
+          loja_id:    lojaId,
+          nome:       nome.trim(),
+          preco:      Number(preco),
+          preco_promo: precoPromo ? Number(precoPromo) : null,
+          categoria,
+          descricao:  descricao.trim() || null,
+          genero,
+          fotos:      fotosFinais,
+          variantes:  hasVariants
+            ? {
+                raiz:  variantes.raiz,
+                filha: variantes.filha,
+                neta:  variantes.neta,
+                versoes: variantes.versoes,
+                imagensPorCaracteristica: variantes.imagensPorCaracteristica,
+              }
+            : null,
+          estoque,
+          mais_opcoes: Object.values(maisOpcoesFinal).some((v) => v !== undefined && v !== null && v !== '')
+            ? maisOpcoesFinal
+            : null,
+          ativo: produto.ativo,
+        };
+
+        const res = await updateProduto(produto.id, payload);
+        if (!res.ok) return show(res.error ?? 'Não foi possível guardar o produto.', 'error');
+        show('Produto atualizado.');
+        router.refresh();
+      })();
+
       setDirty(false);
-      router.push('/produtos');
-      router.refresh();
       return;
     }
 
