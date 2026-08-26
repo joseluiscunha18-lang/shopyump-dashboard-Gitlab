@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Ban } from 'lucide-react';
+import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { Skeleton } from '@/components/ui/Surfaces';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { useToast } from '@/components/ui/Toast';
 
 /**
  * Enquanto a publicação está a decorrer (ou já terminou mas ainda à
@@ -50,6 +51,7 @@ export function PendingProductRow({
   confirmado: boolean;
 }) {
   const { dismissPending, finalizePublish } = usePublishing();
+  const { show } = useToast();
   const comErro = produto.status === 'erro';
 
   // Duração sorteada uma única vez por linha (não a cada re-render), para
@@ -128,6 +130,17 @@ export function PendingProductRow({
     />
   );
 
+  // Feedback para as ações que dependem de o produto já estar gravado no
+  // servidor (Editar, Duplicar, Ativar/Inativar): enquanto a publicação
+  // ainda decorre não há `produto.id` real para essas mutações agirem em
+  // cima, por isso avisam em vez de fingir que fizeram algo. "Cancelar
+  // publicação" continua à parte, por já ser possível de verdade nesta
+  // fase (remove a linha otimista).
+  function avisarAindaPublicando() {
+    setMenuOpen(false);
+    show('Aguarda a publicação terminar para fazer isso.');
+  }
+
   const menuEl = (
     <div ref={menuRef} className="relative flex-shrink-0">
       <button
@@ -143,14 +156,39 @@ export function PendingProductRow({
         <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
           <button
             type="button"
+            onClick={avisarAindaPublicando}
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+          >
+            <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={avisarAindaPublicando}
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+          >
+            <Copy size={15} strokeWidth={2.3} className="text-slate-500" />
+            Duplicar
+          </button>
+          <button
+            type="button"
+            onClick={avisarAindaPublicando}
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+          >
+            <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
+            Inativar
+          </button>
+          <div className="my-1 h-px bg-[#1A1210]/8" />
+          <button
+            type="button"
             onClick={() => {
               setMenuOpen(false);
               dismissPending(produto.tempId);
             }}
             className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
           >
-            <Ban size={15} strokeWidth={2.3} />
-            Cancelar publicação
+            <Trash2 size={15} strokeWidth={2.3} />
+            Excluir
           </button>
         </div>
       )}
