@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
+import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
 import { Skeleton } from '@/components/ui/Surfaces';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { useToast } from '@/components/ui/Toast';
@@ -37,6 +38,8 @@ const SKELETON_MAX_MS = 2000;
 export function PendingProductRow({
   produto,
   confirmado,
+  selected,
+  onToggleSelect,
 }: {
   produto: PendingProduto;
   /**
@@ -49,10 +52,20 @@ export function PendingProductRow({
    * o produto real aparecer.
    */
   confirmado: boolean;
+  /** Vem da ProductsExplorer — a mesma seleção em massa da lista real,
+   * chaveada por `pending:${tempId}` (ver ProductsExplorer) já que ainda
+   * não existe um `id` de produto real. */
+  selected: boolean;
+  onToggleSelect: (key: string) => void;
 }) {
   const { dismissPending, finalizePublish } = usePublishing();
   const { show } = useToast();
   const comErro = produto.status === 'erro';
+
+  // Mesma regra da ProductRow real: mostra só o segmento mais específico
+  // do caminho de categoria, não a cadeia inteira — ver ProductRow.tsx.
+  const segmentosPendente = segmentosCategoria(produto.categoria);
+  const categoriaEspecifica = segmentosPendente[segmentosPendente.length - 1] ?? produto.categoria;
 
   // Duração sorteada uma única vez por linha (não a cada re-render), para
   // não parecer sempre o mesmo tempo cronometrado ao segundo.
@@ -60,11 +73,9 @@ export function PendingProductRow({
   const [showSkeleton, setShowSkeleton] = useState(!comErro);
 
   // Checkbox e menu "⋮" respondem ao toque desde o primeiro instante (ver
-  // nota mais abaixo) — precisam do seu próprio estado local, já que ainda
-  // não existe um `produto.id` real para participar na seleção em massa da
-  // ProductsExplorer nem num menu de ações que dependa de mutações no
-  // servidor.
-  const [selecionado, setSelecionado] = useState(false);
+  // nota mais abaixo). O menu continua com estado próprio (não participa
+  // em seleção em massa); a checkbox agora vem controlada de fora, pela
+  // mesma seleção da ProductsExplorer que a ProductRow real usa.
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -114,17 +125,18 @@ export function PendingProductRow({
   // Checkbox e botão "⋮" — a ProductRow real MOSTRA SEMPRE os dois (a
   // ProductsExplorer passa onToggleSelect incondicionalmente). Por isso
   // mostramo-los aqui também, em todos os estados (esqueleto, normal e
-  // erro), com a MESMA aparência visual da linha real — e AGORA também com
-  // a mesma resposta ao toque. Enquanto o produto ainda está a publicar,
-  // ainda não há `id` real para participar na seleção em massa nem em
-  // mutações no servidor, mas isso não é motivo para o botão ficar morto:
-  // a checkbox marca-se localmente (dá o mesmo feedback imediato que o
-  // lojista já conhece do resto da lista) e o "⋮" abre um menu real com a
-  // única ação que já faz sentido nesta fase — cancelar a publicação.
+  // erro), com a MESMA aparência visual da linha real — e com a mesma
+  // resposta ao toque. A checkbox agora participa mesmo na seleção em
+  // massa real (contador do cabeçalho, barra flutuante de ações no fundo
+  // da lista): usa a chave `pending:${tempId}` porque ainda não há um
+  // `id` de produto definitivo. As ações em massa que dependem do
+  // servidor (ativar/desativar/duplicar) tratam essa chave como
+  // "cancelar publicação" quando aplicadas a uma linha pendente — ver
+  // ProductsExplorer.
   const checkboxEl = (
     <Checkbox
-      checked={selecionado}
-      onChange={setSelecionado}
+      checked={selected}
+      onChange={() => onToggleSelect(`pending:${produto.tempId}`)}
       ariaLabel="Selecionar produto"
       className="ml-0.5 mr-2"
     />
@@ -231,7 +243,7 @@ export function PendingProductRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-bold text-ink">{produto.nome}</p>
         <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-600">
-          {produto.precoLabel} MZN · {produto.categoria}
+          {produto.precoLabel} MZN · {categoriaEspecifica}
         </p>
         {comErro ? (
           <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
