@@ -135,17 +135,24 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
             </div>
           </div>
 
-          {/* CTA — só aparece como link quando produtoId estiver disponível (após resolvePublish).
-              Enquanto o upload/insert decorrem mostra o botão de fechar no lugar, para não
-              bloquear o banner nem deixar um link quebrado. */}
-          {lojaSlug && produtoId ? (
+          {/* CTA — o link para a loja não depende do produtoId (o lojaSlug já
+              está disponível desde o startPublish), por isso o lojista nunca
+              vê um botão morto tipo "OK": desde o primeiro instante já pode
+              ir ver a sua loja. Assim que produtoId chegar (resolvePublish),
+              o mesmo botão passa a apontar directamente para a página do
+              produto — sem trocar de rótulo, só o destino melhora. */}
+          {lojaSlug ? (
             <a
-              href={`https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`}
+              href={
+                produtoId
+                  ? `https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`
+                  : `https://shopyump.vercel.app/loja/${lojaSlug}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
             >
-              Ver produto na loja
+              Ver sua loja
             </a>
           ) : (
             <button
@@ -153,7 +160,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
               onClick={fechar}
               className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
             >
-              {produtoId ? 'Ver produto na loja' : 'OK'}
+              OK
             </button>
           )}
 
