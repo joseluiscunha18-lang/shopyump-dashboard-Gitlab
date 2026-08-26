@@ -32,7 +32,22 @@ import { Skeleton } from '@/components/ui/Surfaces';
 const SKELETON_MIN_MS = 1500;
 const SKELETON_MAX_MS = 2000;
 
-export function PendingProductRow({ produto, confirmado }: { produto: PendingProduto; confirmado: boolean }) {
+export function PendingProductRow({
+  produto,
+  confirmado,
+}: {
+  produto: PendingProduto;
+  /**
+   * True só quando o produto real já está presente no `produtos` recebido
+   * do servidor (i.e. o router.refresh() disparado por resolvePublish já
+   * chegou). Enquanto for false, mantemos a linha otimista visível mesmo
+   * que `produtoId` já tenha chegado e o esqueleto já tenha terminado —
+   * finalizar cedo demais deixaria uma janela sem otimista nem real, e é
+   * aí que a lista mostra "Nenhum produto encontrado" por engano antes de
+   * o produto real aparecer.
+   */
+  confirmado: boolean;
+}) {
   const { dismissPending, finalizePublish } = usePublishing();
   const comErro = produto.status === 'erro';
 
@@ -58,20 +73,18 @@ export function PendingProductRow({ produto, confirmado }: { produto: PendingPro
   // ProductsExplorer, que decide o momento exato da troca. Isto garante a
   // janela mínima de exibição mesmo quando o servidor responde muito
   // depressa (produto já confirmado antes de a página nem terminar de
-  // montar). Se o esqueleto já tiver terminado e a confirmação chegar
-  // mais tarde, este efeito volta a correr e finaliza de imediato.
+  // montar). Se o esqueleto já tiver terminado e a confirmação chegar mais
+  // tarde, este efeito volta a correr (por `produto.produtoId` ou
+  // `confirmado` mudarem) e finaliza assim que ambos estiverem prontos.
   //
-  // IMPORTANTE: "confirmação real" não é o mesmo que `produto.produtoId`
-  // estar preenchido — isso só significa que o insert no servidor
-  // terminou, não que o `router.refresh()` (disparado em
-  // `resolvePublish`) já trouxe essa lista atualizada até este
-  // componente. Em rede lenta, `produtoId` pode chegar bem antes de
-  // `produtos` (no ProductsExplorer) ser atualizado. Finalizar só com
-  // base no `produtoId` fazia esta linha desaparecer de `pending` antes
-  // de o produto existir mesmo em `produtos` — abrindo a janela sem
-  // otimista nem real, o "Nenhum produto encontrado" a piscar. Por isso
-  // só finalizamos quando `confirmado` (o ProductsExplorer já viu o
-  // produto em `produtos`) também for verdadeiro.
+  // A condição exige `confirmado` (não só `produto.produtoId`): ter um
+  // produtoId só significa que o insert no servidor terminou — não que o
+  // router.refresh() já trouxe esse produto de volta no `produtos` da
+  // página. Finalizar com base só no produtoId cria uma janela em que a
+  // linha otimista já saiu e a real ainda não chegou, e a lista mostra
+  // "Nenhum produto encontrado" por um instante. Ao exigir `confirmado`,
+  // a troca só acontece quando já há sempre pelo menos uma linha (a
+  // otimista ou a real) visível.
   useEffect(() => {
     if (showSkeleton || comErro) return;
     if (produto.produtoId && confirmado) finalizePublish(produto.tempId);
