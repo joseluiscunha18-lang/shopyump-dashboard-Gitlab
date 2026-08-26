@@ -32,7 +32,7 @@ import { Skeleton } from '@/components/ui/Surfaces';
 const SKELETON_MIN_MS = 1500;
 const SKELETON_MAX_MS = 2000;
 
-export function PendingProductRow({ produto }: { produto: PendingProduto }) {
+export function PendingProductRow({ produto, confirmado }: { produto: PendingProduto; confirmado: boolean }) {
   const { dismissPending, finalizePublish } = usePublishing();
   const comErro = produto.status === 'erro';
 
@@ -54,17 +54,28 @@ export function PendingProductRow({ produto }: { produto: PendingProduto }) {
   }, [comErro]);
 
   // Só depois de o esqueleto terminar É QUE se verifica se já há
-  // confirmação real (`produtoId`) para finalizar — é este componente,
-  // não o ProductsExplorer, que decide o momento exato da troca. Isto
-  // garante a janela mínima de exibição mesmo quando o servidor responde
-  // muito depressa (produto já confirmado antes de a página nem
-  // terminar de montar). Se o esqueleto já tiver terminado e a
-  // confirmação chegar mais tarde, este efeito volta a correr (por
-  // `produto.produtoId` mudar) e finaliza de imediato.
+  // confirmação real para finalizar — é este componente, não o
+  // ProductsExplorer, que decide o momento exato da troca. Isto garante a
+  // janela mínima de exibição mesmo quando o servidor responde muito
+  // depressa (produto já confirmado antes de a página nem terminar de
+  // montar). Se o esqueleto já tiver terminado e a confirmação chegar
+  // mais tarde, este efeito volta a correr e finaliza de imediato.
+  //
+  // IMPORTANTE: "confirmação real" não é o mesmo que `produto.produtoId`
+  // estar preenchido — isso só significa que o insert no servidor
+  // terminou, não que o `router.refresh()` (disparado em
+  // `resolvePublish`) já trouxe essa lista atualizada até este
+  // componente. Em rede lenta, `produtoId` pode chegar bem antes de
+  // `produtos` (no ProductsExplorer) ser atualizado. Finalizar só com
+  // base no `produtoId` fazia esta linha desaparecer de `pending` antes
+  // de o produto existir mesmo em `produtos` — abrindo a janela sem
+  // otimista nem real, o "Nenhum produto encontrado" a piscar. Por isso
+  // só finalizamos quando `confirmado` (o ProductsExplorer já viu o
+  // produto em `produtos`) também for verdadeiro.
   useEffect(() => {
     if (showSkeleton || comErro) return;
-    if (produto.produtoId) finalizePublish(produto.tempId);
-  }, [showSkeleton, comErro, produto.produtoId, produto.tempId, finalizePublish]);
+    if (produto.produtoId && confirmado) finalizePublish(produto.tempId);
+  }, [showSkeleton, comErro, produto.produtoId, confirmado, produto.tempId, finalizePublish]);
 
   if (showSkeleton) {
     return (
