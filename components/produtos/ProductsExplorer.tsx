@@ -54,6 +54,15 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   );
   const pendingVisivel = pending;
 
+  // IDs que já vieram no `produtos` real (i.e. o router.refresh() disparado
+  // por resolvePublish já chegou e trouxe este produto). A PendingProductRow
+  // só pode finalizar-se — e sair de `pending` — depois disto ser verdade
+  // para o seu `produtoId`; caso contrário há uma janela em que a linha
+  // otimista já saiu de `pending` mas o `produtos` do servidor ainda não a
+  // substituiu, e é exatamente aí que "Nenhum produto encontrado" pisca
+  // antes de o produto real aparecer. Ver PendingProductRow.
+  const produtosConfirmadosIds = useMemo(() => new Set(produtos.map((p) => p.id)), [produtos]);
+
   const categorias = useMemo(
     () => Array.from(new Set(produtosVisiveis.map((p) => p.categoria).filter(Boolean))).sort(),
     [produtosVisiveis],
@@ -262,7 +271,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                 <PendingProductRow
                   key={p.tempId}
                   produto={p}
-                  confirmado={!!p.produtoId && produtos.some((real) => real.id === p.produtoId)}
+                  confirmado={p.produtoId ? produtosConfirmadosIds.has(p.produtoId) : false}
                 />
               ))}
               {visible.map((p) => (
