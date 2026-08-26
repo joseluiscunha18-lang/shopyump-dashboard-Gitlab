@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!ctx.userId) redirect('/login');
   if (!ctx.loja && !ctx.isAdmin) redirect('/onboarding');
 
-  const storeUrl = ctx.loja ? `${process.env.NEXT_PUBLIC_WEB_URL ?? ''}/loja/${ctx.loja.slug}` : null;
+  const storeUrl = ctx.loja ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
 
   return (
     <MobileNavProvider>
