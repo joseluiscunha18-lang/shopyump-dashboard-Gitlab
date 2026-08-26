@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
-import { Skeleton } from '@/components/ui/Surfaces';
+import { cn } from '@/lib/cn';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { useToast } from '@/components/ui/Toast';
 
@@ -207,33 +207,32 @@ export function PendingProductRow({
     </div>
   );
 
-  if (showSkeleton) {
-    return (
-      <div className="flex items-center gap-3 p-4">
-        {checkboxEl}
-        <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
-        {/* Alturas E margens espelham 1:1 as 3 linhas de texto reais logo
-        abaixo (leading-[13px]/[12px]/[11px] + mt-0.5/mt-1) — não só o total,
-        mas cada bloco individualmente. Um "gap" uniforme aqui (como havia
-        antes) até fecha a MESMA altura total, mas distribui o espaço de
-        forma diferente do conteúdo real; ao trocar de esqueleto para
-        conteúdo, o "⋮", o checkbox e os pontos (indicador de estado, "·"
-        separador) ainda saltavam alguns pixels porque a proporção interna
-        das margens não coincidia. Espelhar mt a mt elimina isso de vez. */}
-        <div className="min-w-0 flex-1">
-          <Skeleton className="h-[13px] w-2/5" />
-          <Skeleton className="mt-0.5 h-[12px] w-1/3" />
-          <Skeleton className="mt-1 h-[11px] w-1/4" />
-        </div>
-        {menuEl}
-      </div>
-    );
-  }
-
+  // ── Skeleton vs conteúdo real ──────────────────────────────────────────
+  // A abordagem anterior (barras cinzas com larguras "chutadas" tipo w-2/5)
+  // NUNCA bate com precisão pixel-a-pixel com o texto real — mesmo
+  // espelhando alturas e margens à mão, a fonte, o kerning e o cálculo do
+  // line-height do navegador sempre deixam uma diferença de 1-2px, e é
+  // isso que fazia os pontos (indicador de estado, "·" separador) parecer
+  // "saltar" ao trocar de fase.
+  //
+  // A correção definitiva é não fingir. `produto.nome`, `precoLabel`,
+  // `categoria` e `fotoPreview` já chegam TODOS prontos assim que o
+  // formulário chama `startPublish` — não há nada "desconhecido" para
+  // esconder atrás de uma barra cinza. Por isso, agora o esqueleto e o
+  // conteúdo final usam exatamente o MESMO markup (mesmas linhas, mesmas
+  // classes, mesmo texto) — o único efeito de "ainda a processar" é uma
+  // opacidade a pulsar sobre esse mesmo bloco. Como é literalmente o
+  // mesmo DOM nos dois estados, é estruturalmente impossível haver
+  // qualquer diferença de alinhamento entre eles.
   return (
     <div className="flex items-center gap-3 p-4">
       {checkboxEl}
-      <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
+      <div
+        className={cn(
+          'relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50 transition-opacity',
+          showSkeleton && 'animate-pulse opacity-70',
+        )}
+      >
         {comErro ? (
           <div className="flex h-full w-full items-center justify-center">
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
@@ -248,7 +247,7 @@ export function PendingProductRow({
         <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className={cn('min-w-0 flex-1 transition-opacity', showSkeleton && 'animate-pulse opacity-70')}>
         <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
         <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
           {produto.precoLabel} MZN · {categoriaEspecifica}
