@@ -121,7 +121,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           {/* CTA — secundário, neutro; não compete com o botão + da navegação inferior */}
           {lojaSlug ? (
             <a
-              href={`${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${lojaSlug}/p/${produtoId}`}
+              href={`https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
