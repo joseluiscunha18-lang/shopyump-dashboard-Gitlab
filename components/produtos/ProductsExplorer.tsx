@@ -29,7 +29,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [bulkPending, startBulkTransition] = useTransition();
   const router = useRouter();
   const { show } = useToast();
-  const { pending } = usePublishing();
+  const { pending, dismissPending } = usePublishing();
 
   // Enquanto uma publicação otimista ainda está "a-publicar" — ou já
   // "publicado" mas ainda dentro da sua janela mínima de exibição local
@@ -135,19 +135,42 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
     });
   }
 
-  const allVisibleSelected = visible.length > 0 && visible.every((p) => selectedIds.has(p.id));
-  const someVisibleSelected = visible.some((p) => selectedIds.has(p.id));
+  // Chaves de seleção das linhas ainda-publicando ("pending:<tempId>",
+  // mesma convenção usada na PendingProductRow) — entram na mesma conta e
+  // na mesma barra de ações da seleção real, já que visualmente são só
+  // mais linhas da lista.
+  const pendingKeys = useMemo(() => pendingVisivel.map((p) => `pending:${p.tempId}`), [pendingVisivel]);
+
+  const allVisibleSelected =
+    (visible.length + pendingKeys.length) > 0 &&
+    visible.every((p) => selectedIds.has(p.id)) &&
+    pendingKeys.every((k) => selectedIds.has(k));
+  const someVisibleSelected = visible.some((p) => selectedIds.has(p.id)) || pendingKeys.some((k) => selectedIds.has(k));
 
   function toggleSelectAll() {
     if (allVisibleSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(visible.map((p) => p.id)));
+      setSelectedIds(new Set([...visible.map((p) => p.id), ...pendingKeys]));
     }
   }
 
   function runBulk(action: (id: string) => Promise<{ ok: boolean; error?: string }>, successMsg: string, failMsg: string) {
-    const ids = Array.from(selectedIds);
+    // Linhas ainda-publicando não têm mutação real no servidor — a única
+    // ação que já faz sentido para elas é cancelar a publicação otimista,
+    // o que fazemos localmente em vez de as mandar para `action`.
+    const ids = Array.from(selectedIds).filter((id) => !id.startsWith('pending:'));
+    const pendingTempIds = Array.from(selectedIds)
+      .filter((id) => id.startsWith('pending:'))
+      .map((id) => id.slice('pending:'.length));
+
+    pendingTempIds.forEach((tempId) => dismissPending(tempId));
+
+    if (ids.length === 0) {
+      setSelectedIds(new Set());
+      return;
+    }
+
     startBulkTransition(async () => {
       const results = await Promise.all(ids.map((id) => action(id)));
       const failed = results.filter((r) => !r.ok).length;
@@ -272,6 +295,8 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                   key={p.tempId}
                   produto={p}
                   confirmado={p.produtoId ? produtosConfirmadosIds.has(p.produtoId) : false}
+                  selected={selectedIds.has(`pending:${p.tempId}`)}
+                  onToggleSelect={toggleSelect}
                 />
               ))}
               {visible.map((p) => (
