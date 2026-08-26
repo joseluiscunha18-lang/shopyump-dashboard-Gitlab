@@ -46,7 +46,15 @@ export interface PendingProduto {
 }
 
 export interface Celebration {
-  produtoId: string;
+  /** tempId do pending — preenchido imediatamente em startPublish. */
+  tempId: string;
+  /** Dados optimistas disponíveis desde startPublish — sem esperar rede. */
+  nome: string;
+  precoLabel: string;
+  fotoPreview: string | null;
+  /** Preenchido quando resolvePublish termina. Pode ser null enquanto upload/insert decorrem. */
+  produtoId: string | null;
+  /** URL permanente da foto — null até resolvePublish. */
   foto?: string;
 }
 
@@ -55,8 +63,8 @@ interface PublishingContextValue {
   celebration: Celebration | null;
   /** Regista um produto otimista e mostra-o de imediato na lista. */
   startPublish: (p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>) => void;
-  /** Publicação concluída com sucesso — marca como 'publicado' e acende a celebração. */
-  resolvePublish: (tempId: string, result: Celebration) => void;
+  /** Publicação concluída com sucesso — actualiza celebration com produtoId e foto final. */
+  resolvePublish: (tempId: string, result: { produtoId: string; foto?: string }) => void;
   /** Publicação falhou — o card fica com estado de erro em vez de desaparecer em silêncio. */
   failPublish: (tempId: string, message: string) => void;
   /** O lojista dispensa um card de erro. */
@@ -75,9 +83,20 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
 
   const startPublish = useCallback((p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>) => {
     setPending((prev) => [...prev, { ...p, status: 'a-publicar' }]);
+    // Acende o banner imediatamente com os dados já disponíveis (nome, foto blob, preço).
+    // O banner não precisa de esperar pelo upload/insert — mostra já os dados locais
+    // e actualiza a foto/produtoId silenciosamente quando resolvePublish completar.
+    setCelebration({
+      tempId: p.tempId,
+      nome: p.nome,
+      precoLabel: p.precoLabel,
+      fotoPreview: p.fotoPreview,
+      produtoId: null,
+      foto: undefined,
+    });
   }, []);
 
-  const resolvePublish = useCallback((tempId: string, result: Celebration) => {
+  const resolvePublish = useCallback((tempId: string, result: { produtoId: string; foto?: string }) => {
     // Fica em `pending` (agora 'publicado') em vez de ser removido de
     // imediato: a lista que a página Produtos recebeu do servidor (no
     // momento em que se navegou para lá, ainda antes do insert terminar)
@@ -87,7 +106,13 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
     // mesma foto local, até `finalizePublish` confirmar que já existe nos
     // dados reais.
     setPending((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: 'publicado', produtoId: result.produtoId } : p)));
-    setCelebration(result);
+    // Enriquece a celebration já visível com produtoId e foto CDN.
+    // Não substitui — o banner já está no ecrã desde startPublish.
+    setCelebration((prev) =>
+      prev?.tempId === tempId
+        ? { ...prev, produtoId: result.produtoId, foto: result.foto }
+        : prev
+    );
     router.refresh();
   }, [router]);
 
