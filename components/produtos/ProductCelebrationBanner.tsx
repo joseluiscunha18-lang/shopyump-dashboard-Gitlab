@@ -1,6 +1,5 @@
 'use client';
 
-import NextImage from 'next/image';
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePublishing } from '@/components/produtos/PublishingContext';
@@ -48,8 +47,6 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Dados imediatos — disponíveis desde startPublish, sem esperar rede.
-  const nome       = celebration?.nome       ?? null;
-  const precoLabel = celebration?.precoLabel ?? null;
   const fotoBlob   = celebration?.fotoPreview ?? null;
   // Foto CDN — só disponível após resolvePublish; enquanto não chega usa o blob local.
   const fotoCdn    = celebration?.foto        ?? null;
@@ -104,33 +101,29 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 pr-11 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Thumbnail — mesmo tamanho (56px) e sizes que a lista de produtos usa,
-                para reaproveitar a imagem já otimizada e em cache pelo Next.js
-                em vez de a carregar de novo aqui. */}
-            {foto ? (
-              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 sm:h-12 sm:w-12">
-                {/* blob: URLs não passam pelo optimizador do Next.js — usa <img> directamente.
-                    Quando resolvePublish trouxer a URL CDN, fotoCdn substitui o blob e
-                    NextImage volta a ser usado. A troca é imperceptível porque é a mesma foto. */}
-                {fotoCdn ? (
-                  <NextImage src={fotoCdn} alt="" fill sizes="56px" className="object-cover" />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={foto} alt="" className="h-full w-full object-cover" />
-                )}
-              </div>
-            ) : (
-              <div className="h-11 w-11 shrink-0 rounded-[10px] border border-zinc-200 bg-zinc-100 sm:h-12 sm:w-12" />
-            )}
+            {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
+                ao fim (URL CDN). Nunca troca de tipo de elemento nem de
+                componente: só o `src` muda quando resolvePublish termina, o
+                que o browser resolve pintando a imagem nova por cima da
+                anterior sem desmontar nada — por isso não há "piscar" nem
+                salto de layout entre a versão a carregar e a versão final. */}
+            <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 bg-zinc-100 sm:h-12 sm:w-12">
+              {foto && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={foto} alt="" className="h-full w-full object-cover" />
+              )}
+            </div>
 
-            {/* Texto — usa dados optimistas disponíveis desde startPublish */}
+            {/* Texto — fixo desde o instante em que o banner aparece até ao
+                fim; não depende de nome/preço chegarem, por isso é
+                exatamente igual "a carregar" e "carregado". */}
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 truncate text-[13.5px] font-bold leading-tight text-zinc-900">
+              <p className="flex items-center gap-1.5 text-[13.5px] font-bold leading-tight text-zinc-900">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                {nome ?? 'Produto publicado'}
+                Sua loja já está pronta para receber clientes
               </p>
-              <p className="mt-0.5 truncate text-[12px] font-medium text-zinc-500">
-                {precoLabel ? `${precoLabel} MZN · ` : ''}Já está na sua loja
+              <p className="mt-0.5 text-[12px] font-medium leading-snug text-zinc-500">
+                Seu primeiro produto já está disponível para que pessoas conheçam e encontrem o que você oferece.
               </p>
             </div>
           </div>
@@ -152,7 +145,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
               rel="noopener noreferrer"
               className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
             >
-              Ver sua loja
+              Ver minha loja
             </a>
           ) : (
             <button
