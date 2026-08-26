@@ -29,35 +29,40 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
   const [bulkPending, startBulkTransition] = useTransition();
   const router = useRouter();
   const { show } = useToast();
-  const { pending, finalizePublish } = usePublishing();
+  const { pending } = usePublishing();
+
+  // Enquanto uma publicação otimista ainda está "a-publicar" — ou já
+  // "publicado" mas ainda dentro da sua janela mínima de exibição local
+  // (esqueleto + resultado otimista, ver PendingProductRow) — a linha
+  // otimista fica sempre visível e a real correspondente fica escondida,
+  // para não duplicar. Ao contrário de antes, NÃO removemos a linha
+  // otimista assim que `produtoId` aparece em `produtos`: se o fizéssemos
+  // aqui, a troca aconteceria mal a lista do servidor confirmasse o
+  // produto (que pode ser quase instantâneo, sobretudo depois de o
+  // router.refresh() já ter corrido em segundo plano) — saltando o
+  // esqueleto de propósito. Quem decide o momento certo de finalizar é a
+  // própria PendingProductRow, com o seu temporizador local; só nesse
+  // momento ela chama `finalizePublish`, e a linha real (já sem duplicado
+  // escondido) aparece no lugar.
+  const produtoIdsPendentes = useMemo(
+    () => new Set(pending.filter((p) => p.produtoId).map((p) => p.produtoId as string)),
+    [pending],
+  );
+  const produtosVisiveis = useMemo(
+    () => produtos.filter((p) => !produtoIdsPendentes.has(p.id)),
+    [produtos, produtoIdsPendentes],
+  );
+  const pendingVisivel = pending;
 
   const categorias = useMemo(
-    () => Array.from(new Set(produtos.map((p) => p.categoria).filter(Boolean))).sort(),
-    [produtos],
+    () => Array.from(new Set(produtosVisiveis.map((p) => p.categoria).filter(Boolean))).sort(),
+    [produtosVisiveis],
   );
-
-  // Um pendente 'publicado' fica no contexto até o `produtos` vindo do
-  // servidor (depois do router.refresh() em resolvePublish) confirmar que
-  // já existe de verdade — só então deixa de fazer sentido mostrá-lo em
-  // duplicado. `pendingVisivel` protege visualmente contra qualquer corrida
-  // (produtos já atualizado mas o context ainda não limpou); o efeito a
-  // seguir trata de limpar o context para não ficar lixo acumulado.
-  const idsReais = useMemo(() => new Set(produtos.map((p) => p.id)), [produtos]);
-  const pendingVisivel = useMemo(
-    () => pending.filter((p) => !(p.produtoId && idsReais.has(p.produtoId))),
-    [pending, idsReais],
-  );
-
-  useEffect(() => {
-    for (const p of pending) {
-      if (p.produtoId && idsReais.has(p.produtoId)) finalizePublish(p.tempId);
-    }
-  }, [pending, idsReais, finalizePublish]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    let list = produtos.filter((p) => {
+    let list = produtosVisiveis.filter((p) => {
       if (status === 'ativos' && !p.ativo) return false;
       // "Inativo" exclui rascunhos — são conceitos distintos.
       if (status === 'inativos' && (p.ativo || p.rascunho)) return false;
@@ -99,7 +104,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
     });
 
     return list;
-  }, [produtos, query, status, categoria, sort]);
+  }, [produtosVisiveis, query, status, categoria, sort]);
 
   // Reset progressive reveal (and any active selection) whenever the
   // effective result set changes — a stale selection across a new filter
