@@ -3,57 +3,75 @@
 import { Skeleton } from '@/components/ui/Surfaces';
 import { PendingProductRow } from '@/components/produtos/PendingProductRow';
 import { usePublishing } from '@/components/produtos/PublishingContext';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 /**
  * Next.js mostra este ficheiro IMEDIATAMENTE ao navegar para /produtos,
  * sem esperar pelo `page.tsx` (que faz `getUserContext` + `getProdutosByLoja`
  * — duas idas e voltas reais ao Supabase). O `page.tsx` continua a
  * carregar por trás, em streaming, e troca sozinho para o conteúdo real
- * assim que a resposta chega — sem isto, o `router.push('/produtos')` só
- * troca de ecrã depois de o Supabase responder, e é exactamente essa
- * espera (variável, e por vezes de vários segundos) que fazia parecer que
- * o botão "Publicar produto" demorava muito mais do que o seu próprio
- * temporizador.
+ * assim que a resposta chega.
  *
- * Continua 'use client' + lê o `PublishingContext` (que vive no layout,
- * acima desta rota, por isso já está montado neste preciso instante) para
- * que o produto que acabou de ser publicado apareça já aqui, mesmo antes
- * de a lista real dos outros produtos chegar — é "os dados que já temos
- * agora", tal como pedido. Os produtos já existentes (que ainda não
- * conhecemos neste ecrã, por virem só do servidor) ficam representados
- * por linhas de esqueleto genéricas, substituídas assim que o `page.tsx`
- * terminar de carregar.
+ * UX: pesquisa, filtros e cabeçalho são renderizados como UI real e
+ * interativa desde o primeiro instante — só as linhas de produtos ainda
+ * desconhecidos ficam como skeleton. O produto recém-publicado
+ * (se existir em `pending`) aparece já com os dados reais, sem skeleton.
  */
 export default function ProdutosLoading() {
   const { pending } = usePublishing();
 
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <Skeleton className="h-6 w-24" />
+      {/* Título real — não skeleton */}
+      <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
       <div className="rounded-md border border-[#1A1210]/8 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
+        {/* Área de pesquisa e filtros: UI real mas desativada/placeholder
+            enquanto os dados do servidor ainda não chegaram */}
         <div className="px-4 pb-3 pt-4">
-          <Skeleton className="h-9 w-full rounded-[10px]" />
-          <div className="mt-3">
-            <Skeleton className="h-8 w-2/3 rounded-[10px]" />
+          {/* SearchBar placeholder — mesma aparência, mas não funcional ainda */}
+          <div className="flex h-9 w-full items-center gap-2 rounded-[10px] border border-[#1A1210]/10 bg-[#F6F7F9] px-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[#1A1210]/30">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            <span className="text-[13px] font-medium text-[#1A1210]/30">Pesquisar produtos…</span>
+          </div>
+
+          {/* Filtros placeholder — skeleton só nas pílulas, não na área toda */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Skeleton className="h-8 w-16 rounded-[10px]" />
+            <Skeleton className="h-8 w-20 rounded-[10px]" />
+            <Skeleton className="h-8 w-24 rounded-[10px]" />
           </div>
         </div>
 
+        {/* Cabeçalho da tabela — real, com checkbox e contador */}
         <div className="flex h-11 items-center gap-3 border-b border-[#1A1210]/8 bg-[#F6F7F9] px-4">
-          <Skeleton className="h-4 w-4 rounded-[4px]" />
-          <Skeleton className="h-3 w-20" />
+          <Checkbox
+            checked={false}
+            onChange={() => {}}
+            ariaLabel="Selecionar todos"
+            className="pointer-events-none opacity-40"
+          />
+          <span className="text-[12px] font-bold text-[#1A1210]/40">
+            {pending.length > 0 ? `${pending.length} produto${pending.length !== 1 ? 's' : ''}` : 'A carregar…'}
+          </span>
         </div>
 
         <div className="divide-y divide-[#1A1210]/8">
-          {/* O produto recém-publicado, já com os dados reais que se
-          conhecem — não é um placeholder. */}
+          {/* Produto recém-publicado: dados reais já disponíveis, sem skeleton */}
           {pending.map((p) => (
-            <PendingProductRow key={p.tempId} produto={p} confirmado={false} selected={false} onToggleSelect={() => {}} />
+            <PendingProductRow
+              key={p.tempId}
+              produto={p}
+              confirmado={false}
+              selected={false}
+              onToggleSelect={() => {}}
+            />
           ))}
 
-          {/* Produtos já existentes na loja: ainda desconhecidos aqui
-          (só o `page.tsx` sabe, e está a caminho), por isso ficam como
-          linhas genéricas em vez de fingir dados que não temos. */}
+          {/* Produtos já existentes na loja: skeleton só nas linhas,
+              não na pesquisa/filtros/cabeçalho acima. */}
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 p-4">
               <Skeleton className="h-4 w-4 flex-shrink-0 rounded-[4px]" />
