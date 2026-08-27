@@ -10,6 +10,23 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Skeleton } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
 
+// tempIds cuja janela de esqueleto já foi consumida (o timeout chegou a
+// terminar) pelo menos uma vez. Módulo, não estado do componente — para
+// sobreviver às duas montagens desta linha (loading.tsx e depois
+// ProductsExplorer) e nunca reativar o esqueleto numa remontagem tardia
+// que já o tinha mostrado.
+const esqueletoJaConsumido = new Set<string>();
+
+// Janela mínima de fallback (ms) usada SÓ quando a navegação para
+// /produtos demorou mais do que o previsto (ligação lenta, dispositivo
+// lento, etc.) e o relógio absoluto `skeletonUntil` — pensado para o
+// caso normal — já tiver expirado antes mesmo de esta linha montar pela
+// primeira vez. Sem isto, esse caso extremo saltava logo para o
+// conteúdo final sem o lojista chegar a ver nenhuma animação de
+// esqueleto. Nunca se aplica numa remontagem cujo esqueleto já foi
+// consumido (ver `esqueletoJaConsumido`).
+const SKELETON_FALLBACK_MS = 400;
+
 /**
  * Enquanto a publicação está a decorrer (ou já terminou mas ainda à
  * espera de o `produtos` do servidor confirmar), mostra a MESMA aparência
@@ -74,8 +91,16 @@ export function PendingProductRow({
   // "início" já passou, ou nunca dar tempo de o esqueleto ser visto antes
   // de o servidor confirmar. Lendo o mesmo relógio em qualquer montagem,
   // o tempo restante é sempre o correto, medido desde o clique real.
+  //
+  // `SKELETON_FALLBACK_MS`: cobre o caso em que a navegação para /produtos
+  // demorou mais do que o previsto — `restante` já chegaria a 0 mesmo
+  // nesta, a primeira montagem desta linha, saltando logo para o conteúdo
+  // final sem o esqueleto chegar a aparecer. Só se aplica quando o tempId
+  // ainda não tinha consumido o esqueleto nenhuma vez.
   const restante = Math.max(0, produto.skeletonUntil - Date.now());
-  const [showSkeleton, setShowSkeleton] = useState(!comErro && restante > 0);
+  const jaConsumido = esqueletoJaConsumido.has(produto.tempId);
+  const restanteEfetivo = restante > 0 ? restante : jaConsumido ? 0 : SKELETON_FALLBACK_MS;
+  const [showSkeleton, setShowSkeleton] = useState(!comErro && restanteEfetivo > 0);
 
   // Checkbox e menu "⋮" respondem ao toque desde o primeiro instante (ver
   // nota mais abaixo). O menu continua com estado próprio (não participa
@@ -102,10 +127,18 @@ export function PendingProductRow({
       return;
     }
     const msRestantes = Math.max(0, produto.skeletonUntil - Date.now());
-    const t = setTimeout(() => setShowSkeleton(false), msRestantes);
+    // Mesmo fallback do cálculo inicial de `showSkeleton`: se a navegação
+    // demorou mais do que o previsto e o relógio absoluto já expirou antes
+    // de este efeito sequer correr, ainda assim garante-se uma janela
+    // mínima visível — mas só na primeira vez que este tempId aparece.
+    const efetivo = msRestantes > 0 ? msRestantes : esqueletoJaConsumido.has(produto.tempId) ? 0 : SKELETON_FALLBACK_MS;
+    const t = setTimeout(() => {
+      esqueletoJaConsumido.add(produto.tempId);
+      setShowSkeleton(false);
+    }, efetivo);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comErro, produto.skeletonUntil]);
+  }, [comErro, produto.skeletonUntil, produto.tempId]);
 
   // Só depois de o esqueleto terminar É QUE se verifica se já há
   // confirmação real para finalizar — é este componente, não o
