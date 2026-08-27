@@ -72,7 +72,7 @@ function FormSection({
 }
 
 /* ── Linha de controlo leve (Estoque / Peso) ───────────────────────────────
-   Vive dentro de uma FormSection — por isso nunca tem borda ou fundo
+   Vive ydentro de uma FormSection — por isso nunca tem borda ou fundo
    próprios; é só um título + descrição + switch, com o campo condicional
    a aparecer por baixo. A secção-mãe já define os limites do grupo. */
 
