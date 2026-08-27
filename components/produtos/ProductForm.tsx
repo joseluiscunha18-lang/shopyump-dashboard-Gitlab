@@ -478,7 +478,7 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     // próprio startPublish precisa de saber quanto tempo ainda falta até a
     // navegação real para /produtos acontecer — ver comentário em
     // PublishingContext.startPublish.
-    const MIN_BOTAO_PUBLICAR_MS = 2500;
+    const MIN_BOTAO_PUBLICAR_MS = 2000;
 
     startPublish({
       tempId,
