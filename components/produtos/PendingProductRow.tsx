@@ -214,34 +214,42 @@ export function PendingProductRow({
     </div>
   );
 
+  // Placeholder de checkbox e menu — usados no estado de skeleton para
+  // reservar o mesmo espaço que a linha real ocupa, evitando qualquer
+  // salto de layout na troca entre skeleton → conteúdo.
+  const checkboxPlaceholder = (
+    <Checkbox checked={false} onChange={() => {}} ariaLabel="" className="pointer-events-none ml-0.5 mr-2 opacity-0" />
+  );
+  const menuPlaceholder = (
+    <div className="pointer-events-none flex h-8 w-8 flex-shrink-0 items-center justify-center opacity-0">
+      <MoreVertical size={17} strokeWidth={2.3} />
+    </div>
+  );
+
   // ── Skeleton vs conteúdo real ──────────────────────────────────────────
-  // A abordagem anterior (barras cinzas com larguras "chutadas" tipo w-2/5)
-  // NUNCA bate com precisão pixel-a-pixel com o texto real — mesmo
-  // espelhando alturas e margens à mão, a fonte, o kerning e o cálculo do
-  // line-height do navegador sempre deixam uma diferença de 1-2px, e é
-  // isso que fazia os pontos (indicador de estado, "·" separador) parecer
-  // "saltar" ao trocar de fase.
-  //
-  // A correção definitiva é não fingir. `produto.nome`, `precoLabel`,
-  // `categoria` e `fotoPreview` já chegam TODOS prontos assim que o
-  // formulário chama `startPublish` — não há nada "desconhecido" para
-  // esconder atrás de uma barra cinza. Por isso, agora o esqueleto e o
-  // conteúdo final usam exatamente o MESMO markup (mesmas linhas, mesmas
-  // classes, mesmo texto) — o único efeito de "ainda a processar" é uma
-  // opacidade a pulsar sobre esse mesmo bloco. Como é literalmente o
-  // mesmo DOM nos dois estados, é estruturalmente impossível haver
-  // qualquer diferença de alinhamento entre eles.
+  // Durante a janela do esqueleto (definida por skeletonUntil no
+  // PublishingContext), mostra uma linha inteira em skeleton — foto, nome
+  // e preço — para que a troca para o conteúdo real seja suave e sem
+  // saltos de layout.
+  if (showSkeleton && !comErro) {
+    return (
+      <div className="flex items-center gap-3 p-4">
+        {checkboxPlaceholder}
+        <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
+        <div className="min-w-0 flex-1 flex flex-col gap-2">
+          <Skeleton className="h-[13px] w-2/5" />
+          <Skeleton className="h-[12px] w-1/3" />
+        </div>
+        {menuPlaceholder}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 p-4">
       {checkboxEl}
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
-        {showSkeleton && !comErro ? (
-          // Bloco de esqueleto de verdade (não a foto real por baixo de um
-          // brilho) — só durante a janela inicial (definida em skeletonUntil),
-          // só aqui na foto. Nome, preço, categoria e status já são
-          // definitivos desde o primeiro instante e nunca usam esqueleto.
-          <Skeleton className="h-full w-full rounded-md" />
-        ) : comErro ? (
+        {comErro ? (
           <div className="flex h-full w-full items-center justify-center">
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
           </div>
