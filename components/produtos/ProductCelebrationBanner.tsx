@@ -119,10 +119,10 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
                 exatamente igual "a carregar" e "carregado". */}
             <div className="min-w-0 flex-1">
               <p className="text-[13.5px] font-bold leading-tight text-zinc-900">
-                Sua loja já está pronta para receber clientes
+                Seu primeiro produto está no ar
               </p>
               <p className="mt-0.5 text-[12px] font-medium leading-snug text-zinc-500">
-                Seu primeiro produto já está disponível para que pessoas conheçam e encontrem o que você oferece.
+                Sua loja já está pronta para receber visitantes.
               </p>
             </div>
           </div>
