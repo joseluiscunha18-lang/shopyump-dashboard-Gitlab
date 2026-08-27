@@ -44,18 +44,15 @@ export interface PendingProduto {
   /** Preenchido quando `status` passa a 'publicado'. */
   produtoId?: string;
   /**
-   * Timestamp (Date.now()) até ao qual a PendingProductRow deve mostrar o
-   * esqueleto da foto — definido UMA ÚNICA VEZ aqui, em startPublish, e
-   * nunca num useState/useRef local do componente. A PendingProductRow
-   * monta pelo menos duas vezes neste fluxo (uma dentro de loading.tsx,
-   * assim que se navega para /produtos, e outra dentro da ProductsExplorer
-   * quando o page.tsx real termina de carregar); se cada montagem contasse
-   * o seu próprio temporizador do zero, uma troca rápida entre as duas
-   * (comum quando a query de produtos responde depressa) fazia o esqueleto
-   * da segunda montagem começar tarde demais para ser visto — na prática,
-   * "o esqueleto não aparece". Guardando aqui um relógio absoluto, todas
-   * as montagens leem o mesmo prazo e a janela real de exibição (medida
-   * desde o clique, não desde o mount) fica sempre garantida.
+   * Timestamp (Date.now()) até ao qual a PendingProductRow deve mostrar-se
+   * inteira como esqueleto — definido UMA ÚNICA VEZ aqui, em startPublish
+   * (medido a partir do clique real em "Publicar produto"), e nunca num
+   * useState/useRef local do componente que só arrancasse a contar quando
+   * a linha monta em /produtos. A navegação real só acontece
+   * MIN_BOTAO_PUBLICAR_MS depois do clique (ver ProductForm), por isso
+   * `startPublish` já soma esse atraso ao calcular este valor — sem isso a
+   * janela do esqueleto começaria tarde demais e a linha chegaria a
+   * /produtos já sem esqueleto para mostrar.
    */
   skeletonUntil: number;
 }
