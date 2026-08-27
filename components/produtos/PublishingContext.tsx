@@ -84,7 +84,7 @@ interface PublishingContextValue {
      * vai realmente acontecer — normalmente MIN_BOTAO_PUBLICAR_MS, do
      * ProductForm. Sem isto, skeletonUntil arrancava a contar já no
      * clique, mas a linha só monta em /produtos MIN_BOTAO_PUBLICAR_MS
-     * depois; como esse atraso (2500ms) é maior que a própria janela do
+     * depois; como esse atraso (2000ms) é maior que a própria janela do
      * esqueleto (1600–1800ms), o prazo expirava por completo ainda no
      * formulário — a linha nascia sempre já sem esqueleto. Ver uso abaixo.
      */
