@@ -7,6 +7,7 @@ import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, 
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { Skeleton } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
 
 /**
@@ -227,7 +228,13 @@ export function PendingProductRow({
     <div className="flex items-center gap-3 p-4">
       {checkboxEl}
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
-        {comErro ? (
+        {showSkeleton && !comErro ? (
+          // Bloco de esqueleto de verdade (não a foto real por baixo de um
+          // brilho) — só durante a janela inicial (SKELETON_MIN_MS/MAX_MS),
+          // só aqui na foto. Nome, preço, categoria e status já são
+          // definitivos desde o primeiro instante e nunca usam esqueleto.
+          <Skeleton className="h-full w-full rounded-md" />
+        ) : comErro ? (
           <div className="flex h-full w-full items-center justify-center">
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
           </div>
@@ -238,12 +245,6 @@ export function PendingProductRow({
             <ImageIcon size={26} strokeWidth={1.5} style={{ color: 'rgba(26,18,16,0.22)' }} />
           </div>
         )}
-        {/* Brilho a percorrer por cima da própria foto (não uma barra
-        cinza a escondê-la) — é a única coisa realmente "em trânsito"
-        neste momento (upload verdadeiro a decorrer), por isso é a única
-        que pisca. Nome, preço e categoria já são definitivos e ficam
-        sempre nítidos, sem qualquer animação. */}
-        {showSkeleton && !comErro && <div className="skeleton-shimmer-overlay rounded-md" />}
         <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
       </div>
 
