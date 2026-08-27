@@ -107,7 +107,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
                 que o browser resolve pintando a imagem nova por cima da
                 anterior sem desmontar nada — por isso não há "piscar" nem
                 salto de layout entre a versão a carregar e a versão final. */}
-            <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 bg-zinc-100 sm:h-12 sm:w-12">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px] border border-zinc-200 bg-zinc-100 sm:h-16 sm:w-16">
               {foto && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={foto} alt="" className="h-full w-full object-cover" />
@@ -118,8 +118,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
                 fim; não depende de nome/preço chegarem, por isso é
                 exatamente igual "a carregar" e "carregado". */}
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-[13.5px] font-bold leading-tight text-zinc-900">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <p className="text-[13.5px] font-bold leading-tight text-zinc-900">
                 Sua loja já está pronta para receber clientes
               </p>
               <p className="mt-0.5 text-[12px] font-medium leading-snug text-zinc-500">
