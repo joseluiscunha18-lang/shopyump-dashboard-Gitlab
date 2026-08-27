@@ -32,9 +32,6 @@ import { useToast } from '@/components/ui/Toast';
  * novo ou descarta — por isso, se `status` já vier (ou passar a) 'erro',
  * salta-se o esqueleto e mostra-se logo a mensagem e as ações.
  */
-const SKELETON_MIN_MS = 1600;
-const SKELETON_MAX_MS = 1800;
-
 export function PendingProductRow({
   produto,
   confirmado,
@@ -67,10 +64,18 @@ export function PendingProductRow({
   const segmentosPendente = segmentosCategoria(produto.categoria);
   const categoriaEspecifica = segmentosPendente[segmentosPendente.length - 1] ?? produto.categoria;
 
-  // Duração sorteada uma única vez por linha (não a cada re-render), para
-  // não parecer sempre o mesmo tempo cronometrado ao segundo.
-  const skeletonMsRef = useRef(SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS));
-  const [showSkeleton, setShowSkeleton] = useState(!comErro);
+  // `produto.skeletonUntil` é um relógio absoluto definido UMA VEZ em
+  // startPublish (ver PublishingContext) — não um temporizador local desta
+  // instância. Isto importa porque esta linha monta pelo menos duas vezes
+  // por publicação (dentro de loading.tsx assim que se navega para
+  // /produtos, e outra vez dentro da ProductsExplorer quando o page.tsx
+  // real chega); se cada montagem recomeçasse a contar do zero, uma troca
+  // rápida entre as duas fazia a segunda montagem herdar um prazo cujo
+  // "início" já passou, ou nunca dar tempo de o esqueleto ser visto antes
+  // de o servidor confirmar. Lendo o mesmo relógio em qualquer montagem,
+  // o tempo restante é sempre o correto, medido desde o clique real.
+  const restante = Math.max(0, produto.skeletonUntil - Date.now());
+  const [showSkeleton, setShowSkeleton] = useState(!comErro && restante > 0);
 
   // Checkbox e menu "⋮" respondem ao toque desde o primeiro instante (ver
   // nota mais abaixo). O menu continua com estado próprio (não participa
@@ -96,9 +101,11 @@ export function PendingProductRow({
       setShowSkeleton(false);
       return;
     }
-    const t = setTimeout(() => setShowSkeleton(false), skeletonMsRef.current);
+    const msRestantes = Math.max(0, produto.skeletonUntil - Date.now());
+    const t = setTimeout(() => setShowSkeleton(false), msRestantes);
     return () => clearTimeout(t);
-  }, [comErro]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comErro, produto.skeletonUntil]);
 
   // Só depois de o esqueleto terminar É QUE se verifica se já há
   // confirmação real para finalizar — é este componente, não o
@@ -230,7 +237,7 @@ export function PendingProductRow({
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {showSkeleton && !comErro ? (
           // Bloco de esqueleto de verdade (não a foto real por baixo de um
-          // brilho) — só durante a janela inicial (SKELETON_MIN_MS/MAX_MS),
+          // brilho) — só durante a janela inicial (definida em skeletonUntil),
           // só aqui na foto. Nome, preço, categoria e status já são
           // definitivos desde o primeiro instante e nunca usam esqueleto.
           <Skeleton className="h-full w-full rounded-md" />
