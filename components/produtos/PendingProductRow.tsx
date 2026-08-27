@@ -65,15 +65,13 @@ export function PendingProductRow({
   const categoriaEspecifica = segmentosPendente[segmentosPendente.length - 1] ?? produto.categoria;
 
   // `produto.skeletonUntil` é um relógio absoluto definido UMA VEZ em
-  // startPublish (ver PublishingContext) — não um temporizador local desta
-  // instância. Isto importa porque esta linha monta pelo menos duas vezes
-  // por publicação (dentro de loading.tsx assim que se navega para
-  // /produtos, e outra vez dentro da ProductsExplorer quando o page.tsx
-  // real chega); se cada montagem recomeçasse a contar do zero, uma troca
-  // rápida entre as duas fazia a segunda montagem herdar um prazo cujo
-  // "início" já passou, ou nunca dar tempo de o esqueleto ser visto antes
-  // de o servidor confirmar. Lendo o mesmo relógio em qualquer montagem,
-  // o tempo restante é sempre o correto, medido desde o clique real.
+  // startPublish (ver PublishingContext), medido a partir do clique real
+  // em "Publicar produto" — não um temporizador local desta instância que
+  // só começasse a contar quando o componente monta. Como a navegação
+  // para /produtos só acontece MIN_BOTAO_PUBLICAR_MS depois do clique (ver
+  // ProductForm), contar a partir do mount atrasaria a janela do esqueleto
+  // para além do previsto; lendo o mesmo relógio absoluto, o tempo
+  // restante mostrado é sempre o correto.
   const restante = Math.max(0, produto.skeletonUntil - Date.now());
   const [showSkeleton, setShowSkeleton] = useState(!comErro && restante > 0);
 
@@ -215,33 +213,40 @@ export function PendingProductRow({
   );
 
   // ── Skeleton vs conteúdo real ──────────────────────────────────────────
-  // A abordagem anterior (barras cinzas com larguras "chutadas" tipo w-2/5)
-  // NUNCA bate com precisão pixel-a-pixel com o texto real — mesmo
-  // espelhando alturas e margens à mão, a fonte, o kerning e o cálculo do
-  // line-height do navegador sempre deixam uma diferença de 1-2px, e é
-  // isso que fazia os pontos (indicador de estado, "·" separador) parecer
-  // "saltar" ao trocar de fase.
-  //
-  // A correção definitiva é não fingir. `produto.nome`, `precoLabel`,
-  // `categoria` e `fotoPreview` já chegam TODOS prontos assim que o
-  // formulário chama `startPublish` — não há nada "desconhecido" para
-  // esconder atrás de uma barra cinza. Por isso, agora o esqueleto e o
-  // conteúdo final usam exatamente o MESMO markup (mesmas linhas, mesmas
-  // classes, mesmo texto) — o único efeito de "ainda a processar" é uma
-  // opacidade a pulsar sobre esse mesmo bloco. Como é literalmente o
-  // mesmo DOM nos dois estados, é estruturalmente impossível haver
-  // qualquer diferença de alinhamento entre eles.
+  // Enquanto `showSkeleton` for true (dentro da janela definida por
+  // `skeletonUntil`, ver PublishingContext.startPublish), mostra-se a
+  // linha inteira como esqueleto — foto E as 3 linhas de texto — e não só
+  // a foto. É esse esqueleto completo, visível assim que se chega a
+  // /produtos depois de publicar, que dá o feedback de "ainda a
+  // processar" antes de revelar nome/preço/categoria reais.
+  if (showSkeleton) {
+    return (
+      <div className="flex items-center gap-3 p-4">
+        {checkboxEl}
+        <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
+        {/* Alturas E margens espelham 1:1 as 3 linhas de texto reais logo
+        abaixo (leading-[13px]/[12px]/[11px] + mt-0.5/mt-1) — não só o total,
+        mas cada bloco individualmente. Um "gap" uniforme aqui (como havia
+        antes) até fecha a MESMA altura total, mas distribui o espaço de
+        forma diferente do conteúdo real; ao trocar de esqueleto para
+        conteúdo, o "⋮", o checkbox e os pontos (indicador de estado, "·"
+        separador) ainda saltavam alguns pixels porque a proporção interna
+        das margens não coincidia. Espelhar mt a mt elimina isso de vez. */}
+        <div className="min-w-0 flex-1">
+          <Skeleton className="h-[13px] w-2/5" />
+          <Skeleton className="mt-0.5 h-[12px] w-1/3" />
+          <Skeleton className="mt-1 h-[11px] w-1/4" />
+        </div>
+        {menuEl}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 p-4">
       {checkboxEl}
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
-        {showSkeleton && !comErro ? (
-          // Bloco de esqueleto de verdade (não a foto real por baixo de um
-          // brilho) — só durante a janela inicial (definida em skeletonUntil),
-          // só aqui na foto. Nome, preço, categoria e status já são
-          // definitivos desde o primeiro instante e nunca usam esqueleto.
-          <Skeleton className="h-full w-full rounded-md" />
-        ) : comErro ? (
+        {comErro ? (
           <div className="flex h-full w-full items-center justify-center">
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
           </div>
