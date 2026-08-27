@@ -32,8 +32,8 @@ import { useToast } from '@/components/ui/Toast';
  * novo ou descarta — por isso, se `status` já vier (ou passar a) 'erro',
  * salta-se o esqueleto e mostra-se logo a mensagem e as ações.
  */
-const SKELETON_MIN_MS = 350;
-const SKELETON_MAX_MS = 550;
+const SKELETON_MIN_MS = 1600;
+const SKELETON_MAX_MS = 1800;
 
 export function PendingProductRow({
   produto,
