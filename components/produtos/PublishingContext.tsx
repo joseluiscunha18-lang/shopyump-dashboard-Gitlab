@@ -43,6 +43,21 @@ export interface PendingProduto {
   errorMessage?: string;
   /** Preenchido quando `status` passa a 'publicado'. */
   produtoId?: string;
+  /**
+   * Timestamp (Date.now()) até ao qual a PendingProductRow deve mostrar o
+   * esqueleto da foto — definido UMA ÚNICA VEZ aqui, em startPublish, e
+   * nunca num useState/useRef local do componente. A PendingProductRow
+   * monta pelo menos duas vezes neste fluxo (uma dentro de loading.tsx,
+   * assim que se navega para /produtos, e outra dentro da ProductsExplorer
+   * quando o page.tsx real termina de carregar); se cada montagem contasse
+   * o seu próprio temporizador do zero, uma troca rápida entre as duas
+   * (comum quando a query de produtos responde depressa) fazia o esqueleto
+   * da segunda montagem começar tarde demais para ser visto — na prática,
+   * "o esqueleto não aparece". Guardando aqui um relógio absoluto, todas
+   * as montagens leem o mesmo prazo e a janela real de exibição (medida
+   * desde o clique, não desde o mount) fica sempre garantida.
+   */
+  skeletonUntil: number;
 }
 
 export interface Celebration {
@@ -62,7 +77,7 @@ interface PublishingContextValue {
   pending: PendingProduto[];
   celebration: Celebration | null;
   /** Regista um produto otimista e mostra-o de imediato na lista. */
-  startPublish: (p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>) => void;
+  startPublish: (p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>) => void;
   /** Publicação concluída com sucesso — actualiza celebration com produtoId e foto final. */
   resolvePublish: (tempId: string, result: { produtoId: string; foto?: string }) => void;
   /** Publicação falhou — o card fica com estado de erro em vez de desaparecer em silêncio. */
@@ -81,8 +96,15 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const router = useRouter();
 
-  const startPublish = useCallback((p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>) => {
-    setPending((prev) => [...prev, { ...p, status: 'a-publicar' }]);
+  const startPublish = useCallback((p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>) => {
+    // Sorteado uma única vez aqui, no clique — não em cada montagem de
+    // PendingProductRow — para que o esqueleto seja sempre medido a partir
+    // do momento real da publicação, e não do momento em que este ou
+    // aquele componente calhou de montar.
+    const SKELETON_MIN_MS = 1600;
+    const SKELETON_MAX_MS = 1800;
+    const skeletonUntil = Date.now() + SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS);
+    setPending((prev) => [...prev, { ...p, status: 'a-publicar', skeletonUntil }]);
     // Acende o banner imediatamente com os dados já disponíveis (nome, foto blob, preço).
     // O banner não precisa de esperar pelo upload/insert — mostra já os dados locais
     // e actualiza a foto/produtoId silenciosamente quando resolvePublish completar.
