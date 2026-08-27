@@ -474,18 +474,23 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     const precoPromoNum = precoPromo ? Number(precoPromo) : 0;
     const precoLabel    = (precoPromoNum > 0 ? precoPromoNum : precoNum).toLocaleString('pt-MZ');
 
+    // Definido ANTES do startPublish (não só antes do setTimeout) porque o
+    // próprio startPublish precisa de saber quanto tempo ainda falta até a
+    // navegação real para /produtos acontecer — ver comentário em
+    // PublishingContext.startPublish.
+    const MIN_BOTAO_PUBLICAR_MS = 2500;
+
     startPublish({
       tempId,
       nome: nome.trim(),
       precoLabel,
       categoria,
       fotoPreview: fotos[0] ?? null,
-    });
+    }, MIN_BOTAO_PUBLICAR_MS);
 
     clearProdutoDraft(lojaId);
     setDirty(false);
 
-    const MIN_BOTAO_PUBLICAR_MS = 2500;
     setTimeout(() => {
       // Sem setSaving(false) aqui de propósito: se o resetássemos antes do
       // router.push, o botão voltava a "Publicar produto" por um instante
