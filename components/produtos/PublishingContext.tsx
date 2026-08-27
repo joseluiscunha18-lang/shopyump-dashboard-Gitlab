@@ -77,7 +77,19 @@ interface PublishingContextValue {
   pending: PendingProduto[];
   celebration: Celebration | null;
   /** Regista um produto otimista e mostra-o de imediato na lista. */
-  startPublish: (p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>) => void;
+  startPublish: (
+    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>,
+    /**
+     * Quanto tempo (ms) depois de AGORA é que a navegação para /produtos
+     * vai realmente acontecer — normalmente MIN_BOTAO_PUBLICAR_MS, do
+     * ProductForm. Sem isto, skeletonUntil arrancava a contar já no
+     * clique, mas a linha só monta em /produtos MIN_BOTAO_PUBLICAR_MS
+     * depois; como esse atraso (2500ms) é maior que a própria janela do
+     * esqueleto (1600–1800ms), o prazo expirava por completo ainda no
+     * formulário — a linha nascia sempre já sem esqueleto. Ver uso abaixo.
+     */
+    navigationDelayMs?: number,
+  ) => void;
   /** Publicação concluída com sucesso — actualiza celebration com produtoId e foto final. */
   resolvePublish: (tempId: string, result: { produtoId: string; foto?: string }) => void;
   /** Publicação falhou — o card fica com estado de erro em vez de desaparecer em silêncio. */
@@ -96,14 +108,23 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const router = useRouter();
 
-  const startPublish = useCallback((p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>) => {
+  const startPublish = useCallback((
+    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>,
+    navigationDelayMs = 0,
+  ) => {
     // Sorteado uma única vez aqui, no clique — não em cada montagem de
     // PendingProductRow — para que o esqueleto seja sempre medido a partir
     // do momento real da publicação, e não do momento em que este ou
     // aquele componente calhou de montar.
+    //
+    // IMPORTANTE: soma-se `navigationDelayMs` (o tempo que o botão ainda
+    // vai segurar antes de navegar para /produtos) porque a linha só
+    // MONTA depois desse atraso. Contar só a partir daqui faria o prazo
+    // do esqueleto expirar ainda no formulário, antes de a linha sequer
+    // existir no ecrã — ver comentário em PublishingContextValue.
     const SKELETON_MIN_MS = 1600;
     const SKELETON_MAX_MS = 1800;
-    const skeletonUntil = Date.now() + SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS);
+    const skeletonUntil = Date.now() + navigationDelayMs + SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS);
     setPending((prev) => [...prev, { ...p, status: 'a-publicar', skeletonUntil }]);
     // Acende o banner imediatamente com os dados já disponíveis (nome, foto blob, preço).
     // O banner não precisa de esperar pelo upload/insert — mostra já os dados locais
