@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
-import { cn } from '@/lib/cn';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { useToast } from '@/components/ui/Toast';
 
@@ -32,8 +31,8 @@ import { useToast } from '@/components/ui/Toast';
  * novo ou descarta — por isso, se `status` já vier (ou passar a) 'erro',
  * salta-se o esqueleto e mostra-se logo a mensagem e as ações.
  */
-const SKELETON_MIN_MS = 1500;
-const SKELETON_MAX_MS = 2000;
+const SKELETON_MIN_MS = 350;
+const SKELETON_MAX_MS = 550;
 
 export function PendingProductRow({
   produto,
@@ -227,12 +226,7 @@ export function PendingProductRow({
   return (
     <div className="flex items-center gap-3 p-4">
       {checkboxEl}
-      <div
-        className={cn(
-          'relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50 transition-opacity',
-          showSkeleton && 'animate-pulse opacity-70',
-        )}
-      >
+      <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {comErro ? (
           <div className="flex h-full w-full items-center justify-center">
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
@@ -244,10 +238,16 @@ export function PendingProductRow({
             <ImageIcon size={26} strokeWidth={1.5} style={{ color: 'rgba(26,18,16,0.22)' }} />
           </div>
         )}
+        {/* Brilho a percorrer por cima da própria foto (não uma barra
+        cinza a escondê-la) — é a única coisa realmente "em trânsito"
+        neste momento (upload verdadeiro a decorrer), por isso é a única
+        que pisca. Nome, preço e categoria já são definitivos e ficam
+        sempre nítidos, sem qualquer animação. */}
+        {showSkeleton && !comErro && <div className="skeleton-shimmer-overlay rounded-md" />}
         <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
       </div>
 
-      <div className={cn('min-w-0 flex-1 transition-opacity', showSkeleton && 'animate-pulse opacity-70')}>
+      <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
         <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
           {produto.precoLabel} MZN · {categoriaEspecifica}
