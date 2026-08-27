@@ -216,14 +216,15 @@ export function PendingProductRow({
 
   // Placeholder de checkbox e menu — usados no estado de skeleton para
   // reservar o mesmo espaço que a linha real ocupa, evitando qualquer
-  // salto de layout na troca entre skeleton → conteúdo.
+  // salto de layout na troca entre skeleton → conteúdo. Em vez de ficarem
+  // invisíveis (opacity-0), mostram o mesmo shimmer do resto da linha,
+  // para o esqueleto cobrir a linha toda — do quadradinho da checkbox até
+  // aos "⋮" — e não só a foto e o texto.
   const checkboxPlaceholder = (
-    <Checkbox checked={false} onChange={() => {}} ariaLabel="" className="pointer-events-none ml-0.5 mr-2 opacity-0" />
+    <Skeleton className="ml-0.5 mr-2 h-[19px] w-[19px] flex-shrink-0 rounded-[6px]" />
   );
   const menuPlaceholder = (
-    <div className="pointer-events-none flex h-8 w-8 flex-shrink-0 items-center justify-center opacity-0">
-      <MoreVertical size={17} strokeWidth={2.3} />
-    </div>
+    <Skeleton className="h-8 w-8 flex-shrink-0 rounded-md" />
   );
 
   // ── Skeleton vs conteúdo real ──────────────────────────────────────────
