@@ -46,7 +46,13 @@ export function ProductThumbnail({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
+      {/* Borda só faz sentido a definir o contorno de uma FOTO real — sobre
+      o shimmer do esqueleto (ou o placeholder/erro) ela só desenhava um
+      quadrado extra por cima de outro elemento que já tem a sua própria
+      aparência, criando inconsistência entre estados. */}
+      {state === 'image' && (
+        <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
+      )}
     </div>
   );
 }
