@@ -474,19 +474,19 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
     const precoPromoNum = precoPromo ? Number(precoPromo) : 0;
     const precoLabel    = (precoPromoNum > 0 ? precoPromoNum : precoNum).toLocaleString('pt-MZ');
 
-    // Definido ANTES do startPublish (não só antes do setTimeout) porque o
-    // próprio startPublish precisa de saber quanto tempo ainda falta até a
-    // navegação real para /produtos acontecer — ver comentário em
-    // PublishingContext.startPublish.
     const MIN_BOTAO_PUBLICAR_MS = 2000;
 
+    // startPublish já não recebe (nem precisa d)o atraso de navegação: o
+    // esqueleto da PendingProductRow conta-se a partir do momento em que
+    // ELA monta em /produtos, não a partir deste clique — ver
+    // PublishingContext.startPublish e PendingProductRow.
     startPublish({
       tempId,
       nome: nome.trim(),
       precoLabel,
       categoria,
       fotoPreview: fotos[0] ?? null,
-    }, MIN_BOTAO_PUBLICAR_MS);
+    });
 
     clearProdutoDraft(lojaId);
     setDirty(false);
