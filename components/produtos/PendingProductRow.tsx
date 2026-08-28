@@ -245,16 +245,14 @@ export function PendingProductRow({
           </button>
         </div>
       ) : (
-        // Durante o esqueleto, o menu fica ligeiramente deslocado para a
-        // direita em relação às linhas reais — provavelmente por o layout
-        // do PendingProductRow (height fixo 88px) resolver o flex de forma
-        // marginalmente diferente do ProductRow (sem height fixo). O
-        // ajuste de 10% para a esquerda corrige esse desvio visual apenas
-        // enquanto o skeleton está ativo; quando termina, o wrapper
-        // desaparece e o ícone fica na posição natural.
-        <div style={showSkeleton ? { marginRight: '10%' } : undefined}>
-          <ProductActionsMenu items={menuItems} loading={showSkeleton} />
-        </div>
+        // Mesmo componente, usado diretamente como filho do flex — sem
+        // wrapper à volta. O ProductActionsMenu já tem `flex-shrink-0` e
+        // tamanho fixo (h-8 w-8) na própria raiz, exatamente o que a
+        // ProductRow real faz. Um <div> extra à volta perde esse
+        // `flex-shrink-0` (o padrão do flexbox é encolher), e é isso que
+        // causava o menu "⋮" a ficar desalinhado em relação às linhas
+        // reais — não era o skeleton em si, era o wrapper.
+        <ProductActionsMenu items={menuItems} loading={showSkeleton} />
       )}
     </div>
   );
