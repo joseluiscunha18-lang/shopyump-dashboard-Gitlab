@@ -114,7 +114,7 @@ export function ProductRow({
         'group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer',
         selected && 'bg-[#1A1210]/[0.04] hover:bg-[#1A1210]/[0.06]',
       )}
-      style={{ contain: 'layout', height: '88px' }}
+      style={{ contain: 'layout' }}
     >
       {onToggleSelect && (
         <ProductRowCheckbox
@@ -150,7 +150,18 @@ export function ProductRow({
 
       <ProductActionsMenu items={menuItems} />
 
-      <div onClick={(e) => e.stopPropagation()}>
+      {/* `contents`: remove a CAIXA deste wrapper do layout flex (deixa de
+      contar como item e deixa de consumir o espaçamento do `gap-3` da
+      linha), sem tirá-lo da árvore React — continua a existir para o
+      `stopPropagation` funcionar e para o ConfirmDialog (que só desenha
+      via portal, ver Sheet.tsx) continuar a montar aqui. Antes, mesmo
+      fechado e com largura 0, este wrapper ainda contava como mais um
+      filho flex depois do menu, e o `gap-3` reservava 12px extra a mais
+      só nesta linha — isso encolhia a coluna do meio (`flex-1`) e
+      empurrava os 3 pontos 12px para a esquerda em relação à mesma linha
+      na PendingProductRow (que não tem este wrapper). Com `contents` o
+      menu volta a ser o último item real da linha, igual ao otimista. */}
+      <div className="contents" onClick={(e) => e.stopPropagation()}>
         <ConfirmDialog
           open={confirmDeleteOpen}
           onClose={() => setConfirmDeleteOpen(false)}
