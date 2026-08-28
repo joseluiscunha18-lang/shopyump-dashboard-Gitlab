@@ -207,8 +207,8 @@ export function PendingProductRow({
           // da linha (88px) sem overflow nem descentralizar o bloco de texto.
           <div className="flex flex-col">
             <Skeleton className="h-[13px] w-3/5 rounded-full" />
-            <Skeleton className="mt-2.5 h-[12px] w-2/5 rounded-full" />
-            <Skeleton className="mt-2 h-[11px] w-1/3 rounded-full" />
+            <Skeleton className="mt-1 h-[12px] w-2/5 rounded-full" />
+            <Skeleton className="mt-1 h-[11px] w-1/3 rounded-full" />
           </div>
         ) : (
           <>
