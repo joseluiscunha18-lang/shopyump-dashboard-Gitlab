@@ -3,14 +3,11 @@ import { AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Surfaces';
 
 /**
- * Miniatura 56x56 usada em ProductRow e PendingProductRow. Um único lugar
- * para o tamanho, o cantos arredondados e a moldura (inset shadow) — antes
- * cada ficheiro tinha a sua própria cópia deste bloco, com risco de as
- * duas se desalinharem ao longo do tempo.
+ * Miniatura 56x56 usada em ProductRow e PendingProductRow.
  *
- * `state` cobre os 4 casos que já existiam espalhados pelos dois
- * ficheiros: a carregar (skeleton), com foto, sem foto (placeholder) e em
- * erro de publicação (só acontece na linha pendente).
+ * blob: URLs (produtos pendentes) não são suportados pelo next/image —
+ * usamos <img> nativo nesses casos para evitar reflow e erros de
+ * optimização. URLs normais (https://...) continuam a usar next/image.
  */
 export function ProductThumbnail({
   state,
@@ -21,6 +18,8 @@ export function ProductThumbnail({
   src?: string;
   alt: string;
 }) {
+  const isBlob = src?.startsWith('blob:');
+
   return (
     <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
       {state === 'skeleton' && <Skeleton className="h-full w-full rounded-md" />}
@@ -32,7 +31,13 @@ export function ProductThumbnail({
       )}
 
       {state === 'image' && src && (
-        <Image src={src} alt={alt} fill className="object-cover" sizes="56px" unoptimized loading="eager" />
+        isBlob ? (
+          /* blob: URL — img nativo evita reflow do next/image */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <Image src={src} alt={alt} fill className="object-cover" sizes="56px" unoptimized loading="eager" />
+        )
       )}
 
       {state === 'placeholder' && (
