@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, RotateCcw, X, Image as ImageIcon, MoreVertical, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
+import { AlertTriangle, RotateCcw, X, Pencil, Copy, EyeOff, Trash2 } from 'lucide-react';
 import { usePublishing, type PendingProduto } from '@/components/produtos/PublishingContext';
 import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { Skeleton } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
+import { Skeleton } from '@/components/ui/Surfaces';
+import { ProductThumbnail } from '@/components/produtos/shared/ProductThumbnail';
+import { ProductRowCheckbox } from '@/components/produtos/shared/ProductRowCheckbox';
+import { ProductActionsMenu, type ProductMenuItem } from '@/components/produtos/shared/ProductActionsMenu';
 
 // tempIds cuja janela de esqueleto já foi consumida (o timeout chegou a
 // terminar) pelo menos uma vez. Módulo, não estado do componente — para
@@ -38,6 +39,11 @@ const SKELETON_MAX_MS = 1800;
  * vai ficar guardada), nome e preço já digitados. Isso faz a troca por
  * ProductRow (quando os dados reais chegam) ser impercetível — mesmo
  * layout, mesma foto, sem qualquer estado intermédio "a piscar" pelo meio.
+ *
+ * O layout (checkbox, miniatura, menu "⋮") vem dos componentes partilhados
+ * em `components/produtos/shared/` — os mesmos usados pela ProductRow real
+ * — para os dois nunca se desalinharem visualmente. Só o CONTEÚDO de cada
+ * estado (esqueleto / erro / normal) muda aqui.
  *
  * Ao MONTAR — ou seja, exatamente quando se chega à página Produtos —
  * esta linha (e só esta, as restantes já existentes na lista ficam
@@ -92,22 +98,6 @@ export function PendingProductRow({
     !comErro && !esqueletoJaConsumido.has(produto.tempId)
   );
 
-  // Checkbox e menu "⋮" respondem ao toque desde o primeiro instante (ver
-  // nota mais abaixo). O menu continua com estado próprio (não participa
-  // em seleção em massa); a checkbox agora vem controlada de fora, pela
-  // mesma seleção da ProductsExplorer que a ProductRow real usa.
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function onClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [menuOpen]);
-
   useEffect(() => {
     // Erro chegado a meio do esqueleto (ex: falhou o upload enquanto ainda
     // se mostrava a animar) — não faz sentido continuar a "carregar" algo
@@ -155,151 +145,57 @@ export function PendingProductRow({
     if (produto.produtoId && confirmado) finalizePublish(produto.tempId);
   }, [showSkeleton, comErro, produto.produtoId, confirmado, produto.tempId, finalizePublish]);
 
-  // Checkbox e botão "⋮" — a ProductRow real MOSTRA SEMPRE os dois (a
-  // ProductsExplorer passa onToggleSelect incondicionalmente). Por isso
-  // mostramo-los aqui também, em todos os estados (esqueleto, normal e
-  // erro), com a MESMA aparência visual da linha real — e com a mesma
-  // resposta ao toque. A checkbox agora participa mesmo na seleção em
-  // massa real (contador do cabeçalho, barra flutuante de ações no fundo
-  // da lista): usa a chave `pending:${tempId}` porque ainda não há um
-  // `id` de produto definitivo. As ações em massa que dependem do
-  // servidor (ativar/desativar/duplicar) tratam essa chave como
-  // "cancelar publicação" quando aplicadas a uma linha pendente — ver
-  // ProductsExplorer.
-  // ── Checkbox: wrapper SEMPRE presente (mesmo elemento, mesmo tamanho
-  // 19x19 + margens), quer no esqueleto quer no conteúdo real — só o que
-  // está lá dentro muda (shimmer vs <Checkbox> interativo). Isto evita
-  // que o React trate a troca esqueleto → real como troca de TIPO de
-  // elemento (Skeleton vs Checkbox) na mesma posição, o que forçaria a
-  // desmontagem/remontagem de toda a linha nesse instante — exatamente o
-  // momento em que o "⋮" aparecia a saltar de posição.
-  const checkboxEl = (
-    <span className="relative ml-0.5 mr-2 inline-flex h-[19px] w-[19px] flex-shrink-0">
-      {showSkeleton && !comErro ? (
-        <Skeleton className="h-full w-full rounded-[6px]" />
-      ) : (
-        <Checkbox
-          checked={selected}
-          onChange={() => onToggleSelect(`pending:${produto.tempId}`)}
-          ariaLabel="Selecionar produto"
-        />
-      )}
-    </span>
-  );
-
-  // Feedback para as ações que dependem de o produto já estar gravado no
-  // servidor (Editar, Duplicar, Ativar/Inativar): enquanto a publicação
-  // ainda decorre não há `produto.id` real para essas mutações agirem em
-  // cima, por isso avisam em vez de fingir que fizeram algo. "Cancelar
-  // publicação" continua à parte, por já ser possível de verdade nesta
-  // fase (remove a linha otimista).
+  // Enquanto a publicação decorre não há `produto.id` real para as
+  // mutações (Editar/Duplicar/Ativar) agirem em cima, por isso avisam em
+  // vez de fingir que fizeram algo. "Excluir" continua à parte, por já
+  // ser possível de verdade nesta fase (remove a linha otimista).
   function avisarAindaPublicando() {
-    setMenuOpen(false);
     show('Aguarda a publicação terminar para fazer isso.');
   }
 
-  // ── Menu "⋮": mesma lógica do checkbox acima — wrapper h-8 w-8 SEMPRE
-  // presente; só o conteúdo (shimmer ou botão real) é que troca.
-  const menuEl = (
-    <div ref={menuRef} className="relative h-8 w-8 flex-shrink-0">
-      {showSkeleton && !comErro ? (
-        // Alinhado à direita da caixa, e não centrado: o botão real (ao
-        // lado) também fica encostado à direita via `justify-end`. Manter
-        // os dois presos ao MESMO ponto de referência (a borda direita)
-        // evita o salto visual de o esqueleto aparecer num sítio e o ícone
-        // real "saltar" para outro quando a troca acontece.
-        <Skeleton className="absolute right-0 top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full" />
-      ) : (
-        <>
-          {/* O botão ocupa toda a área do wrapper (inset-0) para a
-          zona de clique ser h-8 w-8, igual ao ProductRow real.
-          O ícone fica posicionado em absolute relativo ao wrapper
-          (o mesmo contexto de posicionamento do esqueleto acima),
-          não relativo ao botão — assim os dois estados usam
-          exactamente o mesmo ponto de referência e nunca há salto. */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Ações do produto"
-            className="absolute inset-0 rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
-          />
-          <MoreVertical size={17} strokeWidth={2.3} className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" />
+  const menuItems: ProductMenuItem[] = [
+    {
+      key: 'editar',
+      icon: <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />,
+      label: 'Editar',
+      onClick: avisarAindaPublicando,
+    },
+    {
+      key: 'duplicar',
+      icon: <Copy size={15} strokeWidth={2.3} className="text-slate-500" />,
+      label: 'Duplicar',
+      onClick: avisarAindaPublicando,
+    },
+    {
+      key: 'inativar',
+      icon: <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />,
+      label: 'Inativar',
+      onClick: avisarAindaPublicando,
+    },
+    {
+      key: 'excluir',
+      icon: <Trash2 size={15} strokeWidth={2.3} />,
+      label: 'Excluir',
+      onClick: () => dismissPending(produto.tempId),
+      danger: true,
+      separatorBefore: true,
+    },
+  ];
 
-          {menuOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
-              <button
-                type="button"
-                onClick={avisarAindaPublicando}
-                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-              >
-                <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />
-                Editar
-              </button>
-              <button
-                type="button"
-                onClick={avisarAindaPublicando}
-                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-              >
-                <Copy size={15} strokeWidth={2.3} className="text-slate-500" />
-                Duplicar
-              </button>
-              <button
-                type="button"
-                onClick={avisarAindaPublicando}
-                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-              >
-                <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
-                Inativar
-              </button>
-              <div className="my-1 h-px bg-[#1A1210]/8" />
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  dismissPending(produto.tempId);
-                }}
-                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
-              >
-                <Trash2 size={15} strokeWidth={2.3} />
-                Excluir
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
+  // ── Checkbox e miniatura: mesmos componentes partilhados da ProductRow
+  // real, só a variar o `state`/`loading` consoante esqueleto ou erro.
+  const thumbnailState = showSkeleton && !comErro ? 'skeleton' : comErro ? 'error' : produto.fotoPreview ? 'image' : 'placeholder';
 
-  // ── Uma ÚNICA árvore JSX para esqueleto, erro e conteúdo real ──────────
-  // Antes havia dois `return` inteiramente separados (um só para o
-  // esqueleto, outro para tudo o resto); como as suas subárvores usavam
-  // tipos de elemento diferentes na mesma posição (ex.: <Skeleton> no
-  // lugar onde depois entra <Checkbox>), o React desmontava e voltava a
-  // montar a linha inteira no instante em que o esqueleto terminava — e
-  // era exactamente aí que o "⋮" podia saltar de posição por um frame.
-  // Agora a checkbox, a miniatura, o texto e o menu são SEMPRE os mesmos
-  // elementos de wrapper (mesmo tipo, mesmo tamanho) em qualquer estado;
-  // só o que está dentro de cada um é que muda.
   return (
     <div className="flex items-center gap-3 p-4" style={{ contain: 'layout' }}>
-      {checkboxEl}
+      <ProductRowCheckbox
+        loading={showSkeleton && !comErro}
+        checked={selected}
+        onChange={() => onToggleSelect(`pending:${produto.tempId}`)}
+        ariaLabel="Selecionar produto"
+      />
 
-      <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
-        {showSkeleton && !comErro ? (
-          <Skeleton className="h-full w-full rounded-md" />
-        ) : comErro ? (
-          <div className="flex h-full w-full items-center justify-center">
-            <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
-          </div>
-        ) : produto.fotoPreview ? (
-          <Image src={produto.fotoPreview} alt="" fill className="object-cover" sizes="56px" unoptimized loading="eager" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <ImageIcon size={26} strokeWidth={1.5} style={{ color: 'rgba(26,18,16,0.22)' }} />
-          </div>
-        )}
-        <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_0_1px_rgba(26,18,16,0.08)]" />
-      </div>
+      <ProductThumbnail state={thumbnailState} src={produto.fotoPreview} alt="" />
 
       <div className="min-w-0 flex-1">
         {showSkeleton && !comErro ? (
@@ -349,7 +245,7 @@ export function PendingProductRow({
           </button>
         </div>
       ) : (
-        menuEl
+        <ProductActionsMenu items={menuItems} loading={showSkeleton} />
       )}
     </div>
   );
