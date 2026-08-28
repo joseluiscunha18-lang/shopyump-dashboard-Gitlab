@@ -245,7 +245,16 @@ export function PendingProductRow({
           </button>
         </div>
       ) : (
-        <ProductActionsMenu items={menuItems} loading={showSkeleton} />
+        // Durante o esqueleto, o menu fica ligeiramente deslocado para a
+        // direita em relação às linhas reais — provavelmente por o layout
+        // do PendingProductRow (height fixo 88px) resolver o flex de forma
+        // marginalmente diferente do ProductRow (sem height fixo). O
+        // ajuste de 10% para a esquerda corrige esse desvio visual apenas
+        // enquanto o skeleton está ativo; quando termina, o wrapper
+        // desaparece e o ícone fica na posição natural.
+        <div style={showSkeleton ? { marginRight: '10%' } : undefined}>
+          <ProductActionsMenu items={menuItems} loading={showSkeleton} />
+        </div>
       )}
     </div>
   );
