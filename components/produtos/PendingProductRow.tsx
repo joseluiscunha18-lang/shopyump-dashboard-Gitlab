@@ -203,7 +203,11 @@ export function PendingProductRow({
   const menuEl = (
     <div ref={menuRef} className="relative h-8 w-8 flex-shrink-0">
       {showSkeleton && !comErro ? (
-        <Skeleton className="h-full w-full rounded-md" />
+        // Só o footprint visual do ícone "⋮" (não a caixa de toque toda de
+        // 32x32) — preencher a caixa inteira fazia este esqueleto parecer
+        // bem maior e mais deslocado para a direita do que os 3 pontos
+        // reais, que ocupam só uns 18px de largura centrados na mesma caixa.
+        <Skeleton className="absolute inset-0 m-auto h-[18px] w-[18px] rounded-full" />
       ) : (
         <>
           <button
@@ -294,8 +298,8 @@ export function PendingProductRow({
       <div className="min-w-0 flex-1">
         {showSkeleton && !comErro ? (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-[13px] w-2/5" />
-            <Skeleton className="h-[12px] w-1/3" />
+            <Skeleton className="h-[13px] w-2/5 rounded-full" />
+            <Skeleton className="h-[12px] w-1/3 rounded-full" />
           </div>
         ) : (
           <>
