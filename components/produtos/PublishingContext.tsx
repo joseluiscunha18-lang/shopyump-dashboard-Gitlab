@@ -156,6 +156,21 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
         ? { ...prev, produtoId: result.produtoId, foto: result.foto }
         : prev
     );
+    // Pré-carrega a foto definitiva (CDN) em segundo plano, ainda antes de
+    // `finalizePublish` trocar a PendingProductRow (foto local em blob:)
+    // pela ProductRow real (foto do servidor). Como são componentes
+    // diferentes, essa troca desmonta e volta a montar a linha — a
+    // ProductRow nasce com um <img> novo, cujo `src` (a foto do CDN) o
+    // navegador ainda não tinha pedido. Sem isto, esse <img> começa em
+    // branco e só pinta a foto quando o download terminar, dando a
+    // sensação de "a foto está a carregar outra vez" bem visível nesse
+    // instante. Ao pedir a imagem aqui, mal a URL fica conhecida, o
+    // navegador já tem os bytes em cache quando a ProductRow nascer — o
+    // <img> novo pinta de imediato, sem qualquer piscar.
+    if (result.foto) {
+      const preload = new window.Image();
+      preload.src = result.foto;
+    }
     router.refresh();
   }, [router]);
 
