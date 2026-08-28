@@ -59,7 +59,17 @@
      as imagens em object-cover a recalcular o enquadramento — o efeito
      visual de a miniatura parecer "recarregar"/cortar durante essa troca.
   */
-  html { scrollbar-gutter: stable; }
+  html {
+    scrollbar-gutter: stable;
+    /* `scrollbar-gutter` sozinho depende do navegador o suportar — em
+       alguns navegadores/webviews OEM (ex.: o navegador da MIUI) pode não
+       ter efeito. `overflow-y: scroll` é suportado universalmente e força
+       a barra a existir SEMPRE, desde o primeiro frame — nunca aparece
+       "mais tarde" para estreitar a página, porque nunca esteve ausente.
+       As duas regras juntas cobrem tanto navegadores modernos como mais
+       antigos/OEM. */
+    overflow-y: scroll;
+  }
 
   /* Propositalmente SEM "scroll-behavior: smooth" aqui. Um valor global
      faz o próprio scroll-to-top automático do Next.js (ao navegar com
