@@ -141,9 +141,14 @@ export function ProductRow({
           onClick={() => setMenuOpen((v) => !v)}
           disabled={pending}
           aria-label="Ações do produto"
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-end rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+          className="relative flex h-8 w-8 flex-shrink-0 items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
         >
-          <MoreVertical size={17} strokeWidth={2.3} />
+          {/* Mesmo ponto de referência absoluto usado no esqueleto da
+          PendingProductRow (right-0, centrado verticalmente) — não
+          `justify-end`, que dava um resultado ligeiramente diferente
+          do esqueleto por depender de como o flexbox distribui o
+          espaço à volta do ícone. */}
+          <MoreVertical size={17} strokeWidth={2.3} className="absolute right-0 top-1/2 -translate-y-1/2" />
         </button>
 
         {menuOpen && (
