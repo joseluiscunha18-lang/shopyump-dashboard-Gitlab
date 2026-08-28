@@ -43,6 +43,20 @@ export interface PendingProduto {
   errorMessage?: string;
   /** Preenchido quando `status` passa a 'publicado'. */
   produtoId?: string;
+  /**
+   * True assim que a foto definitiva (CDN) já está garantidamente no
+   * browser — via `load` (ou `error`, para não bloquear para sempre se a
+   * foto falhar) do pré-carregamento feito em `resolvePublish`. `undefined`
+   * enquanto ainda não se sabe (antes de `resolvePublish`). Sem isto, a
+   * troca para a ProductRow real podia acontecer antes de a foto (que é a
+   * imagem em tamanho grande, não uma miniatura) terminar de baixar — a
+   * confirmação do servidor (`confirmado`) e o fim do esqueleto costumam
+   * ser mais rápidos do que o download da foto em ligações mais lentas.
+   * `finalizePublish` só é chamado quando isto também for true (ver
+   * PendingProductRow) — até lá a linha otimista continua visível com a
+   * MESMA foto (via blob:, já carregada), sem qualquer "buraco" em branco.
+   */
+  fotoPronta?: boolean;
 }
 
 export interface Celebration {
@@ -116,7 +130,7 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
     // aparecer sozinho" que queremos evitar. Mantém-se visível, com a
     // mesma foto local, até `finalizePublish` confirmar que já existe nos
     // dados reais.
-    setPending((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: 'publicado', produtoId: result.produtoId } : p)));
+    setPending((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: 'publicado', produtoId: result.produtoId, fotoPronta: !result.foto } : p)));
     // Enriquece a celebration já visível com produtoId e foto CDN.
     // Não substitui — o banner já está no ecrã desde startPublish.
     setCelebration((prev) =>
@@ -135,8 +149,22 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
     // instante. Ao pedir a imagem aqui, mal a URL fica conhecida, o
     // navegador já tem os bytes em cache quando a ProductRow nascer — o
     // <img> novo pinta de imediato, sem qualquer piscar.
+    //
+    // Mas só pedir a imagem não bastava: o `router.refresh()` (que confirma
+    // o produto e permite o `finalizePublish`) costuma ser mais rápido do
+    // que o download desta foto em tamanho grande, sobretudo em ligações
+    // mais lentas — a troca podia acontecer ANTES de a foto terminar de
+    // chegar, e o "piscar" reaparecia. Por isso `fotoPronta` só passa a
+    // true quando o `load` (ou `error`, para não travar a lista para
+    // sempre se a foto falhar) deste pré-carregamento disparar de facto —
+    // é essa flag, não o tempo, que a PendingProductRow espera antes de
+    // finalizar (ver PendingProductRow).
     if (result.foto) {
       const preload = new window.Image();
+      const marcarFotoPronta = () =>
+        setPending((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, fotoPronta: true } : p)));
+      preload.onload = marcarFotoPronta;
+      preload.onerror = marcarFotoPronta;
       preload.src = result.foto;
     }
     router.refresh();
