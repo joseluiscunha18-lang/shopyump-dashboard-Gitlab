@@ -195,7 +195,7 @@ export function PendingProductRow({
         ariaLabel="Selecionar produto"
       />
 
-      <ProductThumbnail state={thumbnailState} src={produto.fotoPreview} alt="" />
+      <ProductThumbnail state={thumbnailState} src={produto.fotoPreview ?? undefined} alt="" />
 
       <div className="min-w-0 flex-1">
         {showSkeleton && !comErro ? (
