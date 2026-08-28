@@ -114,7 +114,7 @@ export function ProductRow({
         'group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer',
         selected && 'bg-[#1A1210]/[0.04] hover:bg-[#1A1210]/[0.06]',
       )}
-      style={{ contain: 'layout' }}
+      style={{ contain: 'layout', height: '88px' }}
     >
       {onToggleSelect && (
         <ProductRowCheckbox
