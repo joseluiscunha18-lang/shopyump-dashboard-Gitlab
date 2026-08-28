@@ -136,7 +136,7 @@ export function ProductRow({
         </p>
       </div>
 
-      <div ref={menuRef} className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div ref={menuRef} className="relative h-8 w-8 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
           disabled={pending}
