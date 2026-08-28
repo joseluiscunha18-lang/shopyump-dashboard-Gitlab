@@ -141,7 +141,7 @@ export function ProductRow({
           onClick={() => setMenuOpen((v) => !v)}
           disabled={pending}
           aria-label="Ações do produto"
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-end rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
         >
           <MoreVertical size={17} strokeWidth={2.3} />
         </button>
