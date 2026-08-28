@@ -203,18 +203,19 @@ export function PendingProductRow({
   const menuEl = (
     <div ref={menuRef} className="relative h-8 w-8 flex-shrink-0">
       {showSkeleton && !comErro ? (
-        // Só o footprint visual do ícone "⋮" (não a caixa de toque toda de
-        // 32x32) — preencher a caixa inteira fazia este esqueleto parecer
-        // bem maior e mais deslocado para a direita do que os 3 pontos
-        // reais, que ocupam só uns 18px de largura centrados na mesma caixa.
-        <Skeleton className="absolute inset-0 m-auto h-[18px] w-[18px] rounded-full" />
+        // Alinhado à direita da caixa, e não centrado: o botão real (ao
+        // lado) também fica encostado à direita via `justify-end`. Manter
+        // os dois presos ao MESMO ponto de referência (a borda direita)
+        // evita o salto visual de o esqueleto aparecer num sítio e o ícone
+        // real "saltar" para outro quando a troca acontece.
+        <Skeleton className="absolute right-0 top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full" />
       ) : (
         <>
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Ações do produto"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-end rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
           >
             <MoreVertical size={17} strokeWidth={2.3} />
           </button>
