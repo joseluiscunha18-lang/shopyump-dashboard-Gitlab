@@ -267,7 +267,7 @@ export function PendingProductRow({
   // saltos de layout.
   if (showSkeleton && !comErro) {
     return (
-      <div className="flex items-center gap-3 p-4">
+      <div className="flex items-center gap-3 p-4" style={{ contain: 'layout' }}>
         {checkboxPlaceholder}
         <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
         <div className="min-w-0 flex-1 flex flex-col gap-2">
@@ -280,7 +280,7 @@ export function PendingProductRow({
   }
 
   return (
-    <div className="flex items-center gap-3 p-4">
+    <div className="flex items-center gap-3 p-4" style={{ contain: 'layout' }}>
       {checkboxEl}
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {comErro ? (
@@ -288,7 +288,7 @@ export function PendingProductRow({
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
           </div>
         ) : produto.fotoPreview ? (
-          <Image src={produto.fotoPreview} alt="" fill className="object-cover" sizes="56px" unoptimized />
+          <Image src={produto.fotoPreview} alt="" fill className="object-cover" sizes="56px" unoptimized loading="eager" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <ImageIcon size={26} strokeWidth={1.5} style={{ color: 'rgba(26,18,16,0.22)' }} />
