@@ -194,17 +194,20 @@ export function ProductRow({
         )}
       </div>
 
-      <div onClick={(e) => e.stopPropagation()}>
-        <ConfirmDialog
-          open={confirmDeleteOpen}
-          onClose={() => setConfirmDeleteOpen(false)}
-          onConfirm={confirmarDelete}
-          title={`Remover "${produto.nome}"?`}
-          description="Esta ação não pode ser desfeita."
-          confirmLabel="Remover"
-          danger
-        />
-      </div>
     </div>
+
+    {/* Fora do div role="button": o Sheet usa createPortal e não precisa
+    de estar dentro do pai para funcionar. Antes ficava dentro envolto
+    num <div onClick=stopPropagation>, que entrava no flex como filho
+    vazio e empurrava o ⋮ para a esquerda. */}
+    <ConfirmDialog
+      open={confirmDeleteOpen}
+      onClose={() => setConfirmDeleteOpen(false)}
+      onConfirm={confirmarDelete}
+      title={`Remover "${produto.nome}"?`}
+      description="Esta ação não pode ser desfeita."
+      confirmLabel="Remover"
+      danger
+    />
   );
 }
