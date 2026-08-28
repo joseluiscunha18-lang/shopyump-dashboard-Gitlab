@@ -47,14 +47,14 @@ export function ProductActionsMenu({ items, loading }: { items: ProductMenuItem[
       <MoreVertical
         size={17}
         strokeWidth={2.3}
-        className={`pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 transition-opacity duration-150 ${
+        className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-150 ${
           loading ? 'opacity-0' : 'opacity-100'
         }`}
       />
 
       {/* Shimmer sobreposto enquanto loading — desaparece sem mover nada */}
       {loading && (
-        <Skeleton className="pointer-events-none absolute right-0 top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full" />
+        <Skeleton className="pointer-events-none absolute left-1/2 top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full" />
       )}
 
       {/* Dropdown — só quando não está em loading */}
