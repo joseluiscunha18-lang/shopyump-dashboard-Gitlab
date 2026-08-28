@@ -43,21 +43,6 @@ export interface PendingProduto {
   errorMessage?: string;
   /** Preenchido quando `status` passa a 'publicado'. */
   produtoId?: string;
-  /**
-   * Timestamp (Date.now()) até ao qual a PendingProductRow deve mostrar o
-   * esqueleto da foto — definido UMA ÚNICA VEZ aqui, em startPublish, e
-   * nunca num useState/useRef local do componente. A PendingProductRow
-   * monta pelo menos duas vezes neste fluxo (uma dentro de loading.tsx,
-   * assim que se navega para /produtos, e outra dentro da ProductsExplorer
-   * quando o page.tsx real termina de carregar); se cada montagem contasse
-   * o seu próprio temporizador do zero, uma troca rápida entre as duas
-   * (comum quando a query de produtos responde depressa) fazia o esqueleto
-   * da segunda montagem começar tarde demais para ser visto — na prática,
-   * "o esqueleto não aparece". Guardando aqui um relógio absoluto, todas
-   * as montagens leem o mesmo prazo e a janela real de exibição (medida
-   * desde o clique, não desde o mount) fica sempre garantida.
-   */
-  skeletonUntil: number;
 }
 
 export interface Celebration {
@@ -78,17 +63,7 @@ interface PublishingContextValue {
   celebration: Celebration | null;
   /** Regista um produto otimista e mostra-o de imediato na lista. */
   startPublish: (
-    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>,
-    /**
-     * Quanto tempo (ms) depois de AGORA é que a navegação para /produtos
-     * vai realmente acontecer — normalmente MIN_BOTAO_PUBLICAR_MS, do
-     * ProductForm. Sem isto, skeletonUntil arrancava a contar já no
-     * clique, mas a linha só monta em /produtos MIN_BOTAO_PUBLICAR_MS
-     * depois; como esse atraso (2000ms) é maior que a própria janela do
-     * esqueleto (1600–1800ms), o prazo expirava por completo ainda no
-     * formulário — a linha nascia sempre já sem esqueleto. Ver uso abaixo.
-     */
-    navigationDelayMs?: number,
+    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>,
   ) => void;
   /** Publicação concluída com sucesso — actualiza celebration com produtoId e foto final. */
   resolvePublish: (tempId: string, result: { produtoId: string; foto?: string }) => void;
@@ -109,23 +84,16 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const startPublish = useCallback((
-    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId' | 'skeletonUntil'>,
-    navigationDelayMs = 0,
+    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>,
   ) => {
-    // Sorteado uma única vez aqui, no clique — não em cada montagem de
-    // PendingProductRow — para que o esqueleto seja sempre medido a partir
-    // do momento real da publicação, e não do momento em que este ou
-    // aquele componente calhou de montar.
-    //
-    // IMPORTANTE: soma-se `navigationDelayMs` (o tempo que o botão ainda
-    // vai segurar antes de navegar para /produtos) porque a linha só
-    // MONTA depois desse atraso. Contar só a partir daqui faria o prazo
-    // do esqueleto expirar ainda no formulário, antes de a linha sequer
-    // existir no ecrã — ver comentário em PublishingContextValue.
-    const SKELETON_MIN_MS = 1600;
-    const SKELETON_MAX_MS = 1800;
-    const skeletonUntil = Date.now() + navigationDelayMs + SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS);
-    setPending((prev) => [...prev, { ...p, status: 'a-publicar', skeletonUntil }]);
+    // Já não se calcula aqui nenhum relógio de esqueleto: a janela do
+    // esqueleto (SKELETON_MIN_MS–SKELETON_MAX_MS) passa a ser cronometrada
+    // dentro da própria PendingProductRow, a partir do instante em que ELA
+    // monta — não a partir deste clique. Isso torna a duração do esqueleto
+    // independente de quanto tempo a navegação para /produtos demorar: seja
+    // a rede rápida ou lenta, a linha mostra sempre a janela completa assim
+    // que aparece no ecrã. Ver PendingProductRow para o temporizador.
+    setPending((prev) => [...prev, { ...p, status: 'a-publicar' }]);
     // Acende o banner imediatamente com os dados já disponíveis (nome, foto blob, preço).
     // O banner não precisa de esperar pelo upload/insert — mostra já os dados locais
     // e actualiza a foto/produtoId silenciosamente quando resolvePublish completar.
