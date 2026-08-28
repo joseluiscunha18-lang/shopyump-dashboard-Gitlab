@@ -215,9 +215,17 @@ export function PendingProductRow({
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Ações do produto"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-end rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="relative flex h-8 w-8 flex-shrink-0 items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
           >
-            <MoreVertical size={17} strokeWidth={2.3} />
+            {/* Mesma técnica de posicionamento do esqueleto acima
+            (absolute right-0 top-1/2 -translate-y-1/2) — não
+            `justify-end` no flex do botão. O `justify-end` dava um
+            resultado ligeiramente diferente do esqueleto (a posição
+            final dependia de como o flexbox distribui o espaço à volta
+            do ícone, não de um ponto fixo), por isso os dois nunca
+            ficavam exatamente coincidentes. Usando o mesmo ponto de
+            referência absoluto nos dois, ficam sempre no mesmo pixel. */}
+            <MoreVertical size={17} strokeWidth={2.3} className="absolute right-0 top-1/2 -translate-y-1/2" />
           </button>
 
           {menuOpen && (
