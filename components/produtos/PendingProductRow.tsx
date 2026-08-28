@@ -187,7 +187,7 @@ export function PendingProductRow({
   const thumbnailState = showSkeleton && !comErro ? 'skeleton' : comErro ? 'error' : produto.fotoPreview ? 'image' : 'placeholder';
 
   return (
-    <div className="flex items-center gap-3 p-4" style={{ contain: 'layout' }}>
+    <div className="flex items-center gap-3 p-4" style={{ contain: 'layout', height: '88px' }}>
       <ProductRowCheckbox
         loading={showSkeleton && !comErro}
         checked={selected}
