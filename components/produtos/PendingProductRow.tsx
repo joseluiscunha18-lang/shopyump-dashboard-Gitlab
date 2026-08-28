@@ -14,18 +14,22 @@ import { useToast } from '@/components/ui/Toast';
 // terminar) pelo menos uma vez. Módulo, não estado do componente — para
 // sobreviver às duas montagens desta linha (loading.tsx e depois
 // ProductsExplorer) e nunca reativar o esqueleto numa remontagem tardia
-// que já o tinha mostrado.
+// que já o tinha mostrado. Normalmente isso significa que, se a primeira
+// montagem (em loading.tsx) já mostrou e terminou o esqueleto, a segunda
+// (na ProductsExplorer) nasce direto no conteúdo final — o que é
+// correto, já foi vista uma janela completa de esqueleto para este tempId.
 const esqueletoJaConsumido = new Set<string>();
 
-// Janela mínima de fallback (ms) usada SÓ quando a navegação para
-// /produtos demorou mais do que o previsto (ligação lenta, dispositivo
-// lento, etc.) e o relógio absoluto `skeletonUntil` — pensado para o
-// caso normal — já tiver expirado antes mesmo de esta linha montar pela
-// primeira vez. Sem isto, esse caso extremo saltava logo para o
-// conteúdo final sem o lojista chegar a ver nenhuma animação de
-// esqueleto. Nunca se aplica numa remontagem cujo esqueleto já foi
-// consumido (ver `esqueletoJaConsumido`).
-const SKELETON_FALLBACK_MS = 400;
+// Janela do esqueleto (ms) — contada a partir do instante em que ESTA
+// linha monta, não a partir do clique em "Publicar produto". Antes, o
+// prazo vinha de um relógio absoluto calculado no clique, à espera de
+// que a navegação para /produtos demorasse sempre ~MIN_BOTAO_PUBLICAR_MS;
+// se a rede fosse mais lenta que isso, o relógio já estava a meio (ou
+// esgotado) quando a linha finalmente nascia, e o esqueleto saía cedo
+// demais ou nem chegava a aparecer. Medindo a partir da montagem real,
+// a janela completa fica sempre garantida, seja a rede rápida ou lenta.
+const SKELETON_MIN_MS = 1600;
+const SKELETON_MAX_MS = 1800;
 
 /**
  * Enquanto a publicação está a decorrer (ou já terminou mas ainda à
@@ -81,26 +85,12 @@ export function PendingProductRow({
   const segmentosPendente = segmentosCategoria(produto.categoria);
   const categoriaEspecifica = segmentosPendente[segmentosPendente.length - 1] ?? produto.categoria;
 
-  // `produto.skeletonUntil` é um relógio absoluto definido UMA VEZ em
-  // startPublish (ver PublishingContext) — não um temporizador local desta
-  // instância. Isto importa porque esta linha monta pelo menos duas vezes
-  // por publicação (dentro de loading.tsx assim que se navega para
-  // /produtos, e outra vez dentro da ProductsExplorer quando o page.tsx
-  // real chega); se cada montagem recomeçasse a contar do zero, uma troca
-  // rápida entre as duas fazia a segunda montagem herdar um prazo cujo
-  // "início" já passou, ou nunca dar tempo de o esqueleto ser visto antes
-  // de o servidor confirmar. Lendo o mesmo relógio em qualquer montagem,
-  // o tempo restante é sempre o correto, medido desde o clique real.
-  //
-  // `SKELETON_FALLBACK_MS`: cobre o caso em que a navegação para /produtos
-  // demorou mais do que o previsto — `restante` já chegaria a 0 mesmo
-  // nesta, a primeira montagem desta linha, saltando logo para o conteúdo
-  // final sem o esqueleto chegar a aparecer. Só se aplica quando o tempId
-  // ainda não tinha consumido o esqueleto nenhuma vez.
-  const restante = Math.max(0, produto.skeletonUntil - Date.now());
-  const jaConsumido = esqueletoJaConsumido.has(produto.tempId);
-  const restanteEfetivo = restante > 0 ? restante : jaConsumido ? 0 : SKELETON_FALLBACK_MS;
-  const [showSkeleton, setShowSkeleton] = useState(!comErro && restanteEfetivo > 0);
+  // Mostra o esqueleto de início só se este tempId ainda não o tiver
+  // consumido — se já foi visto numa montagem anterior (ver
+  // `esqueletoJaConsumido`), esta linha nasce direto no conteúdo final.
+  const [showSkeleton, setShowSkeleton] = useState(
+    !comErro && !esqueletoJaConsumido.has(produto.tempId)
+  );
 
   // Checkbox e menu "⋮" respondem ao toque desde o primeiro instante (ver
   // nota mais abaixo). O menu continua com estado próprio (não participa
@@ -126,19 +116,22 @@ export function PendingProductRow({
       setShowSkeleton(false);
       return;
     }
-    const msRestantes = Math.max(0, produto.skeletonUntil - Date.now());
-    // Mesmo fallback do cálculo inicial de `showSkeleton`: se a navegação
-    // demorou mais do que o previsto e o relógio absoluto já expirou antes
-    // de este efeito sequer correr, ainda assim garante-se uma janela
-    // mínima visível — mas só na primeira vez que este tempId aparece.
-    const efetivo = msRestantes > 0 ? msRestantes : esqueletoJaConsumido.has(produto.tempId) ? 0 : SKELETON_FALLBACK_MS;
+    // Já consumido numa montagem anterior desta mesma publicação — nada a
+    // fazer, o `useState` inicial já nasceu com `showSkeleton` a false.
+    if (esqueletoJaConsumido.has(produto.tempId)) return;
+    // Duração sorteada aqui, no mount deste efeito — ou seja, a partir do
+    // instante em que a linha realmente aparece no ecrã, e não do clique
+    // em "Publicar produto". Isto garante a janela completa
+    // (SKELETON_MIN_MS–SKELETON_MAX_MS) sempre que a linha nasce,
+    // independentemente de a rede ter sido rápida ou lenta até aqui.
+    const duracao = SKELETON_MIN_MS + Math.random() * (SKELETON_MAX_MS - SKELETON_MIN_MS);
     const t = setTimeout(() => {
       esqueletoJaConsumido.add(produto.tempId);
       setShowSkeleton(false);
-    }, efetivo);
+    }, duracao);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comErro, produto.skeletonUntil, produto.tempId]);
+  }, [comErro, produto.tempId]);
 
   // Só depois de o esqueleto terminar É QUE se verifica se já há
   // confirmação real para finalizar — é este componente, não o
@@ -173,13 +166,25 @@ export function PendingProductRow({
   // servidor (ativar/desativar/duplicar) tratam essa chave como
   // "cancelar publicação" quando aplicadas a uma linha pendente — ver
   // ProductsExplorer.
+  // ── Checkbox: wrapper SEMPRE presente (mesmo elemento, mesmo tamanho
+  // 19x19 + margens), quer no esqueleto quer no conteúdo real — só o que
+  // está lá dentro muda (shimmer vs <Checkbox> interativo). Isto evita
+  // que o React trate a troca esqueleto → real como troca de TIPO de
+  // elemento (Skeleton vs Checkbox) na mesma posição, o que forçaria a
+  // desmontagem/remontagem de toda a linha nesse instante — exatamente o
+  // momento em que o "⋮" aparecia a saltar de posição.
   const checkboxEl = (
-    <Checkbox
-      checked={selected}
-      onChange={() => onToggleSelect(`pending:${produto.tempId}`)}
-      ariaLabel="Selecionar produto"
-      className="ml-0.5 mr-2"
-    />
+    <span className="relative ml-0.5 mr-2 inline-flex h-[19px] w-[19px] flex-shrink-0">
+      {showSkeleton && !comErro ? (
+        <Skeleton className="h-full w-full rounded-[6px]" />
+      ) : (
+        <Checkbox
+          checked={selected}
+          onChange={() => onToggleSelect(`pending:${produto.tempId}`)}
+          ariaLabel="Selecionar produto"
+        />
+      )}
+    </span>
   );
 
   // Feedback para as ações que dependem de o produto já estar gravado no
@@ -193,97 +198,86 @@ export function PendingProductRow({
     show('Aguarda a publicação terminar para fazer isso.');
   }
 
+  // ── Menu "⋮": mesma lógica do checkbox acima — wrapper h-8 w-8 SEMPRE
+  // presente; só o conteúdo (shimmer ou botão real) é que troca.
   const menuEl = (
-    <div ref={menuRef} className="relative flex-shrink-0">
-      <button
-        type="button"
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-label="Ações do produto"
-        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
-      >
-        <MoreVertical size={17} strokeWidth={2.3} />
-      </button>
+    <div ref={menuRef} className="relative h-8 w-8 flex-shrink-0">
+      {showSkeleton && !comErro ? (
+        <Skeleton className="h-full w-full rounded-md" />
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Ações do produto"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+          >
+            <MoreVertical size={17} strokeWidth={2.3} />
+          </button>
 
-      {menuOpen && (
-        <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
-          <button
-            type="button"
-            onClick={avisarAindaPublicando}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-          >
-            <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />
-            Editar
-          </button>
-          <button
-            type="button"
-            onClick={avisarAindaPublicando}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-          >
-            <Copy size={15} strokeWidth={2.3} className="text-slate-500" />
-            Duplicar
-          </button>
-          <button
-            type="button"
-            onClick={avisarAindaPublicando}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
-          >
-            <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
-            Inativar
-          </button>
-          <div className="my-1 h-px bg-[#1A1210]/8" />
-          <button
-            type="button"
-            onClick={() => {
-              setMenuOpen(false);
-              dismissPending(produto.tempId);
-            }}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
-          >
-            <Trash2 size={15} strokeWidth={2.3} />
-            Excluir
-          </button>
-        </div>
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
+              <button
+                type="button"
+                onClick={avisarAindaPublicando}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              >
+                <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={avisarAindaPublicando}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              >
+                <Copy size={15} strokeWidth={2.3} className="text-slate-500" />
+                Duplicar
+              </button>
+              <button
+                type="button"
+                onClick={avisarAindaPublicando}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-ink transition-colors hover:bg-slate-50"
+              >
+                <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
+                Inativar
+              </button>
+              <div className="my-1 h-px bg-[#1A1210]/8" />
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  dismissPending(produto.tempId);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
+              >
+                <Trash2 size={15} strokeWidth={2.3} />
+                Excluir
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 
-  // Placeholder de checkbox e menu — usados no estado de skeleton para
-  // reservar o mesmo espaço que a linha real ocupa, evitando qualquer
-  // salto de layout na troca entre skeleton → conteúdo. Em vez de ficarem
-  // invisíveis (opacity-0), mostram o mesmo shimmer do resto da linha,
-  // para o esqueleto cobrir a linha toda — do quadradinho da checkbox até
-  // aos "⋮" — e não só a foto e o texto.
-  const checkboxPlaceholder = (
-    <Skeleton className="ml-0.5 mr-2 h-[19px] w-[19px] flex-shrink-0 rounded-[6px]" />
-  );
-  const menuPlaceholder = (
-    <Skeleton className="h-8 w-8 flex-shrink-0 rounded-md" />
-  );
-
-  // ── Skeleton vs conteúdo real ──────────────────────────────────────────
-  // Durante a janela do esqueleto (definida por skeletonUntil no
-  // PublishingContext), mostra uma linha inteira em skeleton — foto, nome
-  // e preço — para que a troca para o conteúdo real seja suave e sem
-  // saltos de layout.
-  if (showSkeleton && !comErro) {
-    return (
-      <div className="flex items-center gap-3 p-4" style={{ contain: 'layout' }}>
-        {checkboxPlaceholder}
-        <Skeleton className="-ml-1 h-14 w-14 flex-shrink-0 rounded-md" />
-        <div className="min-w-0 flex-1 flex flex-col gap-2">
-          <Skeleton className="h-[13px] w-2/5" />
-          <Skeleton className="h-[12px] w-1/3" />
-        </div>
-        {menuPlaceholder}
-      </div>
-    );
-  }
-
+  // ── Uma ÚNICA árvore JSX para esqueleto, erro e conteúdo real ──────────
+  // Antes havia dois `return` inteiramente separados (um só para o
+  // esqueleto, outro para tudo o resto); como as suas subárvores usavam
+  // tipos de elemento diferentes na mesma posição (ex.: <Skeleton> no
+  // lugar onde depois entra <Checkbox>), o React desmontava e voltava a
+  // montar a linha inteira no instante em que o esqueleto terminava — e
+  // era exactamente aí que o "⋮" podia saltar de posição por um frame.
+  // Agora a checkbox, a miniatura, o texto e o menu são SEMPRE os mesmos
+  // elementos de wrapper (mesmo tipo, mesmo tamanho) em qualquer estado;
+  // só o que está dentro de cada um é que muda.
   return (
     <div className="flex items-center gap-3 p-4" style={{ contain: 'layout' }}>
       {checkboxEl}
+
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
-        {comErro ? (
+        {showSkeleton && !comErro ? (
+          <Skeleton className="h-full w-full rounded-md" />
+        ) : comErro ? (
           <div className="flex h-full w-full items-center justify-center">
             <AlertTriangle size={22} strokeWidth={1.5} className="text-red-400" />
           </div>
@@ -298,25 +292,34 @@ export function PendingProductRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
-        <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
-          {produto.precoLabel} MZN · {categoriaEspecifica}
-        </p>
-        {comErro ? (
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
-            <AlertTriangle size={11} className="text-red-500" />
-            <span className="text-red-500">{produto.errorMessage ?? 'Não foi possível publicar.'}</span>
-          </p>
+        {showSkeleton && !comErro ? (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-[13px] w-2/5" />
+            <Skeleton className="h-[12px] w-1/3" />
+          </div>
         ) : (
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
-            <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
-            Ativo
-          </p>
+          <>
+            <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
+            <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
+              {produto.precoLabel} MZN · {categoriaEspecifica}
+            </p>
+            {comErro ? (
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
+                <AlertTriangle size={11} className="text-red-500" />
+                <span className="text-red-500">{produto.errorMessage ?? 'Não foi possível publicar.'}</span>
+              </p>
+            ) : (
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
+                <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
+                Ativo
+              </p>
+            )}
+          </>
         )}
       </div>
 
       {comErro ? (
-        <div className="flex flex-shrink-0 items-center gap-1">
+        <div className="flex h-8 flex-shrink-0 items-center gap-1">
           <Link
             href="/produtos/novo"
             aria-label="Tentar novamente"
