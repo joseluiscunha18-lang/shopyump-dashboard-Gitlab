@@ -49,6 +49,18 @@
 @layer base {
   * { box-sizing: border-box; }
 
+  /* Reserva sempre o espaço da barra de scroll vertical, mesmo quando a
+     página ainda não precisa dela (ex.: mesmo instante em que o banner
+     "Seu primeiro produto está no ar" expande de altura 0, ou em que a
+     linha otimista troca para a linha real — ambos alteram a altura total
+     do documento). Sem isto, o aparecimento/desaparecimento da barra
+     estreita/alarga a largura útil da página por um instante, empurrando
+     elementos alinhados à direita (ex.: o "⋮" de cada produto) e forçando
+     as imagens em object-cover a recalcular o enquadramento — o efeito
+     visual de a miniatura parecer "recarregar"/cortar durante essa troca.
+  */
+  html { scrollbar-gutter: stable; }
+
   /* Propositalmente SEM "scroll-behavior: smooth" aqui. Um valor global
      faz o próprio scroll-to-top automático do Next.js (ao navegar com
      router.push) animar em vez de saltar direto — e enquanto essa
