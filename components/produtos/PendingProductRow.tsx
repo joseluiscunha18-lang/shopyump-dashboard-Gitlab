@@ -140,10 +140,20 @@ export function PendingProductRow({
   // "Nenhum produto encontrado" por um instante. Ao exigir `confirmado`,
   // a troca só acontece quando já há sempre pelo menos uma linha (a
   // otimista ou a real) visível.
+  //
+  // E exige também `fotoPronta`: `confirmado` só garante que os DADOS do
+  // produto já chegaram — não que a FOTO (tamanho grande, ver
+  // PublishingContext.resolvePublish) já terminou de baixar no browser.
+  // Sem isto, em ligações mais lentas a troca acontecia antes da foto
+  // estar pronta, e a ProductRow real nascia com a miniatura em branco até
+  // o download terminar — exatamente a "foto a carregar de novo" que não
+  // queremos que o lojista veja. Enquanto `fotoPronta` não for true, a
+  // linha otimista continua visível com a MESMA foto (via blob:, já
+  // carregada há muito), sem qualquer buraco em branco.
   useEffect(() => {
     if (showSkeleton || comErro) return;
-    if (produto.produtoId && confirmado) finalizePublish(produto.tempId);
-  }, [showSkeleton, comErro, produto.produtoId, confirmado, produto.tempId, finalizePublish]);
+    if (produto.produtoId && confirmado && produto.fotoPronta) finalizePublish(produto.tempId);
+  }, [showSkeleton, comErro, produto.produtoId, confirmado, produto.fotoPronta, produto.tempId, finalizePublish]);
 
   // Enquanto a publicação decorre não há `produto.id` real para as
   // mutações (Editar/Duplicar/Ativar) agirem em cima, por isso avisam em
