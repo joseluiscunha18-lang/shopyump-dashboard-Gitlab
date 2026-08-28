@@ -66,5 +66,13 @@ export function EmptyState({
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('skeleton-shimmer rounded-[10px]', className)} />;
+  // Sem raio embutido aqui de propósito: cn() é um combinador simples (não
+  // resolve conflitos como o tailwind-merge), por isso um valor por
+  // omissão aqui competiria sempre com o `rounded-*` que cada utilização
+  // já passa em `className` — e qual dos dois vence depende da ordem em
+  // que o Tailwind gerou as classes na folha de estilos, não da ordem no
+  // JSX. Isso já causou uma checkbox-esqueleto a sair redonda em vez de
+  // quadrada. Cada chamada a <Skeleton> é responsável por indicar o seu
+  // próprio arredondamento.
+  return <div className={cn('skeleton-shimmer', className)} />;
 }
