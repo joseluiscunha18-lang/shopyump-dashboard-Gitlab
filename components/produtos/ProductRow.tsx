@@ -96,6 +96,7 @@ export function ProductRow({
         'group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer',
         selected && 'bg-[#1A1210]/[0.04] hover:bg-[#1A1210]/[0.06]',
       )}
+      style={{ contain: 'layout' }}
     >
       {onToggleSelect && (
         <Checkbox
@@ -108,7 +109,7 @@ export function ProductRow({
 
       <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
         {produto.fotos?.[0] ? (
-          <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" unoptimized />
+          <Image src={produto.fotos[0]} alt={produto.nome} fill className="object-cover" sizes="56px" unoptimized loading="eager" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <ImageIcon size={26} strokeWidth={1.5} style={{ color: 'rgba(26,18,16,0.22)' }} />
