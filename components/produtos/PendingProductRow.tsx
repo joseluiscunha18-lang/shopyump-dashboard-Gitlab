@@ -211,21 +211,19 @@ export function PendingProductRow({
         <Skeleton className="absolute right-0 top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full" />
       ) : (
         <>
+          {/* O botão ocupa toda a área do wrapper (inset-0) para a
+          zona de clique ser h-8 w-8, igual ao ProductRow real.
+          O ícone fica posicionado em absolute relativo ao wrapper
+          (o mesmo contexto de posicionamento do esqueleto acima),
+          não relativo ao botão — assim os dois estados usam
+          exactamente o mesmo ponto de referência e nunca há salto. */}
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Ações do produto"
-            className="relative flex h-8 w-8 flex-shrink-0 items-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
-          >
-            {/* Caixa 18×18 ancorada no mesmo ponto de referência que
-            o esqueleto acima (absolute right-0 top-1/2
-            -translate-y-1/2) — e com o mesmo tamanho. O ícone fica
-            centrado dentro desta caixa; assim o esqueleto e o botão
-            real partem literalmente da mesma caixa e nunca há salto. */}
-            <div className="absolute right-0 top-1/2 flex h-[18px] w-[18px] -translate-y-1/2 items-center justify-center">
-              <MoreVertical size={17} strokeWidth={2.3} />
-            </div>
-          </button>
+            className="absolute inset-0 rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+          />
+          <MoreVertical size={17} strokeWidth={2.3} className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" />
 
           {menuOpen && (
             <div className="absolute right-0 top-full z-20 mt-1.5 w-[176px] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]">
