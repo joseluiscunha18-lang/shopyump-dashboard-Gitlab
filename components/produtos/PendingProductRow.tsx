@@ -199,9 +199,16 @@ export function PendingProductRow({
 
       <div className="min-w-0 flex-1">
         {showSkeleton && !comErro ? (
-          <div className="flex flex-col gap-2">
+          // 3 linhas, não 2 — a linha real sempre acaba com nome, preço·categoria
+          // E o status (ponto colorido + "Ativo"/etc). Mostrar só 2 linhas no
+          // esqueleto fazia o conteúdo "crescer" uma linha no momento da troca
+          // para o real. As margens (mt-0.5/mt-1) são as MESMAS usadas nos <p>
+          // reais logo abaixo — não um gap genérico — para o espaçamento vertical
+          // ficar idêntico entre esqueleto e conteúdo final.
+          <div className="flex flex-col">
             <Skeleton className="h-[13px] w-2/5 rounded-full" />
-            <Skeleton className="h-[12px] w-1/3 rounded-full" />
+            <Skeleton className="mt-0.5 h-[12px] w-1/3 rounded-full" />
+            <Skeleton className="mt-1 h-[11px] w-1/4 rounded-full" />
           </div>
         ) : (
           <>
