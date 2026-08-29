@@ -133,7 +133,12 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
             transform: open ? 'translateY(0)' : 'translateY(-12px)',
             transition: `opacity ${DURATION_MS}ms ${EASE}, transform ${DURATION_MS}ms ${EASE}`,
           }}
-          className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
+          // Borda/sombra/raio: mesmo tratamento de superfície dos cards de
+          // onboarding da Início (StoreExplorationGuide.tsx) — rounded-[28px],
+          // ring-1 ring-black/[0.035] (em vez de border) e a mesma sombra em
+          // 3 camadas. Nada de estrutura/tamanho mudou: continua flex-col,
+          // gap-3, p-3.5, os mesmos sm: de sempre.
+          className="relative flex flex-col gap-3 rounded-[28px] bg-white p-3.5 shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
           <div className="flex w-full items-start gap-3 sm:w-auto sm:items-center sm:gap-4">
             {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
