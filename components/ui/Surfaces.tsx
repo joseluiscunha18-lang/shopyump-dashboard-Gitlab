@@ -32,7 +32,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
  * sombra e o contorno são, e devem continuar a ser, sempre os mesmos.
  */
 export const ELEVATED_SURFACE =
-  'bg-white shadow-[0_1px_0_rgba(15,23,42,0.035),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]';
+  'bg-white shadow-[0_1px_0_rgba(15,23,42,0.035),0_5px_12px_-6px_rgba(15,23,42,0.08),0_14px_20px_-16px_rgba(15,23,42,0.045)] ring-1 ring-black/[0.035]';
 
 /**
  * Variante mais subtil de `ELEVATED_SURFACE`, calibrada para cards muito
