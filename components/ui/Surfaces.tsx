@@ -17,8 +17,10 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
  * "Superfície elevada" — fundo branco + sombra suave em 3 camadas + ring
  * quase invisível (em vez de border sólido) — usado pelos cards de
  * onboarding da Início (StoreExplorationGuide) e pelo
- * ProductCelebrationBanner. Antes cada ficheiro tinha a sua própria cópia
- * manual desta string de classes; bastava um copiar-colar impreciso (ou o
+ * ProductCelebrationBanner (ambos usam esta MESMA constante, de propósito:
+ * o banner deve flutuar com a sombra idêntica à dos cards guia, "linha de
+ * baixo" incluída). Antes cada ficheiro tinha a sua própria cópia manual
+ * desta string de classes; bastava um copiar-colar impreciso (ou o
  * `border` sólido a competir com a sombra, como aconteceu) para os dois
  * parecerem visualmente diferentes mesmo com a intenção de serem iguais.
  * Ao importar esta MESMA constante, os dois deixam de poder divergir —
@@ -33,21 +35,12 @@ export const ELEVATED_SURFACE =
   'bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]';
 
 /**
- * Mesma "família" de sombra que `ELEVATED_SURFACE` (linha fina + sombra
- * próxima + sombra ambiente) mas calibrada para cards pequenos como o
- * ProductCelebrationBanner (~90-140px de altura) — usar `ELEVATED_SURFACE`
- * tal e qual aí fazia a sombra parecer desproporcionalmente pesada
- * comparada com um card grande (o guia de onboarding, min-h-[224px]), já
- * que os MESMOS pixels de desfoque ocupam uma fatia muito maior de um
- * card pequeno.
- *
- * As duas camadas de desfoque (sombra próxima + ambiente) ficam BEM
- * subtis de propósito — é o que dá o efeito "a flutuar" sem pesar no
- * card pequeno. A linha fina (`0_1px_0`) é a única camada mais escura,
- * de propósito: só ela desenha a parte de BAIXO do card; o topo só tem
- * o `ring` quase invisível (3.5%) — por isso a base fica sempre um
- * pouco mais escura que o topo, sem precisar de nada assimétrico
- * complicado.
+ * Variante mais subtil de `ELEVATED_SURFACE`, calibrada para cards muito
+ * pequenos onde a mesma sombra ficaria desproporcionalmente pesada.
+ * Atualmente sem utilização (o ProductCelebrationBanner passou a usar
+ * `ELEVATED_SURFACE` diretamente, para flutuar com a MESMA sombra dos
+ * cards guia) — mantida disponível caso volte a ser necessária para um
+ * card pequeno no futuro.
  */
 export const ELEVATED_SURFACE_COMPACT =
   'bg-white shadow-[0_1px_0_rgba(15,23,42,0.14),0_4px_10px_-4px_rgba(15,23,42,0.10),0_10px_18px_-10px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.035]';
