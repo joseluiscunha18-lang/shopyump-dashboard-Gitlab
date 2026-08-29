@@ -13,6 +13,25 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   );
 }
 
+/**
+ * "Superfície elevada" — fundo branco + sombra suave em 3 camadas + ring
+ * quase invisível (em vez de border sólido) — usado pelos cards de
+ * onboarding da Início (StoreExplorationGuide) e pelo
+ * ProductCelebrationBanner. Antes cada ficheiro tinha a sua própria cópia
+ * manual desta string de classes; bastava um copiar-colar impreciso (ou o
+ * `border` sólido a competir com a sombra, como aconteceu) para os dois
+ * parecerem visualmente diferentes mesmo com a intenção de serem iguais.
+ * Ao importar esta MESMA constante, os dois deixam de poder divergir —
+ * mudar a sombra aqui muda-a nos dois sítios ao mesmo tempo.
+ *
+ * Não inclui `rounded-*`, padding, nem `overflow` de propósito: cada
+ * utilização tem raio/tamanho/layout diferentes (o card guia é grande,
+ * com imagem, `rounded-[28px]`; o banner é compacto, `rounded-xl`) — só a
+ * sombra e o contorno são, e devem continuar a ser, sempre os mesmos.
+ */
+export const ELEVATED_SURFACE =
+  'bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]';
+
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'brand';
 
 const tones: Record<BadgeTone, string> = {
