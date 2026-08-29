@@ -133,7 +133,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
             transform: open ? 'translateY(0)' : 'translateY(-12px)',
             transition: `opacity ${DURATION_MS}ms ${EASE}, transform ${DURATION_MS}ms ${EASE}`,
           }}
-          className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 pr-11 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
+          className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
           <div className="flex w-full items-start gap-3 sm:w-auto sm:items-center sm:gap-4">
             {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
@@ -157,8 +157,12 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
             <div className="min-w-0 flex-1">
               {/* Texto — fixo desde o instante em que o banner aparece até ao
                   fim; não depende de nome/preço chegarem, por isso é
-                  exatamente igual "a carregar" e "carregado". */}
-              <p className="text-[13.5px] font-bold leading-tight text-zinc-900">
+                  exatamente igual "a carregar" e "carregado". `pr-8` só
+                  no título: é a única linha à altura do X (canto superior
+                  direito) — reservar esse espaço no card inteiro (como
+                  era antes) tirava largura da descrição sem necessidade,
+                  fazendo "visitantes" cair para uma 3ª linha à toa. */}
+              <p className="pr-8 text-[13.5px] font-bold leading-tight text-zinc-900 sm:pr-0">
                 Seu primeiro produto está no ar
               </p>
               <p className="mt-0.5 text-[12px] font-medium leading-snug text-zinc-500">
