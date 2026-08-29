@@ -32,6 +32,21 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 export const ELEVATED_SURFACE =
   'bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]';
 
+/**
+ * Mesma "família" de sombra que `ELEVATED_SURFACE` (mesmas cores/opacidades:
+ * a linha fina, a sombra próxima e a sombra ambiente) mas com o desfoque e
+ * o afastamento das duas camadas de sombra reduzidos a pouco mais de
+ * metade. Usar `ELEVATED_SURFACE` tal e qual num card pequeno (como o
+ * ProductCelebrationBanner, ~90-140px de altura) faz a sombra parecer
+ * desproporcionalmente pesada/diferente comparada com um card grande
+ * (o guia de onboarding, min-h-[224px]) — os MESMOS pixels de desfoque
+ * ocupam uma fatia muito maior de um card pequeno. Esta variante existe
+ * para cards compactos que devem continuar a pertencer à mesma família
+ * visual sem herdar uma sombra pensada para um card 2-3x mais alto.
+ */
+export const ELEVATED_SURFACE_COMPACT =
+  'bg-white shadow-[0_1px_0_rgba(15,23,42,0.06),0_3px_8px_-4px_rgba(15,23,42,0.13),0_8px_14px_-10px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]';
+
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'brand';
 
 const tones: Record<BadgeTone, string> = {
