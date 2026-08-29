@@ -133,18 +133,9 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
             transform: open ? 'translateY(0)' : 'translateY(-12px)',
             transition: `opacity ${DURATION_MS}ms ${EASE}, transform ${DURATION_MS}ms ${EASE}`,
           }}
-          // Sombra suave (2 camadas desfocadas, iguais às dos cards de
-          // onboarding) + um acento mais escuro na base — mas como sombra
-          // INSET (`inset_0_-1px_0`), não externa. A versão externa
-          // (`0_1px_0`, sem inset) desenha uma cópia da forma da caixa
-          // DESLOCADA 1px para baixo — nos lados retos isso dá só uma
-          // linha fina, mas nos cantos arredondados a curva deslocada
-          // "sobra" por fora da curva original, criando aquela linha mais
-          // grossa e escura vista nos cantos. Uma sombra inset, por ficar
-          // SEMPRE dentro da própria caixa, acompanha o border-radius sem
-          // nunca ultrapassar a curva — dá o mesmo reforço escuro na base,
-          // sem o artefacto nos cantos.
-          className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 shadow-[0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07),inset_0_-1px_0_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
+          // Sombra copiada literalmente do card "Personalizar loja"
+          // (StoreExplorationGuide.tsx) — mesmo valor, sem adaptações.
+          className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
           <div className="flex w-full items-start gap-3 sm:w-auto sm:items-center sm:gap-4">
             {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
