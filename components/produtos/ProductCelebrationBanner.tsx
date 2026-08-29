@@ -3,7 +3,7 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePublishing } from '@/components/produtos/PublishingContext';
-import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
+import { ELEVATED_SURFACE_COMPACT } from '@/components/ui/Surfaces';
 import { cn } from '@/lib/cn';
 
 const DURATION_MS = 400;
@@ -135,13 +135,16 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
             transform: open ? 'translateY(0)' : 'translateY(-12px)',
             transition: `opacity ${DURATION_MS}ms ${EASE}, transform ${DURATION_MS}ms ${EASE}`,
           }}
-          // Superfície partilhada com o card guia (ver ELEVATED_SURFACE em
-          // Surfaces.tsx) — a MESMA constante importada nos dois ficheiros,
-          // não uma cópia manual da string de classes. Só o raio (rounded-xl,
-          // compacto) e o padding/layout continuam próprios deste banner.
+          // Superfície partilhada com o card guia — mas a variante COMPACTA
+          // (ver ELEVATED_SURFACE_COMPACT em Surfaces.tsx): mesma família de
+          // cores/opacidades, com o desfoque escalado para o tamanho pequeno
+          // deste banner (a versão do card guia, pensada para um card
+          // min-h-[224px], ficava desproporcionalmente pesada aqui). Só o
+          // raio (rounded-xl, compacto) e o padding/layout continuam
+          // próprios deste banner.
           className={cn(
             'relative flex flex-col gap-3 rounded-xl p-3.5 sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12',
-            ELEVATED_SURFACE,
+            ELEVATED_SURFACE_COMPACT,
           )}
         >
           <div className="flex w-full items-start gap-3 sm:w-auto sm:items-center sm:gap-4">
