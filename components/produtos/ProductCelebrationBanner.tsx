@@ -7,12 +7,15 @@ import { usePublishing } from '@/components/produtos/PublishingContext';
 const DURATION_MS = 400;
 // CTA preenchido — mesmo preto/castanho do botão "Adicionar" da navegação
 // (bg-zinc-900), para ficar claramente a ação principal do card sem
-// competir com aquele botão. `self-start` é o que impede o botão de
-// esticar em barra: o card é um `flex-col` no mobile e, sem isto, o
-// `align-items: stretch` por omissão do flex fazia o botão ocupar a
-// largura toda em vez de ficar compacto do tamanho do próprio texto.
+// competir com aquele botão. No mobile (card empilhado em coluna) o botão
+// fica a ~60% da largura do card — nem uma barra esticada de ponta a
+// ponta, nem um botão pequeno perdido no meio de muito espaço vazio à
+// direita. Em ecrãs maiores (sm:), onde o botão fica ao lado do
+// conteúdo em vez de abaixo dele, volta a `w-auto` — 60% de uma LINHA
+// (imagem+texto+botão) seria enorme, só faz sentido como percentagem de
+// uma coluna.
 const CTA_PRIMARIO =
-  'group inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap rounded-full bg-zinc-900 px-4 py-2.5 text-center text-[12.5px] font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] sm:ml-auto';
+  'group inline-flex w-[60%] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-zinc-900 px-4 py-2.5 text-center text-[12.5px] font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] sm:ml-auto sm:w-auto';
 // Tempo de "respiro" antes do banner começar a entrar — dá ao lojista um
 // instante para reconhecer que chegou à página Produtos, ver o produto já
 // na lista (ainda que como card "a publicar" ou já resolvido) antes de
@@ -108,7 +111,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           }}
           className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 pr-11 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
             {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
                 ao fim (URL CDN). Nunca troca de tipo de elemento nem de
                 componente: só o `src` muda quando resolvePublish termina, o
@@ -153,12 +156,12 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
               className={CTA_PRIMARIO}
             >
               Ver minha loja
-              <ArrowRight size={13} strokeWidth={2.5} className="opacity-60 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
             </a>
           ) : (
             <button type="button" onClick={fechar} className={CTA_PRIMARIO}>
               OK
-              <ArrowRight size={13} strokeWidth={2.5} className="opacity-60 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
             </button>
           )}
 
