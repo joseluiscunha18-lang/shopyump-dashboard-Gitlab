@@ -1,10 +1,18 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 
 const DURATION_MS = 400;
+// CTA preenchido — mesmo preto/castanho do botão "Adicionar" da navegação
+// (bg-zinc-900), para ficar claramente a ação principal do card sem
+// competir com aquele botão. `self-start` é o que impede o botão de
+// esticar em barra: o card é um `flex-col` no mobile e, sem isto, o
+// `align-items: stretch` por omissão do flex fazia o botão ocupar a
+// largura toda em vez de ficar compacto do tamanho do próprio texto.
+const CTA_PRIMARIO =
+  'group inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap rounded-full bg-zinc-900 px-4 py-2.5 text-center text-[12.5px] font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] sm:ml-auto';
 // Tempo de "respiro" antes do banner começar a entrar — dá ao lojista um
 // instante para reconhecer que chegou à página Produtos, ver o produto já
 // na lista (ainda que como card "a publicar" ou já resolvido) antes de
@@ -142,17 +150,15 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
               }
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
+              className={CTA_PRIMARIO}
             >
               Ver minha loja
+              <ArrowRight size={13} strokeWidth={2.5} className="opacity-60 transition-transform group-hover:translate-x-0.5" />
             </a>
           ) : (
-            <button
-              type="button"
-              onClick={fechar}
-              className="shrink-0 whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1.5 text-center text-[12.5px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-200 active:scale-[0.98] sm:ml-auto"
-            >
+            <button type="button" onClick={fechar} className={CTA_PRIMARIO}>
               OK
+              <ArrowRight size={13} strokeWidth={2.5} className="opacity-60 transition-transform group-hover:translate-x-0.5" />
             </button>
           )}
 
