@@ -135,7 +135,13 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           }}
           // Sombra copiada literalmente do card "Personalizar loja"
           // (StoreExplorationGuide.tsx) — mesmo valor, sem adaptações.
-          className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
+          // O contorno também: `ring-1 ring-black/[0.035]` em vez de um
+          // `border` sólido. O ring do guia é quase invisível (3.5% de
+          // opacidade) — é a SOMBRA que define o limite do card, dando
+          // aquele efeito "a flutuar". Um `border-zinc-200` (linha sólida,
+          // bem visível) competia com a sombra e mudava a perceção dela
+          // por completo, mesmo com o box-shadow sendo byte a byte igual.
+          className="relative flex flex-col gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
           <div className="flex w-full items-start gap-3 sm:w-auto sm:items-center sm:gap-4">
             {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
