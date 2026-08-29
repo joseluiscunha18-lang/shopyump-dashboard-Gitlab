@@ -93,6 +93,30 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
 
   if (!celebration) return null;
 
+  // Definido uma vez, usado em dois pontos da árvore (mobile: dentro da
+  // coluna de texto; desktop/tablet: ao lado do conteúdo) — ver comentários
+  // junto a cada `{cta}` abaixo sobre o motivo de existirem duas posições.
+  const cta = lojaSlug ? (
+    <a
+      href={
+        produtoId
+          ? `https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`
+          : `https://shopyump.vercel.app/loja/${lojaSlug}`
+      }
+      target="_blank"
+      rel="noopener noreferrer"
+      className={CTA_PRIMARIO}
+    >
+      Ver minha loja
+      <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
+    </a>
+  ) : (
+    <button type="button" onClick={fechar} className={CTA_PRIMARIO}>
+      OK
+      <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
+    </button>
+  );
+
   return (
     <div
       ref={containerRef}
@@ -111,7 +135,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
           }}
           className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3.5 pr-11 shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:pr-12"
         >
-          <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
+          <div className="flex w-full items-start gap-3 sm:w-auto sm:items-center sm:gap-4">
             {/* Thumbnail — sempre o mesmo elemento <img>, do início (blob local)
                 ao fim (URL CDN). Nunca troca de tipo de elemento nem de
                 componente: só o `src` muda quando resolvePublish termina, o
@@ -125,45 +149,35 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
               )}
             </div>
 
-            {/* Texto — fixo desde o instante em que o banner aparece até ao
-                fim; não depende de nome/preço chegarem, por isso é
-                exatamente igual "a carregar" e "carregado". */}
+            {/* Texto + CTA (mobile) na MESMA coluna — é isto que alinha o
+            botão com o texto em vez de com a imagem. Antes o botão vivia
+            fora deste bloco, como irmão direto da linha imagem+texto, por
+            isso a sua margem esquerda começava no canto do card (à altura
+            da imagem), não onde o texto começa. */}
             <div className="min-w-0 flex-1">
+              {/* Texto — fixo desde o instante em que o banner aparece até ao
+                  fim; não depende de nome/preço chegarem, por isso é
+                  exatamente igual "a carregar" e "carregado". */}
               <p className="text-[13.5px] font-bold leading-tight text-zinc-900">
                 Seu primeiro produto está no ar
               </p>
               <p className="mt-0.5 text-[12px] font-medium leading-snug text-zinc-500">
                 Sua loja já está pronta para receber visitantes.
               </p>
+
+              {/* CTA — versão mobile, dentro da coluna de texto (ver acima).
+              Escondida em ecrãs sm: onde existe uma segunda cópia fora
+              deste bloco, ao lado do conteúdo em vez de abaixo dele. */}
+              <div className="mt-3 sm:hidden">{cta}</div>
             </div>
           </div>
 
-          {/* CTA — o link para a loja não depende do produtoId (o lojaSlug já
-              está disponível desde o startPublish), por isso o lojista nunca
-              vê um botão morto tipo "OK": desde o primeiro instante já pode
-              ir ver a sua loja. Assim que produtoId chegar (resolvePublish),
-              o mesmo botão passa a apontar directamente para a página do
-              produto — sem trocar de rótulo, só o destino melhora. */}
-          {lojaSlug ? (
-            <a
-              href={
-                produtoId
-                  ? `https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`
-                  : `https://shopyump.vercel.app/loja/${lojaSlug}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className={CTA_PRIMARIO}
-            >
-              Ver minha loja
-              <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
-            </a>
-          ) : (
-            <button type="button" onClick={fechar} className={CTA_PRIMARIO}>
-              OK
-              <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
-            </button>
-          )}
+          {/* CTA — versão desktop/tablet, ao lado do conteúdo (sm:ml-auto
+          empurra para a direita da linha). Nas telas onde este layout se
+          aplica o botão nunca ficou desalinhado da imagem — o pedido do
+          lojista era só sobre a coluna no mobile — por isso aqui mantém-se
+          como irmão da linha imagem+texto, tal como antes. */}
+          <div className="hidden sm:contents">{cta}</div>
 
           {/* X — fixo no canto superior direito, com área de toque ampliada */}
           <button
