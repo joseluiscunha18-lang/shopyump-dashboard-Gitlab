@@ -57,6 +57,15 @@ const EASE = 'cubic-bezier(0.22,1,0.36,1)';
 export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   const { celebration, clearCelebration } = usePublishing();
   const [open, setOpen] = useState(false); // controla a animação (altura + fade)
+  // Enquanto a animação de entrada decorre, o wrapper interno precisa de
+  // overflow: hidden (é o que permite a caixa crescer de 0fr até 1fr sem
+  // que o conteúdo "vaze" antes de haver espaço para ele). Mas depois de
+  // completa, esse overflow: hidden continua a cortar a sombra do card
+  // (a camada mais suave "sai" alguns pixels fora da caixa para se ver
+  // corretamente) — por isso desligamo-lo assim que a transição termina.
+  // Ao fechar, volta a ligar-se de imediato para a animação de saída
+  // (colapso) voltar a precisar dele.
+  const [clipOverflow, setClipOverflow] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Dados imediatos — disponíveis desde startPublish, sem esperar rede.
@@ -87,6 +96,7 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   }, [celebration?.tempId]);
 
   function fechar() {
+    setClipOverflow(true); // volta a cortar antes de colapsar (sem isto o conteúdo "vazava")
     setOpen(false); // dispara a animação de saída (colapso + fade)
     setTimeout(() => {
       clearCelebration();
@@ -127,8 +137,19 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
         gridTemplateRows: open ? '1fr' : '0fr',
         transition: `grid-template-rows ${DURATION_MS}ms ${EASE}`,
       }}
+      onTransitionEnd={(e) => {
+        // Só nos interessa o fim da transição de altura desta própria div
+        // (evita reagir a transições de opacidade/transform que borbulham
+        // do conteúdo lá dentro). E só desligamos o corte quando a
+        // animação que terminou foi a de ABRIR — se foi a de fechar,
+        // `clipOverflow` já está true (definido em fechar()) e deve
+        // continuar assim.
+        if (e.target === containerRef.current && e.propertyName === 'grid-template-rows' && open) {
+          setClipOverflow(false);
+        }
+      }}
     >
-      <div style={{ overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ overflow: clipOverflow ? 'hidden' : 'visible', minHeight: 0 }}>
         <div
           style={{
             opacity: open ? 1 : 0,
