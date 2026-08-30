@@ -36,18 +36,6 @@ export interface Loja {
   conteudo_sobre: string | null;
   conteudo_entrega: string | null;
   conteudo_termos: string | null;
-  /**
-   * Estado do card "Seu primeiro produto está no ar" (ver
-   * migration_celebracao_primeiro_produto.sql). `celebracao_primeiro_produto_id`
-   * é definido automaticamente, por trigger, na primeira publicação da
-   * loja — nunca sobrescrito depois. `celebracao_primeiro_produto_dispensada`
-   * fica `true` para sempre assim que o card é fechado (X ou "Ver minha
-   * loja") OU quando um 2º produto é publicado (o trigger fecha sozinho,
-   * mesmo sem ação do usuário). Mostrar o card apenas quando o primeiro
-   * campo não é null E o segundo é false.
-   */
-  celebracao_primeiro_produto_id: string | null;
-  celebracao_primeiro_produto_dispensada: boolean;
   created_at: string;
 }
 
@@ -305,3 +293,37 @@ export interface Visita {
 export interface AdminRow {
   email: string;
 }
+
+/**
+ * Marco genérico de onboarding (ver migration_loja_marcos.sql) — uma
+ * tabela partilhada por TODOS os cards de "próximos passos" da loja
+ * ('primeiro_produto', 'personalizar_loja', 'partilhar_loja', e os que
+ * vierem a seguir), em vez de duas colunas por card em `lojas`.
+ *
+ * `concluido_em: null` = ainda não atingido. `dispensado: true` = o
+ * usuário fechou o card (ou ele deixou de fazer sentido, ex: um 2º
+ * produto foi publicado) — nunca mais volta a `false`. Um marco só deve
+ * ser mostrado como "próximo passo" quando `concluido_em` é null E
+ * `dispensado` é false.
+ */
+export type MarcoOnboarding = 'primeiro_produto' | 'personalizar_loja' | 'partilhar_loja';
+
+export interface LojaMarco {
+  loja_id: string;
+  marco: MarcoOnboarding;
+  concluido_em: string | null;
+  dispensado: boolean;
+  referencia_id: string | null;
+  created_at: string;
+}
+
+/**
+ * Ordem fixa em que os marcos de onboarding devem ser oferecidos — a
+ * Início mostra sempre o PRIMEIRO desta lista que ainda não estiver
+ * concluído nem dispensado, nunca mais que um de cada vez.
+ */
+export const ORDEM_MARCOS_ONBOARDING: MarcoOnboarding[] = [
+  'primeiro_produto',
+  'personalizar_loja',
+  'partilhar_loja',
+];
