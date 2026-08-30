@@ -4,7 +4,7 @@ import { ArrowRight, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
-import { updateLoja } from '@/lib/mutations/loja';
+import { dispensarMarco } from '@/lib/mutations/lojaMarcos';
 import { cn } from '@/lib/cn';
 
 const DURATION_MS = 400;
@@ -42,20 +42,19 @@ const EASE = 'cubic-bezier(0.22,1,0.36,1)';
  *    nascer, ainda nesta sessão, porque o lojista publicou agora mesmo o
  *    seu primeiro produto. Anima a entrada (ver `REVEAL_DELAY_MS`/`open`).
  *
- * 2. `persisted` (prop, vindo de `lojas.celebracao_primeiro_produto_*` no
- *    servidor — ver migration_celebracao_primeiro_produto.sql) — o
- *    lojista publicou o primeiro produto numa visita anterior, saiu, e
- *    voltou à página Produtos agora. O card deve continuar visível
- *    (regra 2 do fluxo), mas SEM repetir a animação de entrada — nasce
- *    já aberto.
+ * 2. `persisted` (prop, vindo do marco 'primeiro_produto' em `loja_marcos`
+ *    — ver migration_loja_marcos.sql) — o lojista publicou o primeiro
+ *    produto numa visita anterior, saiu, e voltou à página Produtos
+ *    agora. O card deve continuar visível (regra 2 do fluxo), mas SEM
+ *    repetir a animação de entrada — nasce já aberto.
  *
- * Fechar (X) ou clicar "Ver minha loja" chama `updateLoja` para gravar
- * `celebracao_primeiro_produto_dispensada = true` na base de dados — só
- * assim o card fica mesmo fechado para sempre (regras 3 e 4), em vez de
- * voltar a aparecer no próximo carregamento da página. A base de dados
- * também fecha-o sozinha (via trigger) assim que existir um 2º produto
- * publicado (regra 5) — isso já não passa por aqui, mas o efeito na
- * próxima visita é o mesmo: `persisted` chega `null`.
+ * Fechar (X) ou clicar "Ver minha loja" chama `dispensarMarco` para
+ * gravar o marco 'primeiro_produto' como dispensado na base de dados —
+ * só assim o card fica mesmo fechado para sempre (regras 3 e 4), em vez
+ * de voltar a aparecer no próximo carregamento da página. A base de
+ * dados também fecha-o sozinha (via trigger) assim que existir um 2º
+ * produto publicado (regra 5) — isso já não passa por aqui, mas o
+ * efeito na próxima visita é o mesmo: `persisted` chega `null`.
  */
 export function ProductCelebrationBanner({
   lojaId,
@@ -120,14 +119,15 @@ export function ProductCelebrationBanner({
     return () => clearTimeout(t);
   }, [celebration?.tempId]);
 
-  // Grava a dispensa na base de dados — chamado tanto pelo "X" como por
-  // "Ver minha loja" (regras 3 e 4: ambos fecham para sempre). Fire-and-
-  // forget de propósito: a UI já fecha localmente de imediato (via
-  // `fechar()`/`dismissedLocally`); se este pedido falhar silenciosamente
-  // por perda de rede, o pior cenário é o card voltar a aparecer na
-  // próxima visita, nunca travar o fecho local que o lojista já viu.
+  // Grava a dispensa do marco 'primeiro_produto' na base de dados —
+  // chamado tanto pelo "X" como por "Ver minha loja" (regras 3 e 4: ambos
+  // fecham para sempre). Fire-and-forget de propósito: a UI já fecha
+  // localmente de imediato (via `fechar()`/`dismissedLocally`); se este
+  // pedido falhar silenciosamente por perda de rede, o pior cenário é o
+  // card voltar a aparecer na próxima visita, nunca travar o fecho local
+  // que o lojista já viu.
   function persistirDispensa() {
-    updateLoja(lojaId, { celebracao_primeiro_produto_dispensada: true }).catch(() => {});
+    dispensarMarco(lojaId, 'primeiro_produto').catch(() => {});
   }
 
   function fechar() {
