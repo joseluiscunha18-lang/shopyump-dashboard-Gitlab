@@ -6,7 +6,7 @@ import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
 import { ProductsExplorer } from '@/components/produtos/ProductsExplorer';
 import { ProductCelebrationBanner } from '@/components/produtos/ProductCelebrationBanner';
 import { usePublishing } from '@/components/produtos/PublishingContext';
-import type { Produto, Loja } from '@/types/database';
+import type { Produto, LojaMarco } from '@/types/database';
 
 /**
  * Decide entre o ecrã vazio ("Adicione seu primeiro produto") e a lista.
@@ -28,22 +28,27 @@ import type { Produto, Loja } from '@/types/database';
  */
 export function ProdutosPageBody({
   produtos,
-  loja,
+  lojaId,
+  lojaSlug,
+  marcoPrimeiroProduto,
 }: {
   produtos: Produto[];
-  loja: Pick<Loja, 'id' | 'slug' | 'celebracao_primeiro_produto_id' | 'celebracao_primeiro_produto_dispensada'>;
+  lojaId: string;
+  lojaSlug?: string;
+  /** Marco 'primeiro_produto' da loja (ver loja_marcos) — null se ainda não atingido. */
+  marcoPrimeiroProduto: LojaMarco | null;
 }) {
   const { pending, celebration } = usePublishing();
   const temAlgumaCoisa = produtos.length > 0 || pending.length > 0 || celebration !== null;
 
   // Celebração PERSISTIDA (sobrevive a reloads/trocas de aba) — vem de
-  // `lojas.celebracao_primeiro_produto_*` (ver migration_celebracao_
-  // primeiro_produto.sql), não do PublishingContext. Só existe enquanto
-  // não foi dispensada; o produto é procurado na própria lista já
-  // carregada (nunca precisa de uma query extra).
+  // `loja_marcos` (marco 'primeiro_produto', ver migration_loja_marcos.sql),
+  // não do PublishingContext. Só existe enquanto não foi dispensada; o
+  // produto é procurado na própria lista já carregada (nunca precisa de
+  // uma query extra).
   const produtoCelebrado =
-    loja.celebracao_primeiro_produto_id && !loja.celebracao_primeiro_produto_dispensada
-      ? produtos.find((p) => p.id === loja.celebracao_primeiro_produto_id)
+    marcoPrimeiroProduto && !marcoPrimeiroProduto.dispensado
+      ? produtos.find((p) => p.id === marcoPrimeiroProduto.referencia_id)
       : undefined;
   const persisted = produtoCelebrado
     ? { produtoId: produtoCelebrado.id, foto: produtoCelebrado.fotos[0] ?? null }
@@ -51,7 +56,7 @@ export function ProdutosPageBody({
 
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <ProductCelebrationBanner lojaId={loja.id} lojaSlug={loja.slug} persisted={persisted} />
+      <ProductCelebrationBanner lojaId={lojaId} lojaSlug={lojaSlug} persisted={persisted} />
 
       <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
