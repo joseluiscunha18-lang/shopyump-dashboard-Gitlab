@@ -4,6 +4,7 @@ import { ArrowRight, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
+import { updateLoja } from '@/lib/mutations/loja';
 import { cn } from '@/lib/cn';
 
 const DURATION_MS = 400;
@@ -29,34 +30,56 @@ const REVEAL_DELAY_MS = 1400;
 const EASE = 'cubic-bezier(0.22,1,0.36,1)';
 
 /**
- * Banner discreto no topo da página Produtos, exibido logo após a primeira
- * publicação (ou qualquer publicação) terminar com sucesso. Fica visível
- * junto à lista (nunca por cima dela) e confirma, de forma neutra e
- * profissional, que o produto está ativo na loja.
+ * Banner discreto no topo da página Produtos, exibido logo após a
+ * PRIMEIRA publicação da loja terminar com sucesso — e só ela (ver
+ * `souPrimeiroProduto`/`celebrar` em ProductForm/PublishingContext).
+ * Fica visível junto à lista (nunca por cima dela) e confirma, de forma
+ * neutra e profissional, que a loja está pronta para receber visitantes.
  *
- * A fonte da verdade é o PublishingContext (`celebration`), não a URL —
- * antes usava ?publicado=ID&foto=URL, mas isso dependia do redirect
- * acontecer só depois do upload/insert terminarem. Agora que a publicação
- * é otimista (o ProductForm navega logo e o upload/insert continuam em
- * segundo plano), é o próprio contexto que acende este banner quando o
- * trabalho em fundo resolve — independentemente de que página o lojista
- * estava a ver nesse momento.
+ * Duas fontes possíveis de dados, nunca ambas ao mesmo tempo:
  *
- * Sequência de entrada:
- * 1. Assim que `celebration` aparece, o banner monta no DOM com altura 0
- *    e opacidade 0 — não ocupa espaço nem é visível.
- * 2. Passados REVEAL_DELAY_MS, a altura expande e o conteúdo entra com
- *    fade + slide, empurrando a lista para baixo de forma fluida ao longo
- *    de DURATION_MS.
+ * 1. `celebration` (PublishingContext) — fluxo AO VIVO: o card acabou de
+ *    nascer, ainda nesta sessão, porque o lojista publicou agora mesmo o
+ *    seu primeiro produto. Anima a entrada (ver `REVEAL_DELAY_MS`/`open`).
  *
- * O fecho (X) faz o percurso inverso — colapsa e desvanece antes de
- * limpar `celebration` — usando DURATION_MS e a mesma curva, para que
- * entrada e saída pareçam espelhadas (a saída não precisa do respiro
- * inicial, só a entrada).
+ * 2. `persisted` (prop, vindo de `lojas.celebracao_primeiro_produto_*` no
+ *    servidor — ver migration_celebracao_primeiro_produto.sql) — o
+ *    lojista publicou o primeiro produto numa visita anterior, saiu, e
+ *    voltou à página Produtos agora. O card deve continuar visível
+ *    (regra 2 do fluxo), mas SEM repetir a animação de entrada — nasce
+ *    já aberto.
+ *
+ * Fechar (X) ou clicar "Ver minha loja" chama `updateLoja` para gravar
+ * `celebracao_primeiro_produto_dispensada = true` na base de dados — só
+ * assim o card fica mesmo fechado para sempre (regras 3 e 4), em vez de
+ * voltar a aparecer no próximo carregamento da página. A base de dados
+ * também fecha-o sozinha (via trigger) assim que existir um 2º produto
+ * publicado (regra 5) — isso já não passa por aqui, mas o efeito na
+ * próxima visita é o mesmo: `persisted` chega `null`.
  */
-export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
+export function ProductCelebrationBanner({
+  lojaId,
+  lojaSlug,
+  persisted,
+}: {
+  lojaId: string;
+  lojaSlug?: string;
+  persisted: { produtoId: string; foto: string | null } | null;
+}) {
   const { celebration, clearCelebration } = usePublishing();
-  const [open, setOpen] = useState(false); // controla a animação (altura + fade)
+  // Se as duas fontes coexistissem (não deveria acontecer — `persisted` só
+  // fica preenchido ANTES do lojista publicar, e o publish ao vivo só
+  // acontece quando `souPrimeiroProduto` já sabia que ainda não havia
+  // celebração), o fluxo ao vivo ganha, por ser o mais recente.
+  const isLive = celebration !== null;
+  const isPersisted = !isLive && persisted !== null;
+  const [dismissedLocally, setDismissedLocally] = useState(false);
+  const visivel = (isLive || isPersisted) && !dismissedLocally;
+
+  // Persistido nasce já aberto/sem corte (não há animação de entrada a
+  // fazer); ao vivo nasce fechado, como antes, para a sequência de
+  // REVEAL_DELAY_MS + expansão continuar a acontecer.
+  const [open, setOpen] = useState(isPersisted);
   // Enquanto a animação de entrada decorre, o wrapper interno precisa de
   // overflow: hidden (é o que permite a caixa crescer de 0fr até 1fr sem
   // que o conteúdo "vaze" antes de haver espaço para ele). Mas depois de
@@ -64,21 +87,23 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
   // (a camada mais suave "sai" alguns pixels fora da caixa para se ver
   // corretamente) — por isso desligamo-lo assim que a transição termina.
   // Ao fechar, volta a ligar-se de imediato para a animação de saída
-  // (colapso) voltar a precisar dele.
-  const [clipOverflow, setClipOverflow] = useState(true);
+  // (colapso) voltar a funcionar. O persistido já nasce sem corte, pois
+  // nunca passa pela transição de entrada.
+  const [clipOverflow, setClipOverflow] = useState(!isPersisted);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Dados imediatos — disponíveis desde startPublish, sem esperar rede.
+  // Dados imediatos — disponíveis desde startPublish, sem esperar rede
+  // (fluxo ao vivo); ou já definitivos, vindos do servidor (persistido).
   const fotoBlob   = celebration?.fotoPreview ?? null;
   // Foto CDN — só disponível após resolvePublish; enquanto não chega usa o blob local.
-  const fotoCdn    = celebration?.foto        ?? null;
+  const fotoCdn    = celebration?.foto ?? persisted?.foto ?? null;
   const foto       = fotoCdn ?? fotoBlob;
   // produtoId — null enquanto upload/insert decorrem; link só aparece quando estiver pronto.
-  const produtoId  = celebration?.produtoId  ?? null;
+  const produtoId  = celebration?.produtoId ?? persisted?.produtoId ?? null;
 
   useEffect(() => {
-    // O banner acende assim que celebration existe (desde startPublish),
-    // não é preciso esperar produtoId. tempId é a âncora estável.
+    // Só o fluxo AO VIVO anima a entrada. O persistido já nasceu com
+    // `open` true (ver useState acima) — não há nada a animar aqui.
     if (!celebration?.tempId) return;
     // Espera a página "assentar" antes de animar a entrada.
     const t = setTimeout(() => {
@@ -95,15 +120,27 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
     return () => clearTimeout(t);
   }, [celebration?.tempId]);
 
+  // Grava a dispensa na base de dados — chamado tanto pelo "X" como por
+  // "Ver minha loja" (regras 3 e 4: ambos fecham para sempre). Fire-and-
+  // forget de propósito: a UI já fecha localmente de imediato (via
+  // `fechar()`/`dismissedLocally`); se este pedido falhar silenciosamente
+  // por perda de rede, o pior cenário é o card voltar a aparecer na
+  // próxima visita, nunca travar o fecho local que o lojista já viu.
+  function persistirDispensa() {
+    updateLoja(lojaId, { celebracao_primeiro_produto_dispensada: true }).catch(() => {});
+  }
+
   function fechar() {
+    persistirDispensa();
     setClipOverflow(true); // volta a cortar antes de colapsar (sem isto o conteúdo "vazava")
     setOpen(false); // dispara a animação de saída (colapso + fade)
     setTimeout(() => {
+      setDismissedLocally(true);
       clearCelebration();
     }, DURATION_MS);
   }
 
-  if (!celebration) return null;
+  if (!visivel) return null;
 
   // Definido uma vez, usado em dois pontos da árvore (mobile: dentro da
   // coluna de texto; desktop/tablet: ao lado do conteúdo) — ver comentários
@@ -117,6 +154,16 @@ export function ProductCelebrationBanner({ lojaSlug }: { lojaSlug?: string }) {
       }
       target="_blank"
       rel="noopener noreferrer"
+      // Abre a loja numa nova aba (o dashboard continua aqui) MAS já
+      // regista a dispensa e fecha localmente de imediato — regra 3:
+      // "quando voltar ao dashboard, o card não deve mais aparecer".
+      // Sem isto, esta aba continuaria a mostrar o card até um reload.
+      onClick={() => {
+        persistirDispensa();
+        setClipOverflow(true);
+        setOpen(false);
+        setTimeout(() => setDismissedLocally(true), DURATION_MS);
+      }}
       className={CTA_PRIMARIO}
     >
       Ver minha loja
