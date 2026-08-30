@@ -75,9 +75,11 @@ export interface Celebration {
 interface PublishingContextValue {
   pending: PendingProduto[];
   celebration: Celebration | null;
-  /** Regista um produto otimista e mostra-o de imediato na lista. */
+  /** Regista um produto otimista e mostra-o de imediato na lista.
+   *  `celebrar: true` acende também o card de celebração (só deve ser
+   *  true quando é comprovadamente o 1º produto da loja). */
   startPublish: (
-    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>,
+    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'> & { celebrar?: boolean },
   ) => void;
   /** Publicação concluída com sucesso — actualiza celebration com produtoId e foto final. */
   resolvePublish: (tempId: string, result: { produtoId: string; foto?: string }) => void;
@@ -98,7 +100,7 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const startPublish = useCallback((
-    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'>,
+    p: Omit<PendingProduto, 'status' | 'errorMessage' | 'produtoId'> & { celebrar?: boolean },
   ) => {
     // Já não se calcula aqui nenhum relógio de esqueleto: a janela do
     // esqueleto (SKELETON_MIN_MS–SKELETON_MAX_MS) passa a ser cronometrada
@@ -107,10 +109,14 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
     // independente de quanto tempo a navegação para /produtos demorar: seja
     // a rede rápida ou lenta, a linha mostra sempre a janela completa assim
     // que aparece no ecrã. Ver PendingProductRow para o temporizador.
-    setPending((prev) => [...prev, { ...p, status: 'a-publicar' }]);
-    // Acende o banner imediatamente com os dados já disponíveis (nome, foto blob, preço).
-    // O banner não precisa de esperar pelo upload/insert — mostra já os dados locais
-    // e actualiza a foto/produtoId silenciosamente quando resolvePublish completar.
+    const { celebrar, ...pendingFields } = p;
+    setPending((prev) => [...prev, { ...pendingFields, status: 'a-publicar' }]);
+    // Acende o banner imediatamente com os dados já disponíveis (nome, foto blob, preço)
+    // — mas só quando `celebrar` for true, ou seja, só na primeira publicação
+    // da loja (ver ProductForm.souPrimeiroProduto). Publicações seguintes
+    // continuam com o fluxo otimista normal (linha "a publicar" na lista),
+    // só não acendem este card, cujo propósito é celebrar SÓ a primeira vez.
+    if (!celebrar) return;
     setCelebration({
       tempId: p.tempId,
       nome: p.nome,
