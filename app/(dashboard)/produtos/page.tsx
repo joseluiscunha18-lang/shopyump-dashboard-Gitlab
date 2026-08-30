@@ -19,5 +19,5 @@ export default async function ProdutosPage() {
 
   const produtos = await getProdutosByLoja(ctx.loja.id);
 
-  return <ProdutosPageBody produtos={produtos} lojaSlug={ctx.loja.slug} />;
+  return <ProdutosPageBody produtos={produtos} loja={ctx.loja} />;
 }
