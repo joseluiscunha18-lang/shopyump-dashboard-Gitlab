@@ -6,7 +6,7 @@ import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
 import { ProductsExplorer } from '@/components/produtos/ProductsExplorer';
 import { ProductCelebrationBanner } from '@/components/produtos/ProductCelebrationBanner';
 import { usePublishing } from '@/components/produtos/PublishingContext';
-import type { Produto } from '@/types/database';
+import type { Produto, Loja } from '@/types/database';
 
 /**
  * Decide entre o ecrã vazio ("Adicione seu primeiro produto") e a lista.
@@ -16,23 +16,42 @@ import type { Produto } from '@/types/database';
  * mesmo antes de existir na base de dados, e nesse caso já não faz
  * sentido mostrar o ecrã vazio.
  *
- * `celebration` entra nesta conta pela mesma razão: quando o upload+insert
- * em segundo plano termina antes da navegação para esta página, o
- * `pending` já foi limpo e a `celebration` já está pronta — mas os
- * `produtos` vindos do servidor (por trás de um router.push que ainda usa
- * cache do prefetch) podem chegar vazios por mais um instante, até o
- * router.refresh() que se segue trazer os dados atualizados. Sem este
- * terceiro sinal, esse instante mostraria "Adicione seu primeiro
+ * `celebration` (do PublishingContext) entra nesta conta pela mesma razão:
+ * quando o upload+insert em segundo plano termina antes da navegação para
+ * esta página, o `pending` já foi limpo e a `celebration` já está pronta —
+ * mas os `produtos` vindos do servidor (por trás de um router.push que
+ * ainda usa cache do prefetch) podem chegar vazios por mais um instante,
+ * até o router.refresh() que se segue trazer os dados atualizados. Sem
+ * este terceiro sinal, esse instante mostraria "Adicione seu primeiro
  * produto" a piscar antes do produto (e do banner) aparecerem — mesmo
  * havendo, de facto, um produto recém-publicado.
  */
-export function ProdutosPageBody({ produtos, lojaSlug }: { produtos: Produto[]; lojaSlug?: string }) {
+export function ProdutosPageBody({
+  produtos,
+  loja,
+}: {
+  produtos: Produto[];
+  loja: Pick<Loja, 'id' | 'slug' | 'celebracao_primeiro_produto_id' | 'celebracao_primeiro_produto_dispensada'>;
+}) {
   const { pending, celebration } = usePublishing();
   const temAlgumaCoisa = produtos.length > 0 || pending.length > 0 || celebration !== null;
 
+  // Celebração PERSISTIDA (sobrevive a reloads/trocas de aba) — vem de
+  // `lojas.celebracao_primeiro_produto_*` (ver migration_celebracao_
+  // primeiro_produto.sql), não do PublishingContext. Só existe enquanto
+  // não foi dispensada; o produto é procurado na própria lista já
+  // carregada (nunca precisa de uma query extra).
+  const produtoCelebrado =
+    loja.celebracao_primeiro_produto_id && !loja.celebracao_primeiro_produto_dispensada
+      ? produtos.find((p) => p.id === loja.celebracao_primeiro_produto_id)
+      : undefined;
+  const persisted = produtoCelebrado
+    ? { produtoId: produtoCelebrado.id, foto: produtoCelebrado.fotos[0] ?? null }
+    : null;
+
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <ProductCelebrationBanner lojaSlug={lojaSlug} />
+      <ProductCelebrationBanner lojaId={loja.id} lojaSlug={loja.slug} persisted={persisted} />
 
       <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
 
