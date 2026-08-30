@@ -126,7 +126,22 @@ function FieldLabel({ label, optional }: { label: string; optional?: boolean }) 
 
 /* ── ProductForm ───────────────────────────────────────────────────────────── */
 
-export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Produto }) {
+export function ProductForm({
+  lojaId,
+  produto,
+  souPrimeiroProduto = false,
+}: {
+  lojaId: string;
+  produto?: Produto;
+  /**
+   * true = a loja ainda não tinha nenhum produto publicado quando este
+   * formulário foi aberto (calculado no servidor, ver page.tsx). Só então
+   * `startPublish` deve acender o card "Seu primeiro produto está no ar" —
+   * publicações seguintes (2º, 3º produto...) usam o mesmo fluxo otimista,
+   * mas sem o card, cuja finalidade é celebrar SÓ a primeira publicação.
+   */
+  souPrimeiroProduto?: boolean;
+}) {
   const [nome, setNome]               = useState(produto?.nome ?? '');
   const [descricao, setDescricao]     = useState(produto?.descricao ?? '');
   const [categoria, setCategoria]     = useState(produto?.categoria ?? '');
@@ -486,6 +501,11 @@ export function ProductForm({ lojaId, produto }: { lojaId: string; produto?: Pro
       precoLabel,
       categoria,
       fotoPreview: fotos[0] ?? null,
+      // Só acende o card "Seu primeiro produto está no ar" quando ESTE
+      // publish é mesmo o primeiro da loja (calculado no servidor, ver
+      // page.tsx) — publicações seguintes continuam otimistas, mas sem
+      // celebração, pois ela já foi usada.
+      celebrar: souPrimeiroProduto,
     });
 
     clearProdutoDraft(lojaId);
