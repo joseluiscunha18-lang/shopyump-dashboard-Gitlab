@@ -3,7 +3,7 @@ import { ClipboardList, Eye, Wallet, PackageCheck } from 'lucide-react';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { getDashboardStats } from '@/lib/queries/stats';
 import { getPedidosByLoja } from '@/lib/queries/pedidos';
-import { getProdutosCount } from '@/lib/queries/produtos';
+import { getLojaMarcos } from '@/lib/queries/lojaMarcos';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { PendingOrdersList } from '@/components/dashboard/PendingOrdersList';
 import { StoreExplorationGuide } from '@/components/dashboard/StoreExplorationGuide';
@@ -17,10 +17,10 @@ export default async function DashboardHomePage() {
     return <p className="pt-10 text-sm font-medium text-slate-500">Sem loja associada a esta conta.</p>;
   }
 
-  const [stats, pedidosPendentes, produtosCount] = await Promise.all([
+  const [stats, pedidosPendentes, marcos] = await Promise.all([
     getDashboardStats(ctx.loja.id),
     getPedidosByLoja(ctx.loja.id, 'pendente'),
-    getProdutosCount(ctx.loja.id),
+    getLojaMarcos(ctx.loja.id),
   ]);
 
   // "Activity" is defined by real orders having happened — not by daily
@@ -31,9 +31,6 @@ export default async function DashboardHomePage() {
 
   if (!hasActivity) {
     const storeUrl = ctx.loja.slug ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
-    const hasCustomized = Boolean(
-      ctx.loja.descricao?.trim() || ctx.loja.banner_url || ctx.loja.instagram || ctx.loja.facebook || ctx.loja.email
-    );
 
     return (
       <div className="flex flex-col gap-8 pt-2">
@@ -41,8 +38,7 @@ export default async function DashboardHomePage() {
           lojaId={ctx.loja.id}
           storeUrl={storeUrl}
           storeName={ctx.loja.nome}
-          hasProduct={produtosCount > 0}
-          hasCustomized={hasCustomized}
+          marcos={marcos}
         />
 
         <div>
