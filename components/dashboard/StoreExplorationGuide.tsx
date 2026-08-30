@@ -1,81 +1,125 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Package, Store, Share2, Check, X } from 'lucide-react';
-import { Card } from '@/components/ui/Surfaces';
+import { X } from 'lucide-react';
+import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
+import { dispensarMarco, marcarMarcoConcluido } from '@/lib/mutations/lojaMarcos';
+import { ORDEM_MARCOS_ONBOARDING, type LojaMarco, type MarcoOnboarding } from '@/types/database';
 import { cn } from '@/lib/cn';
-
-type Tone = 'next' | 'default' | 'done';
-
-interface GuideItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: React.ElementType;
-  completed: boolean;
-  ctaLabel: string;
-  ctaLabelDone: string;
-  href?: string;
-  onAction?: () => void;
-}
 
 const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
-const visualTone: Record<Tone, string> = {
-  next: 'bg-[#EEF1F4]',
-  default: 'bg-[#F7F8FA]',
-  done: 'bg-[#EFFAF3]',
-};
-
-function dismissedKey(lojaId: string) {
-  return `shopyump:guide:${lojaId}:dismissed`;
+interface ItemConfig {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  href?: string;
+  onAction?: () => void;
+  image: string;
+  imageClassName: string;
+  imageWrapperClassName: string;
+  contentWidthClassName: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
 }
-function shareKey(lojaId: string) {
-  return `shopyump:guide:${lojaId}:partilhado`;
+
+/**
+ * Copy/visual de cada marco — puramente apresentação. A decisão de QUAL
+ * marco mostrar vem inteiramente de `loja_marcos` (ver `proximoMarco` em
+ * StoreExplorationGuide) — esta função nunca decide visibilidade, só
+ * como desenhar o marco que já foi escolhido.
+ */
+function getItemConfig(marco: MarcoOnboarding, handleShare: () => void): ItemConfig {
+  switch (marco) {
+    case 'primeiro_produto':
+      return {
+        eyebrow: 'Comece por aqui',
+        title: 'Adicione seu primeiro produto',
+        subtitle: 'Comece a construir seu catálogo.',
+        ctaLabel: 'Criar produto',
+        href: '/produtos/novo',
+        image: 'https://i.ibb.co/kg0TN94W/1-4.png',
+        imageClassName: 'h-full w-full object-contain object-right',
+        imageWrapperClassName: 'right-0 top-2 bottom-2 w-[50%] max-w-[204px]',
+        contentWidthClassName: 'w-[62%]',
+        titleClassName: 'max-w-[152px]',
+        subtitleClassName: 'max-w-[160px]',
+      };
+    case 'personalizar_loja':
+      return {
+        eyebrow: 'Aparência',
+        title: 'Personalize sua loja',
+        subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
+        ctaLabel: 'Personalizar',
+        href: '/loja',
+        image: 'https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png',
+        imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
+        contentWidthClassName: 'w-[42%]',
+        subtitleClassName: 'max-w-[230px]',
+      };
+    case 'partilhar_loja':
+      return {
+        eyebrow: 'Divulgação',
+        title: 'Compartilhe sua loja',
+        subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
+        ctaLabel: 'Copiar link',
+        onAction: handleShare,
+        image: 'https://i.ibb.co/Gf4VYtpV/file-000000003fd081f4b4d9cdab95a4be2b.png',
+        imageClassName: 'h-full w-full translate-y-3 scale-110 object-cover object-right',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]',
+        contentWidthClassName: 'w-[58%]',
+        titleClassName: 'whitespace-nowrap',
+        subtitleClassName: 'max-w-[150px]',
+      };
+  }
 }
 
+/**
+ * Guia de onboarding da Início — mostra SEMPRE só o próximo passo
+ * relevante (nunca uma lista com itens "concluídos"). A fonte da verdade
+ * é `loja_marcos` (ver migration_loja_marcos.sql): assim que um marco
+ * fica com `concluido_em` preenchido OU `dispensado = true`, ele nunca
+ * mais aparece aqui — o próximo da fila (`ORDEM_MARCOS_ONBOARDING`) toma
+ * o lugar automaticamente. Quando não sobra nenhum, a secção inteira
+ * desaparece (não há "tudo concluído!" a mostrar).
+ *
+ * Note-se que 'primeiro_produto' é o MESMO marco usado pelo banner "Seu
+ * primeiro produto está no ar" na página Produtos (ProductCelebrationBanner)
+ * — ambos leem/escrevem a mesma linha em `loja_marcos`, porque representam
+ * o mesmo acontecimento real. Publicar o primeiro produto conclui os dois
+ * ao mesmo tempo (este card e o gatilho do banner), sem duplicar estado.
+ */
 export function StoreExplorationGuide({
   lojaId,
   storeUrl,
   storeName,
-  hasProduct,
-  hasCustomized,
+  marcos,
 }: {
   lojaId: string;
   storeUrl: string | null;
   storeName: string;
-  hasProduct: boolean;
-  hasCustomized: boolean;
+  /** Marcos já atingidos/dispensados desta loja (ver getLojaMarcos). */
+  marcos: Partial<Record<MarcoOnboarding, LojaMarco>>;
 }) {
   const { show } = useToast();
-  const [ready, setReady] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [partilhado, setPartilhado] = useState(false);
+  // Dispensas/conclusões feitas NESTA sessão, antes de o servidor ser
+  // relido — sem isto, o card ficaria visível até ao próximo
+  // router.refresh(), mesmo já tendo sido fechado/concluído.
+  const [marcosLocais, setMarcosLocais] = useState<
+    Partial<Record<MarcoOnboarding, { concluido?: boolean; dispensado?: boolean }>>
+  >({});
 
-  useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(dismissedKey(lojaId)) === '1');
-      setPartilhado(localStorage.getItem(shareKey(lojaId)) === '1');
-    } catch {
-      // localStorage indisponível — segue sem persistência
-    } finally {
-      setReady(true);
-    }
-  }, [lojaId]);
-
-  function handleDismiss() {
-    setClosing(true);
-    try {
-      localStorage.setItem(dismissedKey(lojaId), '1');
-    } catch {
-      // ignore
-    }
-    setTimeout(() => setDismissed(true), 200);
-  }
+  const proximoMarco = ORDEM_MARCOS_ONBOARDING.find((m) => {
+    const concluido = Boolean(marcos[m]?.concluido_em) || marcosLocais[m]?.concluido;
+    const dispensado = Boolean(marcos[m]?.dispensado) || marcosLocais[m]?.dispensado;
+    return !concluido && !dispensado;
+  });
 
   async function handleShare() {
     if (!storeUrl) return;
@@ -86,53 +130,65 @@ export function StoreExplorationGuide({
         await navigator.clipboard.writeText(storeUrl);
         show('Link da loja copiado.');
       }
-      try {
-        localStorage.setItem(shareKey(lojaId), '1');
-      } catch {
-        // ignore
-      }
-      setPartilhado(true);
+      setMarcosLocais((prev) => ({ ...prev, partilhar_loja: { concluido: true } }));
+      marcarMarcoConcluido(lojaId, 'partilhar_loja').catch(() => {});
     } catch {
       // utilizador cancelou a partilha — não é um erro a comunicar
     }
   }
 
-  if (!ready || dismissed) return null;
+  function handleDismiss(marco: MarcoOnboarding) {
+    setClosing(true);
+    dispensarMarco(lojaId, marco).catch(() => {});
+    setTimeout(() => {
+      setMarcosLocais((prev) => ({ ...prev, [marco]: { dispensado: true } }));
+      setClosing(false);
+    }, 200);
+  }
 
-  const items: GuideItem[] = [
-    {
-      id: 'produto',
-      title: 'Adicione seu primeiro produto',
-      subtitle: 'Comece a construir seu catálogo.',
-      icon: Package,
-      completed: hasProduct,
-      ctaLabel: 'Criar produto',
-      ctaLabelDone: 'Ver produtos',
-      href: hasProduct ? '/produtos' : '/produtos/novo',
-    },
-    {
-      id: 'personalizar',
-      title: 'Personalize sua loja',
-      subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
-      icon: Store,
-      completed: hasCustomized,
-      ctaLabel: 'Personalizar',
-      ctaLabelDone: 'Editar loja',
-      href: '/loja',
-    },
-    {
-      id: 'compartilhar',
-      title: 'Compartilhe sua loja',
-      subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
-      icon: Share2,
-      completed: partilhado,
-      ctaLabel: 'Copiar link',
-      ctaLabelDone: 'Partilhar de novo',
-      onAction: handleShare,
-    },
-  ];
+  if (!proximoMarco) return null;
 
-  const nextId = items.find((i) => !i.completed)?.id;
+  const item = getItemConfig(proximoMarco, handleShare);
+
+  const content = (
+    <div className={cn('relative min-h-[224px] w-full overflow-hidden rounded-[28px] p-4 sm:p-5', ELEVATED_SURFACE)}>
+      {/* Dispensar este passo — passa automaticamente para o próximo da fila */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleDismiss(proximoMarco);
+        }}
+        aria-label="Dispensar"
+        className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center text-slate-500 transition-colors hover:text-ink active:scale-95"
+      >
+        <X size={13} strokeWidth={2.5} />
+      </button>
+
+      {/* Conteúdo: eyebrow → título → descrição → CTA */}
+      <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.contentWidthClassName)}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
+
+        <div className="mt-2">
+          <p className={cn('text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink', item.titleClassName)}>
+            {item.title}
+          </p>
+          <p className={cn('mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400', item.subtitleClassName)}>
+            {item.subtitle}
+          </p>
+        </div>
+
+        <span className={cn(cta, 'mt-auto')}>{item.ctaLabel}</span>
+      </div>
+
+      {/* Área visual à direita */}
+      <div className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.image} alt="" className={item.imageClassName} />
+      </div>
+    </div>
+  );
 
   return (
     <section
@@ -146,146 +202,19 @@ export function StoreExplorationGuide({
           Bem-vindo à sua loja
         </h2>
         <p className="mt-1.5 text-2xl sm:text-3xl font-medium text-slate-500 tracking-tight">
-          Escolha por onde começar.
+          Continue por aqui.
         </p>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {items.map((item) => {
-          const tone: Tone = item.completed ? 'done' : item.id === nextId ? 'next' : 'default';
-          const Icon = item.icon;
-
-          const content = (
-            <div className="relative min-h-[224px] w-full overflow-hidden rounded-[28px] bg-white p-4 sm:p-5 shadow-[0_1px_0_rgba(15,23,42,0.06),0_6px_14px_-6px_rgba(15,23,42,0.13),0_16px_24px_-16px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035]">
-              {/* Dispensar toda a orientação — acessível a partir de qualquer cartão */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDismiss();
-                }}
-                aria-label="Dispensar orientação"
-                className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center text-slate-500 transition-colors hover:text-ink active:scale-95"
-              >
-                <X size={13} strokeWidth={2.5} />
-              </button>
-
-              {/* Conteúdo: eyebrow → título → descrição → CTA */}
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.id === 'personalizar' ? 'w-[42%]' : item.id === 'compartilhar' ? 'w-[58%]' : 'w-[62%]')}>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  {item.completed ? 'Concluído' : item.id === 'produto' ? 'Comece por aqui' : item.id === 'personalizar' ? 'Aparência' : 'Divulgação'}
-                </p>
-
-                <div className="mt-2">
-                  <p
-                    className={cn(
-                      'text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink',
-                      item.id === 'compartilhar' && 'whitespace-nowrap',
-                      item.id === 'produto' && 'max-w-[152px]'
-                    )}
-                  >
-                    {item.title}
-                  </p>
-                  <p
-                    className={cn(
-                      'mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400',
-                      item.id === 'compartilhar' ? 'max-w-[150px]' : item.id === 'produto' ? 'max-w-[160px]' : 'max-w-[230px]'
-                    )}
-                  >
-                    {item.subtitle}
-                  </p>
-                </div>
-
-                <span className={cn(cta, 'mt-auto')}>
-                  {item.completed ? item.ctaLabelDone : item.ctaLabel}
-                </span>
-              </div>
-
-              {/* Área visual à direita: mesma posição e proporção em todos os cards */}
-              <div
-                className={cn(
-                  'absolute flex items-center justify-center overflow-hidden rounded-[22px] transition-colors',
-                  item.id === 'produto'
-                    ? 'right-0 top-2 bottom-2 w-[50%] max-w-[204px]'
-                    : item.id === 'personalizar'
-                      ? 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]'
-                      : item.id === 'compartilhar'
-                        ? 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]'
-                        : 'right-3 top-3 bottom-3 w-[34%] max-w-[142px]',
-                  item.id !== 'produto' && item.id !== 'personalizar' && item.id !== 'compartilhar' && visualTone[tone]
-                )}
-              >
-                {item.id === 'produto' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="https://i.ibb.co/kg0TN94W/1-4.png"
-                    alt=""
-                    className="h-full w-full object-contain object-right"
-                  />
-                ) : item.id === 'personalizar' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="https://i.ibb.co/23rB4yJc/77824d49418a4ab693b33295fed6e239.png"
-                    alt=""
-                    className="h-full w-full translate-y-2 object-contain object-right"
-                  />
-                ) : item.id === 'compartilhar' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="https://i.ibb.co/Gf4VYtpV/file-000000003fd081f4b4d9cdab95a4be2b.png"
-                    alt=""
-                    className="h-full w-full translate-y-3 scale-110 object-cover object-right"
-                  />
-                ) : (
-                  <>
-                    <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-white/60" />
-                    <div className="absolute -bottom-8 -left-5 h-20 w-20 rounded-full bg-white/40" />
-                    <div className="relative flex h-[86px] w-[86px] items-center justify-center rounded-[26px] bg-white/75 shadow-[0_8px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.025]">
-                      <Icon
-                        size={42}
-                        strokeWidth={1.45}
-                        className={cn(
-                          tone === 'done' ? 'text-emerald-600' : tone === 'next' ? 'text-ink' : 'text-slate-500'
-                        )}
-                      />
-                      {item.completed && (
-                        <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
-                          <Check size={12} strokeWidth={3} />
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          );
-
-          if (item.href) {
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={item.onAction}
-                className="block transition-transform active:scale-[0.99]"
-              >
-                {content}
-              </Link>
-            );
-          }
-
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={item.onAction}
-              className="block w-full text-left transition-transform active:scale-[0.99]"
-            >
-              {content}
-            </button>
-          );
-        })}
-      </div>
+      {item.href ? (
+        <Link href={item.href} className="block transition-transform active:scale-[0.99]">
+          {content}
+        </Link>
+      ) : (
+        <button type="button" onClick={item.onAction} className="block w-full text-left transition-transform active:scale-[0.99]">
+          {content}
+        </button>
+      )}
     </section>
   );
 }
