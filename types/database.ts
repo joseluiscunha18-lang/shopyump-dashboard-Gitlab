@@ -36,6 +36,18 @@ export interface Loja {
   conteudo_sobre: string | null;
   conteudo_entrega: string | null;
   conteudo_termos: string | null;
+  /**
+   * Estado do card "Seu primeiro produto está no ar" (ver
+   * migration_celebracao_primeiro_produto.sql). `celebracao_primeiro_produto_id`
+   * é definido automaticamente, por trigger, na primeira publicação da
+   * loja — nunca sobrescrito depois. `celebracao_primeiro_produto_dispensada`
+   * fica `true` para sempre assim que o card é fechado (X ou "Ver minha
+   * loja") OU quando um 2º produto é publicado (o trigger fecha sozinho,
+   * mesmo sem ação do usuário). Mostrar o card apenas quando o primeiro
+   * campo não é null E o segundo é false.
+   */
+  celebracao_primeiro_produto_id: string | null;
+  celebracao_primeiro_produto_dispensada: boolean;
   created_at: string;
 }
 
