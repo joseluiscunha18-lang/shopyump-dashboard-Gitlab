@@ -2,10 +2,8 @@ import type { Metadata } from 'next';
 import { ClipboardList, Eye, Wallet, PackageCheck } from 'lucide-react';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { getDashboardStats } from '@/lib/queries/stats';
-import { getPedidosByLoja } from '@/lib/queries/pedidos';
 import { getLojaMarcos } from '@/lib/queries/lojaMarcos';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { PendingOrdersList } from '@/components/dashboard/PendingOrdersList';
 import { StoreExplorationGuide } from '@/components/dashboard/StoreExplorationGuide';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
@@ -17,9 +15,8 @@ export default async function DashboardHomePage() {
     return <p className="pt-10 text-sm font-medium text-slate-500">Sem loja associada a esta conta.</p>;
   }
 
-  const [stats, pedidosPendentes, marcos] = await Promise.all([
+  const [stats, marcos] = await Promise.all([
     getDashboardStats(ctx.loja.id),
-    getPedidosByLoja(ctx.loja.id, 'pendente'),
     getLojaMarcos(ctx.loja.id),
   ]);
 
@@ -40,11 +37,6 @@ export default async function DashboardHomePage() {
           storeName={ctx.loja.nome}
           marcos={marcos}
         />
-
-        <div>
-          <h2 className="text-lg font-black text-ink tracking-tight mb-4">Pedidos</h2>
-          <PendingOrdersList lojaId={ctx.loja.id} initialPedidos={pedidosPendentes} />
-        </div>
       </div>
     );
   }
@@ -66,13 +58,6 @@ export default async function DashboardHomePage() {
           value={stats.receitaTotal.toLocaleString('pt-MZ')}
           sub="MZN"
         />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black text-ink tracking-tight">Pedidos pendentes</h2>
-        </div>
-        <PendingOrdersList lojaId={ctx.loja.id} initialPedidos={pedidosPendentes} />
       </div>
     </div>
   );
