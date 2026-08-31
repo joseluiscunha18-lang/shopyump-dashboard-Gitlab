@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
-import { ClipboardList, Eye, Wallet, PackageCheck } from 'lucide-react';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { getDashboardStats } from '@/lib/queries/stats';
 import { getLojaMarcos } from '@/lib/queries/lojaMarcos';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { StoreExplorationGuide } from '@/components/dashboard/StoreExplorationGuide';
+import { getPedidosByLoja } from '@/lib/queries/pedidos';
+import { NewOrderAlert } from '@/components/dashboard/NewOrderAlert';
+import { OnboardingSteps } from '@/components/dashboard/OnboardingSteps';
+import { GenericGrowthTips } from '@/components/dashboard/GenericGrowthTips';
+import { StoreSummaryBar } from '@/components/dashboard/StoreSummaryBar';
+import { ORDEM_MARCOS_ONBOARDING } from '@/types/database';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
 
@@ -20,45 +23,63 @@ export default async function DashboardHomePage() {
     getLojaMarcos(ctx.loja.id),
   ]);
 
-  // "Activity" is defined by real orders having happened — not by daily
-  // visit counts (which reset every day) — so a store with history but a
-  // quiet day never gets mistaken for a brand-new one. See redesign notes
-  // for the Início empty state.
-  const hasActivity = stats.pedidosTotal > 0;
+  // Só busca a lista de pedidos pendentes quando `stats` já indicou que
+  // há pelo menos 1 — evita uma query extra em toda visita normal, onde
+  // não há nada por confirmar.
+  const pedidosPendentesLista = stats.pedidosPendentes > 0 ? await getPedidosByLoja(ctx.loja.id, 'pendente') : [];
 
-  if (!hasActivity) {
-    const storeUrl = ctx.loja.slug ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
+  const storeUrl = ctx.loja.slug ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
 
-    return (
-      <div className="flex flex-col gap-8 pt-2">
-        <StoreExplorationGuide
-          lojaId={ctx.loja.id}
-          storeUrl={storeUrl}
-          storeName={ctx.loja.nome}
-          marcos={marcos}
-        />
-      </div>
-    );
-  }
+  // Marcos de onboarding ainda por fazer, na ordem fixa definida em
+  // ORDEM_MARCOS_ONBOARDING — é este array (e só ele) que decide a
+  // hierarquia da página (ver OnboardingSteps e a régua de heading
+  // abaixo): 3/2 restantes → lista em destaque; 1 restante → vira
+  // recomendação discreta; 0 restantes → dicas genéricas no lugar.
+  const marcosRestantes = ORDEM_MARCOS_ONBOARDING.filter((m) => {
+    const registo = marcos[m];
+    return !registo?.concluido_em && !registo?.dispensado;
+  });
+
+  const nenhumFeitoAinda = marcosRestantes.length === ORDEM_MARCOS_ONBOARDING.length;
+  const heading = nenhumFeitoAinda
+    ? 'Comece sua loja'
+    : marcosRestantes.length >= 2
+      ? 'Próximos passos'
+      : 'Dicas para crescer';
 
   return (
     <div className="flex flex-col gap-8 pt-2">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={<ClipboardList size={22} />}
-          label="Pedidos pendentes"
-          value={String(stats.pedidosPendentes)}
-          emphasis
+      {/* Quebra a hierarquia normal — um pedido por confirmar é uma
+          tarefa pendente, não uma métrica, por isso fica sempre no topo
+          quando existe, acima até dos próprios cards de onboarding. */}
+      {pedidosPendentesLista.length > 0 && (
+        <NewOrderAlert pedidoRecente={pedidosPendentesLista[0]} pedidosPendentes={stats.pedidosPendentes} />
+      )}
+
+      {marcosRestantes.length >= 2 && (
+        <OnboardingSteps
+          lojaId={ctx.loja.id}
+          storeUrl={storeUrl}
+          storeName={ctx.loja.nome}
+          marcos={marcosRestantes}
+          heading={heading}
         />
-        <StatCard icon={<PackageCheck size={20} />} label="Pedidos no total" value={String(stats.pedidosTotal)} />
-        <StatCard icon={<Eye size={20} />} label="Visitas hoje" value={String(stats.visitasHoje)} />
-        <StatCard
-          icon={<Wallet size={20} />}
-          label="Receita total"
-          value={stats.receitaTotal.toLocaleString('pt-MZ')}
-          sub="MZN"
+      )}
+
+      {/* Sempre visível, mesmo a zeros — ver StoreSummaryBar sobre o porquê. */}
+      <StoreSummaryBar produtos={stats.produtosCount} visitas={stats.visitasTotal} pedidos={stats.pedidosTotal} />
+
+      {marcosRestantes.length === 1 && (
+        <OnboardingSteps
+          lojaId={ctx.loja.id}
+          storeUrl={storeUrl}
+          storeName={ctx.loja.nome}
+          marcos={marcosRestantes}
+          heading={heading}
         />
-      </div>
+      )}
+
+      {marcosRestantes.length === 0 && <GenericGrowthTips />}
     </div>
   );
 }
