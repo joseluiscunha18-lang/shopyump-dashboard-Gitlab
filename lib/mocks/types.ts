@@ -44,6 +44,10 @@ export interface MockStoreState {
   ordersCount: number;
   /** "Vendas" — valor de pedidos registados. Nunca confundir com saldo (§6). */
   salesAmount: number;
+  /** Variação percentual de `salesAmount` vs. o mês anterior — só faz
+   *  sentido mostrar quando `salesAmount > 0` (ver VisaoGeral.tsx); nos
+   *  cenários sem vendas fica a 0 e é simplesmente ignorado pela UI. */
+  growthPercent: number;
 }
 
 /** Pagamentos da LOJA PRÓPRIA (gateway Shopyump ou externo). Distinto de
