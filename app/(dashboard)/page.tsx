@@ -6,7 +6,7 @@ import { getPedidosByLoja } from '@/lib/queries/pedidos';
 import { NewOrderAlert } from '@/components/dashboard/NewOrderAlert';
 import { OnboardingSteps } from '@/components/dashboard/OnboardingSteps';
 import { GenericGrowthTips } from '@/components/dashboard/GenericGrowthTips';
-import { StoreSummaryBar } from '@/components/dashboard/StoreSummaryBar';
+import { VisaoGeral } from '@/components/dashboard/VisaoGeral';
 import { ORDEM_MARCOS_ONBOARDING } from '@/types/database';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
@@ -66,8 +66,20 @@ export default async function DashboardHomePage() {
         />
       )}
 
-      {/* Sempre visível, mesmo a zeros — ver StoreSummaryBar sobre o porquê. */}
-      <StoreSummaryBar produtos={stats.produtosCount} visitas={stats.visitasTotal} pedidos={stats.pedidosTotal} />
+      {/* Sempre visível, mesmo a zeros — ver VisaoGeral sobre o porquê.
+          Sem `salesAmount`: hoje não existe nenhum canal financeiro
+          confirmado (Marketplace/gateway ainda não estão implementados
+          de facto), então "Vendas" fica escondida — mostrar um valor
+          não confirmável seria enganoso. Passar esse prop assim que
+          houver um gateway/Marketplace real ligado à loja. Ver
+          lib/mocks/* e /dev/cenarios para a pré-visualização desses
+          estados com dados mockados, conforme combinado nesta etapa
+          (só UI dos cards, sem construir o restante do sistema). */}
+      <VisaoGeral
+        productsCount={stats.produtosCount}
+        visits={stats.visitasTotal}
+        ordersCount={stats.pedidosTotal}
+      />
 
       {marcosRestantes.length === 1 && (
         <OnboardingSteps
