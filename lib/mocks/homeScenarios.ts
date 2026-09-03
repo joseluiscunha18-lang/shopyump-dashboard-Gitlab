@@ -19,8 +19,9 @@ const MARKETPLACE_INATIVO = {
 };
 
 /**
- * Os 9 cenários pedidos no §19. Os valores dos cenários 7, 9 e 13 (gateway
- * Shopyump / Marketplace consolidado) são copiados literalmente dos
+ * Os 10 cenários da Home (§19 original + o cruzamento gateway externo ×
+ * Marketplace, adicionado depois). Os valores dos cenários de gateway
+ * Shopyump / Marketplace consolidado são copiados literalmente dos
  * exemplos do documento (SHOPYUMP_LOGICA_HOME_PLANOS_MARKETPLACE_GATEWAY.md
  * §12, §9, §13) — os restantes foram inventados com valores plausíveis,
  * mas seguindo sempre a mesma regra de ouro do §6: nunca inventar saldo
@@ -129,7 +130,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
   // §6/§10 do .txt, com plano pago — Marketplace sozinho, mas em conta paga.
   PAID_MARKETPLACE: {
     id: 'PAID_MARKETPLACE',
-    label: 'Pago · Marketplace ativo, sem gateway próprio',
+    label: 'Pago · Marketplace ativo, sem gateway',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
     store: { productsCount: 22, visits: 90, ordersCount: 11, salesAmount: 0, growthPercent: 0 },
@@ -167,6 +168,35 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       protectedAmount: 0,
       availableAmount: 0, // já refletido no bloco Financeiro consolidado — ver §13, evitar dupla contagem.
       payoutStatus: 'paid',
+    },
+  },
+
+  // Mesma combinação do cenário acima (loja própria + Marketplace, ambos
+  // ativos), mas com gateway EXTERNO em vez do gateway Shopyump — por
+  // isso aparece PaymentsCard ("Confirmados") na Home em vez de
+  // FinanceiroCard, e as vendas da loja (`store.salesAmount`) não são
+  // dinheiro custodiado pela Shopyump (§7/§9), só as do Marketplace são.
+  PAID_EXTERNAL_GATEWAY_AND_MARKETPLACE: {
+    id: 'PAID_EXTERNAL_GATEWAY_AND_MARKETPLACE',
+    label: 'Pago · gateway externo + Marketplace',
+    user: { plan: 'paid', firstProductPublished: true },
+    onboarding: { personalizeCompleted: true, shareCompleted: true },
+    store: { productsCount: 23, visits: 730, ordersCount: 21, salesAmount: 15200, growthPercent: 15.2 },
+    storePayment: {
+      provider: 'external',
+      connected: true,
+      availableAmount: 0, // nunca preenchido para 'external' — ver §7/§11.
+      processingAmount: 0,
+      confirmedPayments: 15200,
+    },
+    marketplace: {
+      status: 'active',
+      productsCount: 18,
+      ordersCount: 9,
+      salesAmount: 6100,
+      protectedAmount: 1800,
+      availableAmount: 4300,
+      payoutStatus: 'pending',
     },
   },
 };
