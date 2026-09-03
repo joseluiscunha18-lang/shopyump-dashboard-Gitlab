@@ -20,6 +20,9 @@ export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
  */
 export default async function CenariosDevPage() {
   const ativo = await getActiveScenario();
+  // Gateway (próprio ou externo) de facto ligado — só aí "Vendas" pode
+  // aparecer na Visão geral (ver comentário mais abaixo).
+  const temGatewayConfirmado = ativo.storePayment.provider !== 'none' && ativo.storePayment.connected;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10">
@@ -41,6 +44,15 @@ export default async function CenariosDevPage() {
         explicitamente mobile-first — ver isto empilhado e compacto aqui
         é mais representativo do produto do que a largura cheia do ecrã.
 
+        `temGatewayConfirmado`: "Vendas" na Visão geral só existe quando
+        há um gateway (próprio ou externo) de facto ligado — Free e
+        pago-sem-gateway ficam só com os 3 indicadores. Marketplace
+        sozinho NÃO liga isto: as vendas do Marketplace têm o seu
+        próprio módulo (MarketplaceCard) e não aparecem na Vendas da
+        loja — nos mocks isso já é natural porque `store.salesAmount`
+        fica em 0 nesses cenários (ver comentário no FREE_MARKETPLACE_ACTIVE
+        em homeScenarios.ts).
+
         `paymentsCount` do PaymentsCard usa `store.ordersCount` como
         aproximação: o tipo de mock ainda não tem uma contagem dedicada
         de pagamentos (só o valor confirmado) — troca-se por um campo
@@ -50,8 +62,8 @@ export default async function CenariosDevPage() {
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
         <div className="mx-auto flex w-full max-w-[380px] flex-col gap-6 rounded-[32px] bg-[#F6F7F9] p-4 ring-1 ring-black/[0.06]">
           <VisaoGeral
-            salesAmount={ativo.store.salesAmount}
-            growthPercent={ativo.store.growthPercent}
+            salesAmount={temGatewayConfirmado ? ativo.store.salesAmount : undefined}
+            growthPercent={temGatewayConfirmado ? ativo.store.growthPercent : undefined}
             productsCount={ativo.store.productsCount}
             visits={ativo.store.visits}
             ordersCount={ativo.store.ordersCount}
