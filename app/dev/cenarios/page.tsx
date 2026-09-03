@@ -4,7 +4,6 @@ import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { setScenarioAction } from '@/lib/mocks/setScenarioAction';
 import { VisaoGeral } from '@/components/dashboard/VisaoGeral';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
-import { PaymentsCard } from '@/components/dashboard/PaymentsCard';
 import { FinanceiroCard } from '@/components/dashboard/FinanceiroCard';
 
 export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
@@ -53,10 +52,13 @@ export default async function CenariosDevPage() {
         fica em 0 nesses cenários (ver comentário no FREE_MARKETPLACE_ACTIVE
         em homeScenarios.ts).
 
-        `paymentsCount` do PaymentsCard usa `store.ordersCount` como
-        aproximação: o tipo de mock ainda não tem uma contagem dedicada
-        de pagamentos (só o valor confirmado) — troca-se por um campo
-        real quando essa contagem existir de facto.
+        Gateway externo NÃO tem um módulo financeiro próprio abaixo da
+        Visão geral (o antigo PaymentsCard foi removido): o valor
+        confirmado pelo gateway já é exatamente o que aparece em "Vendas"
+        — mostrar os dois seria repetir o mesmo número duas vezes. Só o
+        gateway Shopyump tem módulo extra (FinanceiroCard), porque ali
+        existe informação adicional que a Vendas não cobre (disponível
+        para saque vs. em processamento).
       */}
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
@@ -75,10 +77,6 @@ export default async function CenariosDevPage() {
               protectedAmount={ativo.marketplace.protectedAmount}
               availableAmount={ativo.marketplace.availableAmount}
             />
-          )}
-
-          {ativo.storePayment.provider === 'external' && ativo.storePayment.connected && (
-            <PaymentsCard confirmedAmount={ativo.storePayment.confirmedPayments} paymentsCount={ativo.store.ordersCount} />
           )}
 
           {ativo.storePayment.provider === 'shopyump' && ativo.storePayment.connected && (
