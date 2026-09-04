@@ -15,6 +15,7 @@ const MARKETPLACE_INATIVO = {
   salesAmount: 0,
   protectedAmount: 0,
   availableAmount: 0,
+  disputedAmount: 0,
   payoutStatus: 'none' as const,
 };
 
@@ -78,6 +79,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       salesAmount: 7500,
       protectedAmount: 2500,
       availableAmount: 5000,
+      disputedAmount: 180,
       payoutStatus: 'none',
       salesToday: 380,
       salesYesterday: 610,
@@ -150,6 +152,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       salesAmount: 9800,
       protectedAmount: 1200,
       availableAmount: 6400,
+      disputedAmount: 95,
       payoutStatus: 'requested',
       salesToday: 420,
       salesYesterday: 730,
@@ -180,6 +183,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       salesAmount: 10000,
       protectedAmount: 0,
       availableAmount: 0, // já refletido no saldo consolidado do gateway Shopyump — ver resolvePagamentosCard, evitar dupla contagem.
+      disputedAmount: 0,
       payoutStatus: 'paid',
       salesToday: 480,
       salesYesterday: 890,
@@ -217,6 +221,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       salesAmount: 6100,
       protectedAmount: 1800,
       availableAmount: 4300,
+      disputedAmount: 140,
       payoutStatus: 'pending',
       salesToday: 310,
       salesYesterday: 540,
