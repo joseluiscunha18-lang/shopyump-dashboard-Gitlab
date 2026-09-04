@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { HOME_MOCK_SCENARIOS, HOME_MOCK_SCENARIO_IDS } from '@/lib/mocks/homeScenarios';
 import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { setScenarioAction } from '@/lib/mocks/setScenarioAction';
-import { VisaoGeral } from '@/components/dashboard/VisaoGeral';
+import { ResumoCard } from '@/components/dashboard/ResumoCard';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
-import { PagamentosCard, buildPagamentosBreakdown } from '@/components/dashboard/PagamentosCard';
+import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
 
 export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 
@@ -19,9 +19,7 @@ export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
  */
 export default async function CenariosDevPage() {
   const ativo = await getActiveScenario();
-  // Gateway (próprio ou externo) de facto ligado — só aí "Vendas" pode
-  // aparecer na Visão geral (ver comentário mais abaixo).
-  const temGatewayConfirmado = ativo.storePayment.provider !== 'none' && ativo.storePayment.connected;
+  const pagamentos = resolvePagamentosCard(ativo.storePayment, ativo.marketplace);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10">
@@ -33,45 +31,35 @@ export default async function CenariosDevPage() {
       </div>
 
       {/*
-        Pré-visualização "ao vivo" dos cards do Home (§13 do pedido: abrir
-        o frontend e comparar os estados A-F lado a lado, um de cada vez,
-        trocando o cenário abaixo). Só usa os componentes visuais puros
-        (VisaoGeral + módulos financeiros) alimentados pelo cenário mock
-        ativo — nada aqui toca no Home real nem em dados do Supabase.
+        Pré-visualização "ao vivo" dos cards do Home (§13 do pedido original
+        + "NOVA LÓGICA DO CARD FINANCEIRO DA HOME": abrir o frontend e
+        comparar os cenários lado a lado, trocando abaixo). Só usa os
+        componentes visuais puros (ResumoCard + módulos financeiros)
+        alimentados pelo cenário mock ativo — nada aqui toca no Home real
+        nem em dados do Supabase.
 
         Moldura de largura fixa (~ um telemóvel) porque o pedido é
-        explicitamente mobile-first — ver isto empilhado e compacto aqui
-        é mais representativo do produto do que a largura cheia do ecrã.
+        explicitamente mobile-first.
 
-        `temGatewayConfirmado`: "Vendas" na Visão geral só existe quando
-        há um gateway (próprio ou externo) de facto ligado — Free e
-        pago-sem-gateway ficam só com os 3 indicadores. Marketplace
-        sozinho NÃO liga isto: as vendas do Marketplace têm o seu
-        próprio módulo (MarketplaceCard) e não aparecem na Vendas da
-        loja — nos mocks isso já é natural porque `store.salesAmount`
-        fica em 0 nesses cenários (ver comentário no FREE_MARKETPLACE_ACTIVE
-        em homeScenarios.ts).
+        "Resumo" (Pedidos + Visitas) é SEMPRE seguro de mostrar,
+        independentemente de plano ou canal financeiro — nunca duplica
+        nada do card Pagamentos, que agora é o único lugar onde
+        "dinheiro" aparece.
 
-        PagamentosCard é a MESMA estrutura visual para os dois tipos de
-        gateway — só o número principal + label mudam de sentido:
-        "Vendas este mês" no externo (a Shopyump não custodia esse
-        dinheiro, só confirma), "Disponível para saque" no Shopyump
-        (saldo real). O bloco "Hoje/Ontem/Este mês" por baixo é sempre
-        montado por `buildPagamentosBreakdown`, que descarta qualquer
-        período sem dado real em vez de inventar — por isso o card pode
-        aparecer com 1, 2 ou 3 blocos dependendo do cenário, sem que o
-        layout mude de altura.
+        `resolvePagamentosCard` decide TUDO sobre o card Pagamentos numa
+        função só (ver PagamentosCard.tsx): o número principal, se ele é
+        "Vendas este mês" (gateway externo, sem saldo Shopyump) ou
+        "Disponível para saque" (gateway Shopyump e/ou Marketplace já
+        liberado — nunca "Em proteção"), e a quebra Hoje/Ontem/Este mês
+        combinando todos os canais que a Shopyump consegue registar.
+        `null` quando não há nenhum canal financeiro confirmado (Free,
+        ou pago sem gateway e sem Marketplace) — nesse caso nem
+        renderizamos o card.
       */}
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
         <div className="mx-auto flex w-full max-w-[380px] flex-col gap-6 rounded-[32px] bg-[#F6F7F9] p-4 ring-1 ring-black/[0.06]">
-          <VisaoGeral
-            salesAmount={temGatewayConfirmado ? ativo.store.salesAmount : undefined}
-            growthPercent={temGatewayConfirmado ? ativo.store.growthPercent : undefined}
-            productsCount={ativo.store.productsCount}
-            visits={ativo.store.visits}
-            ordersCount={ativo.store.ordersCount}
-          />
+          <ResumoCard ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
 
           {ativo.marketplace.status === 'active' && (
             <MarketplaceCard
@@ -81,20 +69,8 @@ export default async function CenariosDevPage() {
             />
           )}
 
-          {ativo.storePayment.provider === 'external' && ativo.storePayment.connected && (
-            <PagamentosCard
-              amount={ativo.store.salesAmount}
-              amountLabel="Vendas este mês"
-              breakdown={buildPagamentosBreakdown(ativo.storePayment)}
-            />
-          )}
-
-          {ativo.storePayment.provider === 'shopyump' && ativo.storePayment.connected && (
-            <PagamentosCard
-              amount={ativo.storePayment.availableAmount}
-              amountLabel="Disponível para saque"
-              breakdown={buildPagamentosBreakdown(ativo.storePayment)}
-            />
+          {pagamentos && (
+            <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
           )}
         </div>
       </div>
