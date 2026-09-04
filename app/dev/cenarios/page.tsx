@@ -3,6 +3,7 @@ import { HOME_MOCK_SCENARIOS, HOME_MOCK_SCENARIO_IDS } from '@/lib/mocks/homeSce
 import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { setScenarioAction } from '@/lib/mocks/setScenarioAction';
 import { ResumoCard } from '@/components/dashboard/ResumoCard';
+import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
 import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
 
@@ -25,6 +26,12 @@ export default async function CenariosDevPage() {
   // suficiente para o Pagamentos virar o card principal — ver o
   // comentário de `resolvePagamentosCard` em PagamentosCard.tsx.
   const pagamentosEhPrincipal = pagamentos !== null;
+  const marketplaceAtivo = ativo.marketplace.status === 'active';
+  // Marketplace ativo mas a loja própria sem nenhum gateway ligado (nem
+  // externo, nem Shopyump) — em qualquer plano. Só aqui a "Resumo da
+  // loja" aparece, como secção complementar por baixo do Marketplace
+  // (ver ResumoLojaSecao.tsx sobre porquê não é um card).
+  const mostrarResumoLoja = marketplaceAtivo && ativo.storePayment.provider === 'none';
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10">
@@ -62,6 +69,16 @@ export default async function CenariosDevPage() {
         `null` quando não há nenhum canal financeiro confirmado (Free,
         ou pago sem gateway e sem Marketplace) — nesse caso nem
         renderizamos o card, e o Resumo volta a aparecer.
+
+        "Resumo da loja" (Pedidos + Visitas, ver ResumoLojaSecao) é
+        diferente do "Resumo" acima: aparece por baixo do Marketplace,
+        não troca de lugar com o Pagamentos, e NÃO é um card — é uma
+        secção complementar mais discreta. Só existe nos dois cenários
+        em que o Marketplace está ativo mas a loja própria não tem
+        nenhum gateway ligado (nem externo, nem Shopyump), em qualquer
+        plano — assim que há também um gateway próprio ligado, os
+        Pedidos/Visitas da loja já não têm o mesmo destaque e a secção
+        não aparece.
       */}
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
@@ -72,19 +89,23 @@ export default async function CenariosDevPage() {
                 <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
               )}
 
-              {ativo.marketplace.status === 'active' && (
+              {marketplaceAtivo && (
                 <MarketplaceCard
                   salesAmount={ativo.marketplace.salesAmount}
                   protectedAmount={ativo.marketplace.protectedAmount}
                   availableAmount={ativo.marketplace.availableAmount}
                 />
               )}
+
+              {mostrarResumoLoja && (
+                <ResumoLojaSecao ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
+              )}
             </>
           ) : (
             <>
               <ResumoCard ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
 
-              {ativo.marketplace.status === 'active' && (
+              {marketplaceAtivo && (
                 <MarketplaceCard
                   salesAmount={ativo.marketplace.salesAmount}
                   protectedAmount={ativo.marketplace.protectedAmount}
