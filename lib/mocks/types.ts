@@ -93,6 +93,11 @@ export interface MockMarketplaceState {
    *  travada do que a proteção normal. Mostrado no MarketplaceCard ao
    *  lado de "Em proteção", nunca somado a `availableAmount`. */
   disputedAmount: number;
+  /** "Em reembolso" na UI — parte de `protectedAmount` já em processo de
+   *  devolução ao comprador, por isso também não sacável. Mostrado ao
+   *  lado de `disputedAmount` no breakdown do MarketplaceCard, nunca
+   *  somado a `availableAmount`. */
+  refundedAmount: number;
   payoutStatus: MarketplacePayoutStatus;
   /** Quebra diária opcional — mesma regra do storePayment: omitir
    *  quando não houver dado real, nunca inventar 0. */
