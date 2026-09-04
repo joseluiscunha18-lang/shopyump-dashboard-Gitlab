@@ -61,6 +61,19 @@ export interface MockStorePaymentState {
   /** Usado quando provider = 'external': confirmações via webhook/API,
    *  nunca chamadas de "saldo Shopyump" (§7, §11). */
   confirmedPayments: number;
+  /**
+   * Quebra "Hoje / Ontem / Este mês" mostrada no card Pagamentos —
+   * representa volume de vendas confirmado pelo gateway, por isso é o
+   * mesmo tipo de dado independentemente de `provider` ser 'external'
+   * ou 'shopyump' (só o número principal do card muda de sentido; ver
+   * PagamentosCard.tsx). Cada campo é opcional de propósito: quando um
+   * período ainda não tem dado real (ex.: gateway ligado hoje, "ontem"
+   * não existe), omite-se o campo em vez de inventar 0 — o card já
+   * sabe desenhar 1, 2 ou 3 blocos sem quebrar o layout.
+   */
+  salesToday?: number;
+  salesYesterday?: number;
+  salesThisMonth?: number;
 }
 
 export interface MockMarketplaceState {
