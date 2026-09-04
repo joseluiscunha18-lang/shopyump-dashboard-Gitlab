@@ -99,9 +99,8 @@ export default async function CenariosDevPage() {
 
                 {marketplaceAtivo && (
                   <MarketplaceCard
-                    salesAmount={ativo.marketplace.salesAmount}
                     protectedAmount={ativo.marketplace.protectedAmount}
-                    availableAmount={ativo.marketplace.availableAmount}
+                    disputedAmount={ativo.marketplace.disputedAmount}
                   />
                 )}
               </HomeCardCarousel>
@@ -116,9 +115,8 @@ export default async function CenariosDevPage() {
 
               {marketplaceAtivo && (
                 <MarketplaceCard
-                  salesAmount={ativo.marketplace.salesAmount}
                   protectedAmount={ativo.marketplace.protectedAmount}
-                  availableAmount={ativo.marketplace.availableAmount}
+                  disputedAmount={ativo.marketplace.disputedAmount}
                 />
               )}
             </>
