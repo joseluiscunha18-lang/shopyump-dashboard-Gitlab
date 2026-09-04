@@ -4,7 +4,7 @@ import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { setScenarioAction } from '@/lib/mocks/setScenarioAction';
 import { ResumoCard } from '@/components/dashboard/ResumoCard';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
-import { PagamentosCard, resolvePagamentosCard, temGatewayDaLoja } from '@/components/dashboard/PagamentosCard';
+import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
 
 export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 
@@ -20,7 +20,11 @@ export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 export default async function CenariosDevPage() {
   const ativo = await getActiveScenario();
   const pagamentos = resolvePagamentosCard(ativo.storePayment, ativo.marketplace);
-  const temGateway = temGatewayDaLoja(ativo.storePayment);
+  // Único critério: qualquer canal financeiro confirmado (gateway OU
+  // Marketplace, em qualquer combinação, grátis ou pago) já é
+  // suficiente para o Pagamentos virar o card principal — ver o
+  // comentário de `resolvePagamentosCard` em PagamentosCard.tsx.
+  const pagamentosEhPrincipal = pagamentos !== null;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10">
@@ -42,12 +46,12 @@ export default async function CenariosDevPage() {
         Moldura de largura fixa (~ um telemóvel) porque o pedido é
         explicitamente mobile-first.
 
-        "Resumo" (Pedidos + Visitas) só aparece quando a loja NÃO tem
-        gateway próprio ligado (`temGatewayDaLoja`) — com gateway
-        (externo ou Shopyump), o Pagamentos passa a ser o card
-        principal da Home e o Resumo some por completo, para não
-        competir com ele. Marketplace sozinho (sem gateway da loja) não
-        conta como "ter gateway" — nesse caso o Resumo continua normal.
+        "Resumo" (Pedidos + Visitas) só aparece quando NÃO existe nenhum
+        canal financeiro confirmado. Assim que há Marketplace ativo OU
+        gateway (externo ou Shopyump) — em qualquer combinação, e
+        independentemente do plano ser grátis ou pago — o Pagamentos
+        passa a ser o card principal, exibido em primeiro lugar, e o
+        Resumo some por completo, para não competir com ele.
 
         `resolvePagamentosCard` decide TUDO sobre o card Pagamentos numa
         função só (ver PagamentosCard.tsx): o número principal, se ele é
@@ -57,12 +61,12 @@ export default async function CenariosDevPage() {
         combinando todos os canais que a Shopyump consegue registar.
         `null` quando não há nenhum canal financeiro confirmado (Free,
         ou pago sem gateway e sem Marketplace) — nesse caso nem
-        renderizamos o card.
+        renderizamos o card, e o Resumo volta a aparecer.
       */}
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
         <div className="mx-auto flex w-full max-w-[380px] flex-col gap-6 rounded-[32px] bg-[#F6F7F9] p-4 ring-1 ring-black/[0.06]">
-          {temGateway ? (
+          {pagamentosEhPrincipal ? (
             <>
               {pagamentos && (
                 <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
@@ -86,10 +90,6 @@ export default async function CenariosDevPage() {
                   protectedAmount={ativo.marketplace.protectedAmount}
                   availableAmount={ativo.marketplace.availableAmount}
                 />
-              )}
-
-              {pagamentos && (
-                <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
               )}
             </>
           )}
