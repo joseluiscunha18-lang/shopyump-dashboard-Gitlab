@@ -4,7 +4,7 @@ import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { setScenarioAction } from '@/lib/mocks/setScenarioAction';
 import { ResumoCard } from '@/components/dashboard/ResumoCard';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
-import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
+import { PagamentosCard, resolvePagamentosCard, temGatewayDaLoja } from '@/components/dashboard/PagamentosCard';
 
 export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 
@@ -20,6 +20,7 @@ export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 export default async function CenariosDevPage() {
   const ativo = await getActiveScenario();
   const pagamentos = resolvePagamentosCard(ativo.storePayment, ativo.marketplace);
+  const temGateway = temGatewayDaLoja(ativo.storePayment);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10">
@@ -41,10 +42,12 @@ export default async function CenariosDevPage() {
         Moldura de largura fixa (~ um telemóvel) porque o pedido é
         explicitamente mobile-first.
 
-        "Resumo" (Pedidos + Visitas) é SEMPRE seguro de mostrar,
-        independentemente de plano ou canal financeiro — nunca duplica
-        nada do card Pagamentos, que agora é o único lugar onde
-        "dinheiro" aparece.
+        "Resumo" (Pedidos + Visitas) só aparece quando a loja NÃO tem
+        gateway próprio ligado (`temGatewayDaLoja`) — com gateway
+        (externo ou Shopyump), o Pagamentos passa a ser o card
+        principal da Home e o Resumo some por completo, para não
+        competir com ele. Marketplace sozinho (sem gateway da loja) não
+        conta como "ter gateway" — nesse caso o Resumo continua normal.
 
         `resolvePagamentosCard` decide TUDO sobre o card Pagamentos numa
         função só (ver PagamentosCard.tsx): o número principal, se ele é
@@ -59,18 +62,36 @@ export default async function CenariosDevPage() {
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
         <div className="mx-auto flex w-full max-w-[380px] flex-col gap-6 rounded-[32px] bg-[#F6F7F9] p-4 ring-1 ring-black/[0.06]">
-          <ResumoCard ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
+          {temGateway ? (
+            <>
+              {pagamentos && (
+                <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
+              )}
 
-          {ativo.marketplace.status === 'active' && (
-            <MarketplaceCard
-              salesAmount={ativo.marketplace.salesAmount}
-              protectedAmount={ativo.marketplace.protectedAmount}
-              availableAmount={ativo.marketplace.availableAmount}
-            />
-          )}
+              {ativo.marketplace.status === 'active' && (
+                <MarketplaceCard
+                  salesAmount={ativo.marketplace.salesAmount}
+                  protectedAmount={ativo.marketplace.protectedAmount}
+                  availableAmount={ativo.marketplace.availableAmount}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <ResumoCard ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
 
-          {pagamentos && (
-            <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
+              {ativo.marketplace.status === 'active' && (
+                <MarketplaceCard
+                  salesAmount={ativo.marketplace.salesAmount}
+                  protectedAmount={ativo.marketplace.protectedAmount}
+                  availableAmount={ativo.marketplace.availableAmount}
+                />
+              )}
+
+              {pagamentos && (
+                <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
+              )}
+            </>
           )}
         </div>
       </div>
