@@ -4,7 +4,7 @@ import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { setScenarioAction } from '@/lib/mocks/setScenarioAction';
 import { VisaoGeral } from '@/components/dashboard/VisaoGeral';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
-import { FinanceiroCard } from '@/components/dashboard/FinanceiroCard';
+import { PagamentosCard, buildPagamentosBreakdown } from '@/components/dashboard/PagamentosCard';
 
 export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 
@@ -52,13 +52,15 @@ export default async function CenariosDevPage() {
         fica em 0 nesses cenários (ver comentário no FREE_MARKETPLACE_ACTIVE
         em homeScenarios.ts).
 
-        Gateway externo NÃO tem um módulo financeiro próprio abaixo da
-        Visão geral (o antigo PaymentsCard foi removido): o valor
-        confirmado pelo gateway já é exatamente o que aparece em "Vendas"
-        — mostrar os dois seria repetir o mesmo número duas vezes. Só o
-        gateway Shopyump tem módulo extra (FinanceiroCard), porque ali
-        existe informação adicional que a Vendas não cobre (disponível
-        para saque vs. em processamento).
+        PagamentosCard é a MESMA estrutura visual para os dois tipos de
+        gateway — só o número principal + label mudam de sentido:
+        "Vendas este mês" no externo (a Shopyump não custodia esse
+        dinheiro, só confirma), "Disponível para saque" no Shopyump
+        (saldo real). O bloco "Hoje/Ontem/Este mês" por baixo é sempre
+        montado por `buildPagamentosBreakdown`, que descarta qualquer
+        período sem dado real em vez de inventar — por isso o card pode
+        aparecer com 1, 2 ou 3 blocos dependendo do cenário, sem que o
+        layout mude de altura.
       */}
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
@@ -79,10 +81,19 @@ export default async function CenariosDevPage() {
             />
           )}
 
+          {ativo.storePayment.provider === 'external' && ativo.storePayment.connected && (
+            <PagamentosCard
+              amount={ativo.store.salesAmount}
+              amountLabel="Vendas este mês"
+              breakdown={buildPagamentosBreakdown(ativo.storePayment)}
+            />
+          )}
+
           {ativo.storePayment.provider === 'shopyump' && ativo.storePayment.connected && (
-            <FinanceiroCard
-              availableAmount={ativo.storePayment.availableAmount}
-              processingAmount={ativo.storePayment.processingAmount}
+            <PagamentosCard
+              amount={ativo.storePayment.availableAmount}
+              amountLabel="Disponível para saque"
+              breakdown={buildPagamentosBreakdown(ativo.storePayment)}
             />
           )}
         </div>
