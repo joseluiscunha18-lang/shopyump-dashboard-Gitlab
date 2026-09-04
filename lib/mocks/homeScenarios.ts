@@ -106,6 +106,9 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       availableAmount: 0, // nunca preenchido para 'external' — ver §7/§11.
       processingAmount: 0,
       confirmedPayments: 12500,
+      salesToday: 620,
+      salesYesterday: 980,
+      salesThisMonth: 12500,
     },
     marketplace: MARKETPLACE_INATIVO,
   },
@@ -123,6 +126,9 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       availableAmount: 8000,
       processingAmount: 4500,
       confirmedPayments: 0,
+      salesToday: 540,
+      salesYesterday: 910,
+      salesThisMonth: 12500,
     },
     marketplace: MARKETPLACE_INATIVO,
   },
@@ -159,6 +165,9 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       availableAmount: 14200,
       processingAmount: 10600,
       confirmedPayments: 0,
+      salesToday: 1120,
+      salesYesterday: 2380,
+      salesThisMonth: 24800,
     },
     marketplace: {
       status: 'active',
@@ -173,9 +182,10 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
 
   // Mesma combinação do cenário acima (loja própria + Marketplace, ambos
   // ativos), mas com gateway EXTERNO em vez do gateway Shopyump — por
-  // isso aparece PaymentsCard ("Confirmados") na Home em vez de
-  // FinanceiroCard, e as vendas da loja (`store.salesAmount`) não são
-  // dinheiro custodiado pela Shopyump (§7/§9), só as do Marketplace são.
+  // isso o PagamentosCard aqui mostra "Vendas este mês" (não é dinheiro
+  // custodiado pela Shopyump, só confirmação — §7/§9), enquanto o card
+  // Shopyump do cenário acima mostra "Disponível para saque" (saldo
+  // real). O MarketplaceCard aparece igual nos dois, por baixo.
   PAID_EXTERNAL_GATEWAY_AND_MARKETPLACE: {
     id: 'PAID_EXTERNAL_GATEWAY_AND_MARKETPLACE',
     label: 'Pago · gateway externo + Marketplace',
@@ -188,6 +198,9 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       availableAmount: 0, // nunca preenchido para 'external' — ver §7/§11.
       processingAmount: 0,
       confirmedPayments: 15200,
+      salesToday: 1850,
+      salesYesterday: 3200,
+      salesThisMonth: 15200,
     },
     marketplace: {
       status: 'active',
