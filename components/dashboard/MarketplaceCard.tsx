@@ -40,8 +40,7 @@ export function MarketplaceCard({ protectedAmount, disputedAmount, refundedAmoun
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Marketplace</h2>
+      <div className="mb-3 flex items-center justify-end px-1">
         <Badge tone="success">Ativo</Badge>
       </div>
 
