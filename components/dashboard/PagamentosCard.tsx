@@ -51,8 +51,6 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
 
   return (
     <div className="flex h-full flex-col">
-      <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pagamentos</h2>
-
       <div className={cn('flex flex-1 flex-col justify-between rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
         <div className="flex flex-col gap-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{amountLabel}</p>
