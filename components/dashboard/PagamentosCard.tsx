@@ -125,6 +125,18 @@ function somarDefinidos(...valores: Array<number | undefined>): number | undefin
 }
 
 /**
+ * Verdadeiro quando a loja tem um gateway PRÓPRIO ligado (externo ou
+ * Shopyump) — nesse caso o "Resumo" (Pedidos/Visitas) deixa de aparecer
+ * e o card "Pagamentos" passa a ser o principal da Home. Marketplace
+ * sozinho (sem gateway da loja) NÃO conta aqui — nesses cenários o
+ * Resumo continua a aparecer normalmente, com o Pagamentos/Marketplace
+ * por baixo dele.
+ */
+export function temGatewayDaLoja(storePayment: Pick<StorePaymentSource, 'provider' | 'connected'>): boolean {
+  return storePayment.provider !== 'none' && storePayment.connected;
+}
+
+/**
  * Decide TUDO que o card Pagamentos precisa mostrar — número principal,
  * o que ele significa, e a quebra Hoje/Ontem/Este mês — a partir do
  * gateway da loja e do Marketplace. `null` quando não há nenhum canal
