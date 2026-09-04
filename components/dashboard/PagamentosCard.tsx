@@ -38,16 +38,22 @@ interface PagamentosCardProps {
  * a partir do gateway/Marketplace da loja. Ver MarketplaceCard para o
  * módulo equivalente do Marketplace com semântica própria (Vendas/Em
  * proteção/Disponível), que continua a existir separadamente e NÃO usa
- * este componente.
+ * este componente — mas partilha deliberadamente a mesma hierarquia
+ * hero+breakdown, padding e raio, porque os dois vivem lado a lado no
+ * mesmo carrossel (ver HomeCardCarousel) e precisam de ter exatamente a
+ * mesma altura. `h-full`/`flex-1` aqui servem só para isso: quando o
+ * carrossel esticar este card para acompanhar a altura do vizinho, o
+ * espaço extra vai sempre para o `justify-between` interno (nunca para
+ * aumentar a fonte ou inventar espaçamento à parte).
  */
 export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MT' }: PagamentosCardProps) {
   const temBreakdown = breakdown.length > 0;
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pagamentos</h2>
 
-      <div className={cn('rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
+      <div className={cn('flex flex-1 flex-col justify-between rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
         <div className="flex flex-col gap-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{amountLabel}</p>
           <p className="font-display text-[26px] font-black leading-none tracking-tight text-ink sm:text-[28px]">
