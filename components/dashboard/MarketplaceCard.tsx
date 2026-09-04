@@ -3,9 +3,8 @@ import { formatNumberDot } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
 interface MarketplaceCardProps {
-  salesAmount: number;
   protectedAmount: number;
-  availableAmount: number;
+  disputedAmount: number;
   currencyLabel?: string;
 }
 
@@ -13,27 +12,29 @@ interface MarketplaceCardProps {
  * Módulo do Marketplace (§8 do pedido) — só deve ser renderizado pelo
  * chamador quando `marketplace.status === 'active'`.
  *
- * Estrutura interna deliberadamente ESPELHADA na do PagamentosCard
- * (mesmo padding, raio, `ELEVATED_SURFACE`, e a mesma hierarquia
- * hero+breakdown: um número em destaque em cima, blocos secundários em
- * baixo separados por `border-t`) — os dois cards vivem lado a lado no
- * mesmo carrossel (ver HomeCardCarousel) e precisam de parecer um único
- * sistema desenhado em conjunto, com a MESMA altura, em vez de dois
- * desenhos diferentes a competir. "Disponível para saque" (a parte já
- * liberada — o mesmo valor que entra no saldo Shopyump combinado, ver
- * `resolvePagamentosCard`) é o número mais acionável para o vendedor,
- * por isso é o que fica em destaque; Vendas e Em proteção continuam a
- * existir tal e qual, só que como breakdown secundário por baixo — a
- * mesma leitura de antes (3 valores, nenhum escondido), só reorganizada
- * para ter o mesmo peso visual do Pagamentos. `h-full`/`flex-1`/
- * `justify-between` só existem para o card esticar com o vizinho sem
- * aumentar fonte nem inventar espaçamento — o espaço extra vai sempre
- * para o respiro entre o hero e o breakdown.
+ * Conteúdo reduzido, de propósito, a só duas linhas — "Em proteção" e
+ * "Em disputa" — no mesmo formato "valor · rótulo" já usado noutros
+ * sítios do produto (ver ProductRow.tsx: "{preço} MZN · {categoria}").
+ * "Vendas" e "Disponível para saque" deixaram de aparecer aqui: o
+ * primeiro nunca teve ação nenhuma associada, e o segundo já vive
+ * combinado no card Pagamentos (ver `resolvePagamentosCard` em
+ * PagamentosCard.tsx, que soma `marketplace.availableAmount` lá) — não
+ * fazia sentido mostrar o mesmo "disponível para saque" duas vezes. Os
+ * dois valores que sobram aqui são exatamente os que só fazem sentido
+ * dentro do Marketplace: dinheiro ainda retido (proteção) e dinheiro
+ * contestado por um comprador (disputa) — nenhum dos dois é saldo
+ * sacável, por isso não pertencem ao Pagamentos.
+ *
+ * `h-full`/`flex-1`/`justify-center` continuam a existir só para este
+ * card acompanhar a altura do vizinho no carrossel (ver
+ * HomeCardCarousel) sem aumentar a fonte nem inventar espaçamento — com
+ * menos conteúdo do que o Pagamentos, o espaço extra vira respiro
+ * vertical entre as duas linhas, nunca texto maior.
  */
-export function MarketplaceCard({ salesAmount, protectedAmount, availableAmount, currencyLabel = 'MT' }: MarketplaceCardProps) {
-  const breakdown = [
-    { label: 'Vendas', valor: salesAmount },
+export function MarketplaceCard({ protectedAmount, disputedAmount, currencyLabel = 'MT' }: MarketplaceCardProps) {
+  const itens = [
     { label: 'Em proteção', valor: protectedAmount },
+    { label: 'Em disputa', valor: disputedAmount },
   ];
 
   return (
@@ -43,24 +44,13 @@ export function MarketplaceCard({ salesAmount, protectedAmount, availableAmount,
         <Badge tone="success">Ativo</Badge>
       </div>
 
-      <div className={cn('flex flex-1 flex-col justify-between rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
-        <div className="flex flex-col gap-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Disponível para saque</p>
-          <p className="font-display text-[26px] font-black leading-none tracking-tight text-ink sm:text-[28px]">
-            {formatNumberDot(availableAmount)} <span className="text-[14px] font-bold text-slate-400">{currencyLabel}</span>
+      <div className={cn('flex flex-1 flex-col justify-center gap-3 rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
+        {itens.map((item) => (
+          <p key={item.label} className="truncate text-[16px] font-black tracking-tight text-ink sm:text-[17px]">
+            {formatNumberDot(item.valor)} <span className="font-bold text-slate-400">{currencyLabel}</span>{' '}
+            <span className="font-semibold text-slate-400">· {item.label}</span>
           </p>
-        </div>
-
-        <div className="mt-4 flex items-center border-t border-slate-100 pt-3.5">
-          {breakdown.map((item, i) => (
-            <div key={item.label} className={cn('flex flex-1 flex-col min-w-0', i > 0 && 'ml-3 border-l border-slate-100 pl-3')}>
-              <p className="truncate text-[13.5px] font-black tracking-tight text-ink">
-                {formatNumberDot(item.valor)} <span className="text-[10.5px] font-bold text-slate-400">{currencyLabel}</span>
-              </p>
-              <p className="truncate text-[10.5px] font-semibold text-slate-400">{item.label}</p>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     </div>
   );
