@@ -88,6 +88,11 @@ export interface MockMarketplaceState {
   /** Só ESTA parte entra no "Disponível para saque" combinado do card
    *  Pagamentos — protectedAmount nunca entra (ver §"CASO IMPORTANTE"). */
   availableAmount: number;
+  /** "Em disputa" na UI — parte de `protectedAmount` que o comprador
+   *  contestou (reclamação/chargeback em aberto), por isso ainda mais
+   *  travada do que a proteção normal. Mostrado no MarketplaceCard ao
+   *  lado de "Em proteção", nunca somado a `availableAmount`. */
+  disputedAmount: number;
   payoutStatus: MarketplacePayoutStatus;
   /** Quebra diária opcional — mesma regra do storePayment: omitir
    *  quando não houver dado real, nunca inventar 0. */
