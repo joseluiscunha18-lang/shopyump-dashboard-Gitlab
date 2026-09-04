@@ -30,13 +30,15 @@ interface PagamentosCardProps {
 }
 
 /**
- * Card "Pagamentos" — uma ÚNICA estrutura visual para os dois tipos de
- * gateway de loja própria (externo e Shopyump). O layout nunca muda de
- * forma nem de altura entre eles; só o conteúdo (número principal +
- * label + quantos blocos de período existem) se adapta. Ver
- * MarketplaceCard para o módulo equivalente do Marketplace, que tem
- * semântica própria (Vendas/Em proteção/Disponível) e não usa este
- * componente.
+ * Card "Pagamentos" — uma ÚNICA estrutura visual para qualquer
+ * combinação de gateway (externo ou Shopyump) e Marketplace. O layout
+ * nunca muda de forma nem de altura entre os casos; só o conteúdo
+ * (número principal + label + quantos blocos de período existem) se
+ * adapta — ver `resolvePagamentosCard` abaixo, que decide esse conteúdo
+ * a partir do gateway/Marketplace da loja. Ver MarketplaceCard para o
+ * módulo equivalente do Marketplace com semântica própria (Vendas/Em
+ * proteção/Disponível), que continua a existir separadamente e NÃO usa
+ * este componente.
  */
 export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MT' }: PagamentosCardProps) {
   const temBreakdown = breakdown.length > 0;
@@ -77,12 +79,10 @@ interface PagamentosBreakdownSource {
 }
 
 /**
- * Monta o array "Hoje/Ontem/Este mês" a partir dos campos opcionais do
- * gateway (ver MockStorePaymentState), pulando qualquer período sem
- * dado real — nunca inventa um valor só para preencher as 3 colunas.
- * Colocado aqui (e não só no mock) porque é exatamente a mesma regra
- * que a fonte de dados real vai seguir quando o gateway existir de
- * facto: um adaptador, não lógica de mock.
+ * Monta o array "Hoje/Ontem/Este mês" a partir de campos opcionais já
+ * combinados (ver `resolvePagamentosCard`), pulando qualquer período
+ * sem dado real — nunca inventa um valor só para preencher as 3
+ * colunas.
  */
 export function buildPagamentosBreakdown(source: PagamentosBreakdownSource): PagamentosBreakdownItem[] {
   const itens: PagamentosBreakdownItem[] = [];
@@ -90,4 +90,97 @@ export function buildPagamentosBreakdown(source: PagamentosBreakdownSource): Pag
   if (source.salesYesterday !== undefined) itens.push({ label: 'Ontem', value: source.salesYesterday });
   if (source.salesThisMonth !== undefined) itens.push({ label: 'Este mês', value: source.salesThisMonth });
   return itens;
+}
+
+interface StorePaymentSource {
+  provider: 'none' | 'shopyump' | 'external';
+  connected: boolean;
+  /** Só usado quando provider === 'shopyump' — ver §7/§8 da spec original. */
+  availableAmount: number;
+  salesToday?: number;
+  salesYesterday?: number;
+  salesThisMonth?: number;
+}
+
+interface MarketplaceSource {
+  status: string;
+  /** Só a parte já liberada entra no saldo — "Em proteção" nunca conta aqui. */
+  availableAmount: number;
+  /** Tratado como a contribuição de "Este mês" desse canal. */
+  salesAmount: number;
+  salesToday?: number;
+  salesYesterday?: number;
+}
+
+export interface ResolvedPagamentosCard {
+  amount: number;
+  amountLabel: string;
+  breakdown: PagamentosBreakdownItem[];
+}
+
+function somarDefinidos(...valores: Array<number | undefined>): number | undefined {
+  const definidos = valores.filter((v): v is number => v !== undefined);
+  if (definidos.length === 0) return undefined;
+  return definidos.reduce((total, v) => total + v, 0);
+}
+
+/**
+ * Decide TUDO que o card Pagamentos precisa mostrar — número principal,
+ * o que ele significa, e a quebra Hoje/Ontem/Este mês — a partir do
+ * gateway da loja e do Marketplace. `null` quando não há nenhum canal
+ * financeiro confirmado (Free, ou pago sem gateway e sem Marketplace):
+ * nesse caso o card nem deve ser renderizado.
+ *
+ * Regras (ver pedido "NOVA LÓGICA DO CARD FINANCEIRO DA HOME"):
+ * - Dinheiro em gateway EXTERNO nunca entra no saldo Shopyump — o
+ *   vendedor saca direto lá. Sozinho, vira "Vendas este mês".
+ * - Gateway Shopyump e/ou Marketplace (só a parte já liberada, nunca
+ *   "Em proteção"/bloqueado/em disputa) somam para virar "Disponível
+ *   para saque" — esse é o único dinheiro que a Shopyump de facto
+ *   controla e o vendedor pode sacar agora.
+ * - Ter QUALQUER saldo Shopyump (mesmo 0, se o canal está genuinamente
+ *   ligado) tem prioridade sobre mostrar "Vendas este mês" — é a leitura
+ *   mais completa da situação financeira do vendedor.
+ * - Hoje/Ontem/Este mês são SEMPRE vendas (nunca saldo), somadas de
+ *   todos os canais que a Shopyump consegue registar — gateway da loja
+ *   (externo ou Shopyump) + Marketplace — independentemente de qual
+ *   deles decide o número principal.
+ */
+export function resolvePagamentosCard(
+  storePayment: StorePaymentSource,
+  marketplace: MarketplaceSource
+): ResolvedPagamentosCard | null {
+  const gatewayShopyumpAtivo = storePayment.provider === 'shopyump' && storePayment.connected;
+  const gatewayExternoAtivo = storePayment.provider === 'external' && storePayment.connected;
+  const marketplaceAtivo = marketplace.status === 'active';
+  const temSaldoShopyump = gatewayShopyumpAtivo || marketplaceAtivo;
+
+  // "Este mês" combina o gateway da própria loja (seja qual for) com o
+  // Marketplace — são vendas, e a Shopyump regista as duas coisas.
+  const breakdown = buildPagamentosBreakdown({
+    salesToday: somarDefinidos(
+      gatewayShopyumpAtivo || gatewayExternoAtivo ? storePayment.salesToday : undefined,
+      marketplaceAtivo ? marketplace.salesToday : undefined
+    ),
+    salesYesterday: somarDefinidos(
+      gatewayShopyumpAtivo || gatewayExternoAtivo ? storePayment.salesYesterday : undefined,
+      marketplaceAtivo ? marketplace.salesYesterday : undefined
+    ),
+    salesThisMonth: somarDefinidos(
+      gatewayShopyumpAtivo || gatewayExternoAtivo ? storePayment.salesThisMonth : undefined,
+      marketplaceAtivo ? marketplace.salesAmount : undefined
+    ),
+  });
+
+  if (temSaldoShopyump) {
+    const saldoGateway = gatewayShopyumpAtivo ? storePayment.availableAmount : 0;
+    const saldoMarketplace = marketplaceAtivo ? marketplace.availableAmount : 0;
+    return { amount: saldoGateway + saldoMarketplace, amountLabel: 'Disponível para saque', breakdown };
+  }
+
+  if (gatewayExternoAtivo) {
+    return { amount: storePayment.salesThisMonth ?? 0, amountLabel: 'Vendas este mês', breakdown };
+  }
+
+  return null;
 }
