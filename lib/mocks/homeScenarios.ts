@@ -34,7 +34,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Grátis · loja nova, sem produtos',
     user: { plan: 'free', firstProductPublished: false },
     onboarding: { personalizeCompleted: false, shareCompleted: false },
-    store: { productsCount: 0, visits: 0, ordersCount: 0, salesAmount: 0, growthPercent: 0 },
+    store: { productsCount: 0, visits: 0, ordersCount: 0 },
     storePayment: SEM_PAGAMENTO_LOJA,
     marketplace: MARKETPLACE_INATIVO,
   },
@@ -45,7 +45,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Grátis · primeiro produto publicado',
     user: { plan: 'free', firstProductPublished: true },
     onboarding: { personalizeCompleted: false, shareCompleted: false },
-    store: { productsCount: 1, visits: 3, ordersCount: 0, salesAmount: 0, growthPercent: 0 },
+    store: { productsCount: 1, visits: 3, ordersCount: 0 },
     storePayment: SEM_PAGAMENTO_LOJA,
     marketplace: MARKETPLACE_INATIVO,
   },
@@ -56,7 +56,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Grátis · loja ativa, sem gateway',
     user: { plan: 'free', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 12, visits: 248, ordersCount: 5, salesAmount: 0, growthPercent: 0 },
+    store: { productsCount: 12, visits: 248, ordersCount: 5 },
     storePayment: SEM_PAGAMENTO_LOJA,
     marketplace: MARKETPLACE_INATIVO,
   },
@@ -69,7 +69,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Grátis · Marketplace ativo',
     user: { plan: 'free', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 8, visits: 0, ordersCount: 6, salesAmount: 0, growthPercent: 0 },
+    store: { productsCount: 8, visits: 0, ordersCount: 6 },
     storePayment: SEM_PAGAMENTO_LOJA,
     marketplace: {
       status: 'active',
@@ -79,6 +79,8 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       protectedAmount: 2500,
       availableAmount: 5000,
       payoutStatus: 'none',
+      salesToday: 380,
+      salesYesterday: 610,
     },
   },
 
@@ -88,7 +90,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Pago · sem gateway ligado',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 15, visits: 420, ordersCount: 9, salesAmount: 0, growthPercent: 0 },
+    store: { productsCount: 15, visits: 420, ordersCount: 9 },
     storePayment: SEM_PAGAMENTO_LOJA,
     marketplace: MARKETPLACE_INATIVO,
   },
@@ -99,7 +101,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Pago · gateway externo conectado',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 18, visits: 610, ordersCount: 14, salesAmount: 12500, growthPercent: 18.4 },
+    store: { productsCount: 18, visits: 610, ordersCount: 14 },
     storePayment: {
       provider: 'external',
       connected: true,
@@ -119,7 +121,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Pago · gateway Shopyump ativo',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 20, visits: 850, ordersCount: 17, salesAmount: 12500, growthPercent: 9.6 },
+    store: { productsCount: 20, visits: 850, ordersCount: 17 },
     storePayment: {
       provider: 'shopyump',
       connected: true,
@@ -139,7 +141,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Pago · Marketplace ativo, sem gateway',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 22, visits: 90, ordersCount: 11, salesAmount: 0, growthPercent: 0 },
+    store: { productsCount: 22, visits: 90, ordersCount: 11 },
     storePayment: SEM_PAGAMENTO_LOJA,
     marketplace: {
       status: 'active',
@@ -149,6 +151,8 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       protectedAmount: 1200,
       availableAmount: 6400,
       payoutStatus: 'requested',
+      salesToday: 420,
+      salesYesterday: 730,
     },
   },
 
@@ -158,7 +162,7 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
     label: 'Pago · gateway Shopyump + Marketplace',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 25, visits: 1240, ordersCount: 32, salesAmount: 24800, growthPercent: 24.8 },
+    store: { productsCount: 25, visits: 1240, ordersCount: 32 },
     storePayment: {
       provider: 'shopyump',
       connected: true,
@@ -175,23 +179,27 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       ordersCount: 32,
       salesAmount: 10000,
       protectedAmount: 0,
-      availableAmount: 0, // já refletido no bloco Financeiro consolidado — ver §13, evitar dupla contagem.
+      availableAmount: 0, // já refletido no saldo consolidado do gateway Shopyump — ver resolvePagamentosCard, evitar dupla contagem.
       payoutStatus: 'paid',
+      salesToday: 480,
+      salesYesterday: 890,
     },
   },
 
   // Mesma combinação do cenário acima (loja própria + Marketplace, ambos
-  // ativos), mas com gateway EXTERNO em vez do gateway Shopyump — por
-  // isso o PagamentosCard aqui mostra "Vendas este mês" (não é dinheiro
-  // custodiado pela Shopyump, só confirmação — §7/§9), enquanto o card
-  // Shopyump do cenário acima mostra "Disponível para saque" (saldo
-  // real). O MarketplaceCard aparece igual nos dois, por baixo.
+  // ativos), mas com gateway EXTERNO em vez do gateway Shopyump — este é
+  // o "CASO IMPORTANTE" do pedido: o dinheiro da loja própria (gateway
+  // externo) NÃO entra no saldo Shopyump, mas o dinheiro já liberado
+  // pelo Marketplace (`marketplace.availableAmount`) entra sim. Por
+  // isso o card Pagamentos aqui mostra "Disponível para saque" (só a
+  // parte do Marketplace), e não "Vendas este mês" — ver
+  // resolvePagamentosCard em PagamentosCard.tsx.
   PAID_EXTERNAL_GATEWAY_AND_MARKETPLACE: {
     id: 'PAID_EXTERNAL_GATEWAY_AND_MARKETPLACE',
     label: 'Pago · gateway externo + Marketplace',
     user: { plan: 'paid', firstProductPublished: true },
     onboarding: { personalizeCompleted: true, shareCompleted: true },
-    store: { productsCount: 23, visits: 730, ordersCount: 21, salesAmount: 15200, growthPercent: 15.2 },
+    store: { productsCount: 23, visits: 730, ordersCount: 21 },
     storePayment: {
       provider: 'external',
       connected: true,
@@ -210,6 +218,8 @@ export const HOME_MOCK_SCENARIOS: Record<MockScenarioId, MockHomeScenario> = {
       protectedAmount: 1800,
       availableAmount: 4300,
       payoutStatus: 'pending',
+      salesToday: 310,
+      salesYesterday: 540,
     },
   },
 };
