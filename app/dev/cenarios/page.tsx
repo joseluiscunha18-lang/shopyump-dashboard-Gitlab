@@ -6,6 +6,7 @@ import { ResumoCard } from '@/components/dashboard/ResumoCard';
 import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
 import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
+import { HomeCardCarousel } from '@/components/dashboard/HomeCardCarousel';
 
 export const metadata: Metadata = { title: 'Cenários (dev) | Shopyump' };
 
@@ -71,7 +72,7 @@ export default async function CenariosDevPage() {
         renderizamos o card, e o Resumo volta a aparecer.
 
         "Resumo da loja" (Pedidos + Visitas, ver ResumoLojaSecao) é
-        diferente do "Resumo" acima: aparece por baixo do Marketplace,
+        diferente do "Resumo" acima: aparece por baixo do carrossel,
         não troca de lugar com o Pagamentos, e NÃO é um card — é uma
         secção complementar mais discreta. Só existe nos dois cenários
         em que o Marketplace está ativo mas a loja própria não tem
@@ -79,23 +80,31 @@ export default async function CenariosDevPage() {
         plano — assim que há também um gateway próprio ligado, os
         Pedidos/Visitas da loja já não têm o mesmo destaque e a secção
         não aparece.
+
+        Pagamentos + Marketplace (quando os dois existem) deixam de se
+        empilhar verticalmente e passam a viver num carrossel horizontal
+        (ver HomeCardCarousel) — nenhum dos dois cards divide o ecrã ao
+        meio, o card em foco ocupa quase toda a largura e o outro
+        espreita na borda, deslize manual, sem trocar sozinho.
       */}
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
         <div className="mx-auto flex w-full max-w-[380px] flex-col gap-6 rounded-[32px] bg-[#F6F7F9] p-4 ring-1 ring-black/[0.06]">
           {pagamentosEhPrincipal ? (
             <>
-              {pagamentos && (
-                <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
-              )}
+              <HomeCardCarousel>
+                {pagamentos && (
+                  <PagamentosCard amount={pagamentos.amount} amountLabel={pagamentos.amountLabel} breakdown={pagamentos.breakdown} />
+                )}
 
-              {marketplaceAtivo && (
-                <MarketplaceCard
-                  salesAmount={ativo.marketplace.salesAmount}
-                  protectedAmount={ativo.marketplace.protectedAmount}
-                  availableAmount={ativo.marketplace.availableAmount}
-                />
-              )}
+                {marketplaceAtivo && (
+                  <MarketplaceCard
+                    salesAmount={ativo.marketplace.salesAmount}
+                    protectedAmount={ativo.marketplace.protectedAmount}
+                    availableAmount={ativo.marketplace.availableAmount}
+                  />
+                )}
+              </HomeCardCarousel>
 
               {mostrarResumoLoja && (
                 <ResumoLojaSecao ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
