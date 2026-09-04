@@ -37,17 +37,17 @@ export interface MockOnboardingState {
 }
 
 /** Indicadores operacionais/comerciais — SEMPRE seguros de mostrar,
- *  independentemente de haver ou não fluxo financeiro ativo (§5, §9). */
+ *  independentemente de haver ou não fluxo financeiro ativo (§5, §9).
+ *  NÃO tem mais `salesAmount`/`growthPercent`: "Vendas" deixou de viver
+ *  aqui — agora é inteiramente responsabilidade do card "Pagamentos"
+ *  (ver PagamentosCard.tsx / resolvePagamentosCard), que só existe
+ *  quando há um canal financeiro (gateway ou Marketplace) confirmado.
+ *  Mostrar o mesmo número em dois lugares diferentes era exatamente a
+ *  duplicação que a nova lógica veio resolver. */
 export interface MockStoreState {
   productsCount: number;
   visits: number;
   ordersCount: number;
-  /** "Vendas" — valor de pedidos registados. Nunca confundir com saldo (§6). */
-  salesAmount: number;
-  /** Variação percentual de `salesAmount` vs. o mês anterior — só faz
-   *  sentido mostrar quando `salesAmount > 0` (ver VisaoGeral.tsx); nos
-   *  cenários sem vendas fica a 0 e é simplesmente ignorado pela UI. */
-  growthPercent: number;
 }
 
 /** Pagamentos da LOJA PRÓPRIA (gateway Shopyump ou externo). Distinto de
@@ -80,11 +80,19 @@ export interface MockMarketplaceState {
   status: MarketplaceStatus;
   productsCount: number;
   ordersCount: number;
+  /** Total de vendas do Marketplace — funciona como o "Este mês" desse
+   *  canal no card Pagamentos (ver resolvePagamentosCard). */
   salesAmount: number;
   /** "Em proteção" na UI — dinheiro vendido mas ainda não liberado (§7). */
   protectedAmount: number;
+  /** Só ESTA parte entra no "Disponível para saque" combinado do card
+   *  Pagamentos — protectedAmount nunca entra (ver §"CASO IMPORTANTE"). */
   availableAmount: number;
   payoutStatus: MarketplacePayoutStatus;
+  /** Quebra diária opcional — mesma regra do storePayment: omitir
+   *  quando não houver dado real, nunca inventar 0. */
+  salesToday?: number;
+  salesYesterday?: number;
 }
 
 export type MockScenarioId =
