@@ -35,6 +35,12 @@ export default async function CenariosDevPage() {
   // Pedidos/Visitas da loja já não têm o mesmo destaque e a secção
   // some.
   const mostrarResumoLoja = ativo.storePayment.provider === 'none';
+  // Antes do primeiro produto publicado, a loja ainda não tem nada para
+  // vender — não faz sentido mostrar "Disponível para saque" nem
+  // "Resumo da loja" nesse momento (ver FREE_NEW/FREE_FIRST_PRODUCT:
+  // o segundo já tem produto mas ainda sem vendas, por isso o corte é
+  // exatamente em `firstProductPublished`, não em `marcosRestantes`).
+  const mostrarBlocoFinanceiro = ativo.user.firstProductPublished;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-10">
@@ -55,6 +61,13 @@ export default async function CenariosDevPage() {
 
         Moldura de largura fixa (~ um telemóvel) porque o pedido é
         explicitamente mobile-first.
+
+        Antes do primeiro produto publicado (`user.firstProductPublished
+        === false`), NENHUM card financeiro aparece — nem Pagamentos,
+        nem Marketplace, nem "Resumo da loja". A loja ainda não tem
+        nada para vender, então "Disponível para saque" ou qualquer
+        indicador financeiro não faz sentido nesse momento (ver
+        `mostrarBlocoFinanceiro` acima).
 
         Pagamentos é sempre o card principal, em primeiro lugar — mesmo
         sem nenhum canal financeiro confirmado (Free novo, ou pago sem
@@ -88,25 +101,33 @@ export default async function CenariosDevPage() {
       <div>
         <h2 className="mb-3 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">Pré-visualização do Home</h2>
         <div className="mx-auto flex w-full max-w-[380px] flex-col gap-6 rounded-[32px] bg-[#F6F7F9] p-4 ring-1 ring-black/[0.06]">
-          <HomeCardCarousel>
-            <PagamentosCard
-              amount={pagamentos.amount}
-              amountLabel={pagamentos.amountLabel}
-              breakdown={pagamentos.breakdown}
-              hint={pagamentos.hint}
-            />
+          {mostrarBlocoFinanceiro ? (
+            <>
+              <HomeCardCarousel>
+                <PagamentosCard
+                  amount={pagamentos.amount}
+                  amountLabel={pagamentos.amountLabel}
+                  breakdown={pagamentos.breakdown}
+                  hint={pagamentos.hint}
+                />
 
-            {marketplaceAtivo && (
-              <MarketplaceCard
-                protectedAmount={ativo.marketplace.protectedAmount}
-                disputedAmount={ativo.marketplace.disputedAmount}
-                refundedAmount={ativo.marketplace.refundedAmount}
-              />
-            )}
-          </HomeCardCarousel>
+                {marketplaceAtivo && (
+                  <MarketplaceCard
+                    protectedAmount={ativo.marketplace.protectedAmount}
+                    disputedAmount={ativo.marketplace.disputedAmount}
+                    refundedAmount={ativo.marketplace.refundedAmount}
+                  />
+                )}
+              </HomeCardCarousel>
 
-          {mostrarResumoLoja && (
-            <ResumoLojaSecao ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
+              {mostrarResumoLoja && (
+                <ResumoLojaSecao ordersCount={ativo.store.ordersCount} visits={ativo.store.visits} />
+              )}
+            </>
+          ) : (
+            <p className="px-1 text-[13px] font-medium text-slate-400">
+              Sem cards financeiros antes do primeiro produto publicado.
+            </p>
           )}
         </div>
       </div>
