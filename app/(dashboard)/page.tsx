@@ -66,6 +66,13 @@ export default async function DashboardHomePage() {
   // tem nenhum gateway ligado (nem externo, nem Shopyump) — com ou sem
   // Marketplace ativo.
   const mostrarResumoLoja = ativo.storePayment.provider === 'none';
+  // Antes do primeiro produto publicado a loja ainda não tem nada para
+  // vender — nenhum card financeiro (Pagamentos/Marketplace/Resumo da
+  // loja) faz sentido nesse momento. Usa o marco REAL (`marcos`,
+  // vindo do Supabase), não o `user.firstProductPublished` do cenário
+  // mock — o produto publicado é dado real, mesmo enquanto
+  // gateway/Marketplace ainda vêm do cenário simulado.
+  const primeiroProdutoPublicado = !marcosRestantes.includes('primeiro_produto');
 
   return (
     <div className="flex flex-col gap-8 pt-2">
@@ -86,29 +93,35 @@ export default async function DashboardHomePage() {
           quando a loja própria não tem gateway ligado (ver
           mostrarResumoLoja acima). Fica sempre no topo da página,
           logo abaixo do alerta de pedido pendente — os cards-guia de
-          onboarding (Próximos passos/Dicas) vêm depois, por baixo. */}
-      <div className="flex flex-col gap-6">
-        <HomeCardCarousel>
-          <PagamentosCard
-            amount={pagamentos.amount}
-            amountLabel={pagamentos.amountLabel}
-            breakdown={pagamentos.breakdown}
-            hint={pagamentos.hint}
-          />
-
-          {marketplaceAtivo && (
-            <MarketplaceCard
-              protectedAmount={ativo.marketplace.protectedAmount}
-              disputedAmount={ativo.marketplace.disputedAmount}
-              refundedAmount={ativo.marketplace.refundedAmount}
+          onboarding (Próximos passos/Dicas) vêm depois, por baixo.
+          Bloco inteiro escondido antes do primeiro produto publicado
+          (ver primeiroProdutoPublicado acima) — sem produto, não há
+          nada para vender ainda, então nenhum indicador financeiro
+          aparece em lugar nenhum da página. */}
+      {primeiroProdutoPublicado && (
+        <div className="flex flex-col gap-6">
+          <HomeCardCarousel>
+            <PagamentosCard
+              amount={pagamentos.amount}
+              amountLabel={pagamentos.amountLabel}
+              breakdown={pagamentos.breakdown}
+              hint={pagamentos.hint}
             />
-          )}
-        </HomeCardCarousel>
 
-        {mostrarResumoLoja && (
-          <ResumoLojaSecao ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
-        )}
-      </div>
+            {marketplaceAtivo && (
+              <MarketplaceCard
+                protectedAmount={ativo.marketplace.protectedAmount}
+                disputedAmount={ativo.marketplace.disputedAmount}
+                refundedAmount={ativo.marketplace.refundedAmount}
+              />
+            )}
+          </HomeCardCarousel>
+
+          {mostrarResumoLoja && (
+            <ResumoLojaSecao ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
+          )}
+        </div>
+      )}
 
       {/* Cards-guia de onboarding — agora sempre por baixo dos cards
           financeiros, independentemente de quantos marcos faltam (a
