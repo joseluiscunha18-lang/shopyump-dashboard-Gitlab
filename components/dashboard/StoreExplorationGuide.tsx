@@ -76,7 +76,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
         ctaLabel: 'Copiar link',
         onAction: handleShare,
-        image: 'https://i.ibb.co/Gf4VYtpV/file-000000003fd081f4b4d9cdab95a4be2b.png',
+        image: 'https://i.ibb.co/m3qFMXR/Imagem-do-Canva-IA-5-09-2026-20-04-27-20260905-200451-0000.jpg',
         imageClassName: 'h-full w-full translate-y-3 scale-110 object-cover object-right',
         imageWrapperClassName: 'right-0 top-0 bottom-0 w-[59%] max-w-[238px]',
         contentWidthClassName: 'w-[58%]',
