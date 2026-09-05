@@ -28,13 +28,31 @@ const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
 /**
+ * Ilustração do card "Pagamentos" — ao contrário dos outros marcos
+ * (fotos/PNGs hospedados em i.ibb.co), este é um SVG genérico embutido
+ * como data URI: nenhuma bandeira/logotipo real, só cartões abstratos +
+ * selo de confirmação, na mesma linguagem visual (flat, cantos
+ * arredondados). Embutido em vez de hospedado para não depender de
+ * upload externo — mesma posição/objeto (canto direito) que os outros.
+ */
+const PAGAMENTOS_ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <rect x="40" y="150" width="200" height="122" rx="18" fill="#10B981" transform="rotate(-10 140 211)" />
+  <rect x="70" y="108" width="200" height="122" rx="18" fill="#4F46E5" transform="rotate(8 170 169)" />
+  <rect x="86" y="130" width="168" height="16" rx="4" fill="#ffffff" opacity="0.35" transform="rotate(8 170 169)" />
+  <circle cx="238" cy="206" r="11" fill="#FBBF24" transform="rotate(8 170 169)" />
+  <circle cx="219" cy="206" r="11" fill="#FDBA74" opacity="0.9" transform="rotate(8 170 169)" />
+  <circle cx="250" cy="246" r="27" fill="#111110" />
+  <path d="M237 246 l8 8 l17 -19" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</svg>`)}`;
+
+/**
  * Design original dos cards ilustrados (mesmo que já existia, com as
  * mesmas imagens) — não é um redesign, é o MESMO visual de sempre, só
  * reaproveitado aqui para poder aparecer mais que um de cada vez (ver
  * OnboardingSteps abaixo). Nunca trocar por um estilo novo sem pedido
  * explícito — ver histórico da conversa sobre "não mexer no design".
  */
-function getItemConfig(marco: MarcoOnboarding, handleShare: () => void): ItemConfig {
+function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePagamentos: () => void): ItemConfig {
   switch (marco) {
     case 'primeiro_produto':
       return {
@@ -62,6 +80,19 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void): ItemCon
         imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
         contentWidthClassName: 'w-[42%]',
         subtitleClassName: 'max-w-[230px]',
+      };
+    case 'configurar_pagamentos':
+      return {
+        eyebrow: 'Pagamentos',
+        title: 'Configure seus pagamentos',
+        subtitle: 'Aceite pagamentos na sua loja e no marketplace de forma simples e rápida.',
+        ctaLabel: 'Configurar',
+        onAction: handlePagamentos,
+        image: PAGAMENTOS_ICON,
+        imageClassName: 'h-full w-full object-contain object-right',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[58%] max-w-[236px]',
+        contentWidthClassName: 'w-[46%]',
+        subtitleClassName: 'max-w-[220px]',
       };
     case 'partilhar_loja':
       return {
@@ -121,6 +152,17 @@ export function OnboardingSteps({
     }
   }
 
+  // Sem página de configuração de pagamentos real ainda (ver
+  // PagamentosCard.tsx/resolvePagamentosCard — gateway/Marketplace
+  // continuam simulados) — por isso este botão só avisa por agora, em
+  // vez de navegar para um link morto ou marcar o marco como concluído
+  // sem o vendedor ter feito nada de facto. Trocar por `href: '/pagamentos'`
+  // assim que essa página existir (mesmo padrão do 'primeiro_produto'
+  // e 'personalizar_loja' acima).
+  function handlePagamentos() {
+    show('A configuração de pagamentos chega em breve.');
+  }
+
   function handleDismiss(marco: MarcoOnboarding) {
     dispensarMarco(lojaId, marco).catch(() => {});
     setOcultosLocalmente((prev) => new Set(prev).add(marco));
@@ -133,7 +175,7 @@ export function OnboardingSteps({
       <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">{heading}</h2>
       <div className="flex flex-col gap-4">
         {visiveis.map((marco) => {
-          const item = getItemConfig(marco, handleShare);
+          const item = getItemConfig(marco, handleShare, handlePagamentos);
 
           const content = (
             <div className={cn('relative min-h-[224px] w-full overflow-hidden rounded-[28px] p-4 sm:p-5', ELEVATED_SURFACE)}>
