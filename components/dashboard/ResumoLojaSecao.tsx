@@ -13,19 +13,20 @@ interface ResumoLojaSecaoProps {
  * página, como um apêndice discreto por baixo do Marketplace, e não como
  * mais um bloco a competir visualmente com ele.
  *
- * Só faz sentido nos dois cenários em que o Marketplace está ativo mas a
- * loja NÃO tem nenhum gateway próprio ligado (nem externo, nem Shopyump —
- * `storePayment.provider === 'none'`), em qualquer plano (grátis ou pago):
- * nesses casos o Pagamentos já assumiu o lugar do card principal (ver
- * `resolvePagamentosCard`) e o Marketplace já mostra "Vendas" dele
- * próprio, mas Pedidos/Visitas da LOJA (que não são a mesma coisa que os
- * pedidos/vendas do Marketplace) ainda não apareciam em lado nenhum — daí
- * esta secção extra, mais discreta, em vez de trazer de volta o
- * `ResumoCard` (esse continua reservado para quando não há canal
- * financeiro nenhum confirmado — ver ResumoCard.tsx).
+ * Faz sentido em todo cenário em que a loja NÃO tem nenhum gateway
+ * próprio ligado (nem externo, nem Shopyump — `storePayment.provider
+ * === 'none'`), com ou sem Marketplace ativo, em qualquer plano (grátis
+ * ou pago) — incluindo quando não há canal financeiro nenhum ainda:
+ * Pagamentos é sempre o card principal (ver `resolvePagamentosCard`,
+ * que nesse caso mostra "Disponível para saque" a 0 MT com um `hint` a
+ * pedir para configurar pagamentos), mas Pedidos/Visitas da LOJA (que
+ * não são a mesma coisa que os pedidos/vendas do Marketplace, quando
+ * ele existe) ainda não aparecem em lado nenhum — daí esta secção
+ * extra, mais discreta, em vez de mais um card a competir com o
+ * Pagamentos.
  *
  * Quem monta a página decide quando mostrar (ver /dev/cenarios): sempre
- * logo a seguir ao MarketplaceCard.
+ * logo a seguir ao card/carrossel do Pagamentos.
  */
 export function ResumoLojaSecao({ ordersCount, visits }: ResumoLojaSecaoProps) {
   const metricas = [
