@@ -65,9 +65,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         href: '/loja',
         image: '/images/personalizar-loja.jpg',
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[52%] max-w-[210px]',
-        contentWidthClassName: 'w-[55%]',
-        subtitleClassName: 'max-w-[210px]',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
+        contentWidthClassName: 'w-[42%]',
+        subtitleClassName: 'max-w-[230px]',
       };
     case 'configurar_pagamentos':
       return {
@@ -165,7 +165,7 @@ export function OnboardingSteps({
           const item = getItemConfig(marco, handleShare, handlePagamentos);
 
           const content = (
-            <div className={cn('relative min-h-[224px] w-full overflow-hidden rounded-[28px] p-4 sm:p-5', ELEVATED_SURFACE)}>
+            <div className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}>
               <button
                 type="button"
                 onClick={(e) => {
@@ -179,14 +179,14 @@ export function OnboardingSteps({
                 <X size={13} strokeWidth={2.5} />
               </button>
 
-              <div className={cn('relative z-10 flex h-full min-h-[156px] flex-col items-start', item.contentWidthClassName)}>
+              <div className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <p className={cn('text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
                     {item.title}
                   </p>
-                  <p className={cn('mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400', item.subtitleClassName)}>
+                  <p className={cn('mt-1.5 text-[12px] sm:text-[12.5px] font-medium leading-[1.4] text-slate-400', item.subtitleClassName)}>
                     {item.subtitle}
                   </p>
                 </div>
