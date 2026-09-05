@@ -84,14 +84,14 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
     case 'configurar_pagamentos':
       return {
         eyebrow: 'Pagamentos',
-        title: 'Configure seus pagamentos',
+        title: 'Configurar pagamentos',
         subtitle: 'Aceite pagamentos na sua loja e no marketplace de forma simples e rápida.',
         ctaLabel: 'Configurar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
-        imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-3 top-0 bottom-0 w-[42%] max-w-[172px]',
-        contentWidthClassName: 'w-[58%]',
+        imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
+        contentWidthClassName: 'w-[42%]',
         subtitleClassName: 'max-w-[210px]',
       };
   }
