@@ -6,7 +6,8 @@ import { getPedidosByLoja } from '@/lib/queries/pedidos';
 import { NewOrderAlert } from '@/components/dashboard/NewOrderAlert';
 import { OnboardingSteps } from '@/components/dashboard/OnboardingSteps';
 import { GenericGrowthTips } from '@/components/dashboard/GenericGrowthTips';
-import { ResumoCard } from '@/components/dashboard/ResumoCard';
+import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
+import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
 import { ORDEM_MARCOS_ONBOARDING } from '@/types/database';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
@@ -47,6 +48,21 @@ export default async function DashboardHomePage() {
       ? 'Próximos passos'
       : 'Dicas para crescer';
 
+  // A base de dados ainda não tem gateway (próprio/externo) nem
+  // Marketplace implementados de facto — ver lib/mocks/types.ts, que
+  // documenta isto explicitamente como "um domínio ainda NÃO real".
+  // Por isso toda loja real está hoje, por definição, no estado "sem
+  // nenhum canal financeiro confirmado" — o mesmo que o cenário
+  // FREE_NEW em /dev/cenarios. `resolvePagamentosCard` já sabe desenhar
+  // esse estado (0 MT + hint pedindo para configurar pagamentos) em vez
+  // de esconder o card. Assim que gateway/Marketplace reais existirem
+  // na base de dados, troca-se SÓ estes dois objetos fixos por uma
+  // leitura real da loja (ctx.loja) — nenhum componente aqui muda.
+  const pagamentos = resolvePagamentosCard(
+    { provider: 'none', connected: false, availableAmount: 0 },
+    { status: 'inactive', availableAmount: 0, salesAmount: 0 }
+  );
+
   return (
     <div className="flex flex-col gap-8 pt-2">
       {/* Quebra a hierarquia normal — um pedido por confirmar é uma
@@ -66,19 +82,23 @@ export default async function DashboardHomePage() {
         />
       )}
 
-      {/* Sempre visível por agora, mesmo a zeros — ver ResumoCard sobre
-          o porquê. Sem card "Pagamentos" ainda: hoje não existe nenhum
-          canal financeiro confirmado (Marketplace/gateway ainda não
-          estão implementados de facto) — ver resolvePagamentosCard em
-          PagamentosCard.tsx, que devolve `null` exatamente nesse caso.
-          Quando Marketplace OU gateway (grátis ou pago) existirem de
-          facto, este Resumo deve esconder-se sempre que
-          `resolvePagamentosCard(...) !== null` — exatamente como já
-          acontece em /dev/cenarios. Ver lib/mocks/* e /dev/cenarios
-          para a pré-visualização desses estados com dados mockados,
-          conforme combinado nesta etapa (só UI dos cards, sem
-          construir o restante do sistema). */}
-      <ResumoCard ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
+      {/* Pagamentos é sempre o card principal agora (ver
+          resolvePagamentosCard em PagamentosCard.tsx), mesmo sem
+          nenhum canal financeiro confirmado — mostra "Disponível para
+          saque" a 0 MT com uma indicação discreta para configurar
+          pagamentos, em vez do antigo "Resumo" isolado. "Resumo da
+          loja" (Pedidos/Visitas, ver ResumoLojaSecao) fica logo
+          abaixo, como secção complementar — mesmo padrão já usado em
+          /dev/cenarios para este estado. */}
+      <div className="flex flex-col gap-6">
+        <PagamentosCard
+          amount={pagamentos.amount}
+          amountLabel={pagamentos.amountLabel}
+          breakdown={pagamentos.breakdown}
+          hint={pagamentos.hint}
+        />
+        <ResumoLojaSecao ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
+      </div>
 
       {marcosRestantes.length === 1 && (
         <OnboardingSteps
