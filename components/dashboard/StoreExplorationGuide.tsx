@@ -51,10 +51,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         href: '/produtos/novo',
         image: 'https://i.ibb.co/kg0TN94W/1-4.png',
         imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-0 top-2 bottom-2 w-[50%] max-w-[204px]',
-        contentWidthClassName: 'w-[62%]',
-        titleClassName: 'max-w-[152px]',
-        subtitleClassName: 'max-w-[160px]',
+        imageWrapperClassName: 'right-0 top-2 bottom-2 w-[42%] max-w-[176px]',
+        contentWidthClassName: 'w-[68%]',
+        subtitleClassName: 'max-w-[210px]',
       };
     case 'personalizar_loja':
       return {
@@ -65,9 +64,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         href: '/loja',
         image: '/images/personalizar-loja.jpg',
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
-        contentWidthClassName: 'w-[42%]',
-        subtitleClassName: 'max-w-[230px]',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[52%] max-w-[210px]',
+        contentWidthClassName: 'w-[55%]',
+        subtitleClassName: 'max-w-[210px]',
       };
     case 'partilhar_loja':
       return {
@@ -78,9 +77,8 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         onAction: handleShare,
         image: '/images/divulgacao.webp',
         imageClassName: 'h-full w-full translate-y-3 scale-110 object-cover object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[53%] max-w-[215px]',
+        imageWrapperClassName: 'right-[-8px] top-0 bottom-0 w-[50%] max-w-[204px]',
         contentWidthClassName: 'w-[58%]',
-        titleClassName: 'whitespace-nowrap',
         subtitleClassName: 'max-w-[150px]',
       };
     case 'configurar_pagamentos':
@@ -92,9 +90,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
         imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[52%] max-w-[212px]',
-        contentWidthClassName: 'w-[46%]',
-        subtitleClassName: 'max-w-[220px]',
+        imageWrapperClassName: 'right-3 top-0 bottom-0 w-[42%] max-w-[172px]',
+        contentWidthClassName: 'w-[58%]',
+        subtitleClassName: 'max-w-[210px]',
       };
   }
 }
@@ -201,7 +199,7 @@ export function StoreExplorationGuide({
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
         <div className="mt-2">
-          <p className={cn('text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink', item.titleClassName)}>
+          <p className={cn('text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
             {item.title}
           </p>
           <p className={cn('mt-2 text-[12px] sm:text-[12.5px] font-medium leading-[1.45] text-slate-400', item.subtitleClassName)}>
