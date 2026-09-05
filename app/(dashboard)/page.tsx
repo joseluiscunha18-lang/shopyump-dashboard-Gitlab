@@ -10,6 +10,7 @@ import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/Pa
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
 import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
 import { HomeCardCarousel } from '@/components/dashboard/HomeCardCarousel';
+import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { ORDEM_MARCOS_ONBOARDING } from '@/types/database';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
@@ -50,26 +51,21 @@ export default async function DashboardHomePage() {
       ? 'Próximos passos'
       : 'Dicas para crescer';
 
-  // A base de dados ainda não tem gateway (próprio/externo) nem
-  // Marketplace implementados de facto — ver lib/mocks/types.ts, que
-  // documenta isto explicitamente como "um domínio ainda NÃO real".
-  // Por isso toda loja real está hoje, por definição, no estado "sem
-  // nenhum canal financeiro confirmado" — o mesmo que o cenário
-  // FREE_NEW em /dev/cenarios. `resolvePagamentosCard` já sabe desenhar
-  // esse estado (0 MT + hint pedindo para configurar pagamentos) em vez
-  // de esconder o card. Assim que gateway/Marketplace reais existirem
-  // na base de dados, troca-se SÓ estes dois objetos fixos por uma
-  // leitura real da loja (ctx.loja) — nenhum componente aqui muda.
-  const marketplace: { status: 'inactive' | 'active'; availableAmount: number; salesAmount: number; protectedAmount: number; disputedAmount: number; refundedAmount: number } = {
-    status: 'inactive',
-    availableAmount: 0,
-    salesAmount: 0,
-    protectedAmount: 0,
-    disputedAmount: 0,
-    refundedAmount: 0,
-  };
-  const pagamentos = resolvePagamentosCard({ provider: 'none', connected: false, availableAmount: 0 }, marketplace);
-  const marketplaceAtivo = marketplace.status === 'active';
+  // Plano/gateway/Marketplace ainda não existem de facto no Supabase —
+  // `getActiveScenario()` é o "único ponto de acesso" a esse estado
+  // (ver lib/mocks/getActiveScenario.ts): hoje lê do MESMO cookie que
+  // `/dev/cenarios` escreve, por isso trocar de cenário lá already
+  // reflete aqui na Home real também — nada de estado hardcoded/parado
+  // em "sem canal nenhum". Quando gateway/Marketplace reais existirem,
+  // troca-se só essa função por uma leitura do Supabase — nenhum
+  // componente abaixo muda, porque o tipo devolvido é o mesmo.
+  const ativo = await getActiveScenario();
+  const pagamentos = resolvePagamentosCard(ativo.storePayment, ativo.marketplace);
+  const marketplaceAtivo = ativo.marketplace.status === 'active';
+  // Mesma regra do /dev/cenarios: aparece sempre que a loja própria não
+  // tem nenhum gateway ligado (nem externo, nem Shopyump) — com ou sem
+  // Marketplace ativo.
+  const mostrarResumoLoja = ativo.storePayment.provider === 'none';
 
   return (
     <div className="flex flex-col gap-8 pt-2">
@@ -90,20 +86,15 @@ export default async function DashboardHomePage() {
         />
       )}
 
-      {/* Pagamentos é sempre o card principal agora (ver
-          resolvePagamentosCard em PagamentosCard.tsx), mesmo sem
-          nenhum canal financeiro confirmado — mostra "Disponível para
-          saque" a 0 MT com uma indicação discreta para configurar
-          pagamentos, em vez do antigo "Resumo" isolado. Já entra
-          dentro do HomeCardCarousel, tal como em /dev/cenarios: hoje
-          só tem este filho (Marketplace ainda não existe de facto na
-          base de dados, por isso `marketplaceAtivo` é sempre `false`
-          aqui), e o carrossel devolve-o tal e qual, sem nenhum chrome
-          — ver HomeCardCarousel.tsx. Assim que o Marketplace real
-          existir, basta acrescentar aqui o mesmo `{marketplaceAtivo &&
-          <MarketplaceCard ... />}` já usado em /dev/cenarios, sem mexer
-          em mais nada. "Resumo da loja" (Pedidos/Visitas, ver
-          ResumoLojaSecao) fica logo abaixo, como secção complementar. */}
+      {/* Pagamentos é sempre o card principal (ver resolvePagamentosCard
+          em PagamentosCard.tsx) — o número/label muda conforme o
+          cenário ativo (ver getActiveScenario acima), incluindo "0 MT +
+          hint" quando não há nenhum canal ainda. Dentro do
+          HomeCardCarousel junto com o MarketplaceCard quando o cenário
+          tem Marketplace ativo — igual a /dev/cenarios. "Resumo da
+          loja" (Pedidos/Visitas reais, ver ResumoLojaSecao) só aparece
+          quando a loja própria não tem gateway ligado (ver
+          mostrarResumoLoja acima). */}
       <div className="flex flex-col gap-6">
         <HomeCardCarousel>
           <PagamentosCard
@@ -115,14 +106,16 @@ export default async function DashboardHomePage() {
 
           {marketplaceAtivo && (
             <MarketplaceCard
-              protectedAmount={marketplace.protectedAmount}
-              disputedAmount={marketplace.disputedAmount}
-              refundedAmount={marketplace.refundedAmount}
+              protectedAmount={ativo.marketplace.protectedAmount}
+              disputedAmount={ativo.marketplace.disputedAmount}
+              refundedAmount={ativo.marketplace.refundedAmount}
             />
           )}
         </HomeCardCarousel>
 
-        <ResumoLojaSecao ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
+        {mostrarResumoLoja && (
+          <ResumoLojaSecao ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
+        )}
       </div>
 
       {marcosRestantes.length === 1 && (
