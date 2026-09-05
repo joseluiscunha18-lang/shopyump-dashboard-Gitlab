@@ -17,7 +17,7 @@ const cta =
  * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
  * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = 'https://i.ibb.co/9HQHd5Jp/Imagem-do-Canva-IA-5-09-2026-15-05-54-20260905-150629-0000.jpg';
+const PAGAMENTOS_ICON = 'https://i.ibb.co/XfSJ6kyQ/Imagem-do-Canva-IA-5-09-2026-15-49-47-20260905-160246-0000.jpg';
 
 interface ItemConfig {
   eyebrow: string;
