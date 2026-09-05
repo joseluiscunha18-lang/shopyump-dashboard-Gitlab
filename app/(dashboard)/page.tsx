@@ -7,7 +7,9 @@ import { NewOrderAlert } from '@/components/dashboard/NewOrderAlert';
 import { OnboardingSteps } from '@/components/dashboard/OnboardingSteps';
 import { GenericGrowthTips } from '@/components/dashboard/GenericGrowthTips';
 import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
+import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
 import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
+import { HomeCardCarousel } from '@/components/dashboard/HomeCardCarousel';
 import { ORDEM_MARCOS_ONBOARDING } from '@/types/database';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
@@ -58,10 +60,16 @@ export default async function DashboardHomePage() {
   // de esconder o card. Assim que gateway/Marketplace reais existirem
   // na base de dados, troca-se SÓ estes dois objetos fixos por uma
   // leitura real da loja (ctx.loja) — nenhum componente aqui muda.
-  const pagamentos = resolvePagamentosCard(
-    { provider: 'none', connected: false, availableAmount: 0 },
-    { status: 'inactive', availableAmount: 0, salesAmount: 0 }
-  );
+  const marketplace: { status: 'inactive' | 'active'; availableAmount: number; salesAmount: number; protectedAmount: number; disputedAmount: number; refundedAmount: number } = {
+    status: 'inactive',
+    availableAmount: 0,
+    salesAmount: 0,
+    protectedAmount: 0,
+    disputedAmount: 0,
+    refundedAmount: 0,
+  };
+  const pagamentos = resolvePagamentosCard({ provider: 'none', connected: false, availableAmount: 0 }, marketplace);
+  const marketplaceAtivo = marketplace.status === 'active';
 
   return (
     <div className="flex flex-col gap-8 pt-2">
@@ -86,17 +94,34 @@ export default async function DashboardHomePage() {
           resolvePagamentosCard em PagamentosCard.tsx), mesmo sem
           nenhum canal financeiro confirmado — mostra "Disponível para
           saque" a 0 MT com uma indicação discreta para configurar
-          pagamentos, em vez do antigo "Resumo" isolado. "Resumo da
-          loja" (Pedidos/Visitas, ver ResumoLojaSecao) fica logo
-          abaixo, como secção complementar — mesmo padrão já usado em
-          /dev/cenarios para este estado. */}
+          pagamentos, em vez do antigo "Resumo" isolado. Já entra
+          dentro do HomeCardCarousel, tal como em /dev/cenarios: hoje
+          só tem este filho (Marketplace ainda não existe de facto na
+          base de dados, por isso `marketplaceAtivo` é sempre `false`
+          aqui), e o carrossel devolve-o tal e qual, sem nenhum chrome
+          — ver HomeCardCarousel.tsx. Assim que o Marketplace real
+          existir, basta acrescentar aqui o mesmo `{marketplaceAtivo &&
+          <MarketplaceCard ... />}` já usado em /dev/cenarios, sem mexer
+          em mais nada. "Resumo da loja" (Pedidos/Visitas, ver
+          ResumoLojaSecao) fica logo abaixo, como secção complementar. */}
       <div className="flex flex-col gap-6">
-        <PagamentosCard
-          amount={pagamentos.amount}
-          amountLabel={pagamentos.amountLabel}
-          breakdown={pagamentos.breakdown}
-          hint={pagamentos.hint}
-        />
+        <HomeCardCarousel>
+          <PagamentosCard
+            amount={pagamentos.amount}
+            amountLabel={pagamentos.amountLabel}
+            breakdown={pagamentos.breakdown}
+            hint={pagamentos.hint}
+          />
+
+          {marketplaceAtivo && (
+            <MarketplaceCard
+              protectedAmount={marketplace.protectedAmount}
+              disputedAmount={marketplace.disputedAmount}
+              refundedAmount={marketplace.refundedAmount}
+            />
+          )}
+        </HomeCardCarousel>
+
         <ResumoLojaSecao ordersCount={stats.pedidosTotal} visits={stats.visitasTotal} />
       </div>
 
