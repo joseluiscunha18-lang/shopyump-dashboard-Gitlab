@@ -32,7 +32,7 @@ const cta =
  * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
  * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = 'https://i.ibb.co/jP5M53SH/1-5.png';
+const PAGAMENTOS_ICON = '/images/pagamentos.png';
 
 /**
  * Design original dos cards ilustrados (mesmo que já existia, com as
@@ -64,7 +64,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
         ctaLabel: 'Personalizar',
         href: '/loja',
-        image: 'https://i.ibb.co/BHSck036/27024766fb864b2aa9b7e4a8a326430b.webp',
+        image: '/images/personalizar-loja.jpg',
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
         imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
         contentWidthClassName: 'w-[42%]',
@@ -90,7 +90,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
         ctaLabel: 'Copiar link',
         onAction: handleShare,
-        image: 'https://i.ibb.co/3mWrwCTc/042cee17-5f1d-4160-a722-ec5a8985b1fb-u2-c5791282-7d31-4ffc-810f-5fc38945d364.jpg',
+        image: '/images/divulgacao.webp',
         imageClassName: 'h-full w-full translate-y-3 scale-110 object-cover object-right',
         imageWrapperClassName: 'right-0 top-0 bottom-0 w-[56%] max-w-[226px]',
         contentWidthClassName: 'w-[58%]',
