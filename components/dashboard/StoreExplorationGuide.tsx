@@ -13,20 +13,11 @@ const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
 /**
- * Ilustração do card "Pagamentos" — mesmo SVG embutido usado em
- * OnboardingSteps.tsx (ver ali para o racional): nenhuma bandeira/logo
- * real, só cartões abstratos + selo de confirmação, embutido para não
- * depender de upload externo.
+ * Ilustração do card "Pagamentos" — foto com os métodos de pagamento
+ * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
+ * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
-  <rect x="40" y="150" width="200" height="122" rx="18" fill="#10B981" transform="rotate(-10 140 211)" />
-  <rect x="70" y="108" width="200" height="122" rx="18" fill="#4F46E5" transform="rotate(8 170 169)" />
-  <rect x="86" y="130" width="168" height="16" rx="4" fill="#ffffff" opacity="0.35" transform="rotate(8 170 169)" />
-  <circle cx="238" cy="206" r="11" fill="#FBBF24" transform="rotate(8 170 169)" />
-  <circle cx="219" cy="206" r="11" fill="#FDBA74" opacity="0.9" transform="rotate(8 170 169)" />
-  <circle cx="250" cy="246" r="27" fill="#111110" />
-  <path d="M237 246 l8 8 l17 -19" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-</svg>`)}`;
+const PAGAMENTOS_ICON = 'https://i.ibb.co/9HQHd5Jp/Imagem-do-Canva-IA-5-09-2026-15-05-54-20260905-150629-0000.jpg';
 
 interface ItemConfig {
   eyebrow: string;
