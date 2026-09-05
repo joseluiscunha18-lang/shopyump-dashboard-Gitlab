@@ -32,7 +32,7 @@ const cta =
  * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
  * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = 'https://i.ibb.co/kV0j8q9n/f351ef15-330e-49ee-ab1c-e556c77e3919.webp';
+const PAGAMENTOS_ICON = 'https://i.ibb.co/nNx7D7b1/5c4024db-9883-4a28-8ec5-40ee0db62766.webp';
 
 /**
  * Design original dos cards ilustrados (mesmo que já existia, com as
