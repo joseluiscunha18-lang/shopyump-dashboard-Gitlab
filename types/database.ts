@@ -297,16 +297,22 @@ export interface AdminRow {
 /**
  * Marco genérico de onboarding (ver migration_loja_marcos.sql) — uma
  * tabela partilhada por TODOS os cards de "próximos passos" da loja
- * ('primeiro_produto', 'personalizar_loja', 'partilhar_loja', e os que
- * vierem a seguir), em vez de duas colunas por card em `lojas`.
+ * ('primeiro_produto', 'personalizar_loja', 'configurar_pagamentos',
+ * 'partilhar_loja', e os que vierem a seguir), em vez de duas colunas
+ * por card em `lojas`.
  *
  * `concluido_em: null` = ainda não atingido. `dispensado: true` = o
  * usuário fechou o card (ou ele deixou de fazer sentido, ex: um 2º
  * produto foi publicado) — nunca mais volta a `false`. Um marco só deve
  * ser mostrado como "próximo passo" quando `concluido_em` é null E
  * `dispensado` é false.
+ *
+ * NOTA: se `loja_marcos.marco` for um enum do Postgres (e não apenas
+ * texto livre), é preciso rodar uma migração no Supabase adicionando o
+ * valor `'configurar_pagamentos'` antes deste marco conseguir ser
+ * gravado de facto — este ficheiro só cobre o lado TypeScript/UI.
  */
-export type MarcoOnboarding = 'primeiro_produto' | 'personalizar_loja' | 'partilhar_loja';
+export type MarcoOnboarding = 'primeiro_produto' | 'personalizar_loja' | 'configurar_pagamentos' | 'partilhar_loja';
 
 export interface LojaMarco {
   loja_id: string;
@@ -321,9 +327,15 @@ export interface LojaMarco {
  * Ordem fixa em que os marcos de onboarding devem ser oferecidos — a
  * Início mostra sempre o PRIMEIRO desta lista que ainda não estiver
  * concluído nem dispensado, nunca mais que um de cada vez.
+ *
+ * 'configurar_pagamentos' fica depois de 'personalizar_loja' e antes de
+ * 'partilhar_loja' — faz sentido pedir pagamentos configurados antes de
+ * mandar convidar clientes, mas só depois de a loja já estar com a cara
+ * do vendedor.
  */
 export const ORDEM_MARCOS_ONBOARDING: MarcoOnboarding[] = [
   'primeiro_produto',
   'personalizar_loja',
+  'configurar_pagamentos',
   'partilhar_loja',
 ];
