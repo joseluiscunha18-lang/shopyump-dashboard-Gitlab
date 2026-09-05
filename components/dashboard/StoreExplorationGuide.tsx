@@ -77,7 +77,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         onAction: handleShare,
         image: '/images/divulgacao.webp',
         imageClassName: 'h-full w-full translate-y-3 scale-110 object-cover object-right',
-        imageWrapperClassName: 'right-[-8px] top-0 bottom-0 w-[50%] max-w-[204px]',
+        imageWrapperClassName: 'right-4 top-0 bottom-0 w-[50%] max-w-[204px]',
         contentWidthClassName: 'w-[58%]',
         subtitleClassName: 'max-w-[150px]',
       };
@@ -90,7 +90,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[59%] max-w-[236px]',
         contentWidthClassName: 'w-[42%]',
         subtitleClassName: 'max-w-[210px]',
       };
