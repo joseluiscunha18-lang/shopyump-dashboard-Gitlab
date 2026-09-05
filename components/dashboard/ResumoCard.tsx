@@ -17,6 +17,18 @@ interface ResumoCardProps {
  * LÓGICA" mostrar essa contagem aqui. Vendas (e tudo o que é dinheiro)
  * agora vive inteiramente no card "Pagamentos" — ver PagamentosCard.tsx
  * — para não haver a mesma informação repetida em dois lugares.
+ *
+ * O componente em si não decide quando aparecer: quem monta a página
+ * é que esconde este card assim que existe algum canal financeiro (ou
+ * a própria noção de "Pagamentos") já modelado. Hoje isso só se aplica
+ * ao Home real (`app/(dashboard)/page.tsx`), que ainda não tem
+ * gateway/Marketplace ligados de facto — assim que essa integração
+ * existir, este card deve seguir a mesma regra já usada em
+ * `/dev/cenarios`: Pagamentos passa a ser sempre o card principal (ver
+ * `resolvePagamentosCard` em PagamentosCard.tsx, que já cobre o caso
+ * "nenhum canal ainda" com um estado zerado + `hint`, em vez de
+ * esconder o card), e o Resumo sai de cena — nesse ponto este
+ * componente deixa de ser necessário.
  */
 export function ResumoCard({ ordersCount, visits }: ResumoCardProps) {
   const metricas = [
