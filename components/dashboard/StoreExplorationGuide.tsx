@@ -12,6 +12,22 @@ import { cn } from '@/lib/cn';
 const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
+/**
+ * Ilustração do card "Pagamentos" — mesmo SVG embutido usado em
+ * OnboardingSteps.tsx (ver ali para o racional): nenhuma bandeira/logo
+ * real, só cartões abstratos + selo de confirmação, embutido para não
+ * depender de upload externo.
+ */
+const PAGAMENTOS_ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <rect x="40" y="150" width="200" height="122" rx="18" fill="#10B981" transform="rotate(-10 140 211)" />
+  <rect x="70" y="108" width="200" height="122" rx="18" fill="#4F46E5" transform="rotate(8 170 169)" />
+  <rect x="86" y="130" width="168" height="16" rx="4" fill="#ffffff" opacity="0.35" transform="rotate(8 170 169)" />
+  <circle cx="238" cy="206" r="11" fill="#FBBF24" transform="rotate(8 170 169)" />
+  <circle cx="219" cy="206" r="11" fill="#FDBA74" opacity="0.9" transform="rotate(8 170 169)" />
+  <circle cx="250" cy="246" r="27" fill="#111110" />
+  <path d="M237 246 l8 8 l17 -19" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</svg>`)}`;
+
 interface ItemConfig {
   eyebrow: string;
   title: string;
@@ -33,7 +49,7 @@ interface ItemConfig {
  * StoreExplorationGuide) — esta função nunca decide visibilidade, só
  * como desenhar o marco que já foi escolhido.
  */
-function getItemConfig(marco: MarcoOnboarding, handleShare: () => void): ItemConfig {
+function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePagamentos: () => void): ItemConfig {
   switch (marco) {
     case 'primeiro_produto':
       return {
@@ -75,6 +91,19 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void): ItemCon
         contentWidthClassName: 'w-[58%]',
         titleClassName: 'whitespace-nowrap',
         subtitleClassName: 'max-w-[150px]',
+      };
+    case 'configurar_pagamentos':
+      return {
+        eyebrow: 'Pagamentos',
+        title: 'Configure seus pagamentos',
+        subtitle: 'Aceite pagamentos na sua loja e no marketplace de forma simples e rápida.',
+        ctaLabel: 'Configurar',
+        onAction: handlePagamentos,
+        image: PAGAMENTOS_ICON,
+        imageClassName: 'h-full w-full object-contain object-right',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[58%] max-w-[236px]',
+        contentWidthClassName: 'w-[46%]',
+        subtitleClassName: 'max-w-[220px]',
       };
   }
 }
@@ -137,6 +166,16 @@ export function StoreExplorationGuide({
     }
   }
 
+  // Sem página de configuração de pagamentos real ainda (ver
+  // PagamentosCard.tsx/resolvePagamentosCard — gateway/Marketplace
+  // continuam simulados) — por isso este botão só avisa por agora, em
+  // vez de navegar para um link morto ou marcar o marco como concluído
+  // sem o vendedor ter feito nada de facto (mesmo padrão de
+  // OnboardingSteps.tsx).
+  function handlePagamentos() {
+    show('A configuração de pagamentos chega em breve.');
+  }
+
   function handleDismiss(marco: MarcoOnboarding) {
     setClosing(true);
     dispensarMarco(lojaId, marco).catch(() => {});
@@ -148,7 +187,7 @@ export function StoreExplorationGuide({
 
   if (!proximoMarco) return null;
 
-  const item = getItemConfig(proximoMarco, handleShare);
+  const item = getItemConfig(proximoMarco, handleShare, handlePagamentos);
 
   const content = (
     <div className={cn('relative min-h-[224px] w-full overflow-hidden rounded-[28px] p-4 sm:p-5', ELEVATED_SURFACE)}>
