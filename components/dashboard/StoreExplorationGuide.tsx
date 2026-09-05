@@ -63,7 +63,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
         ctaLabel: 'Personalizar',
         href: '/loja',
-        image: 'https://i.ibb.co/VW6NfT9t/Imagem-do-Canva-IA-5-09-2026-20-48-02-20260905-204913-0000.jpg',
+        image: 'https://i.ibb.co/BHSck036/27024766fb864b2aa9b7e4a8a326430b.webp',
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
         imageWrapperClassName: 'right-0 top-0 bottom-0 w-[65%] max-w-[262px]',
         contentWidthClassName: 'w-[42%]',
