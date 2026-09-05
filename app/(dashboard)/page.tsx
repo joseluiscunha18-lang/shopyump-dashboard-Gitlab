@@ -71,19 +71,9 @@ export default async function DashboardHomePage() {
     <div className="flex flex-col gap-8 pt-2">
       {/* Quebra a hierarquia normal — um pedido por confirmar é uma
           tarefa pendente, não uma métrica, por isso fica sempre no topo
-          quando existe, acima até dos próprios cards de onboarding. */}
+          quando existe, acima de tudo o resto. */}
       {pedidosPendentesLista.length > 0 && (
         <NewOrderAlert pedidoRecente={pedidosPendentesLista[0]} pedidosPendentes={stats.pedidosPendentes} />
-      )}
-
-      {marcosRestantes.length >= 2 && (
-        <OnboardingSteps
-          lojaId={ctx.loja.id}
-          storeUrl={storeUrl}
-          storeName={ctx.loja.nome}
-          marcos={marcosRestantes}
-          heading={heading}
-        />
       )}
 
       {/* Pagamentos é sempre o card principal (ver resolvePagamentosCard
@@ -94,7 +84,9 @@ export default async function DashboardHomePage() {
           tem Marketplace ativo — igual a /dev/cenarios. "Resumo da
           loja" (Pedidos/Visitas reais, ver ResumoLojaSecao) só aparece
           quando a loja própria não tem gateway ligado (ver
-          mostrarResumoLoja acima). */}
+          mostrarResumoLoja acima). Fica sempre no topo da página,
+          logo abaixo do alerta de pedido pendente — os cards-guia de
+          onboarding (Próximos passos/Dicas) vêm depois, por baixo. */}
       <div className="flex flex-col gap-6">
         <HomeCardCarousel>
           <PagamentosCard
@@ -118,7 +110,13 @@ export default async function DashboardHomePage() {
         )}
       </div>
 
-      {marcosRestantes.length === 1 && (
+      {/* Cards-guia de onboarding — agora sempre por baixo dos cards
+          financeiros, independentemente de quantos marcos faltam (a
+          diferença entre "Próximos passos" com >=2 e "Dicas para
+          crescer" com 1 restante continua a existir, só que os dois
+          casos ficam na mesma posição na página em vez de um antes e
+          outro depois do bloco financeiro). */}
+      {marcosRestantes.length >= 1 && (
         <OnboardingSteps
           lojaId={ctx.loja.id}
           storeUrl={storeUrl}
