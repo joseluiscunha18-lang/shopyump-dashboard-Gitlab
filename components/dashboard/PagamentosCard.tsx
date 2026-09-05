@@ -27,6 +27,16 @@ interface PagamentosCardProps {
    */
   breakdown?: PagamentosBreakdownItem[];
   currencyLabel?: string;
+  /**
+   * Mensagem discreta mostrada só no estado "ainda sem nenhum canal
+   * financeiro confirmado" (ver `resolvePagamentosCard`): o vendedor
+   * ainda não ligou gateway nem tem Marketplace ativo, por isso o
+   * "Disponível para saque" está a zeros por não haver mesmo nada para
+   * mostrar ainda — e não porque algo esteja em falta ou quebrado. Fica
+   * por baixo do número principal, discreta (mesmo peso visual do
+   * breakdown), nunca como aviso/erro.
+   */
+  hint?: string;
 }
 
 /**
@@ -46,7 +56,7 @@ interface PagamentosCardProps {
  * espaço extra vai sempre para o `justify-between` interno (nunca para
  * aumentar a fonte ou inventar espaçamento à parte).
  */
-export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MT' }: PagamentosCardProps) {
+export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MT', hint }: PagamentosCardProps) {
   const temBreakdown = breakdown.length > 0;
 
   return (
@@ -57,6 +67,7 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
           <p className="font-display text-[26px] font-black leading-none tracking-tight text-ink sm:text-[28px]">
             {formatNumberDot(amount)} <span className="text-[14px] font-bold text-slate-400">{currencyLabel}</span>
           </p>
+          {hint && <p className="text-[12.5px] font-semibold text-slate-400">{hint}</p>}
         </div>
 
         {temBreakdown && (
@@ -120,6 +131,9 @@ export interface ResolvedPagamentosCard {
   amount: number;
   amountLabel: string;
   breakdown: PagamentosBreakdownItem[];
+  /** Ver o campo homónimo em `PagamentosCardProps`. Só preenchido no
+   *  estado "nenhum canal financeiro confirmado ainda". */
+  hint?: string;
 }
 
 function somarDefinidos(...valores: Array<number | undefined>): number | undefined {
@@ -130,17 +144,19 @@ function somarDefinidos(...valores: Array<number | undefined>): number | undefin
 
 /**
  * Decide TUDO que o card Pagamentos precisa mostrar — número principal,
- * o que ele significa, e a quebra Hoje/Ontem/Este mês — a partir do
- * gateway da loja e do Marketplace. `null` quando não há nenhum canal
- * financeiro confirmado (Free, ou pago sem gateway e sem Marketplace):
- * nesse caso o card nem deve ser renderizado.
+ * o que ele significa, a quebra Hoje/Ontem/Este mês e, quando é caso
+ * disso, a mensagem de configuração — a partir do gateway da loja e do
+ * Marketplace.
  *
- * Este `null`/não-`null` é também o único critério para decidir a
- * ordem da Home: sempre que há Marketplace ativo OU gateway (externo
- * ou Shopyump) — em qualquer combinação, independentemente do plano
- * ser grátis ou pago — este método devolve um valor, e nesse caso o
- * "Resumo" (Pedidos/Visitas) deixa de aparecer e o Pagamentos passa a
- * ser o card principal, exibido em primeiro lugar (ver /dev/cenarios).
+ * Pagamentos é SEMPRE o card principal da Home agora, mesmo quando não
+ * há nenhum canal financeiro confirmado (Free, ou pago sem gateway e
+ * sem Marketplace) — esta função já não devolve `null` para esse caso.
+ * Em vez de esconder o card, mostra "Disponível para saque" a 0 MT com
+ * `hint` a convidar o vendedor a configurar um método de pagamento (ver
+ * PagamentosCardProps.hint). Quem monta a página decide, à parte, se
+ * mostra a secção complementar "Resumo da loja" por baixo (ver
+ * ResumoLojaSecao) — isso acontece sempre que `storePayment.provider
+ * === 'none'`, com ou sem Marketplace ativo (ver /dev/cenarios).
  *
  * Regras (ver pedido "NOVA LÓGICA DO CARD FINANCEIRO DA HOME"):
  * - Dinheiro em gateway EXTERNO nunca entra no saldo Shopyump — o
@@ -156,11 +172,14 @@ function somarDefinidos(...valores: Array<number | undefined>): number | undefin
  *   todos os canais que a Shopyump consegue registar — gateway da loja
  *   (externo ou Shopyump) + Marketplace — independentemente de qual
  *   deles decide o número principal.
+ * - Sem nenhum canal confirmado, Hoje/Ontem/Este mês aparecem a 0 MT
+ *   (nunca escondidos): é o mesmo "shape" do card já pronto, só à
+ *   espera de dados reais assim que o vendedor configurar pagamentos.
  */
 export function resolvePagamentosCard(
   storePayment: StorePaymentSource,
   marketplace: MarketplaceSource
-): ResolvedPagamentosCard | null {
+): ResolvedPagamentosCard {
   const gatewayShopyumpAtivo = storePayment.provider === 'shopyump' && storePayment.connected;
   const gatewayExternoAtivo = storePayment.provider === 'external' && storePayment.connected;
   const marketplaceAtivo = marketplace.status === 'active';
@@ -193,5 +212,17 @@ export function resolvePagamentosCard(
     return { amount: storePayment.salesThisMonth ?? 0, amountLabel: 'Vendas este mês', breakdown };
   }
 
-  return null;
+  // Nenhum canal financeiro confirmado ainda (nem gateway, nem
+  // Marketplace) — em vez de esconder o card, mostra-o já na forma
+  // final ("Disponível para saque"), só que a zeros, com uma indicação
+  // discreta do que falta fazer. Hoje/Ontem/Este mês entram a 0 MT de
+  // propósito aqui (ver docstring acima) — é o único ponto do ficheiro
+  // onde isso é intencional, ao contrário de `buildPagamentosBreakdown`
+  // que nunca inventa um período sem dado real.
+  return {
+    amount: 0,
+    amountLabel: 'Disponível para saque',
+    breakdown: buildPagamentosBreakdown({ salesToday: 0, salesYesterday: 0, salesThisMonth: 0 }),
+    hint: 'Configure pagamentos para começar a receber',
+  };
 }
