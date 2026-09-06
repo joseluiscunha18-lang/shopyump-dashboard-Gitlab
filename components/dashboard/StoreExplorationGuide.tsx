@@ -184,8 +184,14 @@ export function StoreExplorationGuide({
     // terminar de carregar, e sem isto a imagem aparece "crua" (sem
     // overflow-hidden nem tamanho) por uma fração de segundo, parecendo
     // saltar para fora do card, até o stylesheet aplicar.
+    // `@container` faz o card virar a referência de tamanho para o
+    // título/subtítulo (via `cqw` abaixo) — assim texto e imagem
+    // escalam sempre JUNTOS, proporcionalmente ao card, independente do
+    // tamanho real da tela ou de zoom/acessibilidade do aparelho.
+    // `max-w-[560px] mx-auto` evita que o card fique gigante e
+    // desequilibrado em ecrãs muito largos (tablet/desktop).
     <div
-      className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}
+      className={cn('relative mx-auto min-h-[192px] w-full max-w-[560px] overflow-hidden rounded-[28px] p-3.5 sm:p-4 @container', ELEVATED_SURFACE)}
       style={{ overflow: 'hidden', borderRadius: 28, minHeight: 192 }}
     >
       {/* Dispensar este passo — passa automaticamente para o próximo da fila */}
@@ -210,10 +216,12 @@ export function StoreExplorationGuide({
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
         <div className="mt-1.5">
-          <p className={cn('text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
+          {/* clamp(mínimo, %-da-largura-do-card, máximo): nunca fica
+          minúsculo nem gigante, e acompanha o card em vez do viewport */}
+          <p className={cn('text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
             {item.title}
           </p>
-          <p className={cn('mt-1.5 text-[12px] sm:text-[12.5px] font-medium leading-[1.4] text-slate-400', item.subtitleClassName)}>
+          <p className={cn('mt-1.5 text-[clamp(10.5px,3.2cqw,12.5px)] font-medium leading-[1.4] text-slate-400', item.subtitleClassName)}>
             {item.subtitle}
           </p>
         </div>
