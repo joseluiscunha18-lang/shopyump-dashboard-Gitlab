@@ -90,7 +90,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Copiar link',
         onAction: handleShare,
         image: '/images/divulgacao.webp',
-        imageClassName: 'h-full w-full translate-y-3 scale-110 object-cover object-right',
+        imageClassName: 'h-full w-full object-contain object-right',
         imageWrapperClassName: 'right-4 top-2 bottom-2 w-[40%] max-w-[160px]',
         contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
