@@ -64,8 +64,8 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Personalizar',
         href: '/loja',
         image: '/images/personalizar-loja.jpg',
-        imageClassName: 'h-full w-full translate-y-2 scale-125 object-contain object-right',
-        imageWrapperClassName: 'right-4 top-0 bottom-0 w-[40%] max-w-[160px]',
+        imageClassName: 'h-full w-full object-contain object-right',
+        imageWrapperClassName: 'right-4 top-2 bottom-2 w-[40%] max-w-[160px]',
         contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
       };
@@ -77,8 +77,8 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Configurar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
-        imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-4 top-0 bottom-0 w-[40%] max-w-[160px]',
+        imageClassName: 'h-full w-full object-contain object-right',
+        imageWrapperClassName: 'right-4 top-2 bottom-2 w-[40%] max-w-[160px]',
         contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
       };
