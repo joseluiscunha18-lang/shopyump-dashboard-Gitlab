@@ -165,11 +165,12 @@ export function OnboardingSteps({
           const item = getItemConfig(marco, handleShare, handlePagamentos);
 
           const content = (
-            // `style` inline como rede de segurança contra o "flash" de
-            // imagem crua antes do CSS carregar (ver comentário igual em
-            // StoreExplorationGuide.tsx).
+            // `@container` + `cqw` (ver comentário igual em
+            // StoreExplorationGuide.tsx): título/subtítulo escalam com a
+            // largura do PRÓPRIO card, não do viewport — ficam sempre
+            // equilibrados com a imagem, em qualquer tela/zoom.
             <div
-              className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}
+              className={cn('relative mx-auto min-h-[192px] w-full max-w-[560px] overflow-hidden rounded-[28px] p-3.5 sm:p-4 @container', ELEVATED_SURFACE)}
               style={{ overflow: 'hidden', borderRadius: 28, minHeight: 192 }}
             >
               <button
@@ -192,10 +193,10 @@ export function OnboardingSteps({
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
                 <div className="mt-1.5">
-                  <p className={cn('text-[16px] sm:text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
+                  <p className={cn('text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
                     {item.title}
                   </p>
-                  <p className={cn('mt-1.5 text-[12px] sm:text-[12.5px] font-medium leading-[1.4] text-slate-400', item.subtitleClassName)}>
+                  <p className={cn('mt-1.5 text-[clamp(10.5px,3.2cqw,12.5px)] font-medium leading-[1.4] text-slate-400', item.subtitleClassName)}>
                     {item.subtitle}
                   </p>
                 </div>
