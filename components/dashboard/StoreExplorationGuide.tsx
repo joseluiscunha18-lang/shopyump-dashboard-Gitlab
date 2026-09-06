@@ -17,7 +17,7 @@ const cta =
  * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
  * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = '/images/pagamentos.png';
+const PAGAMENTOS_ICON = '/images/pagamentos.webp';
 
 interface ItemConfig {
   eyebrow: string;
@@ -89,9 +89,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Configurar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
-        imageClassName: 'h-full w-full translate-y-3 object-contain object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[56%] max-w-[224px]',
-        contentWidthClassName: 'w-[42%]',
+        imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
+        imageWrapperClassName: 'right-1 top-0 bottom-0 w-[38%] max-w-[152px]',
+        contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
       };
   }
@@ -179,7 +179,15 @@ export function StoreExplorationGuide({
   const item = getItemConfig(proximoMarco, handleShare, handlePagamentos);
 
   const content = (
-    <div className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}>
+    // `style` (não só `className`) para o corte/tamanho do card já valer
+    // no primeiro paint — em ligação lenta o HTML pinta antes do CSS
+    // terminar de carregar, e sem isto a imagem aparece "crua" (sem
+    // overflow-hidden nem tamanho) por uma fração de segundo, parecendo
+    // saltar para fora do card, até o stylesheet aplicar.
+    <div
+      className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}
+      style={{ overflow: 'hidden', borderRadius: 28, minHeight: 192 }}
+    >
       {/* Dispensar este passo — passa automaticamente para o próximo da fila */}
       <button
         type="button"
@@ -195,7 +203,10 @@ export function StoreExplorationGuide({
       </button>
 
       {/* Conteúdo: eyebrow → título → descrição → CTA */}
-      <div className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}>
+      <div
+        className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}
+        style={{ minHeight: 130 }}
+      >
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
         <div className="mt-1.5">
@@ -211,9 +222,12 @@ export function StoreExplorationGuide({
       </div>
 
       {/* Área visual à direita */}
-      <div className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}>
+      <div
+        className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}
+        style={{ overflow: 'hidden', borderRadius: 22 }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={item.image} alt="" className={item.imageClassName} />
+        <img src={item.image} alt="" className={item.imageClassName} style={{ width: '100%', height: '100%' }} decoding="async" />
       </div>
     </div>
   );
