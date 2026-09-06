@@ -78,7 +78,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-1 top-0 bottom-0 w-[38%] max-w-[152px]',
+        imageWrapperClassName: 'right-3 top-0 bottom-0 w-[40%] max-w-[160px]',
         contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
       };
