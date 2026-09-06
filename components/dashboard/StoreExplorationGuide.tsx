@@ -64,9 +64,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         href: '/loja',
         image: '/images/personalizar-loja.jpg',
         imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-1 top-0 bottom-0 w-[65%] max-w-[262px]',
-        contentWidthClassName: 'w-[42%]',
-        subtitleClassName: 'max-w-[230px]',
+        imageWrapperClassName: 'right-4 top-0 bottom-0 w-[40%] max-w-[160px]',
+        contentWidthClassName: 'w-[54%]',
+        subtitleClassName: 'max-w-[210px]',
       };
     case 'partilhar_loja':
       return {
