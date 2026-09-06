@@ -32,7 +32,7 @@ const cta =
  * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
  * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = '/images/pagamentos.png';
+const PAGAMENTOS_ICON = '/images/pagamentos.webp';
 
 /**
  * Design original dos cards ilustrados (mesmo que já existia, com as
@@ -77,9 +77,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Configurar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
-        imageClassName: 'h-full w-full translate-y-3 object-contain object-right',
-        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[56%] max-w-[224px]',
-        contentWidthClassName: 'w-[42%]',
+        imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
+        imageWrapperClassName: 'right-1 top-0 bottom-0 w-[38%] max-w-[152px]',
+        contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
       };
     case 'partilhar_loja':
@@ -165,7 +165,13 @@ export function OnboardingSteps({
           const item = getItemConfig(marco, handleShare, handlePagamentos);
 
           const content = (
-            <div className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}>
+            // `style` inline como rede de segurança contra o "flash" de
+            // imagem crua antes do CSS carregar (ver comentário igual em
+            // StoreExplorationGuide.tsx).
+            <div
+              className={cn('relative min-h-[192px] w-full overflow-hidden rounded-[28px] p-3.5 sm:p-4', ELEVATED_SURFACE)}
+              style={{ overflow: 'hidden', borderRadius: 28, minHeight: 192 }}
+            >
               <button
                 type="button"
                 onClick={(e) => {
@@ -179,7 +185,10 @@ export function OnboardingSteps({
                 <X size={13} strokeWidth={2.5} />
               </button>
 
-              <div className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}>
+              <div
+                className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}
+                style={{ minHeight: 130 }}
+              >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
                 <div className="mt-1.5">
@@ -194,9 +203,12 @@ export function OnboardingSteps({
                 <span className={cn(cta, 'mt-auto')}>{item.ctaLabel}</span>
               </div>
 
-              <div className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}>
+              <div
+                className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}
+                style={{ overflow: 'hidden', borderRadius: 22 }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.image} alt="" className={item.imageClassName} />
+                <img src={item.image} alt="" className={item.imageClassName} style={{ width: '100%', height: '100%' }} decoding="async" />
               </div>
             </div>
           );
