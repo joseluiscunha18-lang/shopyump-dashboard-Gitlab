@@ -58,9 +58,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
       };
     case 'personalizar_loja':
       return {
-        eyebrow: 'Aparência',
+        eyebrow: 'Personalização',
         title: 'Personalize sua loja',
-        subtitle: 'Ajuste a aparência e deixe sua loja com a sua identidade.',
+        subtitle: 'Ajuste a aparência da sua loja.',
         ctaLabel: 'Personalizar',
         href: '/loja',
         image: '/images/personalizar-loja.jpg',
@@ -72,9 +72,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
     case 'configurar_pagamentos':
       return {
         eyebrow: 'Pagamentos',
-        title: 'Configurar pagamentos',
-        subtitle: 'Aceite pagamentos na sua loja e no marketplace de forma simples e rápida.',
-        ctaLabel: 'Configurar',
+        title: 'Adicione métodos de pagamento',
+        subtitle: 'Comece a receber pagamentos na sua loja.',
+        ctaLabel: 'Adicionar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
         imageClassName: 'h-full w-full object-contain object-right',
@@ -86,8 +86,8 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
       return {
         eyebrow: 'Divulgação',
         title: 'Compartilhe sua loja',
-        subtitle: 'Divulgue sua loja e facilite o acesso dos seus clientes.',
-        ctaLabel: 'Copiar link',
+        subtitle: 'Facilite o acesso dos seus clientes.',
+        ctaLabel: 'Compartilhar',
         onAction: handleShare,
         image: '/images/divulgacao.webp',
         imageClassName: 'h-full w-full translate-y-1 object-contain object-right',
