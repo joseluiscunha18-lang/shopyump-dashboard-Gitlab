@@ -77,9 +77,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Configurar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
-        imageClassName: 'h-full w-full translate-y-2 object-contain object-right',
-        imageWrapperClassName: 'right-1 top-0 bottom-0 w-[38%] max-w-[152px]',
-        contentWidthClassName: 'w-[54%]',
+        imageClassName: 'h-full w-full translate-y-3 object-contain object-right',
+        imageWrapperClassName: 'right-0 top-0 bottom-0 w-[56%] max-w-[224px]',
+        contentWidthClassName: 'w-[42%]',
         subtitleClassName: 'max-w-[210px]',
       };
     case 'partilhar_loja':
