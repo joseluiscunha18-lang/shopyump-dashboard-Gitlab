@@ -26,11 +26,51 @@ function formatMoney(value: number): string {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
-// Surface própria do card Finanças — fundo índigo muito claro derivado de
-// #4F46E5, com sombra colorida suave e ring índigo quase invisível.
-// Substitui ELEVATED_SURFACE (bg-white) só aqui; nenhum outro card muda.
-const FINANCAS_SURFACE =
-  'bg-[#EEF0FF] shadow-[0_1px_0_rgba(79,70,229,0.08),0_6px_13px_-6px_rgba(79,70,229,0.14),0_15px_22px_-16px_rgba(79,70,229,0.08)] ring-1 ring-[#4F46E5]/[0.10]';
+/** Ondas decorativas em SVG — espelham fielmente o fundo da imagem de referência */
+function WavesBackground() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox="0 0 420 220"
+      preserveAspectRatio="xMaxYMid slice"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Onda 1 — mais externa, opacidade baixa */}
+      <path
+        d="M 340 -10 Q 390 60 370 120 Q 350 180 420 200"
+        fill="none"
+        stroke="rgba(148,163,255,0.13)"
+        strokeWidth="38"
+        strokeLinecap="round"
+      />
+      {/* Onda 2 — intermédia */}
+      <path
+        d="M 360 -20 Q 405 55 385 115 Q 365 175 430 195"
+        fill="none"
+        stroke="rgba(148,163,255,0.09)"
+        strokeWidth="28"
+        strokeLinecap="round"
+      />
+      {/* Onda 3 — interior mais fina */}
+      <path
+        d="M 378 -25 Q 418 50 400 110 Q 382 170 445 192"
+        fill="none"
+        stroke="rgba(148,163,255,0.06)"
+        strokeWidth="18"
+        strokeLinecap="round"
+      />
+      {/* Onda 4 — fio mais sutil */}
+      <path
+        d="M 394 -30 Q 430 48 415 108 Q 400 165 455 188"
+        fill="none"
+        stroke="rgba(148,163,255,0.04)"
+        strokeWidth="10"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MZN' }: PagamentosCardProps) {
   const temBreakdown = breakdown.length > 0;
@@ -39,66 +79,90 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
 
   return (
     <div className="flex h-full flex-col">
-      <div className={cn('flex flex-1 flex-col gap-4 rounded-[24px] p-5 sm:p-6', FINANCAS_SURFACE)}>
+      {/* Card dark com ondas */}
+      <div
+        className={cn(
+          'relative flex flex-1 flex-col gap-4 overflow-hidden rounded-[22px] p-5 sm:p-6',
+          // Fundo escuro azul-marinho como na imagem
+          'bg-[#0f1629]',
+          // Sombra colorida suave para encaixar no painel claro
+          'shadow-[0_2px_0_rgba(79,70,229,0.06),0_8px_18px_-6px_rgba(15,22,41,0.28),0_20px_28px_-18px_rgba(15,22,41,0.18)]',
+          'ring-1 ring-white/[0.06]',
+        )}
+      >
+        {/* Ondas decorativas em background */}
+        <WavesBackground />
 
-        {/* Cabeçalho: título + Ver detalhes */}
-        <div className="flex items-center justify-between">
-          <p className="text-[13px] font-black tracking-tight text-[#1e1b4b]">Finanças</p>
-          <button
-            type="button"
-            onClick={() => show('Detalhes financeiros em breve.')}
-            className="flex items-center gap-0.5 text-[12px] font-semibold text-[#4F46E5] transition-opacity hover:opacity-70 active:scale-[0.98]"
-          >
-            Ver detalhes
-            <ChevronRight className="h-[13px] w-[13px]" strokeWidth={2.4} />
-          </button>
-        </div>
+        {/* Conteúdo acima das ondas */}
+        <div className="relative z-10 flex flex-col gap-4">
 
-        {/* Saldo principal */}
-        <div className="flex flex-col gap-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#6d6aba]">{amountLabel}</p>
-          <div className="flex items-center gap-2">
-            <p className="font-display text-[28px] font-black leading-none tracking-tight text-[#1e1b4b] sm:text-[30px]">
-              {amountVisible ? (
-                <>
-                  {formatMoney(amount)}
-                  <span className="ml-1 text-[15px] font-bold text-[#6d6aba]">{currencyLabel}</span>
-                </>
-              ) : (
-                <span aria-hidden className="tracking-[0.15em] text-[#a5b4fc]">
-                  ••••••
-                </span>
-              )}
-            </p>
+          {/* Cabeçalho: título + Ver detalhes */}
+          <div className="flex items-center justify-between">
+            <p className="text-[14px] font-black tracking-tight text-white">Finanças</p>
             <button
               type="button"
-              onClick={() => setAmountVisible((v) => !v)}
-              aria-label={amountVisible ? 'Ocultar valor' : 'Mostrar valor'}
-              aria-pressed={!amountVisible}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-[#4F46E5]/60 transition-colors hover:text-[#4F46E5] active:scale-95"
+              onClick={() => show('Detalhes financeiros em breve.')}
+              className="flex items-center gap-0.5 text-[12px] font-semibold text-[#8b8ff8] transition-opacity hover:opacity-75 active:scale-[0.98]"
             >
-              {amountVisible
-                ? <Eye className="h-[16px] w-[16px]" strokeWidth={2.2} />
-                : <EyeOff className="h-[16px] w-[16px]" strokeWidth={2.2} />}
+              Ver detalhes
+              <ChevronRight className="h-[13px] w-[13px]" strokeWidth={2.4} />
             </button>
           </div>
-        </div>
 
-        {/* Breakdown por período */}
-        {temBreakdown && (
-          <div className="flex items-start border-t border-[#4F46E5]/[0.10] pt-4">
-            {breakdown.map((item, i) => (
-              <div key={item.label} className={cn('flex flex-1 flex-col min-w-0', i > 0 && 'ml-3 border-l border-[#4F46E5]/[0.10] pl-3')}>
-                <p className="truncate text-[10.5px] font-semibold text-[#6d6aba]">{item.label}</p>
-                <p className="truncate text-[13.5px] font-black tracking-tight text-[#1e1b4b]">
-                  {formatMoney(item.value)}
-                  <span className="ml-0.5 text-[10px] font-bold text-[#6d6aba]"> {currencyLabel}</span>
-                </p>
-              </div>
-            ))}
+          {/* Saldo principal */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/40">
+              {amountLabel}
+            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-display text-[30px] font-black leading-none tracking-tight text-white sm:text-[32px]">
+                {amountVisible ? (
+                  <>
+                    {formatMoney(amount)}
+                    <span className="ml-1.5 text-[15px] font-bold text-white/50">{currencyLabel}</span>
+                  </>
+                ) : (
+                  <span aria-hidden className="tracking-[0.18em] text-white/25">
+                    ••••••
+                  </span>
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => setAmountVisible((v) => !v)}
+                aria-label={amountVisible ? 'Ocultar valor' : 'Mostrar valor'}
+                aria-pressed={!amountVisible}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#8b8ff8] transition-colors hover:text-white/80 active:scale-95"
+              >
+                {amountVisible
+                  ? <Eye className="h-[17px] w-[17px]" strokeWidth={2} />
+                  : <EyeOff className="h-[17px] w-[17px]" strokeWidth={2} />}
+              </button>
+            </div>
           </div>
-        )}
 
+          {/* Breakdown por período */}
+          {temBreakdown && (
+            <div className="flex items-start border-t border-white/[0.09] pt-4">
+              {breakdown.map((item, i) => (
+                <div
+                  key={item.label}
+                  className={cn(
+                    'flex flex-1 flex-col min-w-0',
+                    i > 0 && 'ml-3 border-l border-white/[0.09] pl-3',
+                  )}
+                >
+                  <p className="truncate text-[10.5px] font-medium text-white/40">{item.label}</p>
+                  <p className="truncate text-[13.5px] font-black tracking-tight text-white">
+                    {formatMoney(item.value)}
+                    <span className="ml-0.5 text-[10px] font-semibold text-white/40"> {currencyLabel}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
