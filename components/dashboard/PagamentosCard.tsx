@@ -83,11 +83,13 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
       <div
         className={cn(
           'relative flex flex-1 flex-col gap-4 overflow-hidden rounded-[22px] p-5 sm:p-6',
-          // Fundo escuro azul-marinho como na imagem
-          'bg-[#0f1629]',
-          // Sombra colorida suave para encaixar no painel claro
-          'shadow-[0_2px_0_rgba(79,70,229,0.06),0_8px_18px_-6px_rgba(15,22,41,0.28),0_20px_28px_-18px_rgba(15,22,41,0.18)]',
-          'ring-1 ring-white/[0.06]',
+          // Gradiente: canto superior-esquerdo ligeiramente mais claro (azul-aço),
+          // fundo escuro premium no inferior-direito. Nenhuma cor saturada — só
+          // luminosidade, para dar profundidade sem virar degradê colorido.
+          'bg-[linear-gradient(135deg,_#1e2d4a_0%,_#151f35_45%,_#0f1629_100%)]',
+          // Sombra com leve toque índigo para "ancorar" o card no painel claro
+          'shadow-[0_2px_0_rgba(79,70,229,0.07),0_8px_20px_-6px_rgba(15,22,41,0.32),0_22px_30px_-18px_rgba(15,22,41,0.20)]',
+          'ring-1 ring-white/[0.09]',
         )}
       >
         {/* Ondas decorativas em background */}
