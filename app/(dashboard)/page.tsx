@@ -4,10 +4,12 @@ import { getDashboardStats } from '@/lib/queries/stats';
 import { getLojaMarcos } from '@/lib/queries/lojaMarcos';
 import { getPedidosByLoja } from '@/lib/queries/pedidos';
 import { NewOrderAlert } from '@/components/dashboard/NewOrderAlert';
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { OnboardingSteps } from '@/components/dashboard/OnboardingSteps';
 import { GenericGrowthTips } from '@/components/dashboard/GenericGrowthTips';
 import { PagamentosCard, resolvePagamentosCard } from '@/components/dashboard/PagamentosCard';
 import { MarketplaceCard } from '@/components/dashboard/MarketplaceCard';
+import { MarketplacePromoCard } from '@/components/dashboard/MarketplacePromoCard';
 import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
 import { HomeCardCarousel } from '@/components/dashboard/HomeCardCarousel';
 import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
@@ -74,8 +76,17 @@ export default async function DashboardHomePage() {
   // gateway/Marketplace ainda vêm do cenário simulado.
   const primeiroProdutoPublicado = !marcosRestantes.includes('primeiro_produto');
 
+  // Fase da saudação (ver DashboardGreeting) — só 3 estados, na ordem
+  // natural da jornada: sem produto ainda → produto(s) mas falta algum
+  // outro marco → tudo concluído/dispensado. Não usa `heading` (que é
+  // sobre os cards-guia) porque a saudação existe mesmo quando
+  // `marcosRestantes.length === 0` e os cards-guia já não aparecem.
+  const faseGreeting = !primeiroProdutoPublicado ? 'inicio' : marcosRestantes.length > 0 ? 'em_progresso' : 'completo';
+
   return (
     <div className="flex flex-col gap-8 pt-2">
+      <DashboardGreeting name={ctx.loja.nome} fase={faseGreeting} />
+
       {/* Quebra a hierarquia normal — um pedido por confirmar é uma
           tarefa pendente, não uma métrica, por isso fica sempre no topo
           quando existe, acima de tudo o resto. */}
@@ -140,6 +151,15 @@ export default async function DashboardHomePage() {
       )}
 
       {marcosRestantes.length === 0 && <GenericGrowthTips />}
+
+      {/* Card promocional do Marketplace — "descoberta opcional", numa
+          secção própria (heading "Marketplace", nunca "Próximos
+          passos"), mostrado sempre que já há produto publicado mas o
+          Marketplace ainda não está ativo. Some assim que for ativado,
+          dando lugar ao MarketplaceCard funcional lá em cima no
+          carrossel (ver MarketplacePromoCard.tsx para o racional
+          completo). */}
+      {primeiroProdutoPublicado && !marketplaceAtivo && <MarketplacePromoCard />}
     </div>
   );
 }
