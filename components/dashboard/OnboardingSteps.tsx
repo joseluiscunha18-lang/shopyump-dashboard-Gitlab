@@ -91,7 +91,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         onAction: handleShare,
         image: '/images/divulgacao.webp',
         imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-4 top-4 bottom-1 w-[38%] max-w-[152px]',
+        imageWrapperClassName: 'right-6 top-4 bottom-1 w-[38%] max-w-[152px]',
         contentWidthClassName: 'w-[54%]',
         subtitleClassName: 'max-w-[210px]',
       };
