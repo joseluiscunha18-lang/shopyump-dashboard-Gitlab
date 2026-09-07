@@ -77,16 +77,16 @@ export function resolvePagamentosCard(
   if (temSaldoShopyump) {
     const saldoGateway = gatewayShopyumpAtivo ? storePayment.availableAmount : 0;
     const saldoMarketplace = marketplaceAtivo ? marketplace.availableAmount : 0;
-    return { amount: saldoGateway + saldoMarketplace, amountLabel: 'Disponível para saque', breakdown };
+    return { amount: saldoGateway + saldoMarketplace, amountLabel: 'SALDO DISPONÍVEL', breakdown };
   }
 
   if (gatewayExternoAtivo) {
-    return { amount: storePayment.salesThisMonth ?? 0, amountLabel: 'Vendas este mês', breakdown };
+    return { amount: storePayment.salesThisMonth ?? 0, amountLabel: 'VENDAS ESTE MÊS', breakdown };
   }
 
   return {
     amount: 0,
-    amountLabel: 'Disponível para saque',
+    amountLabel: 'SALDO DISPONÍVEL',
     breakdown: buildPagamentosBreakdown({ salesToday: 0, salesYesterday: 0, salesThisMonth: 0 }),
     hint: 'Configure pagamentos para começar a receber',
   };
