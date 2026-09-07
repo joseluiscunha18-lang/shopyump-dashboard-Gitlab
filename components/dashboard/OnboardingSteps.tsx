@@ -67,7 +67,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         imageClassName: 'h-full w-full object-contain object-right',
         imageWrapperClassName: 'right-2 top-2 bottom-2 w-[52%] max-w-[208px]',
         contentWidthClassName: 'w-[48%]',
-        subtitleClassName: 'max-w-[165px]',
+        subtitleClassName: 'max-w-[210px]',
       };
     case 'configurar_pagamentos':
       return {
@@ -196,7 +196,7 @@ export function OnboardingSteps({
                   <p className={cn('text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
                     {item.title}
                   </p>
-                  <p className={cn('mt-1.5 text-[clamp(10.5px,3.2cqw,12.5px)] font-medium leading-[1.4] text-slate-400', item.subtitleClassName)}>
+                  <p className={cn('mt-1.5 text-[clamp(11.5px,3.5cqw,13.5px)] font-medium leading-[1.4] text-slate-500', item.subtitleClassName)}>
                     {item.subtitle}
                   </p>
                 </div>
