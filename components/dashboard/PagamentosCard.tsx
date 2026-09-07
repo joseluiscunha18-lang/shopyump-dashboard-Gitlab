@@ -1,4 +1,9 @@
+'use client';
+
+import { useState } from 'react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
+import { useToast } from '@/components/ui/Toast';
 import { formatNumberDot } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
@@ -55,33 +60,76 @@ interface PagamentosCardProps {
  * carrossel esticar este card para acompanhar a altura do vizinho, o
  * espaço extra vai sempre para o `justify-between` interno (nunca para
  * aumentar a fonte ou inventar espaçamento à parte).
+ *
+ * "Finanças" é o rótulo de categoria do card, fixo e sempre em maiúsculas
+ * pequenas — vive DENTRO do card (nunca como heading solto por cima,
+ * isso duplicaria a informação já que só este card aparece nessa
+ * posição). O ícone de olho ao lado de `amountLabel` deixa o valor
+ * principal oculto/visível (privacidade de saldo, comum em apps
+ * financeiros) — só afasta a VISTA do número, nunca o dado em si nem o
+ * breakdown por baixo. "Ver detalhes" fica sempre na base do mesmo
+ * card (nunca um link separado por fora) — ainda sem página de
+ * detalhes real, por isso só mostra um aviso "em breve" por agora,
+ * mesmo padrão do botão "Configurar" em OnboardingSteps.tsx.
  */
 export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MT', hint }: PagamentosCardProps) {
   const temBreakdown = breakdown.length > 0;
+  const [saldoOculto, setSaldoOculto] = useState(false);
+  const { show } = useToast();
 
   return (
     <div className="flex h-full flex-col">
       <div className={cn('flex flex-1 flex-col justify-between rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
         <div className="flex flex-col gap-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{amountLabel}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Finanças</p>
+
+          <div className="mt-1 flex items-center gap-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{amountLabel}</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSaldoOculto((v) => !v);
+              }}
+              aria-label={saldoOculto ? 'Mostrar saldo' : 'Ocultar saldo'}
+              className="text-slate-300 transition-colors hover:text-slate-500"
+            >
+              {saldoOculto ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
+            </button>
+          </div>
+
           <p className="font-display text-[26px] font-black leading-none tracking-tight text-ink sm:text-[28px]">
-            {formatNumberDot(amount)} <span className="text-[14px] font-bold text-slate-400">{currencyLabel}</span>
+            {saldoOculto ? '••••' : formatNumberDot(amount)} <span className="text-[14px] font-bold text-slate-400">{currencyLabel}</span>
           </p>
           {hint && <p className="text-[12.5px] font-semibold text-slate-400">{hint}</p>}
+
+          {temBreakdown && (
+            <div className="mt-3 flex items-center border-t border-slate-100 pt-3.5">
+              {breakdown.map((item, i) => (
+                <div key={item.label} className={cn('flex flex-1 flex-col min-w-0', i > 0 && 'ml-3 border-l border-slate-100 pl-3')}>
+                  <p className="truncate text-[13.5px] font-black tracking-tight text-ink">
+                    {saldoOculto ? '••••' : formatNumberDot(item.value)} <span className="text-[10.5px] font-bold text-slate-400">{currencyLabel}</span>
+                  </p>
+                  <p className="truncate text-[10.5px] font-semibold text-slate-400">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {temBreakdown && (
-          <div className="mt-4 flex items-center border-t border-slate-100 pt-3.5">
-            {breakdown.map((item, i) => (
-              <div key={item.label} className={cn('flex flex-1 flex-col min-w-0', i > 0 && 'ml-3 border-l border-slate-100 pl-3')}>
-                <p className="truncate text-[13.5px] font-black tracking-tight text-ink">
-                  {formatNumberDot(item.value)} <span className="text-[10.5px] font-bold text-slate-400">{currencyLabel}</span>
-                </p>
-                <p className="truncate text-[10.5px] font-semibold text-slate-400">{item.label}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            show('Os detalhes financeiros chegam em breve.');
+          }}
+          className="mt-4 inline-flex items-center gap-1 self-start text-[12.5px] font-bold text-ink transition-colors hover:text-slate-600"
+        >
+          Ver detalhes
+          <ArrowRight size={13} strokeWidth={2.5} />
+        </button>
       </div>
     </div>
   );
