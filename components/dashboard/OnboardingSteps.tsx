@@ -65,9 +65,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         href: '/loja',
         image: '/images/personalizar-loja.webp',
         imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-3 top-2 bottom-2 w-[48%] max-w-[192px]',
-        contentWidthClassName: 'w-[54%]',
-        subtitleClassName: 'max-w-[210px]',
+        imageWrapperClassName: 'right-2 top-2 bottom-2 w-[52%] max-w-[208px]',
+        contentWidthClassName: 'w-[48%]',
+        subtitleClassName: 'max-w-[165px]',
       };
     case 'configurar_pagamentos':
       return {
