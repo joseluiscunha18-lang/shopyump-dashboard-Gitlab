@@ -113,7 +113,7 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
 
           {/* Saldo principal */}
           <div className="flex flex-col gap-1">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/40">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/65">
               {amountLabel}
             </p>
             <div className="flex items-center gap-2">
@@ -145,19 +145,19 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
 
           {/* Breakdown por período */}
           {temBreakdown && (
-            <div className="flex items-start border-t border-white/[0.09] pt-4">
+            <div className="flex items-start border-t-[1.5px] border-white/[0.22] pt-4">
               {breakdown.map((item, i) => (
                 <div
                   key={item.label}
                   className={cn(
                     'flex flex-1 flex-col min-w-0',
-                    i > 0 && 'ml-3 border-l border-white/[0.09] pl-3',
+                    i > 0 && 'ml-3 border-l-[1.5px] border-white/[0.22] pl-3',
                   )}
                 >
-                  <p className="truncate text-[10.5px] font-medium text-white/40">{item.label}</p>
+                  <p className="truncate text-[10.5px] font-semibold text-white/70">{item.label}</p>
                   <p className="truncate text-[13.5px] font-black tracking-tight text-white">
                     {formatMoney(item.value)}
-                    <span className="ml-0.5 text-[10px] font-semibold text-white/40"> {currencyLabel}</span>
+                    <span className="ml-0.5 text-[10px] font-bold text-white/60"> {currencyLabel}</span>
                   </p>
                 </div>
               ))}
