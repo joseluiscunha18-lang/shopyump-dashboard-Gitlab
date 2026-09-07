@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Eye, EyeOff, ChevronRight } from 'lucide-react';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
-import { formatNumberDot } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
 // Re-exporta para não quebrar imports existentes na page.tsx
@@ -22,6 +21,10 @@ interface PagamentosCardProps {
   breakdown?: PagamentosBreakdownItem[];
   currencyLabel?: string;
   hint?: string;
+}
+
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
 export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MZN', hint }: PagamentosCardProps) {
@@ -53,8 +56,8 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
             <p className="font-display text-[28px] font-black leading-none tracking-tight text-ink sm:text-[30px]">
               {amountVisible ? (
                 <>
-                  <span className="text-[16px] font-bold text-slate-500">{currencyLabel} </span>
-                  {formatNumberDot(amount)}
+                  {formatMoney(amount)}
+                  <span className="ml-1 text-[15px] font-bold text-slate-400">{currencyLabel}</span>
                 </>
               ) : (
                 <span aria-hidden className="tracking-[0.15em] text-slate-300">
@@ -81,11 +84,11 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
           <div className="flex items-start border-t border-slate-100 pt-4">
             {breakdown.map((item, i) => (
               <div key={item.label} className={cn('flex flex-1 flex-col min-w-0', i > 0 && 'ml-3 border-l border-slate-100 pl-3')}>
-                <p className="truncate text-[14px] font-black tracking-tight text-ink">
-                  {formatNumberDot(item.value)}
-                  <span className="ml-0.5 text-[10px] font-bold text-slate-400">{currencyLabel}</span>
-                </p>
                 <p className="truncate text-[10.5px] font-semibold text-slate-400">{item.label}</p>
+                <p className="truncate text-[13.5px] font-black tracking-tight text-ink">
+                  {formatMoney(item.value)}
+                  <span className="ml-0.5 text-[10px] font-bold text-slate-400"> {currencyLabel}</span>
+                </p>
               </div>
             ))}
           </div>
