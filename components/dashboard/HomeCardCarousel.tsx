@@ -14,11 +14,11 @@ interface HomeCardCarouselProps {
  * tempo.
  *
  * Decisões de propósito (conversa sobre a Home, não da spec original):
- * - Card ativo ocupa a maior parte da largura (82%), nunca dois lado a
+ * - Card ativo ocupa a maior parte da largura (90%), nunca dois lado a
  *   lado a dividir o ecrã ao meio — cada card mantém o destaque total
  *   enquanto está em foco.
- * - ~18% do próximo card fica visível na borda — a pista de que há mais
- *   para deslizar, sem escondê-lo por completo.
+ * - ~10% do próximo card fica visível na borda — só o suficiente para
+ *   indicar que há mais para deslizar, sem tirar destaque do card ativo.
  * - Scroll nativo por `scroll-snap`, SEM autoplay — o utilizador desliza
  *   quando quiser, nunca o card muda sozinho.
  * - Indicadores discretos (● ○) por baixo, um por card, não clicáveis —
@@ -77,7 +77,7 @@ export function HomeCardCarousel({ children }: HomeCardCarouselProps) {
             ref={(el) => {
               slideRefs.current[i] = el;
             }}
-            className="w-[82%] shrink-0 snap-center sm:w-[300px]"
+            className="w-[90%] shrink-0 snap-center sm:w-[300px]"
           >
             {child}
           </div>
