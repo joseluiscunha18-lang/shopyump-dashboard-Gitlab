@@ -26,30 +26,30 @@ function formatMoney(value: number): string {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
-/** Ondas decorativas — ancoradas no canto inferior-direito, longe do saldo. */
+/** Ondas decorativas — lado direito do card, meio da altura, longe do saldo. */
 function WavesBackground() {
   return (
     <svg
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 h-full w-full"
       viewBox="0 0 420 220"
-      preserveAspectRatio="xMaxYMax slice"
+      preserveAspectRatio="xMidYMid slice"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Onda principal — nasce fora da borda direita, desce suavemente para o canto inferior */}
+      {/* Onda principal — curva suave da direita superior para direita inferior */}
       <path
-        d="M 280 260 Q 340 190 420 160 Q 480 135 500 80"
+        d="M 480 20 Q 420 80 430 120 Q 440 165 380 210"
         fill="none"
-        stroke="rgba(255,255,255,0.07)"
-        strokeWidth="70"
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth="65"
         strokeLinecap="round"
       />
-      {/* Onda secundária — ligeiramente deslocada, mais interior e mais subtil */}
+      {/* Onda secundária — mais deslocada para fora, muito subtil */}
       <path
-        d="M 320 280 Q 375 205 450 175 Q 510 150 525 95"
+        d="M 510 10 Q 455 75 465 118 Q 475 165 415 215"
         fill="none"
         stroke="rgba(255,255,255,0.04)"
-        strokeWidth="55"
+        strokeWidth="50"
         strokeLinecap="round"
       />
     </svg>
