@@ -63,7 +63,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Ajuste a aparência da sua loja.',
         ctaLabel: 'Personalizar',
         href: '/loja',
-        image: '/images/personalizar-loja.jpg',
+        image: '/images/personalizar-loja.webp',
         imageClassName: 'h-full w-full scale-[1.22] object-contain object-right',
         imageWrapperClassName: 'right-4 top-4 bottom-4 w-[40%] max-w-[160px]',
         contentWidthClassName: 'w-[54%]',
