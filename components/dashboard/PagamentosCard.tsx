@@ -26,38 +26,30 @@ function formatMoney(value: number): string {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
-/** Ondas decorativas — largas, suaves e orgânicas. Sussurram, não gritam. */
+/** Ondas decorativas — ancoradas no canto inferior-direito, longe do saldo. */
 function WavesBackground() {
   return (
     <svg
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 h-full w-full"
       viewBox="0 0 420 220"
-      preserveAspectRatio="xMidYMid slice"
+      preserveAspectRatio="xMaxYMax slice"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Onda 1 — grande, ocupa quase toda a largura, flutua suavemente */}
+      {/* Onda principal — nasce fora da borda direita, desce suavemente para o canto inferior */}
       <path
-        d="M -60 170 Q 100 120 220 155 Q 340 190 500 130"
+        d="M 280 260 Q 340 190 420 160 Q 480 135 500 80"
         fill="none"
-        stroke="rgba(255,255,255,0.055)"
-        strokeWidth="80"
-        strokeLinecap="round"
-      />
-      {/* Onda 2 — ligeiramente acima, curva inversa suave */}
-      <path
-        d="M -80 230 Q 80 165 230 200 Q 370 235 520 175"
-        fill="none"
-        stroke="rgba(255,255,255,0.035)"
+        stroke="rgba(255,255,255,0.07)"
         strokeWidth="70"
         strokeLinecap="round"
       />
-      {/* Onda 3 — topo do card, muito subtil */}
+      {/* Onda secundária — ligeiramente deslocada, mais interior e mais subtil */}
       <path
-        d="M -40 90 Q 120 55 270 88 Q 390 115 510 65"
+        d="M 320 280 Q 375 205 450 175 Q 510 150 525 95"
         fill="none"
-        stroke="rgba(255,255,255,0.025)"
-        strokeWidth="60"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="55"
         strokeLinecap="round"
       />
     </svg>
