@@ -40,7 +40,6 @@ export function MarketplacePromoCard() {
       >
         <div
           className={cn('relative mx-auto min-h-[192px] w-full max-w-[560px] overflow-hidden rounded-[28px] p-3.5 sm:p-4 @container', ELEVATED_SURFACE)}
-          style={{ overflow: 'hidden', borderRadius: 28, minHeight: 192 }}
         >
           <div className="relative z-10 flex h-full min-h-[130px] w-[58%] flex-col items-start" style={{ minHeight: 130 }}>
             <p className="text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap">
@@ -57,7 +56,6 @@ export function MarketplacePromoCard() {
           outros cards guia). */}
           <div
             className="absolute right-3 top-2 bottom-2 flex w-[38%] max-w-[152px] items-center justify-center overflow-hidden rounded-[22px]"
-            style={{ overflow: 'hidden', borderRadius: 22 }}
           >
             <svg viewBox="0 0 200 200" className="h-full w-full" style={{ width: '100%', height: '100%' }} fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="28" y="72" width="144" height="98" rx="16" fill="#EEF2FF" />
