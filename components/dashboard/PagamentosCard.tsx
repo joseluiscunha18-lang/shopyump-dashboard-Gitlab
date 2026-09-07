@@ -24,50 +24,66 @@ interface PagamentosCardProps {
   hint?: string;
 }
 
-export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MT', hint }: PagamentosCardProps) {
+export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLabel = 'MZN', hint }: PagamentosCardProps) {
   const temBreakdown = breakdown.length > 0;
   const [amountVisible, setAmountVisible] = useState(true);
   const { show } = useToast();
 
   return (
     <div className="flex h-full flex-col">
-      <div className={cn('flex flex-1 flex-col justify-between rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
-        <div className="flex flex-col gap-1">
-          <p className="text-[12.5px] font-black tracking-tight text-ink">Finanças</p>
+      <div className={cn('flex flex-1 flex-col gap-4 rounded-[24px] p-5 sm:p-6', ELEVATED_SURFACE)}>
 
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{amountLabel}</p>
+        {/* Cabeçalho: título + Ver detalhes */}
+        <div className="flex items-center justify-between">
+          <p className="text-[13px] font-black tracking-tight text-ink">Finanças</p>
+          <button
+            type="button"
+            onClick={() => show('Detalhes financeiros em breve.')}
+            className="flex items-center gap-0.5 text-[12px] font-semibold text-slate-400 transition-opacity hover:opacity-70 active:scale-[0.98]"
+          >
+            Ver detalhes
+            <ChevronRight className="h-[13px] w-[13px]" strokeWidth={2.4} />
+          </button>
+        </div>
+
+        {/* Saldo principal */}
+        <div className="flex flex-col gap-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">{amountLabel}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-display text-[28px] font-black leading-none tracking-tight text-ink sm:text-[30px]">
+              {amountVisible ? (
+                <>
+                  <span className="text-[16px] font-bold text-slate-500">{currencyLabel} </span>
+                  {formatNumberDot(amount)}
+                </>
+              ) : (
+                <span aria-hidden className="tracking-[0.15em] text-slate-300">
+                  ••••••
+                </span>
+              )}
+            </p>
             <button
               type="button"
               onClick={() => setAmountVisible((v) => !v)}
               aria-label={amountVisible ? 'Ocultar valor' : 'Mostrar valor'}
               aria-pressed={!amountVisible}
-              className="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-ink active:scale-95"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-ink active:scale-95"
             >
-              {amountVisible ? <Eye className="h-[15px] w-[15px]" strokeWidth={2.2} /> : <EyeOff className="h-[15px] w-[15px]" strokeWidth={2.2} />}
+              {amountVisible
+                ? <Eye className="h-[16px] w-[16px]" strokeWidth={2.2} />
+                : <EyeOff className="h-[16px] w-[16px]" strokeWidth={2.2} />}
             </button>
           </div>
-
-          <p className="font-display text-[26px] font-black leading-none tracking-tight text-ink sm:text-[28px]">
-            {amountVisible ? (
-              <>
-                {formatNumberDot(amount)} <span className="text-[14px] font-bold text-slate-400">{currencyLabel}</span>
-              </>
-            ) : (
-              <span aria-hidden className="tracking-[0.15em] text-slate-300">
-                • • • • •
-              </span>
-            )}
-          </p>
-          {hint && <p className="text-[12.5px] font-semibold text-slate-400">{hint}</p>}
         </div>
 
+        {/* Breakdown por período */}
         {temBreakdown && (
-          <div className="mt-4 flex items-center border-t border-slate-100 pt-3.5">
+          <div className="flex items-start border-t border-slate-100 pt-4">
             {breakdown.map((item, i) => (
               <div key={item.label} className={cn('flex flex-1 flex-col min-w-0', i > 0 && 'ml-3 border-l border-slate-100 pl-3')}>
-                <p className="truncate text-[13.5px] font-black tracking-tight text-ink">
-                  {formatNumberDot(item.value)} <span className="text-[10.5px] font-bold text-slate-400">{currencyLabel}</span>
+                <p className="truncate text-[14px] font-black tracking-tight text-ink">
+                  {formatNumberDot(item.value)}
+                  <span className="ml-0.5 text-[10px] font-bold text-slate-400">{currencyLabel}</span>
                 </p>
                 <p className="truncate text-[10.5px] font-semibold text-slate-400">{item.label}</p>
               </div>
@@ -75,14 +91,6 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => show('Detalhes financeiros em breve.')}
-          className="mt-3.5 flex items-center gap-0.5 self-start text-[12.5px] font-bold text-ink transition-opacity hover:opacity-70 active:scale-[0.98]"
-        >
-          Ver detalhes
-          <ChevronRight className="h-[15px] w-[15px]" strokeWidth={2.4} />
-        </button>
       </div>
     </div>
   );
