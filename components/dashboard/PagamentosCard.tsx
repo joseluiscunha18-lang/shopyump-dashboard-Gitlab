@@ -26,46 +26,38 @@ function formatMoney(value: number): string {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
-/** Ondas decorativas em SVG — espelham fielmente o fundo da imagem de referência */
+/** Ondas decorativas — largas, suaves e orgânicas. Sussurram, não gritam. */
 function WavesBackground() {
   return (
     <svg
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 h-full w-full"
       viewBox="0 0 420 220"
-      preserveAspectRatio="xMaxYMid slice"
+      preserveAspectRatio="xMidYMid slice"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Onda 1 — mais externa, opacidade baixa */}
+      {/* Onda 1 — grande, ocupa quase toda a largura, flutua suavemente */}
       <path
-        d="M 340 -10 Q 390 60 370 120 Q 350 180 420 200"
+        d="M -60 170 Q 100 120 220 155 Q 340 190 500 130"
         fill="none"
-        stroke="rgba(148,163,255,0.13)"
-        strokeWidth="38"
+        stroke="rgba(255,255,255,0.055)"
+        strokeWidth="80"
         strokeLinecap="round"
       />
-      {/* Onda 2 — intermédia */}
+      {/* Onda 2 — ligeiramente acima, curva inversa suave */}
       <path
-        d="M 360 -20 Q 405 55 385 115 Q 365 175 430 195"
+        d="M -80 230 Q 80 165 230 200 Q 370 235 520 175"
         fill="none"
-        stroke="rgba(148,163,255,0.09)"
-        strokeWidth="28"
+        stroke="rgba(255,255,255,0.035)"
+        strokeWidth="70"
         strokeLinecap="round"
       />
-      {/* Onda 3 — interior mais fina */}
+      {/* Onda 3 — topo do card, muito subtil */}
       <path
-        d="M 378 -25 Q 418 50 400 110 Q 382 170 445 192"
+        d="M -40 90 Q 120 55 270 88 Q 390 115 510 65"
         fill="none"
-        stroke="rgba(148,163,255,0.06)"
-        strokeWidth="18"
-        strokeLinecap="round"
-      />
-      {/* Onda 4 — fio mais sutil */}
-      <path
-        d="M 394 -30 Q 430 48 415 108 Q 400 165 455 188"
-        fill="none"
-        stroke="rgba(148,163,255,0.04)"
-        strokeWidth="10"
+        stroke="rgba(255,255,255,0.025)"
+        strokeWidth="60"
         strokeLinecap="round"
       />
     </svg>
@@ -104,7 +96,7 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
             <button
               type="button"
               onClick={() => show('Detalhes financeiros em breve.')}
-              className="flex items-center gap-0.5 text-[12px] font-semibold text-[#8b8ff8] transition-opacity hover:opacity-75 active:scale-[0.98]"
+              className="flex items-center gap-0.5 text-[12px] font-semibold text-white/60 transition-opacity hover:opacity-75 active:scale-[0.98]"
             >
               Ver detalhes
               <ChevronRight className="h-[13px] w-[13px]" strokeWidth={2.4} />
@@ -124,7 +116,7 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
                     <span className="ml-1.5 text-[15px] font-bold text-white/50">{currencyLabel}</span>
                   </>
                 ) : (
-                  <span aria-hidden className="tracking-[0.18em] text-white/25">
+                  <span aria-hidden className="tracking-[0.18em] text-white/55">
                     ••••••
                   </span>
                 )}
@@ -134,7 +126,7 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
                 onClick={() => setAmountVisible((v) => !v)}
                 aria-label={amountVisible ? 'Ocultar valor' : 'Mostrar valor'}
                 aria-pressed={!amountVisible}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#8b8ff8] transition-colors hover:text-white/80 active:scale-95"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white/80 active:scale-95"
               >
                 {amountVisible
                   ? <Eye className="h-[17px] w-[17px]" strokeWidth={2} />
@@ -145,13 +137,13 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
 
           {/* Breakdown por período */}
           {temBreakdown && (
-            <div className="flex items-start border-t-[1.5px] border-white/[0.22] pt-4">
+            <div className="flex items-start border-t border-white/[0.18] pt-4">
               {breakdown.map((item, i) => (
                 <div
                   key={item.label}
                   className={cn(
                     'flex flex-1 flex-col min-w-0',
-                    i > 0 && 'ml-3 border-l-[1.5px] border-white/[0.22] pl-3',
+                    i > 0 && 'ml-3 border-l border-white/[0.18] pl-3',
                   )}
                 >
                   <p className="truncate text-[10.5px] font-semibold text-white/70">{item.label}</p>
