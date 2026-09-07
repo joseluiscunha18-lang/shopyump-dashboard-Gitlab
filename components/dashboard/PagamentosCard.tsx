@@ -26,7 +26,7 @@ function formatMoney(value: number): string {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
-/** Luz diagonal — feixes suaves ancorados no canto direito, longe do saldo. */
+/** Luz diagonal — muito subtil, quase invisível. Só se sente. */
 function WavesBackground() {
   return (
     <svg
@@ -36,18 +36,14 @@ function WavesBackground() {
       preserveAspectRatio="xMaxYMid slice"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Feixe 1 — mais largo e brilhante */}
       <line x1="300" y1="-20" x2="470" y2="240"
-        stroke="rgba(255,255,255,0.06)" strokeWidth="55" strokeLinecap="round"/>
-      {/* Feixe 2 — intermédio */}
+        stroke="rgba(255,255,255,0.025)" strokeWidth="55" strokeLinecap="round"/>
       <line x1="340" y1="-20" x2="490" y2="220"
-        stroke="rgba(255,255,255,0.045)" strokeWidth="38" strokeLinecap="round"/>
-      {/* Feixe 3 — fino e subtil */}
+        stroke="rgba(255,255,255,0.018)" strokeWidth="38" strokeLinecap="round"/>
       <line x1="375" y1="-20" x2="510" y2="210"
-        stroke="rgba(255,255,255,0.03)" strokeWidth="24" strokeLinecap="round"/>
-      {/* Feixe 4 — fio quase invisível */}
+        stroke="rgba(255,255,255,0.012)" strokeWidth="24" strokeLinecap="round"/>
       <line x1="405" y1="-20" x2="525" y2="200"
-        stroke="rgba(255,255,255,0.018)" strokeWidth="14" strokeLinecap="round"/>
+        stroke="rgba(255,255,255,0.007)" strokeWidth="14" strokeLinecap="round"/>
     </svg>
   );
 }
@@ -80,7 +76,7 @@ export function PagamentosCard({ amount, amountLabel, breakdown = [], currencyLa
 
           {/* Cabeçalho: título + Ver detalhes */}
           <div className="flex items-center justify-between">
-            <p className="text-[14px] font-black tracking-tight text-white">Finanças</p>
+            <p className="text-[14px] font-black tracking-tight text-white">Carteira</p>
             <button
               type="button"
               onClick={() => show('Detalhes financeiros em breve.')}
