@@ -171,7 +171,6 @@ export function OnboardingSteps({
             // equilibrados com a imagem, em qualquer tela/zoom.
             <div
               className={cn('relative mx-auto min-h-[192px] w-full max-w-[560px] overflow-hidden rounded-[28px] p-3.5 sm:p-4 @container', ELEVATED_SURFACE)}
-              style={{ overflow: 'hidden', borderRadius: 28, minHeight: 192 }}
             >
               <button
                 type="button"
@@ -188,7 +187,6 @@ export function OnboardingSteps({
 
               <div
                 className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}
-                style={{ minHeight: 130 }}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
@@ -206,10 +204,9 @@ export function OnboardingSteps({
 
               <div
                 className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}
-                style={{ overflow: 'hidden', borderRadius: 22 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.image} alt="" className={item.imageClassName} style={{ width: '100%', height: '100%' }} decoding="async" />
+                <img src={item.image} alt="" className={item.imageClassName} decoding="async" />
               </div>
             </div>
           );
