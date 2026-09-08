@@ -17,11 +17,12 @@ interface ItemConfig {
   href?: string;
   onAction?: () => void;
   image: string;
-  imageClassName: string;
-  imageWrapperClassName: string;
-  contentWidthClassName: string;
-  titleClassName?: string;
-  subtitleClassName?: string;
+  contentWidth: string;   // valor CSS direto, ex: '68%'
+  imgRight: string;       // ex: '0px'
+  imgTop: string;         // ex: '8px'
+  imgBottom: string;      // ex: '8px'
+  imgWidth: string;       // ex: '42%'
+  imgMaxWidth: string;    // ex: '176px'
 }
 
 const cta =
@@ -51,10 +52,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Criar produto',
         href: '/produtos/novo',
         image: 'https://i.ibb.co/kg0TN94W/1-4.png',
-        imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-0 top-2 bottom-2 w-[42%] max-w-[176px]',
-        contentWidthClassName: 'w-[68%]',
-        subtitleClassName: 'max-w-[210px]',
+        contentWidth: '58%',
+        imgRight: '0px', imgTop: '8px', imgBottom: '8px',
+        imgWidth: '42%', imgMaxWidth: '176px',
       };
     case 'personalizar_loja':
       return {
@@ -64,10 +64,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Personalizar',
         href: '/loja',
         image: '/images/personalizar-loja.webp',
-        imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-3 top-2 bottom-2 w-[52%] max-w-[208px]',
-        contentWidthClassName: 'w-[48%]',
-        subtitleClassName: 'max-w-[210px]',
+        contentWidth: '48%',
+        imgRight: '12px', imgTop: '8px', imgBottom: '8px',
+        imgWidth: '52%', imgMaxWidth: '208px',
       };
     case 'configurar_pagamentos':
       return {
@@ -77,10 +76,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Adicionar',
         onAction: handlePagamentos,
         image: PAGAMENTOS_ICON,
-        imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-5 top-2 bottom-2 w-[40%] max-w-[160px]',
-        contentWidthClassName: 'w-[54%]',
-        subtitleClassName: 'max-w-[210px]',
+        contentWidth: '54%',
+        imgRight: '20px', imgTop: '8px', imgBottom: '8px',
+        imgWidth: '40%', imgMaxWidth: '160px',
       };
     case 'partilhar_loja':
       return {
@@ -90,10 +88,9 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         ctaLabel: 'Compartilhar',
         onAction: handleShare,
         image: '/images/divulgacao.webp',
-        imageClassName: 'h-full w-full object-contain object-right',
-        imageWrapperClassName: 'right-6 top-4 bottom-1 w-[38%] max-w-[152px]',
-        contentWidthClassName: 'w-[54%]',
-        subtitleClassName: 'max-w-[210px]',
+        contentWidth: '54%',
+        imgRight: '24px', imgTop: '16px', imgBottom: '4px',
+        imgWidth: '38%', imgMaxWidth: '152px',
       };
   }
 }
@@ -186,15 +183,16 @@ export function OnboardingSteps({
               </button>
 
               <div
-                className={cn('relative z-10 flex h-full min-h-[130px] flex-col items-start', item.contentWidthClassName)}
+                className="relative z-10 flex h-full min-h-[130px] flex-col items-start"
+                style={{ width: item.contentWidth }}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
 
                 <div className="mt-1.5">
-                  <p className={cn('text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap', item.titleClassName)}>
+                  <p className="text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap">
                     {item.title}
                   </p>
-                  <p className={cn('mt-1.5 text-[clamp(11.5px,3.5cqw,13.5px)] font-medium leading-[1.4] text-slate-500', item.subtitleClassName)}>
+                  <p className="mt-1.5 max-w-[210px] text-[clamp(11.5px,3.5cqw,13.5px)] font-medium leading-[1.4] text-slate-500">
                     {item.subtitle}
                   </p>
                 </div>
@@ -202,19 +200,25 @@ export function OnboardingSteps({
                 <span className={cn(cta, 'mt-auto')}>{item.ctaLabel}</span>
               </div>
 
-              <div
-                className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.image}
-                  alt=""
-                  className={item.imageClassName}
-                  decoding="async"
-                  loading="eager"
-                  fetchPriority="low"
-                />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.image}
+                alt=""
+                decoding="async"
+                style={{
+                  position: 'absolute',
+                  right: item.imgRight,
+                  top: item.imgTop,
+                  bottom: item.imgBottom,
+                  width: item.imgWidth,
+                  maxWidth: item.imgMaxWidth,
+                  height: 'auto',
+                  objectFit: 'contain',
+                  objectPosition: 'right center',
+                  borderRadius: 22,
+                  overflow: 'hidden',
+                }}
+              />
             </div>
           );
 
