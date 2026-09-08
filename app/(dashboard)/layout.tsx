@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { countPedidosPendentes } from '@/lib/queries/pedidos';
@@ -7,6 +8,17 @@ import { TopBar } from '@/components/nav/TopBar';
 import { MobileNavProvider } from '@/components/nav/MobileNavContext';
 import { ProductFormGuardProvider } from '@/components/produtos/ProductFormGuardContext';
 import { PublishingProvider } from '@/components/produtos/PublishingContext';
+
+/**
+ * Componente async isolado para o BottomNav — resolve o countPedidosPendentes
+ * de forma independente, sem bloquear o streaming da page.tsx.
+ * O layout principal termina imediatamente após getUserContext(), permitindo
+ * que o loading.tsx → page.tsx fluam sem esperar por esta query.
+ */
+async function BottomNavAsync({ lojaId }: { lojaId: string }) {
+  const pedidosPendentes = await countPedidosPendentes(lojaId);
+  return <BottomNav lojaId={lojaId} initialPedidosPendentes={pedidosPendentes} />;
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getUserContext();
@@ -18,10 +30,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!ctx.loja && !ctx.isAdmin) redirect('/onboarding');
 
   const storeUrl = ctx.loja ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
-  // Mesmo sinal usado no badge da barra inferior e no alerta da Início —
-  // aqui só precisa do número, não da lista. Uma query leve (count, sem
-  // trazer linhas), corre em paralelo ao resto do layout.
-  const pedidosPendentes = ctx.loja ? await countPedidosPendentes(ctx.loja.id) : 0;
 
   return (
     <MobileNavProvider>
@@ -37,11 +45,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <TopBar
                 storeName={ctx.loja?.nome ?? 'Painel Admin'}
                 storeUrl={storeUrl}
-                hasUnreadNotifications={pedidosPendentes > 0}
+                hasUnreadNotifications={false}
               />
               <main className="flex-1 px-4 sm:px-6 pt-6 pb-10">{children}</main>
             </div>
-            <BottomNav lojaId={ctx.loja?.id} initialPedidosPendentes={pedidosPendentes} />
+            {/* BottomNavAsync resolve a query de pendentes de forma independente
+                para não bloquear o streaming — o loading.tsx da page aparece
+                imediatamente enquanto este Suspense resolve em paralelo. */}
+            {ctx.loja ? (
+              <Suspense fallback={<BottomNav lojaId={ctx.loja.id} initialPedidosPendentes={0} />}>
+                <BottomNavAsync lojaId={ctx.loja.id} />
+              </Suspense>
+            ) : (
+              <BottomNav lojaId={undefined} initialPedidosPendentes={0} />
+            )}
           </div>
         </PublishingProvider>
       </ProductFormGuardProvider>
