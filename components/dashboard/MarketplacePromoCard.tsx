@@ -57,7 +57,7 @@ export function MarketplacePromoCard() {
           <div
             className="absolute right-3 top-2 bottom-2 flex w-[38%] max-w-[152px] items-center justify-center overflow-hidden rounded-[22px]"
           >
-            <svg viewBox="0 0 200 200" className="h-full w-full" style={{ width: '100%', height: '100%' }} fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 200 200" className="h-full w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="28" y="72" width="144" height="98" rx="16" fill="#EEF2FF" />
               <path d="M54 72 L70 32 H130 L146 72" stroke="#6366F1" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
               <circle cx="78" cy="112" r="11" fill="#6366F1" />
