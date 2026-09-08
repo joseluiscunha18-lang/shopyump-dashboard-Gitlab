@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo, useCallback } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
@@ -17,32 +17,24 @@ interface ItemConfig {
   href?: string;
   onAction?: () => void;
   image: string;
-  contentWidth: string;   // valor CSS direto, ex: '68%'
-  imgRight: string;       // ex: '0px'
-  imgTop: string;         // ex: '8px'
-  imgBottom: string;      // ex: '8px'
-  imgWidth: string;       // ex: '42%'
-  imgMaxWidth: string;    // ex: '176px'
+  contentWidth: string;
+  imgRight: string;
+  imgTop: string;
+  imgBottom: string;
+  imgWidth: string;
+  imgMaxWidth: string;
 }
 
 const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
-/**
- * Ilustração do card "Pagamentos" — foto com os métodos de pagamento
- * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
- * i.ibb.co, mesmo padrão dos outros marcos.
- */
 const PAGAMENTOS_ICON = '/images/pagamentos.webp';
 
-/**
- * Design original dos cards ilustrados (mesmo que já existia, com as
- * mesmas imagens) — não é um redesign, é o MESMO visual de sempre, só
- * reaproveitado aqui para poder aparecer mais que um de cada vez (ver
- * OnboardingSteps abaixo). Nunca trocar por um estilo novo sem pedido
- * explícito — ver histórico da conversa sobre "não mexer no design".
- */
-function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePagamentos: () => void): ItemConfig {
+function getItemConfig(
+  marco: MarcoOnboarding,
+  handleShare: () => void,
+  handlePagamentos: () => void,
+): ItemConfig {
   switch (marco) {
     case 'primeiro_produto':
       return {
@@ -96,12 +88,96 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
 }
 
 /**
- * Cards de "próximos passos" — MESMO visual ilustrado que já existia
- * (getItemConfig acima é literalmente o mesmo conteúdo/imagens de
- * antes), só que agora capaz de empilhar mais de um ao mesmo tempo
- * quando restam 2-3 marcos, em vez de mostrar sempre só um (era essa a
- * parte estrutural que mudou nesta conversa, não o desenho do card).
+ * Card individual memoizado — não re-renderiza quando o pai atualiza
+ * (ex: outro card dispensado, contextos de nav mudam). Isso elimina o
+ * flash da imagem que ocorria porque o React re-montava o <img>
+ * desnecessariamente a cada re-render do componente pai.
  */
+const OnboardingCard = memo(function OnboardingCard({
+  marco,
+  item,
+  onDismiss,
+}: {
+  marco: MarcoOnboarding;
+  item: ItemConfig;
+  onDismiss: (m: MarcoOnboarding) => void;
+}) {
+  const content = (
+    <div
+      className={cn(
+        'relative mx-auto min-h-[192px] w-full max-w-[560px] overflow-hidden rounded-[28px] p-3.5 sm:p-4 @container',
+        ELEVATED_SURFACE,
+      )}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDismiss(marco);
+        }}
+        aria-label="Dispensar"
+        className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center text-slate-500 transition-colors hover:text-ink active:scale-95"
+      >
+        <X size={13} strokeWidth={2.5} />
+      </button>
+
+      <div
+        className="relative z-10 flex h-full min-h-[130px] flex-col items-start"
+        style={{ width: item.contentWidth }}
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+          {item.eyebrow}
+        </p>
+        <div className="mt-1.5">
+          <p className="whitespace-nowrap text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink">
+            {item.title}
+          </p>
+          <p className="mt-1.5 max-w-[210px] text-[clamp(11.5px,3.5cqw,13.5px)] font-medium leading-[1.4] text-slate-500">
+            {item.subtitle}
+          </p>
+        </div>
+        <span className={cn(cta, 'mt-auto')}>{item.ctaLabel}</span>
+      </div>
+
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={item.image}
+        alt=""
+        width={208}
+        height={176}
+        decoding="async"
+        style={{
+          position: 'absolute',
+          right: item.imgRight,
+          top: item.imgTop,
+          bottom: item.imgBottom,
+          width: item.imgWidth,
+          maxWidth: item.imgMaxWidth,
+          height: `calc(100% - ${item.imgTop} - ${item.imgBottom})`,
+          objectFit: 'contain',
+          objectPosition: 'right center',
+          borderRadius: 22,
+        }}
+      />
+    </div>
+  );
+
+  return item.href ? (
+    <Link href={item.href} className="block transition-transform active:scale-[0.99]">
+      {content}
+    </Link>
+  ) : (
+    <button
+      type="button"
+      onClick={item.onAction}
+      className="block w-full text-left transition-transform active:scale-[0.99]"
+    >
+      {content}
+    </button>
+  );
+});
+
 export function OnboardingSteps({
   lojaId,
   storeUrl,
@@ -120,7 +196,7 @@ export function OnboardingSteps({
 
   const visiveis = marcos.filter((m) => !ocultosLocalmente.has(m));
 
-  async function handleShare() {
+  const handleShare = useCallback(async () => {
     if (!storeUrl) return;
     try {
       if (navigator.share) {
@@ -134,104 +210,33 @@ export function OnboardingSteps({
     } catch {
       // usuário cancelou a partilha — não é um erro a comunicar
     }
-  }
+  }, [lojaId, storeUrl, storeName, show]);
 
-  // Sem página de configuração de pagamentos real ainda (ver
-  // PagamentosCard.tsx/resolvePagamentosCard — gateway/Marketplace
-  // continuam simulados) — por isso este botão só avisa por agora, em
-  // vez de navegar para um link morto ou marcar o marco como concluído
-  // sem o vendedor ter feito nada de facto. Trocar por `href: '/pagamentos'`
-  // assim que essa página existir (mesmo padrão do 'primeiro_produto'
-  // e 'personalizar_loja' acima).
-  function handlePagamentos() {
+  const handlePagamentos = useCallback(() => {
     show('A configuração de pagamentos chega em breve.');
-  }
+  }, [show]);
 
-  function handleDismiss(marco: MarcoOnboarding) {
+  const handleDismiss = useCallback((marco: MarcoOnboarding) => {
     dispensarMarco(lojaId, marco).catch(() => {});
     setOcultosLocalmente((prev) => new Set(prev).add(marco));
-  }
+  }, [lojaId]);
 
   if (visiveis.length === 0) return null;
 
   return (
     <div>
-      <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">{heading}</h2>
+      <h2 className="mb-3 px-1 text-[13px] font-bold uppercase tracking-[0.08em] text-slate-400">
+        {heading}
+      </h2>
       <div className="flex flex-col gap-4">
-        {visiveis.map((marco) => {
-          const item = getItemConfig(marco, handleShare, handlePagamentos);
-
-          const content = (
-            // `@container` + `cqw` (ver comentário igual em
-            // StoreExplorationGuide.tsx): título/subtítulo escalam com a
-            // largura do PRÓPRIO card, não do viewport — ficam sempre
-            // equilibrados com a imagem, em qualquer tela/zoom.
-            <div
-              className={cn('relative mx-auto min-h-[192px] w-full max-w-[560px] overflow-hidden rounded-[28px] p-3.5 sm:p-4 @container', ELEVATED_SURFACE)}
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDismiss(marco);
-                }}
-                aria-label="Dispensar"
-                className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center text-slate-500 transition-colors hover:text-ink active:scale-95"
-              >
-                <X size={13} strokeWidth={2.5} />
-              </button>
-
-              <div
-                className="relative z-10 flex h-full min-h-[130px] flex-col items-start"
-                style={{ width: item.contentWidth }}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.eyebrow}</p>
-
-                <div className="mt-1.5">
-                  <p className="text-[clamp(13px,4.6cqw,17px)] font-bold leading-[1.15] tracking-[-0.02em] text-ink whitespace-nowrap">
-                    {item.title}
-                  </p>
-                  <p className="mt-1.5 max-w-[210px] text-[clamp(11.5px,3.5cqw,13.5px)] font-medium leading-[1.4] text-slate-500">
-                    {item.subtitle}
-                  </p>
-                </div>
-
-                <span className={cn(cta, 'mt-auto')}>{item.ctaLabel}</span>
-              </div>
-
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.image}
-                alt=""
-                decoding="async"
-                style={{
-                  position: 'absolute',
-                  right: item.imgRight,
-                  top: item.imgTop,
-                  bottom: item.imgBottom,
-                  width: item.imgWidth,
-                  maxWidth: item.imgMaxWidth,
-                  height: 'auto',
-                  objectFit: 'contain',
-                  objectPosition: 'right center',
-                  borderRadius: 22,
-                  overflow: 'hidden',
-                }}
-              />
-            </div>
-          );
-
-          return item.href ? (
-            <Link key={marco} href={item.href} className="block transition-transform active:scale-[0.99]">
-              {content}
-            </Link>
-          ) : (
-            <button key={marco} type="button" onClick={item.onAction} className="block w-full text-left transition-transform active:scale-[0.99]">
-              {content}
-            </button>
-          );
-        })}
+        {visiveis.map((marco) => (
+          <OnboardingCard
+            key={marco}
+            marco={marco}
+            item={getItemConfig(marco, handleShare, handlePagamentos)}
+            onDismiss={handleDismiss}
+          />
+        ))}
       </div>
     </div>
   );
