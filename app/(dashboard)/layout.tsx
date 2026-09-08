@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import DashboardLoading from './loading';
 import { redirect } from 'next/navigation';
 import { getUserContext } from '@/lib/auth/getUserContext';
 import { countPedidosPendentes } from '@/lib/queries/pedidos';
@@ -47,7 +48,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 storeUrl={storeUrl}
                 hasUnreadNotifications={false}
               />
-              <main className="flex-1 px-4 sm:px-6 pt-6 pb-10">{children}</main>
+              <main className="flex-1 px-4 sm:px-6 pt-6 pb-10">
+                <Suspense fallback={<DashboardLoading />}>
+                  {children}
+                </Suspense>
+              </main>
             </div>
             {/* BottomNavAsync resolve a query de pendentes de forma independente
                 para não bloquear o streaming — o loading.tsx da page aparece
