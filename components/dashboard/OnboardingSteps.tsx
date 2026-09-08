@@ -206,7 +206,14 @@ export function OnboardingSteps({
                 className={cn('absolute flex items-center justify-center overflow-hidden rounded-[22px]', item.imageWrapperClassName)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.image} alt="" className={item.imageClassName} decoding="async" />
+                <img
+                  src={item.image}
+                  alt=""
+                  className={item.imageClassName}
+                  decoding="async"
+                  loading="eager"
+                  fetchPriority="low"
+                />
               </div>
             </div>
           );
