@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: 'placehold.co' },
+      { protocol: 'https', hostname: 'i.ibb.co' },
     ],
   },
   // Por omissão, no Next 15 `staleTimes.dynamic` é 0 — o router.prefetch()
