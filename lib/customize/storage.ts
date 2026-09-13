@@ -41,3 +41,31 @@ export function saveCustomization(lojaId: string, data: LojaCustomization): void
     // silêncio, o editor continua a funcionar só que sem persistir.
   }
 }
+
+/**
+ * Onboarding contextual da pré-visualização ("Toque em uma parte da loja
+ * para editar"): mostrado só até o vendedor tocar pela primeira vez em
+ * qualquer região editável, nunca mais depois disso — não é um tutorial
+ * que se repete a cada visita.
+ */
+function hintKey(lojaId: string): string {
+  return `shopyump:personalizar-loja:hint-visto:${lojaId}`;
+}
+
+export function hasSeenEditHint(lojaId: string): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    return window.localStorage.getItem(hintKey(lojaId)) === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function markEditHintSeen(lojaId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(hintKey(lojaId), '1');
+  } catch {
+    // ignora — não é crítico se o aviso reaparecer numa próxima visita.
+  }
+}
