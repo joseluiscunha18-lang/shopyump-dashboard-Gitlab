@@ -1,47 +1,42 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, ExternalLink, Palette, Paintbrush, MousePointerClick, Store as StoreIcon, ListChecks } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
 import { useToast } from '@/components/ui/Toast';
-import { StorePreview } from '@/components/loja/preview/StorePreview';
+import { StorePreview, type EditableRegion } from '@/components/loja/preview/StorePreview';
 import { StoreSettingsForm } from '@/components/loja/StoreSettingsForm';
 import { ThemeSheet } from './ThemeSheet';
 import { ColorSheet } from './ColorSheet';
 import { ButtonStyleSheet } from './ButtonStyleSheet';
+import { BannerSheet } from './BannerSheet';
+import { InfoSheet } from './InfoSheet';
+import { ProdutosSheet } from './ProdutosSheet';
 import { getThemeById } from '@/types/theme';
 import type { ThemeId, ThemeButtonRadius } from '@/types/theme';
 import { resolvePreviewProducts, resolvePreviewStore, type PreviewProduct } from '@/lib/mocks/storePreview';
-import { loadCustomization, saveCustomization } from '@/lib/customize/storage';
+import { loadCustomization, saveCustomization, hasSeenEditHint, markEditHintSeen } from '@/lib/customize/storage';
 import type { LojaCustomization } from '@/lib/customize/types';
 import type { Loja, Produto } from '@/types/database';
 
-type SheetKind = 'tema' | 'cores' | 'estilo' | 'informacoes' | null;
+type PanelKind = 'tema' | 'cores' | 'estilo' | 'banner' | 'info' | 'produtos' | 'completo' | null;
 
 /**
- * Editor + pré-visualização da "Personalizar loja" (§1, §14).
+ * "Personalizar loja" — editor por toque na pré-visualização.
  *
- * Estado importante para entender o fluxo:
- * - `applied` é a personalização confirmada (o que a loja pública usa).
- * - `previewingThemeId` é só o tema mostrado no preview ENQUANTO o
- *   vendedor está a experimentar — nasce igual a `applied.temaId` e só
- *   diverge quando ele toca noutro tema no sheet "Tema" (§7). A barra
- *   "Aplicar tema" só aparece nesse momento.
- * - Cor e estilo de botão, ao contrário do tema, aplicam-se em tempo
- *   real (§8) — não têm passo de "testar antes", porque são ajustes
- *   pequenos sobre o tema já aplicado, não uma troca de aparência
- *   inteira.
+ * Modelo (revisão pedida sobre a 1ª versão, que listava Tema/Cores/
+ * Estilo como um menu antes de mostrar a loja): o vendedor entra e já vê
+ * a loja; toca num bloco (banner, nome/descrição, produtos) e um painel
+ * contextual sobe só com o que é relevante para aquele bloco. Tema
+ * continua fora da prévia, como configuração global fixa logo abaixo
+ * dela. Tudo o resto (contactos, secções, política de entrega/termos)
+ * fica atrás de "Mais configurações", fechado por omissão, para a tela
+ * inicial continuar limpa.
  */
-export function PersonalizarLojaPage({
-  loja,
-  produtos,
-}: {
-  loja: Loja;
-  produtos: Produto[];
-}) {
+export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos: Produto[] }) {
   const router = useRouter();
   const { show } = useToast();
 
@@ -49,8 +44,17 @@ export function PersonalizarLojaPage({
   const [previewingThemeId, setPreviewingThemeId] = useState<ThemeId>(applied.temaId);
   const [corPrincipal, setCorPrincipal] = useState<string | null>(applied.corPrincipal);
   const [estiloBotao, setEstiloBotao] = useState<ThemeButtonRadius | null>(applied.estiloBotao);
-  const [openSheet, setOpenSheet] = useState<SheetKind>(null);
-  const [saving, setSaving] = useState(false);
+  const [bannerGrande, setBannerGrande] = useState<boolean>(applied.bannerGrande);
+  const [colunas, setColunas] = useState<2 | 3 | null>(applied.colunas);
+
+  const [selectedRegion, setSelectedRegion] = useState<EditableRegion | null>(null);
+  const [panel, setPanel] = useState<PanelKind>(null);
+  const [maisConfigAberto, setMaisConfigAberto] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    setShowHint(!hasSeenEditHint(loja.id));
+  }, [loja.id]);
 
   const isTestingTheme = previewingThemeId !== applied.temaId;
   const previewTheme = getThemeById(previewingThemeId);
@@ -70,68 +74,80 @@ export function PersonalizarLojaPage({
     [produtos]
   );
 
+  function persist(patch: Partial<LojaCustomization>) {
+    setApplied((prev) => {
+      const next = { ...prev, ...patch };
+      saveCustomization(loja.id, next);
+      return next;
+    });
+  }
+
+  function handleSelectRegion(region: EditableRegion) {
+    if (showHint) {
+      setShowHint(false);
+      markEditHintSeen(loja.id);
+    }
+    setSelectedRegion(region);
+    setPanel(region);
+  }
+
+  function closePanel() {
+    setPanel(null);
+    setSelectedRegion(null);
+  }
+
   function applyTheme() {
-    const next: LojaCustomization = { ...applied, temaId: previewingThemeId };
-    setApplied(next);
-    saveCustomization(loja.id, next);
+    persist({ temaId: previewingThemeId });
     show('Tema aplicado.');
   }
 
   function handleCorChange(hex: string | null) {
     setCorPrincipal(hex);
-    setApplied((prev) => {
-      const next = { ...prev, corPrincipal: hex };
-      saveCustomization(loja.id, next);
-      return next;
-    });
+    persist({ corPrincipal: hex });
   }
 
   function handleEstiloChange(radius: ThemeButtonRadius | null) {
     setEstiloBotao(radius);
-    setApplied((prev) => {
-      const next = { ...prev, estiloBotao: radius };
-      saveCustomization(loja.id, next);
-      return next;
-    });
+    persist({ estiloBotao: radius });
   }
 
-  function handleGuardar() {
-    setSaving(true);
-    // O tema/cor/estilo já ficam guardados a cada alteração (ver
-    // handleCorChange/handleEstiloChange e applyTheme) — este botão
-    // existe para dar ao vendedor um momento explícito de "pronto,
-    // terminei", coerente com o resto do dashboard, que sempre fecha
-    // uma alteração com "Guardar alterações".
-    saveCustomization(loja.id, applied);
-    setSaving(false);
-    show('Personalização guardada.');
-    router.refresh();
+  function handleBannerGrandeChange(value: boolean) {
+    setBannerGrande(value);
+    persist({ bannerGrande: value });
+  }
+
+  function handleColunasChange(value: 2 | 3 | null) {
+    setColunas(value);
+    persist({ colunas: value });
   }
 
   return (
-    <div className="flex flex-col gap-6 pt-2">
+    <div className="flex flex-col gap-5 pt-2">
       <div className="flex items-center justify-between">
         <Link href="/" className="flex items-center gap-1 text-[13px] font-bold text-slate-500">
           <ChevronLeft size={18} /> Personalizar loja
         </Link>
-        <a
-          href={storeUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1 text-[13px] font-bold text-ink"
-        >
+        <a href={storeUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[13px] font-bold text-ink">
           Ver loja <ExternalLink size={14} />
         </a>
       </div>
 
-      {/* Pré-visualização */}
+      <div>
+        <h2 className="text-lg font-black tracking-tight text-ink">Personalize sua loja</h2>
+        <p className="text-[12px] font-medium text-slate-400">
+          {showHint ? 'Toque em uma parte da loja para editar.' : 'Toque em qualquer parte da loja para editar.'}
+        </p>
+      </div>
+
+      {/* Pré-visualização — a principal forma de editar */}
       <div className="flex flex-col gap-2">
-        <div className="h-[420px] w-full overflow-hidden rounded-[20px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+        <div className="h-[560px] w-full overflow-hidden rounded-[20px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <StorePreview
             theme={previewTheme}
             store={previewStoreData}
             products={previewProductsData}
-            settings={{ corPrincipal, estiloBotao }}
+            settings={{ corPrincipal, estiloBotao, bannerGrande, colunas: colunas ?? undefined }}
+            editable={{ selected: selectedRegion, onSelect: handleSelectRegion, hint: showHint ? 'banner' : null }}
           />
         </div>
 
@@ -141,11 +157,7 @@ export function PersonalizarLojaPage({
               A testar: <span className="font-black text-ink">{previewTheme.name}</span>
             </span>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPreviewingThemeId(applied.temaId)}
-                className="text-[12px] font-bold text-slate-400"
-              >
+              <button type="button" onClick={() => setPreviewingThemeId(applied.temaId)} className="text-[12px] font-bold text-slate-400">
                 Cancelar
               </button>
               <Button type="button" size="sm" onClick={applyTheme}>
@@ -156,43 +168,66 @@ export function PersonalizarLojaPage({
         )}
       </div>
 
-      {/* Aparência */}
-      <section className="flex flex-col gap-1">
-        <h3 className="mb-1 text-[12px] font-black uppercase tracking-widest text-slate-500">Aparência</h3>
-        <SettingsRow
-          icon={<Palette size={17} />}
-          title="Tema"
-          subtitle={`Escolha uma aparência para sua loja · ${getThemeById(applied.temaId).name}`}
-          onClick={() => setOpenSheet('tema')}
-        />
-        <SettingsRow icon={<Paintbrush size={17} />} title="Cores" subtitle="Defina as cores principais" onClick={() => setOpenSheet('cores')} />
-        <SettingsRow icon={<MousePointerClick size={17} />} title="Estilo" subtitle="Botões e elementos visuais" onClick={() => setOpenSheet('estilo')} />
-      </section>
+      {/* Tema — única configuração global fixa fora da prévia */}
+      <button
+        type="button"
+        onClick={() => setPanel('tema')}
+        className="flex items-center gap-3 rounded-[16px] border border-[#E5E3E0] px-4 py-3.5 text-left"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F4F4F3] text-ink">
+          <Palette size={17} />
+        </span>
+        <span className="flex-1">
+          <span className="block text-[11px] font-black uppercase tracking-widest text-slate-400">Tema</span>
+          <span className="block text-[14px] font-bold text-ink">{getThemeById(applied.temaId).name}</span>
+        </span>
+        <ChevronRight size={18} className="text-slate-300" />
+      </button>
 
-      {/* Conteúdo */}
-      <section className="flex flex-col gap-1">
-        <h3 className="mb-1 text-[12px] font-black uppercase tracking-widest text-slate-500">Conteúdo</h3>
-        <SettingsRow
-          icon={<StoreIcon size={17} />}
-          title="Informações da loja"
-          subtitle="Nome, descrição e contactos"
-          onClick={() => setOpenSheet('informacoes')}
-        />
-        <SettingsRow
-          icon={<ListChecks size={17} />}
-          title="Seções da loja"
-          subtitle="Escolha o que aparece"
-          onClick={() => setOpenSheet('informacoes')}
-        />
-      </section>
+      {/* Mais configurações — fechado por omissão para a tela inicial ficar limpa */}
+      <div className="rounded-[16px] border border-[#E5E3E0]">
+        <button
+          type="button"
+          onClick={() => setMaisConfigAberto((v) => !v)}
+          className="flex w-full items-center justify-between px-4 py-3.5 text-left"
+        >
+          <span className="text-[13px] font-bold text-ink">Mais configurações</span>
+          <ChevronDown size={18} className={`text-slate-400 transition-transform ${maisConfigAberto ? 'rotate-180' : ''}`} />
+        </button>
+        {maisConfigAberto && (
+          <div className="flex flex-col border-t border-[#E5E3E0] px-4">
+            <SettingsRow title="Cores" subtitle="Cor principal da loja" onClick={() => setPanel('cores')} />
+            <SettingsRow title="Estilo" subtitle="Botões e elementos visuais" onClick={() => setPanel('estilo')} />
+            <SettingsRow title="Informações da loja" subtitle="Contactos, secções, política de entrega e termos" onClick={() => setPanel('completo')} />
+          </div>
+        )}
+      </div>
 
-      <Button type="button" className="self-start" loading={saving} onClick={handleGuardar}>
-        Guardar alterações
-      </Button>
+      {/* Painéis contextuais de cada bloco tocável */}
+      <BannerSheet
+        open={panel === 'banner'}
+        onClose={closePanel}
+        lojaId={loja.id}
+        bannerUrl={loja.banner_url}
+        bannerGrande={bannerGrande}
+        onBannerGrandeChange={handleBannerGrandeChange}
+        onSaved={() => router.refresh()}
+      />
+
+      <InfoSheet
+        open={panel === 'info'}
+        onClose={closePanel}
+        lojaId={loja.id}
+        nome={loja.nome}
+        descricao={loja.descricao ?? ''}
+        onSaved={() => router.refresh()}
+      />
+
+      <ProdutosSheet open={panel === 'produtos'} onClose={closePanel} colunas={colunas} onColunasChange={handleColunasChange} />
 
       <ThemeSheet
-        open={openSheet === 'tema'}
-        onClose={() => setOpenSheet(null)}
+        open={panel === 'tema'}
+        onClose={closePanel}
         appliedThemeId={applied.temaId}
         previewingThemeId={previewingThemeId}
         onPreview={setPreviewingThemeId}
@@ -201,27 +236,15 @@ export function PersonalizarLojaPage({
         settings={{ corPrincipal, estiloBotao }}
       />
 
-      <ColorSheet
-        open={openSheet === 'cores'}
-        onClose={() => setOpenSheet(null)}
-        value={corPrincipal}
-        onChange={handleCorChange}
-        themeDefault={previewTheme.colors.primary}
-      />
+      <ColorSheet open={panel === 'cores'} onClose={closePanel} value={corPrincipal} onChange={handleCorChange} themeDefault={previewTheme.colors.primary} />
 
-      <ButtonStyleSheet
-        open={openSheet === 'estilo'}
-        onClose={() => setOpenSheet(null)}
-        value={estiloBotao}
-        onChange={handleEstiloChange}
-        themeDefault={previewTheme.buttons.radius}
-      />
+      <ButtonStyleSheet open={panel === 'estilo'} onClose={closePanel} value={estiloBotao} onChange={handleEstiloChange} themeDefault={previewTheme.buttons.radius} />
 
       <Sheet
-        open={openSheet === 'informacoes'}
-        onClose={() => setOpenSheet(null)}
+        open={panel === 'completo'}
+        onClose={closePanel}
         title="Informações da loja"
-        subtitle="Nome, descrição, contactos e seções visíveis"
+        subtitle="Nome, descrição, contactos e secções visíveis"
         heightVh={90}
       >
         <StoreSettingsForm loja={loja} />
@@ -230,24 +253,9 @@ export function PersonalizarLojaPage({
   );
 }
 
-function SettingsRow({
-  icon,
-  title,
-  subtitle,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  onClick: () => void;
-}) {
+function SettingsRow({ title, subtitle, onClick }: { title: string; subtitle: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-3 border-b border-slate-100 py-3.5 text-left last:border-0"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F4F4F3] text-ink">{icon}</span>
+    <button type="button" onClick={onClick} className="flex items-center gap-3 border-b border-slate-100 py-3.5 text-left last:border-0">
       <span className="flex-1">
         <span className="block text-[13px] font-bold text-ink">{title}</span>
         <span className="block text-[11.5px] font-medium text-slate-400">{subtitle}</span>
