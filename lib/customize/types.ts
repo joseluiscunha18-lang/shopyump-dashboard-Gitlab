@@ -15,10 +15,16 @@ export interface LojaCustomization {
   temaId: ThemeId;
   corPrincipal: string | null;
   estiloBotao: ThemeButtonRadius | null;
+  /** Ajuste feito ao tocar no banner da pré-visualização — altura maior. */
+  bannerGrande: boolean;
+  /** Ajuste feito ao tocar nos produtos da pré-visualização — nº de colunas. */
+  colunas: 2 | 3 | null;
 }
 
 export const DEFAULT_CUSTOMIZATION: LojaCustomization = {
   temaId: 'minimal',
   corPrincipal: null,
   estiloBotao: null,
+  bannerGrande: false,
+  colunas: null,
 };
