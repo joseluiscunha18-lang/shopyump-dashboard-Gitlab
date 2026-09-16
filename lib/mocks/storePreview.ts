@@ -85,3 +85,8 @@ export function resolvePreviewProducts<T>(
   if (realProducts && realProducts.length > 0) return realProducts.map(mapReal);
   return previewProducts;
 }
+
+/** Atalho para quando os "reais" já vêm no formato certo (ver getProdutosParaPreview). */
+export function resolvePreviewProductsDireto(realProducts: PreviewProduct[] | null | undefined): PreviewProduct[] {
+  return resolvePreviewProducts(realProducts, (p) => p);
+}
