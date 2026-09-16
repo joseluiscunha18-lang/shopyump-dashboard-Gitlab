@@ -4,44 +4,40 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Palette } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
-import { useToast } from '@/components/ui/Toast';
 import { StorePreview, type EditableRegion } from '@/components/loja/preview/StorePreview';
 import { StoreSettingsForm } from '@/components/loja/StoreSettingsForm';
-import { ThemeSheet } from './ThemeSheet';
 import { ColorSheet } from './ColorSheet';
 import { ButtonStyleSheet } from './ButtonStyleSheet';
 import { BannerSheet } from './BannerSheet';
 import { InfoSheet } from './InfoSheet';
 import { ProdutosSheet } from './ProdutosSheet';
 import { getThemeById } from '@/types/theme';
-import type { ThemeId, ThemeButtonRadius } from '@/types/theme';
-import { resolvePreviewProducts, resolvePreviewStore, type PreviewProduct } from '@/lib/mocks/storePreview';
+import type { ThemeButtonRadius } from '@/types/theme';
+import { resolvePreviewProductsDireto, resolvePreviewStore } from '@/lib/mocks/storePreview';
 import { loadCustomization, saveCustomization, hasSeenEditHint, markEditHintSeen } from '@/lib/customize/storage';
 import type { LojaCustomization } from '@/lib/customize/types';
-import type { Loja, Produto } from '@/types/database';
+import type { Loja } from '@/types/database';
+import type { ProdutoPreview } from '@/lib/queries/produtos';
 
-type PanelKind = 'tema' | 'cores' | 'estilo' | 'banner' | 'info' | 'produtos' | 'completo' | null;
+type PanelKind = 'cores' | 'estilo' | 'banner' | 'info' | 'produtos' | 'completo' | null;
 
 /**
  * "Personalizar loja" — editor por toque na pré-visualização.
  *
- * Modelo (revisão pedida sobre a 1ª versão, que listava Tema/Cores/
- * Estilo como um menu antes de mostrar a loja): o vendedor entra e já vê
- * a loja; toca num bloco (banner, nome/descrição, produtos) e um painel
- * contextual sobe só com o que é relevante para aquele bloco. Tema
- * continua fora da prévia, como configuração global fixa logo abaixo
- * dela. Tudo o resto (contactos, secções, política de entrega/termos)
- * fica atrás de "Mais configurações", fechado por omissão, para a tela
- * inicial continuar limpa.
+ * A escolha de TEMA não vive mais aqui: é uma página dedicada
+ * (`/loja/temas`, catálogo estático) + a página de detalhe de cada tema
+ * (`/loja/temas/[id]`) — nunca um modal, e o preview delas nunca reage a
+ * toques. Esta página só lida com o tema já aplicado (mostra o nome e
+ * um link "Alterar") e com os ajustes por toque na prévia (banner, nome/
+ * descrição, produtos), que são coisas de EDIÇÃO, diferentes de
+ * ESCOLHER um tema. Tudo o resto (cores, estilo, contactos, secções)
+ * fica atrás de "Mais configurações", fechado por omissão.
  */
-export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos: Produto[] }) {
+export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos: ProdutoPreview[] }) {
   const router = useRouter();
-  const { show } = useToast();
 
   const [applied, setApplied] = useState<LojaCustomization>(() => loadCustomization(loja.id));
-  const [previewingThemeId, setPreviewingThemeId] = useState<ThemeId>(applied.temaId);
   const [corPrincipal, setCorPrincipal] = useState<string | null>(applied.corPrincipal);
   const [estiloBotao, setEstiloBotao] = useState<ThemeButtonRadius | null>(applied.estiloBotao);
   const [bannerGrande, setBannerGrande] = useState<boolean>(applied.bannerGrande);
@@ -53,11 +49,13 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
+    // Relê a personalização sempre que a página monta — cobre o caso de
+    // voltar de /loja/temas depois de aplicar um tema novo.
+    setApplied(loadCustomization(loja.id));
     setShowHint(!hasSeenEditHint(loja.id));
   }, [loja.id]);
 
-  const isTestingTheme = previewingThemeId !== applied.temaId;
-  const previewTheme = getThemeById(previewingThemeId);
+  const appliedTheme = getThemeById(applied.temaId);
   const storeUrl = `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${loja.slug}`;
 
   const previewStoreData = useMemo(
@@ -65,14 +63,7 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
     [loja.nome, loja.descricao, loja.banner_url]
   );
 
-  const previewProductsData = useMemo(
-    () =>
-      resolvePreviewProducts<Produto>(
-        produtos.filter((p) => p.ativo && !p.rascunho).slice(0, 4),
-        (p): PreviewProduct => ({ id: p.id, nome: p.nome, preco: p.preco, imagem: p.fotos?.[0] ?? '' })
-      ),
-    [produtos]
-  );
+  const previewProductsData = useMemo(() => resolvePreviewProductsDireto(produtos), [produtos]);
 
   function persist(patch: Partial<LojaCustomization>) {
     setApplied((prev) => {
@@ -94,11 +85,6 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
   function closePanel() {
     setPanel(null);
     setSelectedRegion(null);
-  }
-
-  function applyTheme() {
-    persist({ temaId: previewingThemeId });
-    show('Tema aplicado.');
   }
 
   function handleCorChange(hex: string | null) {
@@ -140,38 +126,19 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
       </div>
 
       {/* Pré-visualização — a principal forma de editar */}
-      <div className="flex flex-col gap-2">
-        <div className="h-[560px] w-full overflow-hidden rounded-[20px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <StorePreview
-            theme={previewTheme}
-            store={previewStoreData}
-            products={previewProductsData}
-            settings={{ corPrincipal, estiloBotao, bannerGrande, colunas: colunas ?? undefined }}
-            editable={{ selected: selectedRegion, onSelect: handleSelectRegion, hint: showHint ? 'banner' : null }}
-          />
-        </div>
-
-        {isTestingTheme && (
-          <div className="flex items-center justify-between rounded-[13px] bg-[#F4F4F3] px-4 py-3">
-            <span className="text-[12px] font-semibold text-slate-500">
-              A testar: <span className="font-black text-ink">{previewTheme.name}</span>
-            </span>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setPreviewingThemeId(applied.temaId)} className="text-[12px] font-bold text-slate-400">
-                Cancelar
-              </button>
-              <Button type="button" size="sm" onClick={applyTheme}>
-                Aplicar tema
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="h-[560px] w-full overflow-hidden rounded-[20px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+        <StorePreview
+          theme={appliedTheme}
+          store={previewStoreData}
+          products={previewProductsData}
+          settings={{ corPrincipal, estiloBotao, bannerGrande, colunas: colunas ?? undefined }}
+          editable={{ selected: selectedRegion, onSelect: handleSelectRegion, hint: showHint ? 'banner' : null }}
+        />
       </div>
 
-      {/* Tema — única configuração global fixa fora da prévia */}
-      <button
-        type="button"
-        onClick={() => setPanel('tema')}
+      {/* Tema — configuração global, com página dedicada própria */}
+      <Link
+        href="/loja/temas"
         className="flex items-center gap-3 rounded-[16px] border border-[#E5E3E0] px-4 py-3.5 text-left"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F4F4F3] text-ink">
@@ -179,10 +146,11 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
         </span>
         <span className="flex-1">
           <span className="block text-[11px] font-black uppercase tracking-widest text-slate-400">Tema</span>
-          <span className="block text-[14px] font-bold text-ink">{getThemeById(applied.temaId).name}</span>
+          <span className="block text-[14px] font-bold text-ink">{appliedTheme.name}</span>
         </span>
+        <span className="text-[12px] font-bold text-slate-400">Alterar</span>
         <ChevronRight size={18} className="text-slate-300" />
-      </button>
+      </Link>
 
       {/* Mais configurações — fechado por omissão para a tela inicial ficar limpa */}
       <div className="rounded-[16px] border border-[#E5E3E0]">
@@ -225,20 +193,9 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
 
       <ProdutosSheet open={panel === 'produtos'} onClose={closePanel} colunas={colunas} onColunasChange={handleColunasChange} />
 
-      <ThemeSheet
-        open={panel === 'tema'}
-        onClose={closePanel}
-        appliedThemeId={applied.temaId}
-        previewingThemeId={previewingThemeId}
-        onPreview={setPreviewingThemeId}
-        store={previewStoreData}
-        products={previewProductsData}
-        settings={{ corPrincipal, estiloBotao }}
-      />
+      <ColorSheet open={panel === 'cores'} onClose={closePanel} value={corPrincipal} onChange={handleCorChange} themeDefault={appliedTheme.colors.primary} />
 
-      <ColorSheet open={panel === 'cores'} onClose={closePanel} value={corPrincipal} onChange={handleCorChange} themeDefault={previewTheme.colors.primary} />
-
-      <ButtonStyleSheet open={panel === 'estilo'} onClose={closePanel} value={estiloBotao} onChange={handleEstiloChange} themeDefault={previewTheme.buttons.radius} />
+      <ButtonStyleSheet open={panel === 'estilo'} onClose={closePanel} value={estiloBotao} onChange={handleEstiloChange} themeDefault={appliedTheme.buttons.radius} />
 
       <Sheet
         open={panel === 'completo'}
