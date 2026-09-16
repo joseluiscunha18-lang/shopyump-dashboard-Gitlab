@@ -4,6 +4,7 @@ import { getUserContext } from '@/lib/auth/getUserContext';
 import { countPedidosPendentes } from '@/lib/queries/pedidos';
 import { Sidebar } from '@/components/nav/Sidebar';
 import { BottomNav } from '@/components/nav/BottomNav';
+import { DashboardContentFrame } from '@/components/nav/DashboardContentFrame';
 import { TopBar } from '@/components/nav/TopBar';
 import { MobileNavProvider } from '@/components/nav/MobileNavContext';
 import { ProductFormGuardProvider } from '@/components/produtos/ProductFormGuardContext';
@@ -39,7 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <PublishingProvider>
           <div className="min-h-screen bg-[#F6F7F9] flex">
             <Sidebar storeUrl={storeUrl} />
-            <div className="flex-1 flex flex-col pb-28 sm:pb-0 min-w-0">
+            <DashboardContentFrame>
               <TopBar
                 storeName={ctx.loja?.nome ?? 'Painel Admin'}
                 storeUrl={storeUrl}
@@ -50,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   {children}
                 </Suspense>
               </main>
-            </div>
+            </DashboardContentFrame>
             {/* BottomNavAsync resolve a query de pendentes de forma independente
                 para não bloquear o streaming da página principal. */}
             {ctx.loja ? (
