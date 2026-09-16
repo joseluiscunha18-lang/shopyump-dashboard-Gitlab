@@ -69,6 +69,8 @@ export interface Theme {
   name: string;
   /** Frase curta mostrada no card de seleção de tema. */
   tagline: string;
+  /** 2–4 características em linguagem simples, para a página de detalhe do tema. */
+  features: string[];
   spacing: ThemeSpacing;
   colors: ThemeColors;
   typography: ThemeTypography;
@@ -88,6 +90,7 @@ export const THEMES: Theme[] = [
     id: 'minimal',
     name: 'Minimal',
     tagline: 'Limpo, espaçoso, aparência premium.',
+    features: ['Produtos em destaque', 'Banner limpo', 'Navegação simples'],
     spacing: 'spacious',
     colors: {
       primary: '#111110',
@@ -105,6 +108,7 @@ export const THEMES: Theme[] = [
     id: 'boutique',
     name: 'Boutique',
     tagline: 'Imagens grandes, tipografia elegante.',
+    features: ['Fotos em destaque', 'Cabeçalho com banner', 'Estilo boutique'],
     spacing: 'comfortable',
     colors: {
       primary: '#9A6B4A',
@@ -122,6 +126,7 @@ export const THEMES: Theme[] = [
     id: 'modern',
     name: 'Modern',
     tagline: 'Compacto, cards e botões contemporâneos.',
+    features: ['Grelha compacta', 'Botões arredondados', 'Visual contemporâneo'],
     spacing: 'compact',
     colors: {
       primary: '#4F46E5',
