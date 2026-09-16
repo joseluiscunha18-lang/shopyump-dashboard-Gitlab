@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Package, Plus, ClipboardList, BarChart3, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useMobileNav } from './MobileNavContext';
-import { isProductFormFlowPath } from '@/lib/nav/productFormFlow';
+import { isFocusModePath } from '@/lib/nav/productFormFlow';
 import { createClient } from '@/lib/supabase/client';
 
 interface NavItem {
@@ -27,7 +27,7 @@ const items: NavItem[] = [
 export function BottomNav({ lojaId, initialPedidosPendentes = 0 }: { lojaId?: string; initialPedidosPendentes?: number }) {
   const pathname = usePathname();
   const { menuOpen } = useMobileNav();
-  const inFlow = isProductFormFlowPath(pathname);
+  const inFlow = isFocusModePath(pathname);
 
   // Nasce com o valor já calculado no servidor (sem "piscar" 0 → N no
   // primeiro render) e só depois liga-se ao Realtime para se manter
