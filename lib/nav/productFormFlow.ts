@@ -9,6 +9,17 @@ export function isProductFormFlowPath(pathname: string | null): boolean {
   return /^\/produtos\/[^/]+$/.test(pathname);
 }
 
+/**
+ * "Personalizar loja" também esconde a barra inferior — é uma página de
+ * foco único (a pré-visualização + os painéis de edição), e a barra
+ * ocuparia espaço vertical que a prévia precisa, sem ajudar em nada:
+ * não faz sentido trocar de secção do dashboard a meio de uma edição.
+ */
+export function isFocusModePath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return isProductFormFlowPath(pathname) || pathname === '/loja';
+}
+
 export function productFormFlowTitle(pathname: string | null): string {
   return pathname === '/produtos/novo' ? 'Adicionar produto' : 'Editar produto';
 }
