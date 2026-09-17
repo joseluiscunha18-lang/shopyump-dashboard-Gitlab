@@ -14,6 +14,7 @@ import { ResumoLojaSecao } from '@/components/dashboard/ResumoLojaSecao';
 import { HomeCardCarousel } from '@/components/dashboard/HomeCardCarousel';
 import { getActiveScenario } from '@/lib/mocks/getActiveScenario';
 import { ORDEM_MARCOS_ONBOARDING } from '@/types/database';
+import { getStoreUrl } from '@/lib/storeUrl';
 
 export const metadata: Metadata = { title: 'Painel | Shopyump' };
 
@@ -32,9 +33,7 @@ export default async function DashboardHomePage() {
     ? await getPedidosByLoja(ctx.loja.id, 'pendente')
     : [];
 
-  const storeUrl = ctx.loja.slug
-    ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}`
-    : null;
+  const storeUrl = ctx.loja.slug ? getStoreUrl(ctx.loja.slug) : null;
 
   const marcosRestantes = ORDEM_MARCOS_ONBOARDING.filter((m) => {
     const registo = marcos[m];
