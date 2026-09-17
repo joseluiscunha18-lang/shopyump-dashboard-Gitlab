@@ -9,6 +9,7 @@ import { TopBar } from '@/components/nav/TopBar';
 import { MobileNavProvider } from '@/components/nav/MobileNavContext';
 import { ProductFormGuardProvider } from '@/components/produtos/ProductFormGuardContext';
 import { PublishingProvider } from '@/components/produtos/PublishingContext';
+import { getStoreUrl } from '@/lib/storeUrl';
 
 /**
  * Componente async isolado para o BottomNav — resolve o countPedidosPendentes
@@ -28,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!ctx.userId) redirect('/login');
   if (!ctx.loja && !ctx.isAdmin) redirect('/onboarding');
 
-  const storeUrl = ctx.loja ? `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${ctx.loja.slug}` : null;
+  const storeUrl = ctx.loja ? getStoreUrl(ctx.loja.slug) : null;
 
   return (
     <MobileNavProvider>
