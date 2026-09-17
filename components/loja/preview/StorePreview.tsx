@@ -50,6 +50,14 @@ export interface StorePreviewProps {
   size?: 'full' | 'thumb';
   className?: string;
   editable?: StorePreviewEditable;
+  /**
+   * true = trata a pré-visualização como uma imagem: sem scroll interno
+   * e sem interação nenhuma (pointer-events-none). Usado na página de
+   * detalhe do tema (`/loja/temas/[id]`) — lá o objetivo é SÓ mostrar o
+   * tema, como um screenshot; deslizar/tocar dentro dele não deve fazer
+   * nada, porque não é a loja de verdade, é uma amostra.
+   */
+  frozen?: boolean;
 }
 
 const RADIUS_BUTTON: Record<ThemeButtonRadius, string> = {
@@ -114,7 +122,7 @@ function RegionBadge({ label }: { label: string }) {
   );
 }
 
-export function StorePreview({ theme, store, products, settings, size = 'full', className, editable }: StorePreviewProps) {
+export function StorePreview({ theme, store, products, settings, size = 'full', className, editable, frozen = false }: StorePreviewProps) {
   const primary = settings?.corPrincipal || theme.colors.primary;
   const buttonRadius = settings?.estiloBotao ?? theme.buttons.radius;
   const isThumb = size === 'thumb';
@@ -137,6 +145,7 @@ export function StorePreview({ theme, store, products, settings, size = 'full', 
       className={cn(
         'flex h-full w-full flex-col overflow-hidden',
         isThumb ? 'text-[8px]' : 'text-[13px]',
+        frozen && 'pointer-events-none select-none',
         className
       )}
       style={{ backgroundColor: theme.colors.surface, color: theme.colors.ink }}
@@ -154,7 +163,7 @@ export function StorePreview({ theme, store, products, settings, size = 'full', 
         <ShoppingBag size={isThumb ? 10 : 16} style={{ color: theme.colors.muted }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className={cn('flex-1', frozen ? 'overflow-hidden' : 'overflow-y-auto')}>
         {/* Banner — tocável */}
         <div
           onClick={regionClick('banner')}
