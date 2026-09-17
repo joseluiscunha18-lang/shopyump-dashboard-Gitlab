@@ -1,50 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ChevronLeft, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/components/ui/Toast';
-import { StorePreview } from '@/components/loja/preview/StorePreview';
+import { ChevronLeft, Search } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { ThemeThumbnail } from '@/components/loja/preview/ThemeThumbnail';
 import { THEMES } from '@/types/theme';
-import { resolvePreviewProductsDireto, resolvePreviewStore } from '@/lib/mocks/storePreview';
-import { loadCustomization, saveCustomization } from '@/lib/customize/storage';
-import type { Loja } from '@/types/database';
-import type { ProdutoPreview } from '@/lib/queries/produtos';
+
+type Filtro = 'todos' | 'gratis' | 'premium';
+
+const FILTROS: { id: Filtro; label: string }[] = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'gratis', label: 'Grátis' },
+  { id: 'premium', label: 'Premium' },
+];
 
 /**
- * Catálogo de temas — página dedicada, separada do editor (§ pedido do
- * utilizador). Diferente do antigo `ThemeSheet` (removido): não é um
- * modal, e o preview de cada card é só uma imagem estática da loja — não
- * reage a toques. Explorar/comparar temas acontece aqui; ver um tema em
- * detalhe acontece na página seguinte (`/loja/temas/[id]`); editar só
- * acontece de volta em "Personalizar loja".
+ * Catálogo de temas — uma "loja de temas" dedicada, separada do editor.
  *
- * O preview aqui é sempre mobile — é onde o vendedor decide entre temas
- * rapidamente, e a versão mobile é a mais rápida de entender num cartão
- * pequeno. A comparação com desktop fica para a página de detalhe.
+ * Diferente da 1ª versão: os cartões aqui são só uma miniatura estática
+ * (<ThemeThumbnail />) + nome + selo Grátis/Premium — nada de
+ * "Visualizar"/"Usar este tema" nem preview com aparência funcional
+ * aqui. Todo o cartão é um link; a pré-visualização a sério e a ação de
+ * aplicar vivem na página de detalhe (`/loja/temas/[id]`). Isto também
+ * significa que o tema atualmente em uso na loja não precisa de
+ * destaque nenhum aqui — esta página é só para explorar.
  */
-export function ThemeCatalog({ loja, produtos }: { loja: Loja; produtos: ProdutoPreview[] }) {
-  const router = useRouter();
-  const { show } = useToast();
-  const [appliedThemeId, setAppliedThemeId] = useState(() => loadCustomization(loja.id).temaId);
-  const [applying, setApplying] = useState<string | null>(null);
+export function ThemeCatalog() {
+  const [busca, setBusca] = useState('');
+  const [filtro, setFiltro] = useState<Filtro>('todos');
 
-  const store = resolvePreviewStore({ nome: loja.nome, descricao: loja.descricao, bannerUrl: loja.banner_url });
-  const products = resolvePreviewProductsDireto(produtos);
-
-  function usarTema(id: string) {
-    setApplying(id);
-    const atual = loadCustomization(loja.id);
-    saveCustomization(loja.id, { ...atual, temaId: id });
-    setAppliedThemeId(id);
-    show('Tema aplicado.');
-    router.push('/loja');
-  }
+  const temas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return THEMES.filter((t) => {
+      const passaFiltro = filtro === 'todos' || t.pricing === filtro;
+      const passaBusca = !termo || t.name.toLowerCase().includes(termo) || t.tagline.toLowerCase().includes(termo);
+      return passaFiltro && passaBusca;
+    });
+  }, [busca, filtro]);
 
   return (
-    <div className="flex flex-col gap-5 pt-2">
+    <div className="flex flex-col gap-4 pt-2">
       <Link href="/loja" className="flex items-center gap-1 text-[13px] font-bold text-slate-500">
         <ChevronLeft size={18} /> Editar loja
       </Link>
@@ -54,49 +50,64 @@ export function ThemeCatalog({ loja, produtos }: { loja: Loja; produtos: Produto
         <p className="text-[12px] font-medium text-slate-400">Escolha uma aparência para sua loja.</p>
       </div>
 
-      <div className="flex flex-col gap-5">
-        {THEMES.map((theme) => {
-          const emUso = theme.id === appliedThemeId;
-          return (
-            <div key={theme.id} className="flex flex-col overflow-hidden rounded-[20px] border border-[#E5E3E0]">
-              {/* Preview estático — sem onSelect/editable, não reage a toques */}
-              <Link href={`/loja/temas/${theme.id}`} className="block h-64 w-full">
-                <StorePreview theme={theme} store={store} products={products} />
-              </Link>
-              <div className="flex flex-col gap-3 px-4 py-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[14px] font-black text-ink">{theme.name}</span>
-                    <span className="text-[11.5px] font-medium text-slate-400">{theme.tagline}</span>
-                  </div>
-                  {emUso && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
-                      <Check size={13} /> Em uso
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Link href={`/loja/temas/${theme.id}`} className="flex-1">
-                    <Button type="button" variant="secondary" className="w-full">
-                      Visualizar
-                    </Button>
-                  </Link>
-                  {!emUso && (
-                    <Button
-                      type="button"
-                      className="flex-1"
-                      loading={applying === theme.id}
-                      onClick={() => usarTema(theme.id)}
-                    >
-                      Usar este tema
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* Busca */}
+      <div className="relative">
+        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Procurar tema"
+          className="h-11 w-full rounded-[13px] border border-[#E5E3E0] bg-white pl-10 pr-4 text-[13px] font-medium text-ink placeholder:text-slate-400 focus:border-[#111110] focus:outline-none"
+        />
       </div>
+
+      {/* Filtros */}
+      <div className="flex gap-2">
+        {FILTROS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => setFiltro(f.id)}
+            className={cn(
+              'rounded-full px-4 py-1.5 text-[12px] font-bold transition-colors',
+              filtro === f.id ? 'bg-[#111110] text-white' : 'bg-[#F4F4F3] text-slate-500'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid 2 colunas — cada cartão é só a miniatura + nome + selo */}
+      {temas.length === 0 ? (
+        <p className="py-10 text-center text-[13px] font-medium text-slate-400">Nenhum tema encontrado.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3.5">
+          {temas.map((theme) => (
+            <Link
+              key={theme.id}
+              href={`/loja/temas/${theme.id}`}
+              className="flex flex-col overflow-hidden rounded-[16px] border border-[#E5E3E0] transition-transform active:scale-[0.98]"
+            >
+              <div className="h-32 w-full">
+                <ThemeThumbnail theme={theme} />
+              </div>
+              <div className="flex flex-col gap-0.5 px-3 py-2.5">
+                <span className="text-[12.5px] font-black text-ink">{theme.name}</span>
+                <span
+                  className={cn(
+                    'w-fit rounded-full px-2 py-0.5 text-[9.5px] font-bold',
+                    theme.pricing === 'gratis' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                  )}
+                >
+                  {theme.pricing === 'gratis' ? 'Grátis' : 'Premium'}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
