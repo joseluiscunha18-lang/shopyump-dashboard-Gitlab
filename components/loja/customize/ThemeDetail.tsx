@@ -3,23 +3,28 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/components/ui/Toast';
+import { ChevronLeft, Check, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { StorePreview } from '@/components/loja/preview/StorePreview';
 import type { Theme } from '@/types/theme';
 import { resolvePreviewProductsDireto, resolvePreviewStore } from '@/lib/mocks/storePreview';
 import { loadCustomization, saveCustomization } from '@/lib/customize/storage';
+import { useToast } from '@/components/ui/Toast';
 import type { Loja } from '@/types/database';
 import type { ProdutoPreview } from '@/lib/queries/produtos';
 
 /**
  * Página de detalhe de um tema — entre o catálogo (miniaturas) e o
- * editor (toque para editar). O preview aqui é responsivo por si só
- * (o mesmo <StorePreview /> que a loja pública usa), sem alternador
- * Mobile/Desktop: não é o lugar para simular dispositivos, é o lugar
- * para ver o tema. Continua estático — não reage a toques. "Usar este
- * tema" aplica e volta para "Personalizar loja".
+ * editor (toque para editar).
+ *
+ * O preview aqui é o `<StorePreview />` de verdade (não a miniatura
+ * abstrata do catálogo), mas passa `frozen` — sem scroll interno, sem
+ * pointer-events. Deslizar/tocar nele não deve fazer nada: é uma
+ * amostra do tema, não a loja em funcionamento. O único jeito de agir é
+ * o cartão flutuante sobre a base do preview (nome + selo + botão),
+ * no mesmo espírito da Shopify Theme Store: uma imagem do tema com uma
+ * barra de ação fixa por cima, não um formulário nem uma prévia
+ * interativa.
  */
 export function ThemeDetail({ loja, produtos, theme }: { loja: Loja; produtos: ProdutoPreview[]; theme: Theme }) {
   const router = useRouter();
@@ -31,6 +36,7 @@ export function ThemeDetail({ loja, produtos, theme }: { loja: Loja; produtos: P
   const products = resolvePreviewProductsDireto(produtos);
 
   function usarTema() {
+    if (emUso) return;
     setApplying(true);
     const atual = loadCustomization(loja.id);
     saveCustomization(loja.id, { ...atual, temaId: theme.id });
@@ -39,26 +45,51 @@ export function ThemeDetail({ loja, produtos, theme }: { loja: Loja; produtos: P
   }
 
   return (
-    <div className="flex flex-col gap-5 pt-2">
-      <div className="flex items-center justify-between">
-        <Link href="/loja/temas" className="flex items-center gap-1 text-[13px] font-bold text-slate-500">
-          <ChevronLeft size={18} /> Temas
-        </Link>
-        {emUso && (
-          <span className="flex items-center gap-1 text-[12px] font-bold text-emerald-600">
-            <Check size={14} /> Em uso
-          </span>
-        )}
+    <div className="flex flex-col gap-8 pt-2">
+      <Link href="/loja/temas" className="flex items-center gap-1 text-[13px] font-bold text-slate-500">
+        <ChevronLeft size={18} /> Temas
+      </Link>
+
+      {/* Preview congelado — só de olhar, com a barra de ação flutuante
+          por cima, como a Shopify Theme Store */}
+      <div className="relative pb-8">
+        <div className="h-[560px] w-full overflow-hidden rounded-[22px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+          <StorePreview theme={theme} store={store} products={products} frozen />
+        </div>
+
+        <div className="absolute inset-x-4 -bottom-0 flex items-center justify-between gap-3 rounded-[16px] border border-[#E5E3E0] bg-white px-4 py-3 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.25)]">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-[14px] font-black text-ink">{theme.name}</span>
+            <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
+              {theme.pricing === 'gratis' ? 'Grátis' : 'Premium'}
+              {emUso && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="flex items-center gap-1 text-emerald-600">
+                    <Check size={12} /> Em uso
+                  </span>
+                </>
+              )}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={usarTema}
+            disabled={emUso || applying}
+            className={cn(
+              'flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13px] font-bold transition-colors',
+              emUso ? 'bg-[#F4F4F3] text-slate-400' : 'bg-[#111110] text-white active:opacity-80'
+            )}
+          >
+            {applying && <Loader2 size={14} className="animate-spin" />}
+            {emUso ? 'Em uso' : 'Usar tema'}
+          </button>
+        </div>
       </div>
 
-      <div className="text-center">
+      <div>
         <h2 className="text-lg font-black tracking-tight text-ink">{theme.name}</h2>
-        <p className="text-[12px] font-medium text-slate-400">{theme.tagline}</p>
-      </div>
-
-      {/* Preview estático, responsivo — sem alternador de dispositivo */}
-      <div className="h-[500px] w-full overflow-hidden rounded-[20px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-        <StorePreview theme={theme} store={store} products={products} />
+        <p className="text-[12.5px] font-medium text-slate-400">{theme.tagline}</p>
       </div>
 
       {/* Características */}
@@ -72,16 +103,6 @@ export function ThemeDetail({ loja, produtos, theme }: { loja: Loja; produtos: P
           ))}
         </ul>
       </div>
-
-      {!emUso ? (
-        <Button type="button" size="lg" loading={applying} onClick={usarTema}>
-          Usar este tema
-        </Button>
-      ) : (
-        <Button type="button" size="lg" variant="secondary" onClick={() => router.push('/loja')}>
-          Voltar ao editor
-        </Button>
-      )}
     </div>
   );
 }
