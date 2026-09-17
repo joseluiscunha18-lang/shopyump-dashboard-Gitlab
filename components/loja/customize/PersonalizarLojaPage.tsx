@@ -19,6 +19,7 @@ import { loadCustomization, saveCustomization, hasSeenEditHint, markEditHintSeen
 import type { LojaCustomization } from '@/lib/customize/types';
 import type { Loja } from '@/types/database';
 import type { ProdutoPreview } from '@/lib/queries/produtos';
+import { getStoreUrl } from '@/lib/storeUrl';
 
 type PanelKind = 'cores' | 'estilo' | 'banner' | 'info' | 'produtos' | 'completo' | null;
 
@@ -56,7 +57,7 @@ export function PersonalizarLojaPage({ loja, produtos }: { loja: Loja; produtos:
   }, [loja.id]);
 
   const appliedTheme = getThemeById(applied.temaId);
-  const storeUrl = `${process.env.NEXT_PUBLIC_WEB_URL ?? 'https://shopyump.vercel.app'}/loja/${loja.slug}`;
+  const storeUrl = getStoreUrl(loja.slug);
 
   const previewStoreData = useMemo(
     () => resolvePreviewStore({ nome: loja.nome, descricao: loja.descricao, bannerUrl: loja.banner_url }),
