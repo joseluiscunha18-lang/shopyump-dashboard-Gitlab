@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Check, Smartphone, Monitor } from 'lucide-react';
+import { ChevronLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { cn } from '@/lib/cn';
 import { StorePreview } from '@/components/loja/preview/StorePreview';
 import type { Theme } from '@/types/theme';
 import { resolvePreviewProductsDireto, resolvePreviewStore } from '@/lib/mocks/storePreview';
@@ -15,20 +14,16 @@ import type { Loja } from '@/types/database';
 import type { ProdutoPreview } from '@/lib/queries/produtos';
 
 /**
- * Página de detalhe de um tema — entre o catálogo (cartões pequenos) e o
- * editor (toque para editar). Aqui o preview é maior e tem o alternador
- * Mobile/Desktop, mas continua estático: serve para VER o tema, não para
- * editar nada. "Usar este tema" aplica e volta para "Personalizar loja".
- *
- * Mobile-first ≠ mobile-only: a loja pública tem de funcionar bem nos
- * dois, por isso o alternador existe aqui — mas o catálogo (onde o
- * vendedor só está a comparar rapidamente) mostra só mobile, que é o
- * dispositivo com que ele está a gerir a loja.
+ * Página de detalhe de um tema — entre o catálogo (miniaturas) e o
+ * editor (toque para editar). O preview aqui é responsivo por si só
+ * (o mesmo <StorePreview /> que a loja pública usa), sem alternador
+ * Mobile/Desktop: não é o lugar para simular dispositivos, é o lugar
+ * para ver o tema. Continua estático — não reage a toques. "Usar este
+ * tema" aplica e volta para "Personalizar loja".
  */
 export function ThemeDetail({ loja, produtos, theme }: { loja: Loja; produtos: ProdutoPreview[]; theme: Theme }) {
   const router = useRouter();
   const { show } = useToast();
-  const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile');
   const [applying, setApplying] = useState(false);
   const emUso = loadCustomization(loja.id).temaId === theme.id;
 
@@ -61,42 +56,9 @@ export function ThemeDetail({ loja, produtos, theme }: { loja: Loja; produtos: P
         <p className="text-[12px] font-medium text-slate-400">{theme.tagline}</p>
       </div>
 
-      {/* Mobile / Desktop */}
-      <div className="flex justify-center">
-        <div className="inline-flex rounded-full border border-[#E5E3E0] p-1">
-          <button
-            type="button"
-            onClick={() => setDevice('mobile')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12px] font-bold transition-colors',
-              device === 'mobile' ? 'bg-[#111110] text-white' : 'text-slate-500'
-            )}
-          >
-            <Smartphone size={14} /> Mobile
-          </button>
-          <button
-            type="button"
-            onClick={() => setDevice('desktop')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12px] font-bold transition-colors',
-              device === 'desktop' ? 'bg-[#111110] text-white' : 'text-slate-500'
-            )}
-          >
-            <Monitor size={14} /> Desktop
-          </button>
-        </div>
-      </div>
-
-      {/* Preview estático, maior — continua sem reagir a toques */}
-      <div className="flex justify-center">
-        <div
-          className={cn(
-            'overflow-hidden border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all',
-            device === 'mobile' ? 'h-[600px] w-[300px] rounded-[28px]' : 'h-[420px] w-full rounded-[16px]'
-          )}
-        >
-          <StorePreview theme={theme} store={store} products={products} settings={device === 'desktop' ? { colunas: 3 } : undefined} />
-        </div>
+      {/* Preview estático, responsivo — sem alternador de dispositivo */}
+      <div className="h-[500px] w-full overflow-hidden rounded-[20px] border border-[#E5E3E0] shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+        <StorePreview theme={theme} store={store} products={products} />
       </div>
 
       {/* Características */}
