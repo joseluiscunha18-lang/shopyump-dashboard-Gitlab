@@ -71,6 +71,8 @@ export interface Theme {
   tagline: string;
   /** 2–4 características em linguagem simples, para a página de detalhe do tema. */
   features: string[];
+  /** Arquitetura pronta para quando existirem temas pagos — hoje todos são 'gratis'. */
+  pricing: 'gratis' | 'premium';
   spacing: ThemeSpacing;
   colors: ThemeColors;
   typography: ThemeTypography;
@@ -80,10 +82,13 @@ export interface Theme {
 }
 
 /**
- * Três temas fictícios só para validar a arquitetura (seleção, preview,
- * "testar antes de aplicar", ajustes de aparência, guardar). Nomes e
- * estilos são provisórios — ver §16 da spec: substituir por temas
- * oficiais mais tarde nunca deve exigir reconstruir esta página.
+ * Seis temas fictícios: os 3 originais (Minimal/Boutique/Modern) que
+ * validam a arquitetura a sério, mais 3 "de efeito" (Fashion/Urban/
+ * Studio) só para o catálogo parecer um catálogo de verdade em vez de 3
+ * cartões soltos — reaproveitam as mesmas variações de tokens, não são
+ * temas com identidade própria ainda. Nomes e estilos são provisórios —
+ * ver §16 da spec original: substituir por temas oficiais mais tarde
+ * nunca deve exigir reconstruir esta página.
  */
 export const THEMES: Theme[] = [
   {
@@ -91,6 +96,7 @@ export const THEMES: Theme[] = [
     name: 'Minimal',
     tagline: 'Limpo, espaçoso, aparência premium.',
     features: ['Produtos em destaque', 'Banner limpo', 'Navegação simples'],
+    pricing: 'gratis',
     spacing: 'spacious',
     colors: {
       primary: '#111110',
@@ -109,6 +115,7 @@ export const THEMES: Theme[] = [
     name: 'Boutique',
     tagline: 'Imagens grandes, tipografia elegante.',
     features: ['Fotos em destaque', 'Cabeçalho com banner', 'Estilo boutique'],
+    pricing: 'gratis',
     spacing: 'comfortable',
     colors: {
       primary: '#9A6B4A',
@@ -127,6 +134,7 @@ export const THEMES: Theme[] = [
     name: 'Modern',
     tagline: 'Compacto, cards e botões contemporâneos.',
     features: ['Grelha compacta', 'Botões arredondados', 'Visual contemporâneo'],
+    pricing: 'gratis',
     spacing: 'compact',
     colors: {
       primary: '#4F46E5',
@@ -138,6 +146,63 @@ export const THEMES: Theme[] = [
     typography: { display: 'bold', tracking: 'tight', uppercaseLabels: false },
     buttons: { radius: 'full', style: 'solid' },
     cards: { radius: 'lg', shadow: 'lg', imageRatio: 'square', layout: 'grid-2-compact' },
+    header: { align: 'left', bannerOverlay: false },
+  },
+  {
+    id: 'fashion',
+    name: 'Fashion',
+    tagline: 'Editorial, com destaque total para a foto.',
+    features: ['Foco na fotografia', 'Tipografia editorial', 'Visual de revista'],
+    pricing: 'gratis',
+    spacing: 'comfortable',
+    colors: {
+      primary: '#B3122B',
+      surface: '#FFFFFF',
+      surfaceAlt: '#F2E9E9',
+      ink: '#1A1414',
+      muted: '#8C7A7A',
+    },
+    typography: { display: 'black', tracking: 'wide', uppercaseLabels: true },
+    buttons: { radius: 'none', style: 'outline' },
+    cards: { radius: 'none', shadow: 'none', imageRatio: 'portrait', layout: 'grid-1-featured' },
+    header: { align: 'center', bannerOverlay: true },
+  },
+  {
+    id: 'urban',
+    name: 'Urban',
+    tagline: 'Ousado, contrastado, feito para streetwear.',
+    features: ['Contraste forte', 'Grelha densa', 'Botões cheios'],
+    pricing: 'gratis',
+    spacing: 'compact',
+    colors: {
+      primary: '#EAB308',
+      surface: '#111110',
+      surfaceAlt: '#27272A',
+      ink: '#FAFAF9',
+      muted: '#A8A29E',
+    },
+    typography: { display: 'black', tracking: 'tight', uppercaseLabels: true },
+    buttons: { radius: 'none', style: 'solid' },
+    cards: { radius: 'md', shadow: 'none', imageRatio: 'square', layout: 'grid-2-compact' },
+    header: { align: 'left', bannerOverlay: false },
+  },
+  {
+    id: 'studio',
+    name: 'Studio',
+    tagline: 'Suave e neutro, deixa o produto falar.',
+    features: ['Tons neutros', 'Cards arredondados', 'Layout equilibrado'],
+    pricing: 'premium',
+    spacing: 'spacious',
+    colors: {
+      primary: '#57534E',
+      surface: '#FAFAF9',
+      surfaceAlt: '#E7E5E4',
+      ink: '#292524',
+      muted: '#A8A29E',
+    },
+    typography: { display: 'semibold', tracking: 'normal', uppercaseLabels: false },
+    buttons: { radius: 'full', style: 'outline' },
+    cards: { radius: 'lg', shadow: 'sm', imageRatio: 'square', layout: 'grid-2' },
     header: { align: 'left', bannerOverlay: false },
   },
 ];
