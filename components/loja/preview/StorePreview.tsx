@@ -58,6 +58,13 @@ export interface StorePreviewProps {
    * nada, porque não é a loja de verdade, é uma amostra.
    */
   frozen?: boolean;
+  /**
+   * true = modo "site normal": o wrapper não limita a altura nem cria
+   * scroll interno. O conteúdo flui para baixo livremente e o scroll é
+   * do elemento pai (ou da janela). Usado no overlay de pré-visualização
+   * a ecrã cheio, onde queremos comportamento de página real.
+   */
+  flow?: boolean;
 }
 
 const RADIUS_BUTTON: Record<ThemeButtonRadius, string> = {
@@ -122,7 +129,7 @@ function RegionBadge({ label }: { label: string }) {
   );
 }
 
-export function StorePreview({ theme, store, products, settings, size = 'full', className, editable, frozen = false }: StorePreviewProps) {
+export function StorePreview({ theme, store, products, settings, size = 'full', className, editable, frozen = false, flow = false }: StorePreviewProps) {
   const primary = settings?.corPrincipal || theme.colors.primary;
   const buttonRadius = settings?.estiloBotao ?? theme.buttons.radius;
   const isThumb = size === 'thumb';
@@ -143,7 +150,8 @@ export function StorePreview({ theme, store, products, settings, size = 'full', 
   return (
     <div
       className={cn(
-        'flex h-full w-full flex-col overflow-hidden',
+        'flex w-full flex-col',
+        flow ? '' : 'h-full overflow-hidden',
         isThumb ? 'text-[8px]' : 'text-[13px]',
         frozen && 'pointer-events-none select-none',
         className
@@ -163,7 +171,7 @@ export function StorePreview({ theme, store, products, settings, size = 'full', 
         <ShoppingBag size={isThumb ? 10 : 16} style={{ color: theme.colors.muted }} />
       </div>
 
-      <div className={cn('flex-1', frozen ? 'overflow-hidden' : 'overflow-y-auto')}>
+      <div className={cn(flow ? '' : 'flex-1', frozen ? 'overflow-hidden' : flow ? '' : 'overflow-y-auto')}>
         {/* Banner — tocável */}
         <div
           onClick={regionClick('banner')}
