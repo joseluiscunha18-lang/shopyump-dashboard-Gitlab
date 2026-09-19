@@ -15,7 +15,7 @@
  * lugar. Se um dia a loja pública mudar de domínio outra vez, muda-se
  * só esta constante.
  */
-const STORE_DOMAIN = 'https://shopyump.vercel.app';
+const STORE_DOMAIN = 'https://shopyump-dashboard.vercel.app';
 
 export function getStoreUrl(slug: string): string {
   return `${STORE_DOMAIN}/loja/${slug}`;
