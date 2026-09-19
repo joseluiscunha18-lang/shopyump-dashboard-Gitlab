@@ -80,6 +80,16 @@ export function ThemeCatalog() {
   return (
     <>
       <div className="flex flex-col gap-6 py-2">
+        {/* Voltar */}
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="flex w-fit items-center gap-1 text-[13px] font-bold text-slate-500 active:opacity-60"
+        >
+          <ArrowLeft size={15} />
+          Voltar
+        </button>
+
         {/* Título */}
         <div>
           <h1 className="text-[22px] font-black tracking-tight text-[#111110]">Temas</h1>
