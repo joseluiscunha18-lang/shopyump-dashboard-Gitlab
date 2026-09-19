@@ -36,6 +36,13 @@ export interface Loja {
   conteudo_sobre: string | null;
   conteudo_entrega: string | null;
   conteudo_termos: string | null;
+  /**
+   * Qual tema a loja pública usa — resolvido por `resolveStoreTheme()`
+   * (ver lib/store/themes/registry.tsx). 'default' é o único tema que
+   * existe hoje; ids desconhecidos ou nulos caem sempre no 'default'
+   * (nunca um ecrã quebrado). Ver migrations/002_add_theme_id.sql.
+   */
+  theme_id: string;
   created_at: string;
 }
 
