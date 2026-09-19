@@ -29,9 +29,31 @@ const ONBOARDING_PATH = '/onboarding';
  */
 const HAS_LOJA_COOKIE = 'sy_has_loja';
 
+/**
+ * A loja pública (/loja/[slug]) é vista por visitantes anónimos — nunca
+ * deve passar pela lógica de sessão/onboarding abaixo, nem para quem
+ * está logado (ex.: um vendedor a abrir o link da própria loja, ou de
+ * outra, antes de terminar o onboarding). `/loja` (sem mais nada) e
+ * `/loja/temas` continuam protegidas: são páginas do painel, não a loja
+ * pública — só o que vem a seguir a `/loja/` e não é `temas` é tratado
+ * como slug de loja.
+ *
+ * Nota: isto torna "temas" um slug reservado — uma loja não pode ter
+ * `slug: 'temas'} (o onboarding/edição de slug deve bloquear isso).
+ */
+function isPublicStorePath(pathname: string): boolean {
+  if (!pathname.startsWith('/loja/')) return false;
+  return pathname !== '/loja/temas' && !pathname.startsWith('/loja/temas/');
+}
+
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user, supabase } = await updateSession(request);
   const { pathname } = request.nextUrl;
+
+  if (isPublicStorePath(pathname)) {
+    return NextResponse.next();
+  }
+
+  const { supabaseResponse, user, supabase } = await updateSession(request);
 
   const isAuthPath = AUTH_PATHS.some((p) => pathname.startsWith(p));
   const isOnboardingPath = pathname.startsWith(ONBOARDING_PATH);
