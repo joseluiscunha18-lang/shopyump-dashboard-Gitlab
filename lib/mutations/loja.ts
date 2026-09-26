@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { LojaUpdate } from '@/types/database';
+import { SOBRE_PADRAO, ENTREGA_PADRAO, TERMOS_PADRAO } from '@/lib/store/institutionalDefaults';
 
 export interface ActionResult {
   ok: boolean;
@@ -44,6 +45,16 @@ export async function completeOnboarding(input: {
     slug,
     nome: input.nome,
     whatsapp: input.whatsapp,
+    // Conteúdo institucional genérico e FUNCIONAL desde o dia 1 — ver
+    // lib/store/institutionalDefaults.ts. Ao contrário dos produtos de
+    // demonstração, isto não desaparece com o 1º produto: fica ativo até
+    // o lojista editar ou remover explicitamente.
+    conteudo_sobre: SOBRE_PADRAO,
+    conteudo_entrega: ENTREGA_PADRAO,
+    conteudo_termos: TERMOS_PADRAO,
+    mostrar_sobre: true,
+    mostrar_entrega: true,
+    mostrar_termos: true,
   });
 
   if (error) return { ok: false, error: error.message };
