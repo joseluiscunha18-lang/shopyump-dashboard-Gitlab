@@ -1,5 +1,4 @@
 import type { StoreThemeDefinition } from './types';
-import { DefaultTheme } from './default/DefaultTheme';
 import { LumeTheme } from './lume/LumeTheme';
 
 /**
@@ -11,9 +10,13 @@ import { LumeTheme } from './lume/LumeTheme';
  *
  * Nunca é preciso tocar em app/loja/[slug]/page.tsx, nas queries, ou no
  * StoreRenderer — todos eles só conhecem `resolveStoreTheme`.
+ *
+ * O tema 'default' foi descontinuado e removido (ver git history). Lojas
+ * antigas com theme_id = 'default' (ou qualquer id desconhecido) caem
+ * automaticamente no FALLBACK_THEME_ID abaixo — nunca ficam com ecrã em
+ * branco.
  */
 const STORE_THEMES: Record<string, StoreThemeDefinition> = {
-  default: { id: 'default', Component: DefaultTheme },
   lume: { id: 'lume', Component: LumeTheme },
 };
 
