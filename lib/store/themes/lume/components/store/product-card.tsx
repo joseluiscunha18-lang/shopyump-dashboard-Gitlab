@@ -10,6 +10,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { favourites, toggleFavourite } = useStore();
   const liked = favourites.includes(product.id);
   const available = isInStock(product);
+  const photo = product.images?.[0];
   return (
     <article className="group min-w-0">
       <div className="relative">
@@ -19,7 +20,17 @@ export function ProductCard({ product }: { product: Product }) {
           className="product-frame flex items-center justify-center bg-product-gallery p-0"
           aria-label={`Ver ${product.name}`}
         >
-          <ProductArt kind={product.kind} className="transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.04]" />
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- galeria vem de qualquer bucket/host configurado em produto.fotos; next/image exigiria whitelisting por loja.
+            <img
+              src={photo}
+              alt={product.name}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.04]"
+            />
+          ) : (
+            <ProductArt kind={product.kind} className="transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.04]" />
+          )}
         </Link>
         {!available && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-background">
