@@ -7,10 +7,10 @@ import { ProductCard } from "../components/store/product-card";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { categorySlug, type Product, type Category } from "../lib/store-data";
 
-export const Route = createFileRoute("/")(({
+export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "LUME. — Moda essencial" }, { name: "description", content: "Descubra a nova colecção e os destaques da loja LUME." }, { property: "og:title", content: "LUME. — Moda essencial" }, { property: "og:description", content: "Descubra a nova colecção e os destaques da loja LUME." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: HomePage,
-}) as Parameters<typeof createFileRoute<"/", "/", "/", string>>[0]);
+});
 
 const BLOCK_LIMIT = 6;
 const MIN_PRODUCTS_PER_BLOCK = 4;
@@ -53,7 +53,6 @@ function HomePage() {
   const { produtos, categorias, contactos } = useLumeLoja();
   const sections = getHomeSections(produtos, categorias);
 
-  // WhatsApp: só mostra o botão se o lojista preencheu o número
   const whatsappUrl = contactos.whatsapp
     ? `https://wa.me/${contactos.whatsapp.replace(/\D/g, "")}`
     : null;
