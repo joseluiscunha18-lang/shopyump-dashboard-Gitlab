@@ -1,5 +1,6 @@
 import type { StoreThemeDefinition } from './types';
 import { DefaultTheme } from './default/DefaultTheme';
+import { LumeTheme } from './lume/LumeTheme';
 
 /**
  * Registo central de temas. Adicionar um tema novo no futuro (Minimal,
@@ -13,6 +14,7 @@ import { DefaultTheme } from './default/DefaultTheme';
  */
 const STORE_THEMES: Record<string, StoreThemeDefinition> = {
   default: { id: 'default', Component: DefaultTheme },
+  lume: { id: 'lume', Component: LumeTheme },
 };
 
 const FALLBACK_THEME_ID = 'default';
