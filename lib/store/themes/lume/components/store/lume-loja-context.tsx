@@ -20,6 +20,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { LojaPublica } from '@/lib/queries/lojaPublica';
 import type { ProdutoPublico } from '@/lib/queries/produtosPublicos';
+import { totalEstoque } from '@/lib/variantes';
 import {
   products as demoProducts,
   categories as demoCategories,
@@ -99,10 +100,12 @@ function produtoPublicoParaLume(p: ProdutoPublico, index: number): LumeProduto {
     // preenchido, ProductCard/ProductGallery mostram a foto real.
     kind: DEMO_KINDS[index % DEMO_KINDS.length],
     tone: DEMO_TONES[index % DEMO_TONES.length],
-    // stock undefined = disponível (tratado em isInStock)
-    stock: undefined,
+    // Com variantes, o "esgotado" do cartão reflete a soma das versões
+    // ativas; sem variantes, undefined = disponível (tratado em isInStock).
+    stock: p.variantes?.versoes?.length ? totalEstoque(p.variantes.versoes) : undefined,
     images: p.fotos?.length ? p.fotos : undefined,
     description: p.descricao ?? undefined,
+    variantes: p.variantes,
   };
 }
 
