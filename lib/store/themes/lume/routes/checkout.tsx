@@ -33,8 +33,16 @@ function CheckoutPage() {
 
   const submitOrder = (details: { name: string; phone: string; address: string }) => {
     saveDelivery(details);
-    addOrder({ total: subtotal, items: cart.map(({ product, quantity }) => ({ name: product.name, quantity })) });
-    const items = cart.map(({ product, quantity }) => `${quantity}x ${product.name}`).join(", ");
+    addOrder({
+      total: subtotal,
+      items: cart.map(({ product, quantity, variant }) => ({
+        name: variant?.label ? `${product.name} (${variant.label})` : product.name,
+        quantity,
+      })),
+    });
+    const items = cart
+      .map(({ product, quantity, variant }) => `${quantity}x ${product.name}${variant?.label ? ` (${variant.label})` : ""}`)
+      .join(", ");
     const message = `Olá, sou ${details.name}. Pedido: ${items}. Total: ${formatPrice(subtotal)}. WhatsApp: ${details.phone}. Entrega: ${details.address}.`;
     window.open(`https://wa.me/258840000000?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   };
@@ -96,14 +104,17 @@ function CheckoutPage() {
         <aside className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft">
           <h2 className="font-semibold">Resumo do pedido</h2>
           <div className="mt-5 grid gap-4">
-            {cart.map(({ product, quantity }) => (
-              <div key={product.id} className="grid grid-cols-[52px_1fr_auto] items-center gap-3">
-                <div className={`product-mini product-tone-${product.tone}`}><ProductArt kind={product.kind} /></div>
+            {cart.map(({ product, quantity, variant }) => (
+              <div key={`${product.id}::${variant?.chave ?? ""}`} className="grid grid-cols-[52px_1fr_auto] items-center gap-3">
+                <div className={`product-mini product-tone-${product.tone}`}>
+                  {variant?.image ? <img src={variant.image} alt="" className="h-full w-full object-cover" /> : <ProductArt kind={product.kind} />}
+                </div>
                 <div>
                   <p className="text-sm font-medium">{product.name}</p>
+                  {variant?.label && <p className="text-xs text-muted-foreground">{variant.label}</p>}
                   <p className="text-xs text-muted-foreground">Quantidade: {quantity}</p>
                 </div>
-                <strong className="text-sm">{formatPrice(product.price * quantity)}</strong>
+                <strong className="text-sm">{formatPrice((variant?.unitPrice ?? product.price) * quantity)}</strong>
               </div>
             ))}
           </div>
