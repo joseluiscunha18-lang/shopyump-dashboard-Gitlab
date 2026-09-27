@@ -45,12 +45,27 @@ export interface LojaContactos {
   descricao: string | undefined;
 }
 
+/** Uma página institucional (Sobre / Envios / Termos) tal como configurada no dashboard. */
+export interface LojaPagina {
+  /** false = o lojista desligou esta secção em "Definições da loja"; a rota/link deve ficar oculta. */
+  mostrar: boolean;
+  /** Texto próprio do lojista, se preenchido — undefined usa o texto modelo genérico do tema. */
+  texto: string | undefined;
+}
+
 export interface LumeLojaValue {
   /** true enquanto a loja estiver a usar produtos de demonstração */
   usandoDemo: boolean;
   produtos: LumeProduto[];
   categorias: Category[];
   contactos: LojaContactos;
+  /** id real da loja (Supabase) — necessário para gravar pedidos. */
+  lojaId: string;
+  paginas: {
+    sobre: LojaPagina;
+    entrega: LojaPagina;
+    termos: LojaPagina;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -78,13 +93,16 @@ function produtoPublicoParaLume(p: ProdutoPublico, index: number): LumeProduto {
     name: p.nome,
     price: p.preco,
     category: categoria,
-    // Produto real não tem kind/tone → usa valores rotativos para o
-    // ProductArt SVG. Se a loja tiver fotos reais no futuro, o ProductCard
-    // dará prioridade à foto em vez do SVG.
+    // Produto real não tem kind/tone "verdadeiro" — só servem de
+    // fallback rotativo para o SVG do ProductArt nos casos (raros) em
+    // que o produto ainda não tem fotos. Quando `images` está
+    // preenchido, ProductCard/ProductGallery mostram a foto real.
     kind: DEMO_KINDS[index % DEMO_KINDS.length],
     tone: DEMO_TONES[index % DEMO_TONES.length],
     // stock undefined = disponível (tratado em isInStock)
     stock: undefined,
+    images: p.fotos?.length ? p.fotos : undefined,
+    description: p.descricao ?? undefined,
   };
 }
 
@@ -125,8 +143,18 @@ export function LumeLojaProvider({
     email: undefined,
   };
 
+  // Páginas institucionais — `mostrar_*` vem do toggle em "Definições da
+  // loja" (Supabase); `conteudo_*` é o texto próprio do lojista, se
+  // preenchido. undefined/null em `mostrar_*` é tratado como "mostrar"
+  // (comportamento anterior, para lojas antigas sem o campo definido).
+  const paginas: LumeLojaValue['paginas'] = {
+    sobre: { mostrar: loja.mostrar_sobre !== false, texto: loja.conteudo_sobre?.trim() || undefined },
+    entrega: { mostrar: loja.mostrar_entrega !== false, texto: loja.conteudo_entrega?.trim() || undefined },
+    termos: { mostrar: loja.mostrar_termos !== false, texto: loja.conteudo_termos?.trim() || undefined },
+  };
+
   return (
-    <LumeLojaContext.Provider value={{ usandoDemo, produtos, categorias, contactos }}>
+    <LumeLojaContext.Provider value={{ usandoDemo, produtos, categorias, contactos, lojaId: loja.id, paginas }}>
       {children}
     </LumeLojaContext.Provider>
   );
