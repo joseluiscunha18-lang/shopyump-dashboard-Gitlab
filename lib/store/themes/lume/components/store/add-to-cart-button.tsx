@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import type { Product } from "../../lib/store-data";
 import { productImage } from "./product-art";
-import { useStore } from "./store-context";
+import { useStore, type CartVariantSelection } from "./store-context";
 
 type Props = {
   product: Product;
@@ -16,6 +16,8 @@ type Props = {
   variant?: "default" | "outline";
   size?: "default" | "lg";
   label?: string;
+  /** Versão/variante escolhida na página do produto (undefined = produto sem variantes). */
+  selectedVariant?: CartVariantSelection;
 };
 
 export function AddToCartButton({
@@ -26,6 +28,7 @@ export function AddToCartButton({
   variant = "outline",
   size = "lg",
   label = "Adicionar ao Carrinho",
+  selectedVariant,
 }: Props) {
   const { addToCart, flyToCart } = useStore();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -50,7 +53,9 @@ export function AddToCartButton({
         { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
       );
     }
-    flyToCart(source, product.images?.[0] ?? productImage(product.kind), () => addToCart(product, quantity));
+    flyToCart(source, selectedVariant?.image ?? product.images?.[0] ?? productImage(product.kind), () =>
+      addToCart(product, quantity, selectedVariant),
+    );
     setAdded(true);
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setAdded(false), 1600);
