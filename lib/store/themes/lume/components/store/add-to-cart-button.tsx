@@ -50,7 +50,7 @@ export function AddToCartButton({
         { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
       );
     }
-    flyToCart(source, productImage(product.kind), () => addToCart(product, quantity));
+    flyToCart(source, product.images?.[0] ?? productImage(product.kind), () => addToCart(product, quantity));
     setAdded(true);
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setAdded(false), 1600);
