@@ -1,3 +1,6 @@
+import type { ProdutoVariantes, ProdutoVersao } from '@/types/database';
+import { imagensParaVersao } from '@/lib/variantes';
+
 export type ProductKind = "coat" | "shirt" | "bag" | "dress" | "tee" | "wallet" | "hoodie" | "cap";
 export type Category = "Destaques" | "Vestuário" | "Acessórios";
 
@@ -21,7 +24,95 @@ export type Product = {
   images?: string[];
   /** Descrição real do produto (`produtos.descricao`). Só existe em produtos reais. */
   description?: string;
+  /**
+   * Variantes reais (cor/tamanho/etc.) vindas do Supabase
+   * (`produtos.variantes`). undefined/null = produto sem variantes —
+   * componentes de compra usam sempre `price`/`stock` do produto.
+   */
+  variantes?: ProdutoVariantes | null;
 };
+
+/* -------------------------------------------------------------------- */
+/* Variantes — helpers para a loja pública                               */
+/* -------------------------------------------------------------------- */
+
+/** Uma característica de variação do produto, na ordem raiz → filha → neta. */
+export interface CaracteristicaVariante {
+  nome: string;
+  cores?: Record<string, string>;
+}
+
+/** Lista as características (Cor/Tamanho/...) que o produto realmente usa. */
+export function caracteristicasDoProduto(product: Product): CaracteristicaVariante[] {
+  const v = product.variantes;
+  if (!v) return [];
+  return [v.raiz, v.filha, v.neta].filter((c): c is NonNullable<typeof c> => Boolean(c?.nome));
+}
+
+/**
+ * Valores possíveis para `nome`, dado o que já foi escolhido nas
+ * características anteriores (`selecaoAtual`) — preserva a ordem em que
+ * aparecem nas versões vendáveis (que já segue raiz.valores/filha...).
+ */
+export function valoresParaCaracteristica(
+  product: Product,
+  nome: string,
+  selecaoAtual: Record<string, string>
+): string[] {
+  const versoes = product.variantes?.versoes ?? [];
+  const anteriores = caracteristicasDoProduto(product)
+    .map((c) => c.nome)
+    .slice(0, caracteristicasDoProduto(product).findIndex((c) => c.nome === nome));
+
+  const vistos = new Set<string>();
+  const valores: string[] = [];
+  for (const versao of versoes) {
+    if (anteriores.some((c) => versao.valores[c] !== selecaoAtual[c])) continue;
+    const valor = versao.valores[nome];
+    if (valor && !vistos.has(valor)) {
+      vistos.add(valor);
+      valores.push(valor);
+    }
+  }
+  return valores;
+}
+
+/** Versão (combinação) vendável que corresponde à seleção completa, se existir. */
+export function encontrarVersao(product: Product, selecao: Record<string, string>): ProdutoVersao | undefined {
+  const caracteristicas = caracteristicasDoProduto(product);
+  if (!caracteristicas.length) return undefined;
+  return (product.variantes?.versoes ?? []).find((versao) =>
+    caracteristicas.every((c) => versao.valores[c.nome] === selecao[c.nome])
+  );
+}
+
+/** Primeira versão ativa e em estoque — usada como seleção inicial da página do produto. */
+export function versaoInicial(product: Product): ProdutoVersao | undefined {
+  const versoes = product.variantes?.versoes ?? [];
+  return (
+    versoes.find((v) => v.ativa !== false && (v.estoque == null || v.estoque > 0)) ??
+    versoes.find((v) => v.ativa !== false) ??
+    versoes[0]
+  );
+}
+
+/** Preço a mostrar: o da versão selecionada (se definido), senão o preço base do produto. */
+export function precoDaVersao(product: Product, versao: ProdutoVersao | undefined): number {
+  return versao?.preco ?? product.price;
+}
+
+/** Estoque da versão selecionada; undefined = sem controlo de estoque (sempre disponível). */
+export function estoqueDaVersao(product: Product, versao: ProdutoVersao | undefined): number | undefined {
+  if (!product.variantes) return product.stock;
+  if (!versao) return 0;
+  return typeof versao.estoque === 'number' ? versao.estoque : undefined;
+}
+
+/** Imagens a mostrar para a versão selecionada — versão → característica → galeria geral. */
+export function imagensDaVersao(product: Product, versao: ProdutoVersao | undefined): string[] {
+  if (!versao) return product.images ?? [];
+  return imagensParaVersao(versao, product.variantes?.imagensPorCaracteristica, product.images ?? []).imagens;
+}
 
 export const categories: Category[] = ["Destaques", "Vestuário", "Acessórios"];
 
@@ -43,8 +134,12 @@ export const formatPrice = (value: number) => `${new Intl.NumberFormat("pt-PT").
 
 export const getProduct = (id: string) => products.find((product) => product.id === id);
 
-export const isInStock = (product: Product, quantity = 1) =>
-  product.stock === undefined || product.stock >= quantity;
+export const isInStock = (product: Product, quantity = 1, stockOverride?: number) => {
+  const stock = stockOverride !== undefined ? stockOverride : product.stock;
+  return stock === undefined || stock >= quantity;
+};
 
-export const maxQuantity = (product: Product) =>
-  product.stock === undefined ? 99 : Math.max(0, product.stock);
+export const maxQuantity = (product: Product, stockOverride?: number) => {
+  const stock = stockOverride !== undefined ? stockOverride : product.stock;
+  return stock === undefined ? 99 : Math.max(0, stock);
+};
