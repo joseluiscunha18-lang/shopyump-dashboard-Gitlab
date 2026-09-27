@@ -11,13 +11,17 @@ import { ProductGallery } from "../components/store/product-gallery";
 import { ProductCard } from "../components/store/product-card";
 import { useAuth } from "../components/store/auth-context";
 import { useStore } from "../components/store/store-context";
-import { formatPrice, getProduct, isInStock, maxQuantity, products } from "../lib/store-data";
+import { formatPrice, getProduct, isInStock, maxQuantity } from "../lib/store-data";
+import { useLumeLoja } from "../components/store/lume-loja-context";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
+    // Para produtos demo: devolve o produto estático.
+    // Para produtos reais (IDs do Supabase): getProduct retorna undefined,
+    // mas não lançamos notFound() aqui — o componente vai buscar nos
+    // produtos do LumeLojaContext e tratar o caso de não encontrado.
     const product = getProduct(params.productId);
-    if (!product) throw notFound();
-    return product;
+    return product ?? { id: params.productId, name: "", price: 0, category: "Destaques" as const, kind: "coat" as const, tone: "blue" as const };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -33,17 +37,27 @@ export const Route = createFileRoute("/produto/$productId")({
 });
 
 function ProductPage() {
-  const product = Route.useLoaderData();
+  const loaderProduct = Route.useLoaderData();
   const navigate = useNavigate();
   const { addToCart, favourites, setCartOpen, toggleFavourite } = useStore();
   const { restockAlerts, requestRestockAlert } = useAuth();
+  const { produtos: produtosContexto } = useLumeLoja();
   const [quantity, setQuantity] = useState(1);
   const [colour, setColour] = useState("Preto");
   const [size, setSize] = useState("M");
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  // Procura o produto nos dados do contexto (reais ou demo); fallback para o loader
+  const productFromContext = produtosContexto.find((p) => p.id === loaderProduct.id);
+  const product = productFromContext ?? (loaderProduct.name ? loaderProduct : null);
+
+  // Se não existe em lado nenhum, o RouteNotFoundBoundary no LumeTheme.tsx
+  // mostra o fallback de produto não encontrado.
+  if (!product) throw new (class extends Error { constructor() { super("not-found"); } })();
+
   const liked = favourites.includes(product.id);
-  const recommendations = products.filter((item) => item.id !== product.id).slice(0, 4);
+  const recommendations = produtosContexto.filter((item) => item.id !== product.id).slice(0, 4);
   const available = isInStock(product);
   const limit = maxQuantity(product);
   const alertActive = restockAlerts.includes(product.id);
