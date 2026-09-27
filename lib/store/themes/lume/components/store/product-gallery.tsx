@@ -36,12 +36,12 @@ function Gallery({ product, photos }: { product: Product; photos: string[] }) {
 
   return (
     <div className="min-w-0 self-start" role="region" aria-roledescription="carrossel" aria-label={`Imagens de ${product.name}`}>
-      <div ref={carouselRef} className="overflow-hidden touch-pan-y">
+      <div ref={carouselRef} className="overflow-hidden touch-pan-y px-3">
         <div className="flex">
           {slides.map((src, index) => (
             <div
               key={index}
-              className={`product-gallery-slide relative min-w-0 shrink-0 basis-full ${index < slides.length - 1 ? "mr-4" : ""}`}
+              className={`product-gallery-slide relative min-w-0 shrink-0 basis-full ${index < slides.length - 1 ? "mr-3" : ""}`}
               role="group"
               aria-roledescription="imagem"
               aria-label={`Imagem ${index + 1} de ${slides.length} de ${product.name}`}
