@@ -17,7 +17,7 @@ const STORE_THEMES: Record<string, StoreThemeDefinition> = {
   lume: { id: 'lume', Component: LumeTheme },
 };
 
-const FALLBACK_THEME_ID = 'default';
+const FALLBACK_THEME_ID = 'lume';
 
 /**
  * Resolve um `theme_id` (vindo de `lojas.theme_id`) para a sua definição.
