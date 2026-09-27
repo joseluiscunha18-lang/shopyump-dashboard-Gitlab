@@ -2,6 +2,7 @@
 
 import { LumeRouterProvider, RouteNotFoundBoundary, useCurrentLumeRoute } from './router';
 import { StoreShell } from './components/store/store-shell';
+import { LumeLojaProvider } from './components/store/lume-loja-context';
 import type { StoreThemeProps } from '../types';
 
 import { Route as IndexRoute } from './routes/index';
@@ -25,10 +26,10 @@ import { Route as TrocasRoute } from './routes/trocas-e-devolucoes';
  * página única desta app — ver router.tsx) por um switch sobre o estado
  * interno de navegação.
  *
- * MODO DE DEMONSTRAÇÃO: tal como veio do Lovable, este tema mostra os 6
- * produtos fictícios de ./lib/store-data.ts (ilustrações, não fotos reais)
- * — ainda não está ligado a `produtos`/`loja` (dados reais da Supabase).
- * Ver nota no README de entrega para ligar isto à loja real.
+ * LÓGICA DE ONBOARDING/FALLBACK (implementada em lume-loja-context.tsx):
+ *   - Sem produtos reais → mostra demo; com produtos reais → mostra reais.
+ *   - Redes sociais/contactos → só mostra o que o lojista preencheu.
+ *   - Páginas institucionais → sempre activas com texto modelo genérico.
  */
 function CurrentLumeView() {
   const { pathname } = useCurrentLumeRoute();
@@ -85,10 +86,12 @@ function LumeThemeInterno() {
   );
 }
 
-export function LumeTheme(_props: StoreThemeProps) {
+export function LumeTheme({ loja, produtos }: StoreThemeProps) {
   return (
-    <LumeRouterProvider>
-      <LumeThemeInterno />
-    </LumeRouterProvider>
+    <LumeLojaProvider loja={loja} produtos={produtos}>
+      <LumeRouterProvider>
+        <LumeThemeInterno />
+      </LumeRouterProvider>
+    </LumeLojaProvider>
   );
 }
