@@ -27,9 +27,15 @@ function ShellContent({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [institutionalHeadingPassed, setInstitutionalHeadingPassed] = useState(false);
-  const { produtos: produtosContexto } = useLumeLoja();
+  const { produtos: produtosContexto, paginas } = useLumeLoja();
   const results = produtosContexto.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()));
-  const navItems = [{ to: "/" as const, label: "Início" }, { to: "/sobre" as const, label: "Sobre" }, { to: "/contacto" as const, label: "Contacto" }];
+  const navItems = [
+    { to: "/" as const, label: "Início" },
+    // "Sobre" só aparece no menu se o lojista não a tiver desligado em
+    // Definições da loja (loja.mostrar_sobre).
+    ...(paginas.sobre.mostrar ? [{ to: "/sobre" as const, label: "Sobre" }] : []),
+    { to: "/contacto" as const, label: "Contacto" },
+  ];
   const minimal = pathname === "/conta";
   const catalog = pathname === "/produtos";
   const productPage = pathname.startsWith("/produto/");
@@ -153,7 +159,7 @@ function ShellContent({ children }: { children: ReactNode }) {
 }
 
 function StoreFooter({ productPage }: { productPage: boolean }) {
-  const { contactos } = useLumeLoja();
+  const { contactos, paginas } = useLumeLoja();
   const ano = new Date().getFullYear();
 
   // Só renderiza o botão/link se o campo estiver preenchido
@@ -176,9 +182,9 @@ function StoreFooter({ productPage }: { productPage: boolean }) {
           <div>
             <h2 className="text-xs font-bold uppercase text-foreground">INFORMAÇÕES</h2>
             <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
-              <li><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>
+              {paginas.entrega.mostrar && <li><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>}
               <li><Link to="/trocas-e-devolucoes" className="transition-colors hover:text-foreground">Trocas e Devoluções</Link></li>
-              <li><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>
+              {paginas.termos.mostrar && <li><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>}
             </ul>
           </div>
           {hasSocial && (
