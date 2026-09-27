@@ -11,15 +11,33 @@ import {
 } from "react";
 import type { Product } from "../../lib/store-data";
 
-type CartItem = { product: Product; quantity: number };
+/**
+ * Opções de uma versão/variante escolhida ao adicionar ao carrinho.
+ * Quando ausente, o item usa preço/imagem/estoque do produto base
+ * (produto sem variantes).
+ */
+export type CartVariantSelection = {
+  /** `versao.chave` — usado para diferenciar linhas do mesmo produto. */
+  chave: string;
+  /** ex: "Preto / M" — mostrado no carrinho/checkout. */
+  label: string;
+  /** preço resolvido para esta versão (já com fallback ao preço base). */
+  unitPrice: number;
+  image?: string;
+};
+
+type CartItem = { product: Product; quantity: number; variant?: CartVariantSelection };
+/** Identidade de uma linha do carrinho: mesmo produto + mesma variante. */
+const cartItemKey = (productId: string, variantChave?: string) => `${productId}::${variantChave ?? ""}`;
+
 type StoreValue = {
   cart: CartItem[];
   favourites: string[];
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
-  addToCart: (product: Product, quantity?: number) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  removeFromCart: (id: string) => void;
+  addToCart: (product: Product, quantity?: number, variant?: CartVariantSelection) => void;
+  updateQuantity: (itemKey: string, quantity: number) => void;
+  removeFromCart: (itemKey: string) => void;
   toggleFavourite: (id: string) => void;
   subtotal: number;
   cartCount: number;
@@ -117,28 +135,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [pulseCart],
   );
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product, quantity = 1, variant?: CartVariantSelection) => {
     setCart((current) => {
-      const existing = current.find((item) => item.product.id === product.id);
+      const key = cartItemKey(product.id, variant?.chave);
+      const existing = current.find((item) => cartItemKey(item.product.id, item.variant?.chave) === key);
       return existing
         ? current.map((item) =>
-            item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
+            cartItemKey(item.product.id, item.variant?.chave) === key
+              ? { ...item, quantity: item.quantity + quantity }
+              : item,
           )
-        : [...current, { product, quantity }];
+        : [...current, { product, quantity, variant }];
     });
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (itemKey: string, quantity: number) => {
     if (quantity < 1) return;
-    setCart((current) => current.map((item) => item.product.id === id ? { ...item, quantity } : item));
+    setCart((current) =>
+      current.map((item) => (cartItemKey(item.product.id, item.variant?.chave) === itemKey ? { ...item, quantity } : item)),
+    );
   };
-  const removeFromCart = (id: string) => setCart((current) => current.filter((item) => item.product.id !== id));
+  const removeFromCart = (itemKey: string) =>
+    setCart((current) => current.filter((item) => cartItemKey(item.product.id, item.variant?.chave) !== itemKey));
   const toggleFavourite = (id: string) => setFavourites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
 
   const value = useMemo(() => ({
     cart, favourites, cartOpen, setCartOpen, addToCart, updateQuantity, removeFromCart, toggleFavourite,
     registerCartTarget, flyToCart,
-    subtotal: cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+    subtotal: cart.reduce((sum, item) => sum + (item.variant?.unitPrice ?? item.product.price) * item.quantity, 0),
     cartCount: cart.reduce((sum, item) => sum + item.quantity, 0),
   }), [cart, favourites, cartOpen, registerCartTarget, flyToCart]);
 
@@ -150,3 +174,6 @@ export function useStore() {
   if (!value) throw new Error("useStore must be used inside StoreProvider");
   return value;
 }
+
+export { cartItemKey };
+export type { CartItem };
