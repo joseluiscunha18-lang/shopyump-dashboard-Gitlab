@@ -1,4 +1,5 @@
 import { createPublicClient } from '@/lib/supabase/publicClient';
+import type { ProdutoVariantes } from '@/types/database';
 
 /**
  * Forma pública de um produto — o que qualquer tema precisa para
@@ -16,9 +17,15 @@ export interface ProdutoPublico {
   categoria: string;
   descricao: string | null;
   fotos: string[];
+  /**
+   * Variantes (cor/tamanho/etc.) do produto — a mesma estrutura gravada
+   * pelo dashboard em `produtos.variantes` (ver ProdutoVariantes). `null`
+   * = produto sem variantes, vende-se só com preço/estoque próprios.
+   */
+  variantes: ProdutoVariantes | null;
 }
 
-const PRODUTO_PUBLICO_COLUNAS = 'id, nome, preco, preco_promo, categoria, descricao, fotos';
+const PRODUTO_PUBLICO_COLUNAS = 'id, nome, preco, preco_promo, categoria, descricao, fotos, variantes';
 
 /** Nº de produtos por página — ver nota de paginação em getProdutosPublicos. */
 const TAMANHO_PAGINA_PADRAO = 60;
