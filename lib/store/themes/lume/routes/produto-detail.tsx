@@ -169,7 +169,8 @@ function ProductPage() {
           </div>
 
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            Uma peça versátil, confortável e fácil de combinar. Apresentação demonstrativa pronta para receber os detalhes reais do seu produto.
+            {product.description ??
+              "Uma peça versátil, confortável e fácil de combinar. Apresentação demonstrativa pronta para receber os detalhes reais do seu produto."}
           </p>
         </div>
       </div>
