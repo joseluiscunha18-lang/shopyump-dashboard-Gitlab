@@ -10,6 +10,18 @@ export function ProductGallery({ product }: { product: Product }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
+  // Passo real entre slides (largura do slide + gap), medido no DOM em vez
+  // de assumido, porque o gap entre fotos é feito com margin (não padding):
+  // assim o espaço só existe fisicamente entre uma foto e a outra e nunca
+  // sobra colado numa borda em repouso.
+  const getStep = () => {
+    const track = trackRef.current;
+    if (!track) return 0;
+    const first = track.children[0] as HTMLElement | undefined;
+    const second = track.children[1] as HTMLElement | undefined;
+    return first && second ? second.offsetLeft - first.offsetLeft : track.clientWidth;
+  };
+
   // Sincroniza o ponto ativo com o scroll do carrossel (snap nativo).
   useEffect(() => {
     const track = trackRef.current;
@@ -18,7 +30,8 @@ export function ProductGallery({ product }: { product: Product }) {
     const onScroll = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const index = Math.round(track.scrollLeft / track.clientWidth);
+        const step = getStep();
+        const index = step ? Math.round(track.scrollLeft / step) : 0;
         setActive(Math.min(Math.max(index, 0), photos.length - 1));
       });
     };
@@ -32,7 +45,7 @@ export function ProductGallery({ product }: { product: Product }) {
   const goTo = (index: number) => {
     const track = trackRef.current;
     if (!track) return;
-    track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
+    track.scrollTo({ left: index * getStep(), behavior: "smooth" });
   };
 
   if (photos.length === 0) {
@@ -54,7 +67,13 @@ export function ProductGallery({ product }: { product: Product }) {
         aria-label={`Fotos de ${product.name}`}
       >
         {photos.map((src, index) => (
-          <div key={src + index} className="product-gallery-slide relative w-full shrink-0 snap-center p-0">
+          <div
+            key={src + index}
+            className={cn(
+              "product-gallery-slide relative w-full shrink-0 snap-center p-0",
+              index < photos.length - 1 && "mr-3",
+            )}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- ver nota em product-card.tsx */}
             <img
               src={src}
