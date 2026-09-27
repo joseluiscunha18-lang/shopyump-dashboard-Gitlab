@@ -7,7 +7,8 @@ import { Check, Settings2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle } from "../components/ui/sheet";
 import { ProductCard } from "../components/store/product-card";
-import { categories, categoryFromSlug, categorySlug, products } from "../lib/store-data";
+import { categoryFromSlug, categorySlug } from "../lib/store-data";
+import { useLumeLoja } from "../components/store/lume-loja-context";
 
 const sorts = { relevancia: "Relevância", "preco-asc": "Preço: menor", "preco-desc": "Preço: maior", nome: "Nome A–Z" } as const;
 type Sort = keyof typeof sorts;
@@ -37,6 +38,8 @@ const PAGE = 8;
 function CatalogPage() {
   const { categoria, ordenar } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { produtos, categorias } = useLumeLoja();
+
   const active = categoryFromSlug(categoria);
   const sort: Sort = ordenar ?? "relevancia";
   const [filterOpen, setFilterOpen] = useState(false);
@@ -44,13 +47,13 @@ function CatalogPage() {
   const sentinel = useRef<HTMLDivElement>(null);
 
   const list = useMemo(() => {
-    const base = products.filter((p) => !active || p.category === active);
+    const base = produtos.filter((p) => !active || p.category === active);
     const sorted = [...base];
     if (sort === "preco-asc") sorted.sort((a, b) => a.price - b.price);
     if (sort === "preco-desc") sorted.sort((a, b) => b.price - a.price);
     if (sort === "nome") sorted.sort((a, b) => a.name.localeCompare(b.name, "pt"));
     return sorted;
-  }, [active, sort]);
+  }, [produtos, active, sort]);
 
   useEffect(() => setVisible(PAGE), [active, sort]);
 
@@ -73,7 +76,6 @@ function CatalogPage() {
         </Button>
       </div>
 
-
       <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-7 lg:grid-cols-4">
         {list.slice(0, visible).map((p) => <div key={p.id} className="animate-in fade-in duration-500"><ProductCard product={p} /></div>)}
       </div>
@@ -87,7 +89,7 @@ function CatalogPage() {
           <section className="mt-3">
             <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Categoria</h2>
             <div className="mt-1.5 grid gap-0.5">
-              {[undefined, ...categories].map((category) => {
+              {[undefined, ...categorias].map((category) => {
                 const selected = category === active;
                 return (
                   <Link key={category ?? "todos"} to="/produtos" search={(search) => ({ ...search, categoria: category ? categorySlug(category) : undefined })} replace
