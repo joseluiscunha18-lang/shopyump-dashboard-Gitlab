@@ -43,7 +43,7 @@ function Gallery({ product, photos }: { product: Product; photos: string[] }) {
     <div className="min-w-0 self-start" role="region" aria-roledescription="carrossel" aria-label={`Imagens de ${product.name}`}>
       <div
         ref={trackRef}
-        className="flex overflow-x-auto touch-pan-y snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {Array.from({ length: slideCount }, (_, index) => (
           <div
