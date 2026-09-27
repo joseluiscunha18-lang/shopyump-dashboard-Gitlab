@@ -3,7 +3,7 @@
 import { Check, Info, ShieldCheck } from "lucide-react";
 import type { InstitutionalPageData } from "../../lib/institutional-data";
 
-export function InstitutionalPage({ data }: { data: InstitutionalPageData }) {
+export function InstitutionalPage({ data, textoLoja }: { data: InstitutionalPageData; textoLoja?: string }) {
   return (
     <article>
       <header className="border-b border-border bg-muted/40">
@@ -14,6 +14,18 @@ export function InstitutionalPage({ data }: { data: InstitutionalPageData }) {
           <p className="mt-7 text-xs text-muted-foreground">{data.updatedAt}</p>
         </div>
       </header>
+      {textoLoja && (
+        <div className="mx-auto max-w-4xl px-5 pt-10 sm:px-8 sm:pt-16">
+          <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
+            <p className="text-xs font-bold uppercase text-muted-foreground">Nota de {data.title === "Termos e Privacidade" ? "privacidade" : "entrega"} desta loja</p>
+            <div className="mt-3 grid gap-3 text-sm leading-6 text-foreground sm:text-base">
+              {textoLoja.split(/\n{2,}/).map((paragrafo, index) => (
+                <p key={index} className="whitespace-pre-line">{paragrafo}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-16">
         <div className="grid gap-10 sm:gap-12">
           {data.sections.map((section, sectionIndex) => (
