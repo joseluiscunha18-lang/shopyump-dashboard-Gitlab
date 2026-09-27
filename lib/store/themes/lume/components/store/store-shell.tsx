@@ -7,12 +7,13 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { Toaster } from "../ui/sonner";
-import { products } from "../../lib/store-data";
+// products import removed — now sourced from LumeLojaContext
 import { CartDrawer } from "./cart-drawer";
 import { ProductArt } from "./product-art";
 import { StoreProvider, useStore } from "./store-context";
 import { AuthProvider, getInitials, useAuth } from "./auth-context";
 import { AuthModal } from "./auth-modal";
+import { useLumeLoja } from "./lume-loja-context";
 
 export function StoreShell({ children }: { children: ReactNode }) {
   return <StoreProvider><AuthProvider><ShellContent>{children}</ShellContent></AuthProvider></StoreProvider>;
@@ -26,7 +27,8 @@ function ShellContent({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [institutionalHeadingPassed, setInstitutionalHeadingPassed] = useState(false);
-  const results = products.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()));
+  const { produtos: produtosContexto } = useLumeLoja();
+  const results = produtosContexto.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()));
   const navItems = [{ to: "/" as const, label: "Início" }, { to: "/sobre" as const, label: "Sobre" }, { to: "/contacto" as const, label: "Contacto" }];
   const minimal = pathname === "/conta";
   const catalog = pathname === "/produtos";
@@ -135,25 +137,7 @@ function ShellContent({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className={pathname === "/" || productPage ? "pb-0" : "pb-12 sm:pb-0"}>{children}</main>
-      <footer className={`bg-background px-5 pt-4 text-footer-foreground sm:px-8 sm:pb-8 sm:pt-6 ${productPage ? "pb-10" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"}`}>
-        <div className="mx-auto max-w-6xl border-t border-border pt-6 sm:pt-7">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-2 sm:gap-8">
-            <div>
-              <h2 className="text-xs font-bold uppercase text-foreground">INFORMAÇÕES</h2>
-              <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground"><li><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li><li><Link to="/trocas-e-devolucoes" className="transition-colors hover:text-foreground">Trocas e Devoluções</Link></li><li><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li></ul>
-            </div>
-            <div>
-              <div className="flex gap-1 sm:gap-2"><Button variant="footer" size="icon" aria-label="Instagram" className="max-sm:size-8"><Instagram /></Button><Button variant="footer" size="icon" aria-label="Facebook" className="max-sm:size-8"><Facebook /></Button><Button variant="footer" size="icon" aria-label="TikTok" className="max-sm:size-8"><Music2 /></Button></div>
-            </div>
-          </div>
-          <div className="mt-6 border-t border-border/60 pt-5 text-center sm:text-left">
-            <div className="flex flex-col items-center gap-1 text-xs">
-              <p>© {new Date().getFullYear()} LUME. Todos os direitos reservados.</p>
-              <p className="text-footer-muted">Criado com Shopyump</p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <StoreFooter productPage={productPage} />
       {!productPage && <nav aria-label="Navegação principal" className="premium-nav fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center sm:hidden">
         <BottomLink to="/" label="Início" active={pathname === "/"}><Home /></BottomLink>
         <BottomAction label="Pesquisar" active={searchOpen} onClick={() => setSearchOpen(true)}><Search className="optical-lg" /></BottomAction>
@@ -165,6 +149,68 @@ function ShellContent({ children }: { children: ReactNode }) {
       <AuthModal />
       <Toaster />
     </div>
+  );
+}
+
+function StoreFooter({ productPage }: { productPage: boolean }) {
+  const { contactos } = useLumeLoja();
+  const ano = new Date().getFullYear();
+
+  // Só renderiza o botão/link se o campo estiver preenchido
+  const instagramUrl = contactos.instagram
+    ? `https://instagram.com/${contactos.instagram.replace(/^@/, "")}`
+    : null;
+  const facebookUrl = contactos.facebook
+    ? `https://facebook.com/${contactos.facebook.replace(/^@/, "")}`
+    : null;
+  const tiktokUrl = contactos.tiktok
+    ? `https://tiktok.com/@${contactos.tiktok.replace(/^@/, "")}`
+    : null;
+
+  const hasSocial = instagramUrl || facebookUrl || tiktokUrl;
+
+  return (
+    <footer className={`bg-background px-5 pt-4 text-footer-foreground sm:px-8 sm:pb-8 sm:pt-6 ${productPage ? "pb-10" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"}`}>
+      <div className="mx-auto max-w-6xl border-t border-border pt-6 sm:pt-7">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-2 sm:gap-8">
+          <div>
+            <h2 className="text-xs font-bold uppercase text-foreground">INFORMAÇÕES</h2>
+            <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
+              <li><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>
+              <li><Link to="/trocas-e-devolucoes" className="transition-colors hover:text-foreground">Trocas e Devoluções</Link></li>
+              <li><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>
+            </ul>
+          </div>
+          {hasSocial && (
+            <div>
+              <div className="flex gap-1 sm:gap-2">
+                {instagramUrl && (
+                  <Button variant="footer" size="icon" aria-label="Instagram" className="max-sm:size-8" asChild>
+                    <a href={instagramUrl} target="_blank" rel="noreferrer"><Instagram /></a>
+                  </Button>
+                )}
+                {facebookUrl && (
+                  <Button variant="footer" size="icon" aria-label="Facebook" className="max-sm:size-8" asChild>
+                    <a href={facebookUrl} target="_blank" rel="noreferrer"><Facebook /></a>
+                  </Button>
+                )}
+                {tiktokUrl && (
+                  <Button variant="footer" size="icon" aria-label="TikTok" className="max-sm:size-8" asChild>
+                    <a href={tiktokUrl} target="_blank" rel="noreferrer"><Music2 /></a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-6 border-t border-border/60 pt-5 text-center sm:text-left">
+          <div className="flex flex-col items-center gap-1 text-xs">
+            <p>© {ano} {contactos.nome}. Todos os direitos reservados.</p>
+            <p className="text-footer-muted">Criado com Shopyump</p>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }
 
