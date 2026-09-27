@@ -134,7 +134,8 @@ export function notFound(): never {
 type RouteConfig<TLoaderData = unknown> = {
   component: () => ReactNode;
   loader?: (args: { params: Record<string, string> }) => TLoaderData;
-  head?: unknown;
+  /** Nunca invocado pelo router-shim (não há <head> de documento por ecrã aqui) — só precisa de tipar certo o parâmetro para o TypeScript não rebentar com "implicitamente any". */
+  head?: (args: { loaderData: TLoaderData }) => unknown;
   validateSearch?: unknown;
 };
 
@@ -142,7 +143,10 @@ export function createFileRoute(_path: string) {
   return function configure<TLoaderData>(config: RouteConfig<TLoaderData>) {
     return {
       options: config,
-      useSearch(): SearchObj {
+      // any: o schema real (zod) só existe no ficheiro da rota, não aqui no
+      // shim — sem isto o TS travava a destruturação em produtos.tsx com
+      // "unknown".
+      useSearch(): any {
         return useLumeRouter().state.search;
       },
       useNavigate,
