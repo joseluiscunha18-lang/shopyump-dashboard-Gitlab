@@ -5,10 +5,16 @@ import { ProductArt } from "./product-art";
 import type { Product } from "../../lib/store-data";
 import { cn } from "../../lib/utils";
 
-export function ProductGallery({ product }: { product: Product }) {
-  const photos = product.images ?? [];
+export function ProductGallery({ product, images }: { product: Product; images?: string[] }) {
+  const photos = images ?? product.images ?? [];
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+
+  // Reinicia para a primeira foto sempre que a galeria muda (ex: trocou de cor).
+  useEffect(() => {
+    setActive(0);
+    trackRef.current?.scrollTo({ left: 0 });
+  }, [photos.join("|")]);
 
   // Sincroniza o ponto ativo com o scroll do carrossel (snap nativo).
   useEffect(() => {
