@@ -133,7 +133,7 @@ function ProductPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 pb-14 pt-5 sm:px-6 sm:pb-20 sm:pt-10">
       <div className="grid gap-7 md:grid-cols-2 md:gap-12">
-        <div ref={galleryRef} className="min-w-0 -mx-3 sm:-mx-4 md:mx-0">
+        <div ref={galleryRef} className="min-w-0 -mx-5 sm:-mx-6 md:mx-0">
           <ProductGallery product={product} images={galleryImages} />
         </div>
 
