@@ -22,6 +22,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type AnchorHTMLAttributes,
   type ReactNode,
@@ -48,32 +49,49 @@ type NavigateFn = (opts: NavigateOptions | string) => void;
 type LumeRouterValue = {
   state: RouterState;
   navigate: NavigateFn;
+  goBack: () => void;
 };
 
 const LumeRouterContext = createContext<LumeRouterValue | undefined>(undefined);
 
 export function LumeRouterProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<RouterState>({ pathname: '/', params: {}, search: {} });
+  // Pilha do histórico interno — como este router não usa a URL real do
+  // browser (ver nota no topo do ficheiro), window.history.back() nunca
+  // funcionaria: não há entradas correspondentes no histórico do browser.
+  // Guardamos aqui o estado anterior a cada navegação para simular "voltar".
+  const historyRef = useRef<RouterState[]>([]);
 
   const navigate = useCallback<NavigateFn>((opts) => {
+    const replace = typeof opts !== 'string' && !!opts.replace;
     setState((current) => {
+      let next: RouterState;
       if (typeof opts === 'string') {
-        return { pathname: opts, params: {}, search: {} };
+        next = { pathname: opts, params: {}, search: {} };
+      } else {
+        const nextPathname = opts.to ?? current.pathname;
+        const nextParams = opts.params ?? (opts.to ? {} : current.params);
+        let nextSearch: SearchObj = current.search;
+        if (opts.search) {
+          nextSearch = typeof opts.search === 'function' ? opts.search(current.search) : opts.search;
+        } else if (opts.to) {
+          nextSearch = {};
+        }
+        next = { pathname: nextPathname, params: nextParams, search: nextSearch };
       }
-      const nextPathname = opts.to ?? current.pathname;
-      const nextParams = opts.params ?? (opts.to ? {} : current.params);
-      let nextSearch: SearchObj = current.search;
-      if (opts.search) {
-        nextSearch = typeof opts.search === 'function' ? opts.search(current.search) : opts.search;
-      } else if (opts.to) {
-        nextSearch = {};
-      }
-      return { pathname: nextPathname, params: nextParams, search: nextSearch };
+      if (!replace) historyRef.current.push(current);
+      return next;
     });
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   }, []);
 
-  const value = useMemo(() => ({ state, navigate }), [state, navigate]);
+  const goBack = useCallback(() => {
+    const previous = historyRef.current.pop();
+    setState(previous ?? { pathname: '/', params: {}, search: {} });
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }, []);
+
+  const value = useMemo(() => ({ state, navigate, goBack }), [state, navigate, goBack]);
 
   return <LumeRouterContext.Provider value={value}>{children}</LumeRouterContext.Provider>;
 }
@@ -91,6 +109,11 @@ export function useCurrentLumeRoute() {
 
 export function useNavigate() {
   return useLumeRouter().navigate;
+}
+
+/** Substitui window.history.back(): "volta" dentro do histórico interno do tema. */
+export function useGoBack() {
+  return useLumeRouter().goBack;
 }
 
 export function useRouterState<T>({ select }: { select: (state: { location: { pathname: string } }) => T }): T {
