@@ -11,7 +11,19 @@ import { ProductGallery } from "../components/store/product-gallery";
 import { ProductCard } from "../components/store/product-card";
 import { useAuth } from "../components/store/auth-context";
 import { useStore } from "../components/store/store-context";
-import { formatPrice, getProduct, isInStock, maxQuantity } from "../lib/store-data";
+import {
+  formatPrice,
+  getProduct,
+  isInStock,
+  maxQuantity,
+  caracteristicasDoProduto,
+  valoresParaCaracteristica,
+  encontrarVersao,
+  versaoInicial,
+  precoDaVersao,
+  estoqueDaVersao,
+  imagensDaVersao,
+} from "../lib/store-data";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 
 export const Route = createFileRoute("/produto/$productId")({
@@ -43,8 +55,7 @@ function ProductPage() {
   const { restockAlerts, requestRestockAlert } = useAuth();
   const { produtos: produtosContexto } = useLumeLoja();
   const [quantity, setQuantity] = useState(1);
-  const [colour, setColour] = useState("Preto");
-  const [size, setSize] = useState("M");
+  const [selecao, setSelecao] = useState<Record<string, string>>({});
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
 
@@ -58,13 +69,39 @@ function ProductPage() {
 
   const liked = favourites.includes(product.id);
   const recommendations = produtosContexto.filter((item) => item.id !== product.id).slice(0, 4);
-  const available = isInStock(product);
-  const limit = maxQuantity(product);
   const alertActive = restockAlerts.includes(product.id);
 
+  const caracteristicas = caracteristicasDoProduto(product);
+  const temVariantes = caracteristicas.length > 0;
+  const versaoAtual = temVariantes ? encontrarVersao(product, selecao) : undefined;
+  const selecaoCompleta = temVariantes ? caracteristicas.every((c) => Boolean(selecao[c.nome])) : true;
+
+  const price = precoDaVersao(product, versaoAtual);
+  const stock = estoqueDaVersao(product, versaoAtual);
+  const galleryImages = imagensDaVersao(product, versaoAtual);
+  const available = selecaoCompleta && (versaoAtual?.ativa !== false) && isInStock(product, 1, stock);
+  const limit = maxQuantity(product, stock);
+
+  // Ao trocar de produto, reinicia quantidade e escolhe a primeira versão
+  // ativa/em estoque (se o produto tiver variantes).
   useEffect(() => {
     setQuantity(1);
+    const inicial = versaoInicial(product);
+    setSelecao(inicial ? { ...inicial.valores } : {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
+
+  const escolher = (nomeCaracteristica: string, valor: string) => {
+    setSelecao((atual) => {
+      const proxima = { ...atual, [nomeCaracteristica]: valor };
+      // Limpa as escolhas das características seguintes se deixarem de
+      // ser válidas para o novo valor (ex: trocou a cor e o tamanho
+      // selecionado não existe nessa cor).
+      const indice = caracteristicas.findIndex((c) => c.nome === nomeCaracteristica);
+      for (const c of caracteristicas.slice(indice + 1)) delete proxima[c.nome];
+      return proxima;
+    });
+  };
 
   useEffect(() => {
     if (awaitingAuth && alertActive) {
@@ -73,8 +110,12 @@ function ProductPage() {
     }
   }, [awaitingAuth, alertActive]);
 
+  const variantSelecionada = temVariantes && versaoAtual
+    ? { chave: versaoAtual.chave, label: Object.values(versaoAtual.valores).join(" / "), unitPrice: price, image: galleryImages[0] }
+    : undefined;
+
   const buyNow = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, variantSelecionada);
     setCartOpen(false);
     void navigate({ to: "/checkout" });
   };
@@ -93,7 +134,7 @@ function ProductPage() {
     <div className="mx-auto max-w-6xl px-5 pb-14 pt-5 sm:px-6 sm:pb-20 sm:pt-10">
       <div className="grid gap-7 md:grid-cols-2 md:gap-12">
         <div ref={galleryRef} className="min-w-0">
-          <ProductGallery product={product} />
+          <ProductGallery product={product} images={galleryImages} />
         </div>
 
 
@@ -102,45 +143,71 @@ function ProductPage() {
             <h1 className="text-2xl font-bold">{product.name}</h1>
             <FavouriteButton productName={product.name} liked={liked} onToggle={() => toggleFavourite(product.id)} />
           </div>
-          <p className="mt-1 text-lg font-semibold">{formatPrice(product.price)}</p>
+          <p className="mt-1 text-lg font-semibold">{formatPrice(price)}</p>
 
-          <div className="mt-3 space-y-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase">Cor <span className="ml-1 font-normal normal-case text-muted-foreground">{colour}</span></p>
-              <div className="mt-2 flex gap-2.5" role="group" aria-label="Escolher cor">
-                {[
-                  { name: "Preto", className: "bg-swatch-black" },
-                  { name: "Branco", className: "bg-swatch-white" },
-                  { name: "Bege", className: "bg-swatch-beige" },
-                ].map((item) => (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => setColour(item.name)}
-                    aria-label={item.name}
-                    aria-pressed={colour === item.name}
-                    className={`grid size-9 place-items-center rounded-full transition-shadow ${colour === item.name ? "ring-1 ring-foreground ring-offset-2 ring-offset-background" : "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2"}`}
-                  >
-                    <span className={`size-full rounded-full border border-border ${item.className}`} aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
+          {temVariantes && (
+            <div className="mt-3 space-y-3">
+              {caracteristicas.map((caracteristica) => {
+                const valores = valoresParaCaracteristica(product, caracteristica.nome, selecao);
+                const isCor = caracteristica.nome === "Cor";
+                return (
+                  <div key={caracteristica.nome} className="min-w-0">
+                    <p className="text-xs font-semibold uppercase">
+                      {caracteristica.nome}
+                      {selecao[caracteristica.nome] && (
+                        <span className="ml-1 font-normal normal-case text-muted-foreground">{selecao[caracteristica.nome]}</span>
+                      )}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2.5" role="group" aria-label={`Escolher ${caracteristica.nome}`}>
+                      {valores.map((valor) => {
+                        const ativo = selecao[caracteristica.nome] === valor;
+                        const hex = caracteristica.cores?.[valor];
+                        if (isCor) {
+                          return (
+                            <button
+                              key={valor}
+                              type="button"
+                              onClick={() => escolher(caracteristica.nome, valor)}
+                              aria-label={valor}
+                              aria-pressed={ativo}
+                              className={`grid size-9 place-items-center rounded-full transition-shadow ${ativo ? "ring-1 ring-foreground ring-offset-2 ring-offset-background" : "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2"}`}
+                            >
+                              <span
+                                className="size-full rounded-full border border-border"
+                                style={hex ? { backgroundColor: hex } : undefined}
+                                aria-hidden="true"
+                              />
+                            </button>
+                          );
+                        }
+                        return (
+                          <Button
+                            key={valor}
+                            variant={ativo ? "default" : "outline"}
+                            onClick={() => escolher(caracteristica.nome, valor)}
+                            aria-pressed={ativo}
+                            className="min-h-10 min-w-10 rounded-sm px-3.5 shadow-none"
+                          >
+                            {valor}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {!selecaoCompleta && (
+                <p className="text-xs text-muted-foreground">Escolha as opções acima para continuar.</p>
+              )}
             </div>
-
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase">Tamanho <span className="ml-1 font-normal normal-case text-muted-foreground">{size}</span></p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {["PP", "P", "M", "G", "XL"].map((item) => (
-                  <Button key={item} variant={size === item ? "default" : "outline"} onClick={() => setSize(item)} aria-pressed={size === item} className="min-h-10 min-w-10 rounded-sm px-3.5 shadow-none">
-                    {item}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
+          )}
 
           <div className="mt-4 grid gap-2.5">
-            {available ? (
+            {!selecaoCompleta ? (
+              <Button size="lg" disabled className="h-12 w-full rounded-2xl text-sm font-semibold">
+                Escolha as opções
+              </Button>
+            ) : available ? (
               <>
                 <Button size="lg" className="h-12 w-full rounded-2xl text-sm font-semibold" onClick={buyNow}>Comprar Agora</Button>
                 <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5">
@@ -149,7 +216,7 @@ function ProductPage() {
                     <span className="min-w-6 text-center text-sm font-semibold" aria-live="polite">{quantity}</span>
                     <Button variant="ghost" size="icon" className="rounded-2xl" onClick={() => setQuantity(Math.min(limit, quantity + 1))} aria-label="Aumentar quantidade" disabled={quantity >= limit}><Plus /></Button>
                   </div>
-                   <AddToCartButton product={product} quantity={quantity} flyFrom={galleryRef} className="h-12 w-full rounded-2xl font-semibold" />
+                   <AddToCartButton product={product} quantity={quantity} flyFrom={galleryRef} selectedVariant={variantSelecionada} className="h-12 w-full rounded-2xl font-semibold" />
                 </div>
               </>
             ) : (
