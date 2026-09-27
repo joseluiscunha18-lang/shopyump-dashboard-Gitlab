@@ -11,6 +11,16 @@ export type Product = {
   createdAt?: string;
   /** Stock disponível. Indefinido = disponível (dados dinâmicos da loja). */
   stock?: number;
+  /**
+   * Fotos reais do produto (Supabase Storage, `produtos.fotos`) — só
+   * existe em produtos reais. Quando presente, os componentes de
+   * imagem (ProductCard, ProductGallery, AddToCartButton) mostram-nas
+   * em vez do SVG ilustrativo de `kind`/`tone`, que fica reservado
+   * para os produtos de demonstração.
+   */
+  images?: string[];
+  /** Descrição real do produto (`produtos.descricao`). Só existe em produtos reais. */
+  description?: string;
 };
 
 export const categories: Category[] = ["Destaques", "Vestuário", "Acessórios"];
