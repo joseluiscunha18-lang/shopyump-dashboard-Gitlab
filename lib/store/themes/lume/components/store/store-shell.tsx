@@ -1,6 +1,6 @@
 'use client';
 
-import { Link, useRouterState } from "../../router";
+import { Link, useGoBack, useRouterState } from "../../router";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { ArrowLeft, Facebook, Heart, Home, Instagram, MessageCircle, Music2, Search, ShoppingCart, User, X } from "lucide-react";
 import { Button } from "../ui/button";
@@ -27,7 +27,9 @@ function ShellContent({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [institutionalHeadingPassed, setInstitutionalHeadingPassed] = useState(false);
-  const { produtos: produtosContexto, paginas } = useLumeLoja();
+  const { produtos: produtosContexto, paginas, contactos } = useLumeLoja();
+  const nomeLoja = contactos.nome;
+  const goBack = useGoBack();
   const results = produtosContexto.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()));
   const navItems = [
     { to: "/" as const, label: "Início" },
@@ -71,7 +73,7 @@ function ShellContent({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-40 bg-card/95 backdrop-blur">
           <div className="relative mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
             <Button asChild variant="ghost" size="icon" aria-label="Voltar"><Link to="/"><ArrowLeft size={20} strokeWidth={2.25} style={{ width: 20, height: 20 }} /></Link></Button>
-            <Link to="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">LUME</Link>
+            <Link to="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
           </div>
         </header>
         <main className="pb-16">{children}</main>
@@ -87,7 +89,7 @@ function ShellContent({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur">
         <div className={`relative mx-auto flex max-w-6xl items-center justify-between sm:px-6 ${productPage ? "h-[62px] px-3" : "h-16 px-4"}`}>
           {productPage || institutionalTitle ? (
-            <Button variant="ghost" size="icon" aria-label="Voltar à página anterior" onClick={() => window.history.back()}>
+            <Button variant="ghost" size="icon" aria-label="Voltar à página anterior" onClick={goBack}>
               <ArrowLeft size={20} strokeWidth={2.25} style={{ width: 20, height: 20 }} />
             </Button>
           ) : catalog ? (
@@ -100,7 +102,7 @@ function ShellContent({ children }: { children: ReactNode }) {
                 <Button variant="ghost" size="icon" aria-label="Abrir menu"><MenuTwoLines size={20} strokeWidth={2.25} /></Button>
               </SheetTrigger>
               <SheetContent side="left" overlayClassName="menu-backdrop" className="menu-panel w-[min(84vw,340px)] border-r border-border p-5">
-                <SheetTitle className="menu-stagger-title text-xl font-extrabold">LUME</SheetTitle>
+                <SheetTitle className="menu-stagger-title text-xl font-extrabold">{nomeLoja}</SheetTitle>
                 <nav className="menu-stagger-list mt-10 grid gap-0.5">
                   {navItems.map((item) => {
                     const active = pathname === item.to;
@@ -119,7 +121,7 @@ function ShellContent({ children }: { children: ReactNode }) {
                 tabIndex={institutionalHeadingPassed ? -1 : 0}
                 className={`pointer-events-auto absolute text-lg font-extrabold tracking-normal transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${institutionalHeadingPassed ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
               >
-                LUME
+                {nomeLoja}
               </Link>
               <span
                 aria-hidden={!institutionalHeadingPassed}
@@ -129,7 +131,7 @@ function ShellContent({ children }: { children: ReactNode }) {
               </span>
             </div>
           ) : (
-            <Link to="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">LUME</Link>
+            <Link to="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
           )}
           {productPage ? (
             <CartIconButton cartCount={cartCount} onClick={() => setCartOpen(true)} />
