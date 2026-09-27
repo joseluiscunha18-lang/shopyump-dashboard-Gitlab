@@ -45,6 +45,10 @@ export async function completeOnboarding(input: {
     slug,
     nome: input.nome,
     whatsapp: input.whatsapp,
+    // Tema por omissão para lojas novas. Explícito aqui em vez de confiar
+    // no default da coluna na BD — o tema 'default' foi descontinuado,
+    // só existe o 'lume' (ver lib/store/themes/registry.tsx).
+    theme_id: 'lume',
     // Conteúdo institucional genérico e FUNCIONAL desde o dia 1 — ver
     // lib/store/institutionalDefaults.ts. Ao contrário dos produtos de
     // demonstração, isto não desaparece com o 1º produto: fica ativo até
