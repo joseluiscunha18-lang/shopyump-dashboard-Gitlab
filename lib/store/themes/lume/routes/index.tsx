@@ -4,23 +4,22 @@ import { createFileRoute, Link } from "../router";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { ProductCard } from "../components/store/product-card";
-import { categories, categorySlug, products, type Product } from "../lib/store-data";
+import { useLumeLoja } from "../components/store/lume-loja-context";
+import { categorySlug, type Product, type Category } from "../lib/store-data";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/")(({
   head: () => ({ meta: [{ title: "LUME. — Moda essencial" }, { name: "description", content: "Descubra a nova colecção e os destaques da loja LUME." }, { property: "og:title", content: "LUME. — Moda essencial" }, { property: "og:description", content: "Descubra a nova colecção e os destaques da loja LUME." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: HomePage,
-});
-
-const WHATSAPP_URL = "https://wa.me/258840000000";
+}) as Parameters<typeof createFileRoute<"/", "/", "/", string>>[0]);
 
 const BLOCK_LIMIT = 6;
 const MIN_PRODUCTS_PER_BLOCK = 4;
 
-const sectionTitles = {
+const sectionTitles: Record<Category, string> = {
   Destaques: "Lançamentos",
   Vestuário: "Coleção de Vestuário",
   Acessórios: "Acessórios em Destaque",
-} as const;
+};
 
 type ProductSection = {
   title: string;
@@ -28,16 +27,16 @@ type ProductSection = {
   category?: Product["category"];
 };
 
-function getHomeSections(): ProductSection[] {
+function getHomeSections(products: Product[], categorias: Category[]): ProductSection[] {
   const newest = [...products].sort((a, b) => {
     const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
     const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
     return bTime - aTime;
   });
 
-  const categorySections = categories
+  const categorySections = categorias
     .map((category) => ({
-      title: sectionTitles[category],
+      title: sectionTitles[category] ?? category,
       category,
       products: newest.filter((product) => product.category === category).slice(0, BLOCK_LIMIT),
     }))
@@ -51,7 +50,14 @@ function getHomeSections(): ProductSection[] {
 }
 
 function HomePage() {
-  const sections = getHomeSections();
+  const { produtos, categorias, contactos } = useLumeLoja();
+  const sections = getHomeSections(produtos, categorias);
+
+  // WhatsApp: só mostra o botão se o lojista preencheu o número
+  const whatsappUrl = contactos.whatsapp
+    ? `https://wa.me/${contactos.whatsapp.replace(/\D/g, "")}`
+    : null;
+
   return <>
     <section className="bg-hero">
       <div className="relative mx-auto flex min-h-[263px] max-w-6xl items-center overflow-hidden px-5 py-14 text-left sm:min-h-[403px] sm:grid sm:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)] sm:gap-10 sm:px-12 sm:py-16">
@@ -87,11 +93,12 @@ function HomePage() {
         );
       })}
     </div>
-    <PreFooter />
+    <PreFooter whatsappUrl={whatsappUrl} />
   </>;
 }
 
-function PreFooter() {
+function PreFooter({ whatsappUrl }: { whatsappUrl: string | null }) {
+  if (!whatsappUrl) return null;
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-3xl px-5 pb-6 pt-6 sm:px-6 sm:pb-9 sm:pt-8">
@@ -101,7 +108,7 @@ function PreFooter() {
             <p className="mt-1 text-sm text-muted-foreground">Fale diretamente connosco.</p>
           </div>
           <Button asChild variant="whatsapp" size="lg" className="shrink-0 rounded-full px-5">
-            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+            <a href={whatsappUrl} target="_blank" rel="noreferrer">
               <MessageCircle className="size-4" aria-hidden="true" />
               Falar no WhatsApp
             </a>
