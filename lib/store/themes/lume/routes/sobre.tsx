@@ -2,5 +2,47 @@
 
 import { createFileRoute } from "../router";
 import { PageHeading } from "../components/store/page-heading";
-export const Route = createFileRoute("/sobre")({ head: () => ({ meta: [{ title: "Sobre Nós — LUME." }, { name: "description", content: "Conheça a proposta e os valores da loja LUME." }, { property: "og:title", content: "Sobre Nós — LUME." }, { property: "og:description", content: "Conheça a proposta e os valores da loja LUME." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), component: AboutPage });
-function AboutPage() { return <><PageHeading eyebrow="A marca" title="Sobre nós" description="Uma base comercial simples, clara e preparada para apresentar a identidade da sua loja."/><section className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:grid-cols-2 sm:px-6 sm:py-14"><div><h2 className="text-xl font-bold">Essenciais para todos os dias</h2><p className="mt-4 text-sm leading-7 text-muted-foreground">A LUME. nasce com uma proposta direta: reunir peças versáteis, atendimento próximo e uma experiência de compra sem complicações.</p></div><div className="grid gap-5 border-l-0 border-border sm:border-l sm:pl-8"><div><h3 className="font-semibold">Selecção cuidada</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">Produtos escolhidos para combinar qualidade, conforto e uso diário.</p></div><div><h3 className="font-semibold">Compra simples</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">Da descoberta ao pedido, cada etapa foi pensada para ser clara.</p></div><div><h3 className="font-semibold">Atendimento próximo</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">Canais diretos para esclarecer dúvidas e acompanhar cada compra.</p></div></div></section></>; }
+import { useLumeLoja } from "../components/store/lume-loja-context";
+
+export const Route = createFileRoute("/sobre")({
+  head: () => ({ meta: [{ title: "Sobre Nós — LUME." }, { name: "description", content: "Conheça a proposta e os valores da loja." }, { property: "og:title", content: "Sobre Nós — LUME." }, { property: "og:description", content: "Conheça a proposta e os valores da loja." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
+  component: AboutPage,
+});
+
+function AboutPage() {
+  const { contactos } = useLumeLoja();
+  const nome = contactos.nome;
+
+  // Se o lojista preencheu conteúdo personalizado de "Sobre" no dashboard,
+  // usa-o; caso contrário usa o texto modelo genérico com o nome da loja.
+  // (O campo conteudo_sobre chegaria via LojaPublica → passado pelo contexto
+  //  quando for necessário — por agora usa o texto modelo.)
+  return (
+    <>
+      <PageHeading eyebrow="A marca" title="Sobre nós" description={`Conheça a ${nome} — quem somos, o que fazemos e como pode contar connosco.`} />
+      <section className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:grid-cols-2 sm:px-6 sm:py-14">
+        <div>
+          <h2 className="text-xl font-bold">Essenciais para todos os dias</h2>
+          <p className="mt-4 text-sm leading-7 text-muted-foreground">
+            A {nome} nasce com uma proposta direta: reunir peças versáteis, atendimento próximo
+            e uma experiência de compra sem complicações.
+          </p>
+        </div>
+        <div className="grid gap-5 border-l-0 border-border sm:border-l sm:pl-8">
+          <div>
+            <h3 className="font-semibold">Selecção cuidada</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Produtos escolhidos para combinar qualidade, conforto e uso diário.</p>
+          </div>
+          <div>
+            <h3 className="font-semibold">Compra simples</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Da descoberta ao pedido, cada etapa foi pensada para ser clara.</p>
+          </div>
+          <div>
+            <h3 className="font-semibold">Atendimento próximo</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Canais diretos para esclarecer dúvidas e acompanhar cada compra.</p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
