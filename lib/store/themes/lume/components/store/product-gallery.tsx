@@ -49,7 +49,7 @@ function Gallery({
   // uma vez, não a cada frame.
   useEffect(() => {
     if (!carousel) return;
-    const STRETCH = 0.3; // 1 = estica na mesma proporção do puxão; 0.3 = discreto
+    const STRETCH = 0.12; // 1 = estica na mesma proporção do puxão; 0.12 = bem discreto
     let ativo = false;
     let largura = 1;
 
@@ -70,8 +70,11 @@ function Gallery({
     const aplicar = () => {
       const nodes = carousel.slideNodes();
       if (nodes.length < 2) return;
-      const { limit, location } = carousel.internalEngine();
-      const x = location.get();
+      // offsetLocation é a posição que o embla usa de facto para desenhar
+      // o contentor (interpolada entre frames) — usar `location` faz a
+      // contra-translação ficar desfasada e o contentor a tremer.
+      const { limit, offsetLocation } = carousel.internalEngine();
+      const x = offsetLocation.get();
       const sobraFim = limit.min - x; // > 0: puxou além da última foto
       const sobraInicio = x - limit.max; // > 0: puxou além da primeira
       if (sobraFim <= 0.5 && sobraInicio <= 0.5) {
