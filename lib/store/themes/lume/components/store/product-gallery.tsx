@@ -1,16 +1,38 @@
 'use client';
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ProductArt } from "./product-art";
 import type { Product } from "../../lib/store-data";
 
-export function ProductGallery({ product, images }: { product: Product; images?: string[] }) {
+export function ProductGallery({
+  product,
+  images,
+  alvos,
+  onSelectIndex,
+}: {
+  product: Product;
+  images?: string[];
+  /** Índices das fotos da variante selecionada — a galeria posiciona-se numa delas. */
+  alvos?: number[];
+  /** Chamado quando o utilizador muda de foto (swipe/scroll). */
+  onSelectIndex?: (index: number) => void;
+}) {
   const photos = images ?? product.images ?? [];
-  return <Gallery key={product.id + "|" + photos.join("|")} product={product} photos={photos} />;
+  return <Gallery key={product.id + "|" + photos.join("|")} product={product} photos={photos} alvos={alvos} onSelectIndex={onSelectIndex} />;
 }
 
-function Gallery({ product, photos }: { product: Product; photos: string[] }) {
+function Gallery({
+  product,
+  photos,
+  alvos,
+  onSelectIndex,
+}: {
+  product: Product;
+  photos: string[];
+  alvos?: number[];
+  onSelectIndex?: (index: number) => void;
+}) {
   const slides = photos.length > 0 ? photos : [undefined];
   const [selected, setSelected] = useState(0);
   const [carouselRef, carousel] = useEmblaCarousel({
@@ -19,9 +41,24 @@ function Gallery({ product, photos }: { product: Product; photos: string[] }) {
     loop: false,
   });
 
+  const onSelectRef = useRef(onSelectIndex);
+  onSelectRef.current = onSelectIndex;
+
   const updateSelected = useCallback(() => {
-    if (carousel) setSelected(carousel.selectedScrollSnap());
+    if (!carousel) return;
+    const index = carousel.selectedScrollSnap();
+    setSelected(index);
+    onSelectRef.current?.(index);
   }, [carousel]);
+
+  // Ao trocar de cor (ou outra variante com fotos próprias), leva a galeria
+  // até à foto dessa variante — a não ser que já esteja numa delas.
+  const alvosKey = (alvos ?? []).join(",");
+  useEffect(() => {
+    if (!carousel || !alvos || alvos.length === 0) return;
+    if (!alvos.includes(carousel.selectedScrollSnap())) carousel.scrollTo(alvos[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carousel, alvosKey]);
 
   useEffect(() => {
     if (!carousel) return;
@@ -62,11 +99,13 @@ function Gallery({ product, photos }: { product: Product; photos: string[] }) {
           ))}
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-center gap-2" aria-live="polite" aria-label={`Imagem ${selected + 1} de ${slides.length}`}>
-        {slides.map((_, index) => (
-          <span key={index} aria-hidden="true" className={`size-1.5 rounded-full transition-colors ${selected === index ? "bg-foreground" : "bg-muted-foreground/40"}`} />
-        ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-2" aria-live="polite" aria-label={`Imagem ${selected + 1} de ${slides.length}`}>
+          {slides.map((_, index) => (
+            <span key={index} aria-hidden="true" className={`size-1.5 rounded-full transition-colors ${selected === index ? "bg-foreground" : "bg-muted-foreground/40"}`} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
