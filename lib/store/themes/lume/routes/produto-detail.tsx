@@ -221,19 +221,19 @@ function ProductPage() {
 
           <div className="mt-4 grid gap-2.5">
             {!selecaoCompleta ? (
-              <Button size="lg" disabled className="h-12 w-full rounded-2xl text-sm font-semibold">
+              <Button size="lg" disabled className="h-12 w-full rounded-full text-sm font-semibold">
                 Escolha as opções
               </Button>
             ) : available ? (
               <>
-                <Button size="lg" className="h-12 w-full rounded-2xl text-sm font-semibold" onClick={buyNow}>Comprar Agora</Button>
+                <Button size="lg" className="h-12 w-full rounded-full text-sm font-semibold" onClick={buyNow}>Comprar Agora</Button>
                 <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5">
-                  <div className="flex h-12 items-center rounded-2xl border border-border bg-card">
-                    <Button variant="ghost" size="icon" className="rounded-2xl" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Diminuir quantidade" disabled={quantity === 1}><Minus /></Button>
+                  <div className="flex h-12 items-center rounded-full border border-border bg-card">
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Diminuir quantidade" disabled={quantity === 1}><Minus /></Button>
                     <span className="min-w-6 text-center text-sm font-semibold" aria-live="polite">{quantity}</span>
-                    <Button variant="ghost" size="icon" className="rounded-2xl" onClick={() => setQuantity(Math.min(limit, quantity + 1))} aria-label="Aumentar quantidade" disabled={quantity >= limit}><Plus /></Button>
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setQuantity(Math.min(limit, quantity + 1))} aria-label="Aumentar quantidade" disabled={quantity >= limit}><Plus /></Button>
                   </div>
-                   <AddToCartButton product={product} quantity={quantity} flyFrom={galleryRef} selectedVariant={variantSelecionada} className="h-12 w-full rounded-2xl font-semibold" />
+                   <AddToCartButton product={product} quantity={quantity} flyFrom={galleryRef} selectedVariant={variantSelecionada} className="h-12 w-full rounded-full font-semibold" />
                 </div>
               </>
             ) : (
@@ -243,7 +243,7 @@ function ProductPage() {
                   size="lg"
                   onClick={notifyMe}
                   aria-pressed={alertActive}
-                  className="add-to-cart-button h-12 w-full gap-2 rounded-2xl text-sm font-semibold"
+                  className="add-to-cart-button h-12 w-full gap-2 rounded-full text-sm font-semibold"
                 >
                   <BellRing aria-hidden="true" />
                   {alertActive ? "Já será avisado" : "Avisar-me quando chegar"}
