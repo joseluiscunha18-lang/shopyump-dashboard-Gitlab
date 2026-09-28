@@ -230,7 +230,7 @@
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid var(--product-frame-line);
-  border-radius: calc(var(--radius) + 12px);
+  border-radius: calc(var(--radius) - 4px);
 }
 
 @utility product-gallery-bg {
