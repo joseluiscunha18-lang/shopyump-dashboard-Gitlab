@@ -41,6 +41,27 @@ function Gallery({
     loop: false,
   });
 
+  // Nas pontas (primeira/última foto), deixa arrastar só "um pouquinho de
+  // nada" além do limite — o suficiente para o utilizador perceber que não
+  // há mais fotos, sem esticar a imagem e deixar um espaço em branco. O
+  // embla solta o resto sozinho ao largar o dedo.
+  useEffect(() => {
+    if (!carousel) return;
+    const MAX_EXTRA_PX = 20;
+    const limitarPuxao = () => {
+      const { limit, target } = carousel.internalEngine();
+      const atual = target.get();
+      const minimo = limit.min - MAX_EXTRA_PX;
+      const maximo = limit.max + MAX_EXTRA_PX;
+      if (atual < minimo) target.set(minimo);
+      else if (atual > maximo) target.set(maximo);
+    };
+    carousel.on("scroll", limitarPuxao);
+    return () => {
+      carousel.off("scroll", limitarPuxao);
+    };
+  }, [carousel]);
+
   const onSelectRef = useRef(onSelectIndex);
   onSelectRef.current = onSelectIndex;
 
