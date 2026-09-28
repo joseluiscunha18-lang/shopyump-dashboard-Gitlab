@@ -41,24 +41,46 @@ function Gallery({
     loop: false,
   });
 
-  // Nas pontas (primeira/última foto), deixa arrastar só "um pouquinho de
-  // nada" além do limite — o suficiente para o utilizador perceber que não
-  // há mais fotos, sem esticar a imagem e deixar um espaço em branco. O
-  // embla solta o resto sozinho ao largar o dedo.
+  // Nas pontas (primeira/última foto) a moldura fica presa no lugar e só a
+  // imagem "estica" um pouquinho enquanto o dedo puxa — assim o utilizador
+  // percebe que não há mais fotos, sem a foto sair do sítio nem sobrar
+  // espaço em branco. Ao largar, o embla devolve tudo ao normal.
   useEffect(() => {
     if (!carousel) return;
-    const MAX_EXTRA_PX = 20;
-    const limitarPuxao = () => {
-      const { limit, target } = carousel.internalEngine();
-      const atual = target.get();
-      const minimo = limit.min - MAX_EXTRA_PX;
-      const maximo = limit.max + MAX_EXTRA_PX;
-      if (atual < minimo) target.set(minimo);
-      else if (atual > maximo) target.set(maximo);
+    const STRETCH = 0.3; // 1 = estica na mesma proporção do puxão; 0.3 = discreto
+
+    const aplicar = () => {
+      const slidesEl = carousel.slideNodes();
+      if (slidesEl.length < 2) return;
+      const { limit, location } = carousel.internalEngine();
+      const x = location.get();
+      const sobraFim = Math.max(0, limit.min - x); // puxou além da última foto
+      const sobraInicio = Math.max(0, x - limit.max); // puxou além da primeira
+      const primeira = slidesEl[0];
+      const ultima = slidesEl[slidesEl.length - 1];
+
+      const fixar = (slide: HTMLElement, deslocamento: number, sobra: number, origem: "left" | "right") => {
+        const media = slide.firstElementChild as HTMLElement | null;
+        // Contra-translação: a moldura anda com o contentor, por isso anulamos.
+        slide.style.transform = sobra > 0 ? `translate3d(${deslocamento}px,0,0)` : "";
+        if (media) {
+          const largura = slide.offsetWidth || 1;
+          const escala = 1 + Math.min(sobra / largura, 0.35) * STRETCH;
+          media.style.transformOrigin = `${origem} center`;
+          media.style.transform = sobra > 0 ? `scaleX(${escala})` : "";
+        }
+      };
+      fixar(ultima, sobraFim, sobraFim, "right");
+      fixar(primeira, -sobraInicio, sobraInicio, "left");
     };
-    carousel.on("scroll", limitarPuxao);
+
+    carousel.on("scroll", aplicar);
+    carousel.on("settle", aplicar);
+    carousel.on("reInit", aplicar);
     return () => {
-      carousel.off("scroll", limitarPuxao);
+      carousel.off("scroll", aplicar);
+      carousel.off("settle", aplicar);
+      carousel.off("reInit", aplicar);
     };
   }, [carousel]);
 
