@@ -41,8 +41,9 @@ function Gallery({
     loop: false,
   });
 
-  // Nas pontas (primeira/última foto) a moldura fica presa no lugar e só a
-  // imagem "estica" um pouquinho enquanto o dedo puxa. Ao largar, o embla
+  // Nas pontas (primeira/última foto) é o próprio contentor (moldura +
+  // imagem, numa só transformação) que fica preso no lugar e "estica" um
+  // pouquinho enquanto o dedo puxa. Ao largar, o embla
   // devolve tudo ao normal. Feito para ser barato: fora das pontas o
   // handler sai logo (sem ler nem escrever no DOM), e a largura é medida
   // uma vez, não a cada frame.
@@ -63,8 +64,6 @@ function Gallery({
       ativo = false;
       for (const slide of carousel.slideNodes()) {
         slide.style.transform = "";
-        const media = slide.firstElementChild as HTMLElement | null;
-        if (media) media.style.transform = "";
       }
     };
 
@@ -83,13 +82,11 @@ function Gallery({
       const noFim = sobraFim > sobraInicio;
       const slide = noFim ? nodes[nodes.length - 1] : nodes[0];
       const sobra = noFim ? sobraFim : sobraInicio;
-      // Contra-translação: a moldura anda com o contentor, por isso anulamos.
-      slide.style.transform = `translate3d(${noFim ? sobra : -sobra}px,0,0)`;
-      const media = slide.firstElementChild as HTMLElement | null;
-      if (media) {
-        media.style.transformOrigin = noFim ? "right center" : "left center";
-        media.style.transform = `scaleX(${1 + Math.min(sobra / largura, 0.35) * STRETCH})`;
-      }
+      // Uma só transformação no contentor: contra-translação (para ele não
+      // acompanhar o dedo) + esticão a partir do lado que fica fixo.
+      const escala = 1 + Math.min(sobra / largura, 0.35) * STRETCH;
+      slide.style.transformOrigin = noFim ? "right center" : "left center";
+      slide.style.transform = `translate3d(${noFim ? sobra : -sobra}px,0,0) scaleX(${escala})`;
     };
 
     const aoReinicializar = () => {
@@ -145,7 +142,7 @@ function Gallery({
           {slides.map((src, index) => (
             <div
               key={index}
-              className={`product-gallery-slide relative min-w-0 shrink-0 basis-full ${index < slides.length - 1 ? "mr-3" : ""}`}
+              className={`product-gallery-slide relative min-w-0 shrink-0 basis-full will-change-transform ${index < slides.length - 1 ? "mr-3" : ""}`}
               role="group"
               aria-roledescription="imagem"
               aria-label={`Imagem ${index + 1} de ${slides.length} de ${product.name}`}
@@ -157,10 +154,10 @@ function Gallery({
                   src={src}
                   alt={index === 0 ? product.name : ""}
                   aria-hidden={index !== 0 && undefined}
-                  className="absolute inset-0 h-full w-full object-cover will-change-transform"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               ) : (
-                <ProductArt kind={product.kind} className="absolute inset-0 will-change-transform" />
+                <ProductArt kind={product.kind} className="absolute inset-0" />
               )}
             </div>
           ))}
