@@ -158,7 +158,7 @@ function ProductPage() {
         <div className="flex flex-col justify-center">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold">{product.name}</h1>
-            <FavouriteButton productName={product.name} liked={liked} onToggle={() => toggleFavourite(product.id)} />
+            <FavouriteButton productName={product.name} liked={liked} onToggle={() => toggleFavourite(product.id)} className="size-10 [&_svg]:size-5!" />
           </div>
           <p className="mt-1 text-lg font-semibold">{formatPrice(price)}</p>
 
@@ -187,7 +187,7 @@ function ProductPage() {
                               onClick={() => escolher(caracteristica.nome, valor)}
                               aria-label={valor}
                               aria-pressed={ativo}
-                              className={`grid size-9 place-items-center rounded-full transition-shadow ${ativo ? "ring-1 ring-foreground ring-offset-2 ring-offset-background" : "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2"}`}
+                              className={`grid size-8 place-items-center rounded-full transition-shadow ${ativo ? "ring-1 ring-foreground ring-offset-2 ring-offset-background" : "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2"}`}
                             >
                               <span
                                 className="size-full rounded-full border border-border"
@@ -203,7 +203,7 @@ function ProductPage() {
                             variant={ativo ? "default" : "outline"}
                             onClick={() => escolher(caracteristica.nome, valor)}
                             aria-pressed={ativo}
-                            className="min-h-10 min-w-10 rounded-sm px-3.5 shadow-none"
+                            className="min-h-10 min-w-10 rounded-2xl px-3.5 shadow-none"
                           >
                             {valor}
                           </Button>
