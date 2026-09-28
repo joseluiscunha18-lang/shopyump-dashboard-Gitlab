@@ -46,7 +46,55 @@ export interface CaracteristicaVariante {
 export function caracteristicasDoProduto(product: Product): CaracteristicaVariante[] {
   const v = product.variantes;
   if (!v) return [];
-  return [v.raiz, v.filha, v.neta].filter((c): c is NonNullable<typeof c> => Boolean(c?.nome));
+  const lista = [v.raiz, v.filha, v.neta].filter((c): c is NonNullable<typeof c> => Boolean(c?.nome));
+  // Ordem de exibição: Cor primeiro, depois as restantes (ex: Tamanho) pela
+  // ordem em que foram definidas — independente de qual é a raiz no painel.
+  // Os valores de cada característica são filtrados pelas escolhas das que
+  // vêm antes nesta lista (ver valoresParaCaracteristica), por isso a
+  // ordem aqui é a única fonte de verdade.
+  const ehCor = (nome: string) => nome.trim().toLowerCase() === 'cor';
+  return [...lista.filter((c) => ehCor(c.nome)), ...lista.filter((c) => !ehCor(c.nome))];
+}
+
+/**
+ * Galeria completa do produto: todas as fotos (para o utilizador poder
+ * fazer scroll entre elas), mais o índice onde cada valor de uma
+ * característica com fotos próprias (ex: Cor) começa. `alvos` são os
+ * índices das fotos da versão selecionada — a galeria posiciona-se
+ * numa delas ao trocar de cor. `donos[i]` é o valor da característica
+ * dono da foto i (para atualizar a cor ao fazer swipe).
+ */
+export function galeriaDoProduto(
+  product: Product,
+  versao: ProdutoVersao | undefined
+): { imagens: string[]; alvos: number[]; donos: (string | null)[]; caracteristica: string | null } {
+  const gerais = product.images ?? [];
+  const mapa = product.variantes?.imagensPorCaracteristica ?? {};
+  const nomeCar = Object.keys(mapa).find((n) => Object.values(mapa[n] ?? {}).some((l) => l && l.length > 0)) ?? null;
+
+  const imagens = [...gerais];
+  const adicionar = (src: string) => {
+    if (!imagens.includes(src)) imagens.push(src);
+  };
+  for (const v of product.variantes?.versoes ?? []) (v.imagens ?? []).forEach(adicionar);
+  if (nomeCar) Object.values(mapa[nomeCar] ?? {}).forEach((l) => (l ?? []).forEach(adicionar));
+
+  const donos: (string | null)[] = imagens.map(() => null);
+  if (nomeCar) {
+    for (const [valor, lista] of Object.entries(mapa[nomeCar] ?? {})) {
+      for (const src of lista ?? []) {
+        const i = imagens.indexOf(src);
+        if (i >= 0 && donos[i] == null) donos[i] = valor;
+      }
+    }
+  }
+
+  let alvos: number[] = [];
+  if (versao) {
+    const { imagens: daVersao, origem } = imagensParaVersao(versao, mapa, gerais);
+    if (origem !== 'geral') alvos = daVersao.map((src) => imagens.indexOf(src)).filter((i) => i >= 0);
+  }
+  return { imagens, alvos, donos, caracteristica: nomeCar };
 }
 
 /**
