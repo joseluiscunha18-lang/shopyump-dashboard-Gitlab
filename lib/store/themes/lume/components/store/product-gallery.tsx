@@ -42,45 +42,69 @@ function Gallery({
   });
 
   // Nas pontas (primeira/última foto) a moldura fica presa no lugar e só a
-  // imagem "estica" um pouquinho enquanto o dedo puxa — assim o utilizador
-  // percebe que não há mais fotos, sem a foto sair do sítio nem sobrar
-  // espaço em branco. Ao largar, o embla devolve tudo ao normal.
+  // imagem "estica" um pouquinho enquanto o dedo puxa. Ao largar, o embla
+  // devolve tudo ao normal. Feito para ser barato: fora das pontas o
+  // handler sai logo (sem ler nem escrever no DOM), e a largura é medida
+  // uma vez, não a cada frame.
   useEffect(() => {
     if (!carousel) return;
     const STRETCH = 0.3; // 1 = estica na mesma proporção do puxão; 0.3 = discreto
+    let ativo = false;
+    let largura = 1;
+
+    const medir = () => {
+      const nodes = carousel.slideNodes();
+      largura = nodes[0]?.offsetWidth || 1;
+    };
+    medir();
+
+    const limpar = () => {
+      if (!ativo) return;
+      ativo = false;
+      for (const slide of carousel.slideNodes()) {
+        slide.style.transform = "";
+        const media = slide.firstElementChild as HTMLElement | null;
+        if (media) media.style.transform = "";
+      }
+    };
 
     const aplicar = () => {
-      const slidesEl = carousel.slideNodes();
-      if (slidesEl.length < 2) return;
+      const nodes = carousel.slideNodes();
+      if (nodes.length < 2) return;
       const { limit, location } = carousel.internalEngine();
       const x = location.get();
-      const sobraFim = Math.max(0, limit.min - x); // puxou além da última foto
-      const sobraInicio = Math.max(0, x - limit.max); // puxou além da primeira
-      const primeira = slidesEl[0];
-      const ultima = slidesEl[slidesEl.length - 1];
+      const sobraFim = limit.min - x; // > 0: puxou além da última foto
+      const sobraInicio = x - limit.max; // > 0: puxou além da primeira
+      if (sobraFim <= 0.5 && sobraInicio <= 0.5) {
+        limpar();
+        return;
+      }
+      ativo = true;
+      const noFim = sobraFim > sobraInicio;
+      const slide = noFim ? nodes[nodes.length - 1] : nodes[0];
+      const sobra = noFim ? sobraFim : sobraInicio;
+      // Contra-translação: a moldura anda com o contentor, por isso anulamos.
+      slide.style.transform = `translate3d(${noFim ? sobra : -sobra}px,0,0)`;
+      const media = slide.firstElementChild as HTMLElement | null;
+      if (media) {
+        media.style.transformOrigin = noFim ? "right center" : "left center";
+        media.style.transform = `scaleX(${1 + Math.min(sobra / largura, 0.35) * STRETCH})`;
+      }
+    };
 
-      const fixar = (slide: HTMLElement, deslocamento: number, sobra: number, origem: "left" | "right") => {
-        const media = slide.firstElementChild as HTMLElement | null;
-        // Contra-translação: a moldura anda com o contentor, por isso anulamos.
-        slide.style.transform = sobra > 0 ? `translate3d(${deslocamento}px,0,0)` : "";
-        if (media) {
-          const largura = slide.offsetWidth || 1;
-          const escala = 1 + Math.min(sobra / largura, 0.35) * STRETCH;
-          media.style.transformOrigin = `${origem} center`;
-          media.style.transform = sobra > 0 ? `scaleX(${escala})` : "";
-        }
-      };
-      fixar(ultima, sobraFim, sobraFim, "right");
-      fixar(primeira, -sobraInicio, sobraInicio, "left");
+    const aoReinicializar = () => {
+      limpar();
+      medir();
     };
 
     carousel.on("scroll", aplicar);
-    carousel.on("settle", aplicar);
-    carousel.on("reInit", aplicar);
+    carousel.on("settle", limpar);
+    carousel.on("reInit", aoReinicializar);
     return () => {
       carousel.off("scroll", aplicar);
-      carousel.off("settle", aplicar);
-      carousel.off("reInit", aplicar);
+      carousel.off("settle", limpar);
+      carousel.off("reInit", aoReinicializar);
+      limpar();
     };
   }, [carousel]);
 
@@ -133,10 +157,10 @@ function Gallery({
                   src={src}
                   alt={index === 0 ? product.name : ""}
                   aria-hidden={index !== 0 && undefined}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover will-change-transform"
                 />
               ) : (
-                <ProductArt kind={product.kind} className="absolute inset-0" />
+                <ProductArt kind={product.kind} className="absolute inset-0 will-change-transform" />
               )}
             </div>
           ))}
