@@ -69,7 +69,7 @@ function Gallery({
 
     const aplicar = () => {
       const nodes = carousel.slideNodes();
-      if (nodes.length < 2) return;
+      if (nodes.length < 1) return;
       // offsetLocation é a posição que o embla usa de facto para desenhar
       // o contentor (interpolada entre frames) — usar `location` faz a
       // contra-translação ficar desfasada e o contentor a tremer.
