@@ -23,6 +23,7 @@ import {
   precoDaVersao,
   estoqueDaVersao,
   imagensDaVersao,
+  galeriaDoProduto,
 } from "../lib/store-data";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 
@@ -79,6 +80,22 @@ function ProductPage() {
   const price = precoDaVersao(product, versaoAtual);
   const stock = estoqueDaVersao(product, versaoAtual);
   const galleryImages = imagensDaVersao(product, versaoAtual);
+  // Galeria com TODAS as fotos (scroll livre); trocar de cor posiciona-a na
+  // foto dessa cor, e fazer swipe para a foto de outra cor atualiza a cor.
+  const galeria = galeriaDoProduto(product, versaoAtual);
+  const aoMudarFoto = (indice: number) => {
+    const dono = galeria.donos[indice];
+    const nomeCar = galeria.caracteristica;
+    if (!nomeCar || dono == null || selecao[nomeCar] === dono) return;
+    setSelecao((atual) => {
+      const proxima = { ...atual, [nomeCar]: dono };
+      const pos = caracteristicas.findIndex((c) => c.nome === nomeCar);
+      for (const c of caracteristicas.slice(pos + 1)) {
+        if (!valoresParaCaracteristica(product, c.nome, proxima).includes(proxima[c.nome])) delete proxima[c.nome];
+      }
+      return proxima;
+    });
+  };
   const available = selecaoCompleta && (versaoAtual?.ativa !== false) && isInStock(product, 1, stock);
   const limit = maxQuantity(product, stock);
 
@@ -111,7 +128,7 @@ function ProductPage() {
   }, [awaitingAuth, alertActive]);
 
   const variantSelecionada = temVariantes && versaoAtual
-    ? { chave: versaoAtual.chave, label: Object.values(versaoAtual.valores).join(" / "), unitPrice: price, image: galleryImages[0] }
+    ? { chave: versaoAtual.chave, label: caracteristicas.map((c) => versaoAtual.valores[c.nome]).filter(Boolean).join(" / "), unitPrice: price, image: galleryImages[0] }
     : undefined;
 
   const buyNow = () => {
@@ -134,7 +151,7 @@ function ProductPage() {
     <div className="mx-auto max-w-6xl px-5 pb-14 pt-5 sm:px-6 sm:pb-20 sm:pt-10">
       <div className="grid gap-7 md:grid-cols-2 md:gap-12">
         <div ref={galleryRef} className="min-w-0 -mx-5 sm:-mx-6 md:mx-0">
-          <ProductGallery product={product} images={galleryImages} />
+          <ProductGallery product={product} images={galeria.imagens} alvos={galeria.alvos} onSelectIndex={aoMudarFoto} />
         </div>
 
 
