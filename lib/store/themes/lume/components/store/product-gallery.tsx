@@ -49,7 +49,7 @@ function Gallery({
   // uma vez, não a cada frame.
   useEffect(() => {
     if (!carousel) return;
-    const STRETCH = 0.12; // 1 = estica na mesma proporção do puxão; 0.12 = bem discreto
+    const STRETCH = 0.09; // 1 = estica na mesma proporção do puxão; 0.09 = quase imperceptível
     let ativo = false;
     let largura = 1;
 
