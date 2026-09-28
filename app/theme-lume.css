@@ -241,7 +241,7 @@
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid var(--product-frame-line);
-  border-radius: calc(var(--radius) + 8px);
+  border-radius: calc(var(--radius) - 4px);
   background: var(--product-gallery);
 }
 
