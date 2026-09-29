@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { DASHBOARD_BASE_PATH } from '@/lib/domains';
 
 export function ForgotForm() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export function ForgotForm() {
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/nova-senha`,
+      redirectTo: `${window.location.origin}${DASHBOARD_BASE_PATH}/nova-senha`,
     });
     setLoading(false);
     if (error) return show(error.message, 'error');
