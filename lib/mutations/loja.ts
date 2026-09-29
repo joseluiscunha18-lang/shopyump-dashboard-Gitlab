@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { LojaUpdate } from '@/types/database';
+import { isReservedSubdomain, isValidSubdomain } from '@/lib/domains';
 import { SOBRE_PADRAO, ENTREGA_PADRAO, TERMOS_PADRAO } from '@/lib/store/institutionalDefaults';
 
 export interface ActionResult {
@@ -15,7 +16,9 @@ function slugify(value: string) {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 /**
@@ -36,6 +39,9 @@ export async function completeOnboarding(input: {
 
   const slug = slugify(input.nome);
   if (!slug) return { ok: false, error: 'Nome da loja inválido.' };
+  // O slug passa a ser o subdomínio (slug.shopyump.com): tem de ser um nome DNS válido e não reservado.
+  if (!isValidSubdomain(slug)) return { ok: false, error: 'Nome da loja inválido. Usa letras, números e hífens (máx. 63 caracteres).' };
+  if (isReservedSubdomain(slug)) return { ok: false, error: 'Este nome não está disponível. Escolhe outro.' };
 
   const { data: existing } = await supabase.from('lojas').select('id').eq('slug', slug).maybeSingle();
   if (existing) return { ok: false, error: 'Este nome de loja já está em uso. Escolhe outro.' };
