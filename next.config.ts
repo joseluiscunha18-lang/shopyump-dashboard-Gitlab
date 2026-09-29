@@ -1,6 +1,28 @@
 import type { NextConfig } from 'next';
+import { DASHBOARD_BASE_PATH } from './lib/domains';
 
 const nextConfig: NextConfig = {
+  // Todo o painel passa a viver em shopyump.com/dashboard/*. <Link>, router.push,
+  // redirect() e o middleware adicionam/retiram o prefixo sozinhos.
+  basePath: DASHBOARD_BASE_PATH,
+
+  // Ainda não há landing page: shopyump.com/ leva ao painel.
+  // (temporário — quando existir landing, apaga este bloco.)
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: DASHBOARD_BASE_PATH,
+        basePath: false,
+        permanent: false,
+        has: [{ type: 'host', value: 'shopyump.com' }],
+      },
+    ];
+  },
+
+  // nome.shopyump.com → /dashboard/loja/nome é feito no vercel.json (o Next não
+  // permite reescrever pedidos que estão fora do basePath).
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
