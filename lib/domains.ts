@@ -58,3 +58,9 @@ export function getDashboardUrl(path = ''): string {
 export function asset(path: string): string {
   return `${DASHBOARD_BASE_PATH}${path.startsWith('/') ? '' : '/'}${path}`;
 }
+
+/**
+ * Regex de host que corresponde a uma LOJA (`nome.shopyump.com`, exceto
+ * subdomínios reservados). Usada em `missing`/`has` do next.config.ts.
+ */
+export const TENANT_HOST_REGEX = `(?!(?:${RESERVED_SUBDOMAINS.join('|')})\\.)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.${ROOT_DOMAIN.replace(/\./g, '\\.')}`;
