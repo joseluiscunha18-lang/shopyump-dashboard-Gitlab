@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { dispensarMarco, marcarMarcoConcluido } from '@/lib/mutations/lojaMarcos';
 import type { MarcoOnboarding } from '@/types/database';
 import { cn } from '@/lib/cn';
+import { asset } from '@/lib/domains';
 
 interface ItemConfig {
   eyebrow: string;
@@ -28,7 +29,7 @@ interface ItemConfig {
 const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
 
-const PAGAMENTOS_ICON = '/images/pagamentos.webp';
+const PAGAMENTOS_ICON = asset('/images/pagamentos.webp');
 
 function getItemConfig(
   marco: MarcoOnboarding,
@@ -55,7 +56,7 @@ function getItemConfig(
         subtitle: 'Deixe sua loja com a sua identidade e do seu jeito.',
         ctaLabel: 'Personalizar',
         href: '/loja',
-        image: '/images/personalizar-loja.webp',
+        image: asset('/images/personalizar-loja.webp'),
         contentWidth: '48%',
         imgRight: '12px', imgTop: '8px', imgBottom: '8px',
         imgWidth: '52%', imgMaxWidth: '208px',
@@ -79,7 +80,7 @@ function getItemConfig(
         subtitle: 'Compartilhe sua loja e facilite o acesso dos seus clientes.',
         ctaLabel: 'Compartilhar',
         onAction: handleShare,
-        image: '/images/divulgacao.webp',
+        image: asset('/images/divulgacao.webp'),
         contentWidth: '54%',
         imgRight: '24px', imgTop: '16px', imgBottom: '4px',
         imgWidth: '38%', imgMaxWidth: '152px',
