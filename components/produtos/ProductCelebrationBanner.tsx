@@ -6,6 +6,7 @@ import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
 import { dispensarMarco } from '@/lib/mutations/lojaMarcos';
 import { cn } from '@/lib/cn';
+import { getProductUrl, getStoreUrl } from '@/lib/storeUrl';
 
 const DURATION_MS = 400;
 // CTA preenchido — mesmo preto/castanho do botão "Adicionar" da navegação
@@ -147,11 +148,7 @@ export function ProductCelebrationBanner({
   // junto a cada `{cta}` abaixo sobre o motivo de existirem duas posições.
   const cta = lojaSlug ? (
     <a
-      href={
-        produtoId
-          ? `https://shopyump.vercel.app/loja/${lojaSlug}/p/${produtoId}`
-          : `https://shopyump.vercel.app/loja/${lojaSlug}`
-      }
+      href={produtoId ? getProductUrl(lojaSlug, produtoId) : getStoreUrl(lojaSlug)}
       target="_blank"
       rel="noopener noreferrer"
       // Abre a loja numa nova aba (o dashboard continua aqui) MAS já
