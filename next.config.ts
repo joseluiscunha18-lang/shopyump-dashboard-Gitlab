@@ -1,21 +1,31 @@
 import type { NextConfig } from 'next';
-import { DASHBOARD_BASE_PATH } from './lib/domains';
+import { DASHBOARD_BASE_PATH, TENANT_HOST_REGEX } from './lib/domains';
 
 const nextConfig: NextConfig = {
   // Todo o painel passa a viver em shopyump.com/dashboard/*. <Link>, router.push,
   // redirect() e o middleware adicionam/retiram o prefixo sozinhos.
   basePath: DASHBOARD_BASE_PATH,
 
-  // Ainda não há landing page: shopyump.com/ leva ao painel.
-  // (temporário — quando existir landing, apaga este bloco.)
+  // Compatibilidade + sem landing page. Só para hosts que NÃO são lojas:
+  //   /            → /dashboard          (ainda não há landing page)
+  //   /login, ...  → /dashboard/login    (links antigos: emails, favoritos, Supabase)
+  // As lojas (nome.shopyump.com) ficam de fora e são tratadas no vercel.json.
   async redirects() {
+    const notATenant = [{ type: 'host' as const, value: TENANT_HOST_REGEX }];
     return [
       {
         source: '/',
         destination: DASHBOARD_BASE_PATH,
-        basePath: false,
+        basePath: false as const,
         permanent: false,
-        has: [{ type: 'host', value: 'shopyump.com' }],
+        missing: notATenant,
+      },
+      {
+        source: '/:path((?!dashboard|_next|api|images|icons|tema-lume|tema-default|favicon\\.ico).+)',
+        destination: `${DASHBOARD_BASE_PATH}/:path`,
+        basePath: false as const,
+        permanent: false,
+        missing: notATenant,
       },
     ];
   },
