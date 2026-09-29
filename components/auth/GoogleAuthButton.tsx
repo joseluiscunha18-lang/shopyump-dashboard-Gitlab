@@ -15,7 +15,7 @@ export function GoogleAuthButton() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}${DASHBOARD_BASE_PATH}/` },
+      options: { redirectTo: `${window.location.origin}${DASHBOARD_BASE_PATH}/api/auth/callback` },
     });
     if (error) {
       show(`Erro ao ligar à Google: ${error.message}`, 'error');
