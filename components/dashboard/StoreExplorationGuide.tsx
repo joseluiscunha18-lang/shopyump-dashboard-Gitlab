@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import { dispensarMarco, marcarMarcoConcluido } from '@/lib/mutations/lojaMarcos';
 import { ORDEM_MARCOS_ONBOARDING, type LojaMarco, type MarcoOnboarding } from '@/types/database';
 import { cn } from '@/lib/cn';
+import { asset } from '@/lib/domains';
 
 const cta =
   'inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white text-ink text-[12px] font-semibold tracking-tight border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] self-start whitespace-nowrap';
@@ -17,7 +18,7 @@ const cta =
  * suportados (Visa/Mastercard + mkesh/e-Mola/m-pesa), hospedada em
  * i.ibb.co, mesmo padrão dos outros marcos.
  */
-const PAGAMENTOS_ICON = '/images/pagamentos.webp';
+const PAGAMENTOS_ICON = asset('/images/pagamentos.webp');
 
 interface ItemConfig {
   eyebrow: string;
@@ -62,7 +63,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Deixe sua loja com a sua identidade e do seu jeito.',
         ctaLabel: 'Personalizar',
         href: '/loja',
-        image: '/images/personalizar-loja.webp',
+        image: asset('/images/personalizar-loja.webp'),
         imageClassName: 'h-full w-full object-contain object-right',
         imageWrapperClassName: 'right-3 top-2 bottom-2 w-[52%] max-w-[208px]',
         contentWidthClassName: 'w-[48%]',
@@ -75,7 +76,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Compartilhe sua loja e facilite o acesso dos seus clientes.',
         ctaLabel: 'Compartilhar',
         onAction: handleShare,
-        image: '/images/divulgacao.webp',
+        image: asset('/images/divulgacao.webp'),
         imageClassName: 'h-full w-full object-contain object-right',
         imageWrapperClassName: 'right-6 top-4 bottom-1 w-[38%] max-w-[152px]',
         contentWidthClassName: 'w-[54%]',
