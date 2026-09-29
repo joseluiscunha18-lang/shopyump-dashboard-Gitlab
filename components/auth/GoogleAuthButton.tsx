@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/Toast';
+import { DASHBOARD_BASE_PATH } from '@/lib/domains';
 
 export function GoogleAuthButton() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export function GoogleAuthButton() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/` },
+      options: { redirectTo: `${window.location.origin}${DASHBOARD_BASE_PATH}/` },
     });
     if (error) {
       show(`Erro ao ligar à Google: ${error.message}`, 'error');
