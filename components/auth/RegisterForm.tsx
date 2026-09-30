@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Mail, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/Input';
@@ -16,7 +14,6 @@ export function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { show } = useToast();
 
   const valid = useMemo(
@@ -39,7 +36,7 @@ export function RegisterForm() {
       setLoading(false);
       return;
     }
-    router.push('/verificar');
+    window.location.assign('/verificar'); // URL limpo (sem /dashboard)
   }
 
   return (
@@ -81,9 +78,9 @@ export function RegisterForm() {
       <div className="text-center border-t border-slate-100 pt-6">
         <p className="text-sm text-slate-500 font-semibold">
           Já tens conta?{' '}
-          <Link href="/login" className="text-ink font-black hover:underline underline-offset-4">
+          <a href="/login" className="text-ink font-black hover:underline underline-offset-4">
             Iniciar sessão
-          </Link>
+          </a>
         </p>
       </div>
     </div>
