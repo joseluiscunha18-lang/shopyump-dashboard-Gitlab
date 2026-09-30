@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   X,
   Search,
@@ -125,7 +125,6 @@ export function MobileSidebarDrawer({
   logoUrl?: string | null;
   plano?: Plano;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const entries = useMemo(() => buildEntries(storeUrl), [storeUrl]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -200,8 +199,7 @@ export function MobileSidebarDrawer({
     const supabase = createClient();
     await supabase.auth.signOut();
     onClose();
-    router.push('/login');
-    router.refresh();
+    window.location.assign('/login'); // URL limpo (sem /dashboard) e limpa o estado do painel
   }
 
   function isActive(href: string) {
