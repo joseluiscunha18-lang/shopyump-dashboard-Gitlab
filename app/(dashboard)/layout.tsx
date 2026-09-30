@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
 import { getUserContext } from '@/lib/auth/getUserContext';
+import { cleanRedirect } from '@/lib/auth/cleanRedirect';
 import { countPedidosPendentes } from '@/lib/queries/pedidos';
 import { Sidebar } from '@/components/nav/Sidebar';
 import { BottomNav } from '@/components/nav/BottomNav';
@@ -26,8 +26,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Belt-and-braces alongside middleware: Server Components can be hit
   // directly (e.g. prefetch), so the redirect logic is duplicated here
   // cheaply since getUserContext() is request-cached.
-  if (!ctx.userId) redirect('/login');
-  if (!ctx.loja && !ctx.isAdmin) redirect('/onboarding');
+  if (!ctx.userId) return cleanRedirect('/login');
+  if (!ctx.loja && !ctx.isAdmin) return cleanRedirect('/onboarding');
 
   const storeUrl = ctx.loja ? getStoreUrl(ctx.loja.slug) : null;
 
