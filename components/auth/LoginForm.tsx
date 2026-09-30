@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -64,9 +63,9 @@ export function LoginForm() {
         <div>
           <div className="flex justify-between items-center mb-1.5 px-1">
             <label className="text-[11px] font-black uppercase tracking-widest text-slate-500">Senha</label>
-            <Link href="/recuperar" className="text-[11px] font-bold text-slate-400 hover:text-ink transition-colors">
+            <a href="/recuperar" className="text-[11px] font-bold text-slate-400 hover:text-ink transition-colors">
               Esqueceste-te?
-            </Link>
+            </a>
           </div>
           <PasswordInput placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
@@ -79,9 +78,9 @@ export function LoginForm() {
       <div className="text-center border-t border-slate-100 pt-6">
         <p className="text-sm text-slate-500 font-semibold">
           Novo na plataforma?{' '}
-          <Link href="/registar" className="text-ink font-black hover:underline underline-offset-4">
+          <a href="/registar" className="text-ink font-black hover:underline underline-offset-4">
             Criar conta grátis
-          </Link>
+          </a>
         </p>
       </div>
     </div>
