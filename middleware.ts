@@ -59,11 +59,14 @@ export async function middleware(request: NextRequest) {
   const isOnboardingPath = pathname.startsWith(ONBOARDING_PATH);
   const isPublic = isAuthPath || pathname.startsWith('/api') || pathname.startsWith('/manifest');
 
+  // Redirects com URL absoluto e LIMPO (/login, /onboarding, /dashboard), para o
+  // visitante nunca ver /dashboard/login. Funciona igual chegue o pedido como
+  // /login (fora do prefixo) ou /dashboard/... (dentro).
+  const go = (path: string) => NextResponse.redirect(new URL(path, request.url));
+
   if (!user) {
     if (isPublic) return supabaseResponse;
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    return go('/login');
   }
 
   // Signed in — figure out onboarding state once, reused by every branch.
@@ -89,26 +92,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  if (isAuthPath) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    return NextResponse.redirect(url);
-  }
+  if (isAuthPath) return go('/dashboard');
 
   if (isOnboardingPath) {
-    if (hasLoja) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
+    if (hasLoja) return go('/dashboard');
     return supabaseResponse;
   }
 
   // Everything else is the protected dashboard route group.
   if (!hasLoja) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/onboarding';
-    return NextResponse.redirect(url);
+    return go('/onboarding');
   }
 
   return supabaseResponse;
@@ -116,6 +109,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Dentro do painel (o Next junta o prefixo /dashboard sozinho).
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // O início do painel (/dashboard, sem nada a seguir) também tem de passar pelo middleware.
+    '/',
   ],
 };
