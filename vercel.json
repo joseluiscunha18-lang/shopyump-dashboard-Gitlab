@@ -4,6 +4,17 @@
       "source": "/:path((?!dashboard|_next|favicon\\.ico).*)",
       "has": [
         {
+          "type": "header",
+          "key": "x-shop-host",
+          "value": "(?!(?:www|app|api|admin|dashboard|painel|mail|email|cdn|static|assets|status|help|ajuda|support|suporte|blog|loja|lojas|temas|login|registar|onboarding)\\.)(?<tenant>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.shopyump\\.com"
+        }
+      ],
+      "destination": "/dashboard/loja/:tenant/:path*"
+    },
+    {
+      "source": "/:path((?!dashboard|_next|favicon\\.ico).*)",
+      "has": [
+        {
           "type": "host",
           "value": "(?!(?:www|app|api|admin|dashboard|painel|mail|email|cdn|static|assets|status|help|ajuda|support|suporte|blog|loja|lojas|temas|login|registar|onboarding)\\.)(?<tenant>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.shopyump\\.com"
         }
