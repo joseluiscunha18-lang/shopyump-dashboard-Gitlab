@@ -11,7 +11,14 @@ const nextConfig: NextConfig = {
   //   /login, ...  → /dashboard/login    (links antigos: emails, favoritos, Supabase)
   // As lojas (nome.shopyump.com) ficam de fora e são tratadas no vercel.json.
   async redirects() {
-    const notATenant = [{ type: 'host' as const, value: TENANT_HOST_REGEX }];
+    // Uma loja chega de duas formas: pelo host direto (nome.shopyump.com, se o
+    // domínio estiver registado no Vercel) OU via Cloudflare Worker, que muda o
+    // host para shopyump.com e guarda o original no header `x-shop-host`.
+    // Nenhum dos dois pode ser redirecionado para o painel.
+    const notATenant = [
+      { type: 'host' as const, value: TENANT_HOST_REGEX },
+      { type: 'header' as const, key: 'x-shop-host' },
+    ];
     return [
       {
         source: '/',
