@@ -37,6 +37,10 @@ export async function completeOnboarding(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Sessão expirada. Inicia sessão novamente.' };
 
+  // Já tem loja? (ex.: abriu /onboarding à mão) — não cria uma segunda.
+  const { data: minhaLoja } = await supabase.from('lojas').select('id').eq('perfil_id', user.id).maybeSingle();
+  if (minhaLoja) return { ok: true };
+
   const slug = slugify(input.nome);
   if (!slug) return { ok: false, error: 'Nome da loja inválido.' };
   // O slug passa a ser o subdomínio (slug.shopyump.com): tem de ser um nome DNS válido e não reservado.
