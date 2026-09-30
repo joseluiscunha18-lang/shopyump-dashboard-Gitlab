@@ -18,10 +18,12 @@ export async function GET(request: NextRequest) {
   // Caminho completo (com /dashboard) — em Route Handlers o redirect não junta o basePath sozinho.
   const to = (path: string) => NextResponse.redirect(new URL(`${DASHBOARD_BASE_PATH}${path}`, request.url));
 
-  if (!code) return to('/login');
+  const login = () => NextResponse.redirect(new URL('/login', request.url)); // URL limpo
+
+  if (!code) return login();
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  return to(error ? '/login' : '/');
+  return error ? login() : to('/');
 }
