@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
@@ -43,9 +42,9 @@ export function VerifyNotice() {
           Reenviar e-mail
         </Button>
       </div>
-      <Link href="/login" className="text-sm font-bold text-ink hover:underline underline-offset-4 inline-block pt-2">
+      <a href="/login" className="text-sm font-bold text-ink hover:underline underline-offset-4 inline-block pt-2">
         Voltar a iniciar sessão
-      </Link>
+      </a>
     </div>
   );
 }
