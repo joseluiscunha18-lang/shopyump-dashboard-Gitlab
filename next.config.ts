@@ -1,44 +1,22 @@
 import type { NextConfig } from 'next';
-import { DASHBOARD_BASE_PATH, TENANT_HOST_REGEX } from './lib/domains';
+import { DASHBOARD_BASE_PATH } from './lib/domains';
 
 const nextConfig: NextConfig = {
-  // Todo o painel passa a viver em shopyump.com/dashboard/*. <Link>, router.push,
-  // redirect() e o middleware adicionam/retiram o prefixo sozinhos.
-  basePath: DASHBOARD_BASE_PATH,
+  // O painel vive na raiz: shopyump.com/login, /registar, /onboarding, /produtos...
+  // (só usa basePath se DASHBOARD_BASE_PATH em lib/domains.ts não estiver vazio).
+  ...(DASHBOARD_BASE_PATH ? { basePath: DASHBOARD_BASE_PATH } : {}),
 
-  // Compatibilidade + sem landing page. Só para hosts que NÃO são lojas:
-  //   /            → /dashboard          (ainda não há landing page)
-  //   /login, ...  → /dashboard/login    (links antigos: emails, favoritos, Supabase)
-  // As lojas (nome.shopyump.com) ficam de fora e são tratadas no vercel.json.
+  // Links antigos (emails, favoritos, Supabase) que ainda têm /dashboard:
+  //   /dashboard          → /
+  //   /dashboard/login    → /login
   async redirects() {
-    // Uma loja chega de duas formas: pelo host direto (nome.shopyump.com, se o
-    // domínio estiver registado no Vercel) OU via Cloudflare Worker, que muda o
-    // host para shopyump.com e guarda o original no header `x-shop-host`.
-    // Nenhum dos dois pode ser redirecionado para o painel.
-    const notATenant = [
-      { type: 'host' as const, value: TENANT_HOST_REGEX },
-      { type: 'header' as const, key: 'x-shop-host' },
-    ];
     return [
-      {
-        source: '/',
-        destination: DASHBOARD_BASE_PATH,
-        basePath: false as const,
-        permanent: false,
-        missing: notATenant,
-      },
-      {
-        source: '/:path((?!dashboard|_next|api|images|icons|tema-lume|tema-default|favicon\\.ico).+)',
-        destination: `${DASHBOARD_BASE_PATH}/:path`,
-        basePath: false as const,
-        permanent: false,
-        missing: notATenant,
-      },
+      { source: '/dashboard', destination: '/', permanent: false },
+      { source: '/dashboard/:path*', destination: '/:path*', permanent: false },
     ];
   },
 
-  // nome.shopyump.com → /dashboard/loja/nome é feito no vercel.json (o Next não
-  // permite reescrever pedidos que estão fora do basePath).
+  // nome.shopyump.com → /loja/nome é feito no vercel.json.
 
   images: {
     remotePatterns: [
