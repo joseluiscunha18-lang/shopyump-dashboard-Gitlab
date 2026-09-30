@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Mail, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/Input';
@@ -35,18 +34,18 @@ export function ForgotForm() {
           Se existir uma conta associada a <strong className="text-ink">{email}</strong>, vais receber um link para
           repor a senha.
         </p>
-        <Link href="/login" className="text-sm font-bold text-ink hover:underline underline-offset-4 inline-block pt-2">
+        <a href="/login" className="text-sm font-bold text-ink hover:underline underline-offset-4 inline-block pt-2">
           Voltar a iniciar sessão
-        </Link>
+        </a>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Link href="/login" className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-ink">
+      <a href="/login" className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-ink">
         <ArrowLeft size={14} /> Voltar
-      </Link>
+      </a>
       <div>
         <h2 className="text-2xl font-extrabold text-ink tracking-tight mb-2">Recuperar senha</h2>
         <p className="text-sm text-slate-500 font-medium">Insere o teu e-mail e enviamos-te um link para repor a senha.</p>
