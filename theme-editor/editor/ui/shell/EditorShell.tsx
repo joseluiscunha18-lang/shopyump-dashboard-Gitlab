@@ -16,9 +16,9 @@ import {
 import { cn } from "@/theme-editor/lib/utils";
 import { useEditor, useEditorDispatch, type PanelFrame } from "@/theme-editor/editor/core/store";
 import { parsePath, sectionPath } from "@/theme-editor/editor/core/paths";
-import { blockIdsOf, sectionTypeOf } from "@/theme-editor/editor/core/resolve";
+import { blockIdsOf, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { ThemeProvider } from "@/theme-editor/editor/sdk";
-import { DemoCommerceRenderer, visibleSectionIds } from "@/theme-editor/themes/demo-commerce/Renderer";
+import { ThemeRenderer } from "@/theme-editor/themes/registry";
 import { mockAdapter, setFailNextSave } from "@/theme-editor/mocks/adapter";
 import { NodePanel, SettingsList } from "../panels/NodePanel";
 import type { Device } from "@/theme-editor/editor/contracts/types";
@@ -305,7 +305,7 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
                 onSelect: state.ui.showOverlays ? (path, title) => dispatch({ type: "select", path, title }) : undefined,
               }}
             >
-              <DemoCommerceRenderer pageId={state.page} />
+              <ThemeRenderer themeId={state.manifest.id} pageId={state.page} />
             </ThemeProvider>
           </div>
         </div>
