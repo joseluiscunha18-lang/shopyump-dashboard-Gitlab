@@ -962,12 +962,17 @@ export function visibleSectionIds(
   };
 }
 
-export function DemoCommerceRenderer({ pageId }: { pageId: string }) {
+/**
+ * `only`: se indicado, desenha apenas estas seções (ex.: a miniatura da página
+ * "Personalizar loja" mostra só a primeira seção da página, sem barra de anúncio
+ * nem cabeçalho). Sem `only`, desenha a página completa.
+ */
+export function DemoCommerceRenderer({ pageId, only }: { pageId: string; only?: string[] }) {
   const { manifest, customization, device } = useTheme();
   const colors = useColors();
   const typo = useGlobalGroup("typography");
   const ids = visibleSectionIds(manifest, customization, pageId);
-  const all = [...ids.top, ...ids.page, ...ids.bottom];
+  const all = only ? [...ids.top, ...ids.page, ...ids.bottom].filter((id) => only.includes(id)) : [...ids.top, ...ids.page, ...ids.bottom];
   const fonts = Object.fromEntries(manifest.fonts.map((f) => [f.id, f.family]));
 
   const rootStyle = {
