@@ -22,7 +22,7 @@ export interface LojaCustomization {
 }
 
 export const DEFAULT_CUSTOMIZATION: LojaCustomization = {
-  temaId: 'minimal',
+  temaId: 'lume',
   corPrincipal: null,
   estiloBotao: null,
   bannerGrande: false,
