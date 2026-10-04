@@ -114,6 +114,27 @@ export function sectionTypeOf(manifest: ThemeManifest, custom: Customization, se
   return manifest.sectionTypes.find((t) => t.type === typeName);
 }
 
+/**
+ * Ids das seções de uma página, já na ordem final e sem as removidas.
+ * Genérico: serve a qualquer tema (só lê manifesto + customização).
+ */
+export function visibleSectionIds(
+  manifest: ThemeManifest,
+  custom: Customization,
+  pageId: string,
+): { top: string[]; page: string[]; bottom: string[] } {
+  const page = manifest.pages.find((p) => p.id === pageId);
+  if (!page) return { top: [], page: [], bottom: [] };
+  const override = custom.structure.pages[pageId];
+  const order = override?.order ?? page.sections.map((s) => s.id);
+  const removed = new Set(override?.removed ?? []);
+  return {
+    top: page.topSections.filter((id) => !removed.has(id)),
+    page: order.filter((id) => !removed.has(id)),
+    bottom: page.bottomSections.filter((id) => !removed.has(id)),
+  };
+}
+
 export function blockTypeOf(
   manifest: ThemeManifest,
   custom: Customization,
