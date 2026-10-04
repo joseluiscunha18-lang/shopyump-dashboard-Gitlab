@@ -17,7 +17,12 @@ export function isProductFormFlowPath(pathname: string | null): boolean {
  */
 export function isFocusModePath(pathname: string | null): boolean {
   if (!pathname) return false;
-  return isProductFormFlowPath(pathname) || pathname === '/loja' || pathname.startsWith('/loja/temas');
+  return (
+    isProductFormFlowPath(pathname) ||
+    pathname === '/loja' ||
+    pathname === '/personalizar' ||
+    pathname.startsWith('/loja/temas')
+  );
 }
 
 export function productFormFlowTitle(pathname: string | null): string {
