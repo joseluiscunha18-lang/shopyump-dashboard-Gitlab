@@ -1,0 +1,103 @@
+/*
+  Estilos do editor de temas (Personalizar loja + Editor).
+  Importado por app/globals.css. Tudo aqui está LIMITADO a `.ed-root`:
+  fora do editor o painel não muda em nada.
+
+  - `@theme inline` só ADICIONA o que falta (cores do editor, sombras, vidro escuro).
+    As cores semânticas (background, primary, muted…) já existem no tema Lume
+    (theme-lume.css); aqui só se redefinem os VALORES, e apenas dentro de `.ed-root`.
+  - As variáveis (--background, --primary…) e os raios (--radius-*) só existem
+    dentro de `.ed-root`.
+*/
+
+@theme inline {
+  --color-ed-canvas: var(--ed-canvas);
+  --color-ed-thumb: var(--ed-thumb);
+  --shadow-ed-frame: 0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px -12px oklch(0 0 0 / 0.12);
+  --shadow-ed-sheet: 0 -12px 40px -8px oklch(0 0 0 / 0.2);
+  --shadow-pill: 0 1px 2px oklch(0 0 0 / 0.06);
+
+  --color-glass-dark: var(--glass-dark);
+  --color-glass-dark-foreground: var(--glass-dark-foreground);
+  --color-glass-dark-muted: var(--glass-dark-muted);
+  --color-glass-dark-line: var(--glass-dark-line);
+}
+
+.ed-root {
+  --radius: 1.25rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --background: oklch(0.985 0.002 90);
+  --foreground: oklch(0.2 0.004 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.004 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.004 60);
+  --primary: oklch(0.22 0.004 60);
+  --primary-foreground: oklch(0.985 0.002 90);
+  --secondary: oklch(0.955 0.002 90);
+  --secondary-foreground: oklch(0.22 0.004 60);
+  --muted: oklch(0.955 0.002 90);
+  --muted-foreground: oklch(0.55 0.004 60);
+  --accent: oklch(0.945 0.002 90);
+  --accent-foreground: oklch(0.22 0.004 60);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.91 0.002 90);
+  --input: oklch(0.91 0.002 90);
+  --ring: oklch(0.6 0.004 60);
+
+  --ed-canvas: oklch(0.965 0.002 90);
+  --ed-thumb: oklch(0.92 0.01 85);
+  --ed-accent: oklch(0.6 0.17 250);
+
+  --glass-dark: oklch(0.18 0 0 / 0.55);
+  --glass-dark-foreground: oklch(0.99 0 0);
+  --glass-dark-muted: oklch(0.99 0 0 / 0.75);
+  --glass-dark-line: oklch(1 0 0 / 0.12);
+
+  color: var(--foreground);
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Editor em ecrã inteiro (fora da moldura do painel) */
+.ed-root-page {
+  background-color: var(--background);
+  min-height: 100dvh;
+}
+html:has(.ed-root-page) {
+  overflow-y: hidden;
+  scrollbar-gutter: auto;
+}
+
+@layer base {
+  .ed-root *,
+  .ed-root *::before,
+  .ed-root *::after {
+    border-color: var(--border);
+  }
+}
+
+.ed-sheet { transition: height 240ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .ed-sheet { transition: none; } }
+
+/* SDK de seleção (marcas no preview) */
+.sy-editable, .sy-section { position: relative; }
+.sy-hoverable:hover { outline: 1px dashed var(--ed-accent); outline-offset: -1px; cursor: pointer; }
+.sy-selected { outline: 2px solid var(--ed-accent) !important; outline-offset: 1px; }
+.sy-selected-section { outline: 2px solid var(--ed-accent) !important; outline-offset: -2px; }
+.sy-tag {
+  position: absolute; top: -22px; left: 0; z-index: 5; white-space: nowrap;
+  background: var(--ed-accent); color: white; font: 600 11px/1 "Manrope", system-ui, sans-serif;
+  border-radius: 999px !important;
+  padding: 5px 7px; pointer-events: none;
+}
+.sy-tag-section { top: 4px; left: 4px; }
