@@ -82,7 +82,33 @@ export interface Theme {
 }
 
 /**
- * Seis temas fictícios: os 3 originais (Minimal/Boutique/Modern) que
+ * LUME — o tema padrão da plataforma Shopyump. Os tokens abaixo são só a
+ * versão simplificada usada pelas miniaturas do catálogo (StorePreview); o
+ * visual real do Lume vive em lib/store/themes/lume (loja pública) e em
+ * theme-editor/themes/lume (editor + preview do "Personalizar loja").
+ */
+const LUME_THEME: Theme = {
+  id: 'lume',
+  name: 'Lume',
+  tagline: 'Limpo e essencial: o tema padrão do Shopyump.',
+  features: ['Banner com destaque', 'Grelha de produtos clara', 'Botões em pílula'],
+  pricing: 'gratis',
+  spacing: 'comfortable',
+  colors: {
+    primary: '#202020',
+    surface: '#FFFFFF',
+    surfaceAlt: '#F3F3F3',
+    ink: '#202020',
+    muted: '#696969',
+  },
+  typography: { display: 'black', tracking: 'tight', uppercaseLabels: false },
+  buttons: { radius: 'full', style: 'solid' },
+  cards: { radius: 'lg', shadow: 'none', imageRatio: 'square', layout: 'grid-2' },
+  header: { align: 'center', bannerOverlay: false },
+};
+
+/**
+ * Temas FUTUROS (ainda não ativos). Seis temas fictícios: os 3 originais (Minimal/Boutique/Modern) que
  * validam a arquitetura a sério, mais 3 "de efeito" (Fashion/Urban/
  * Studio) só para o catálogo parecer um catálogo de verdade em vez de 3
  * cartões soltos — reaproveitam as mesmas variações de tokens, não são
@@ -90,7 +116,7 @@ export interface Theme {
  * ver §16 da spec original: substituir por temas oficiais mais tarde
  * nunca deve exigir reconstruir esta página.
  */
-export const THEMES: Theme[] = [
+export const PLANNED_THEMES: Theme[] = [
   {
     id: 'minimal',
     name: 'Minimal',
@@ -206,6 +232,12 @@ export const THEMES: Theme[] = [
     header: { align: 'left', bannerOverlay: false },
   },
 ];
+
+/**
+ * Temas ativos no catálogo. Por agora só o Lume (tema padrão da plataforma).
+ * Quando os próximos temas ficarem prontos, passam de PLANNED_THEMES para aqui.
+ */
+export const THEMES: Theme[] = [LUME_THEME];
 
 export function getThemeById(id: ThemeId | null | undefined): Theme {
   return THEMES.find((t) => t.id === id) ?? THEMES[0];
