@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Component, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Copy, ExternalLink, Pencil, Palette, Store as StoreIcon } from "lucide-react";
+import { Copy, ExternalLink, Eye, Pencil, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { EditorRoot } from "@/theme-editor/ui/editor-root";
 import { Toaster } from "@/theme-editor/ui/sonner";
@@ -138,14 +138,19 @@ function MiniPreview({
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-pill">
       {/* Barra contextual: delimita a miniatura (sem o cabeçalho da loja) */}
-      <div className="flex h-12 items-center justify-between gap-2 border-b bg-card pl-4 pr-2">
-        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-tight">
-          <StoreIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="truncate">Sua loja</span>
+      <div className="flex h-14 items-center justify-between gap-3 border-b bg-card px-4">
+        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
+          <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="truncate">Prévia da loja</span>
         </span>
-        <Button variant="ghost" size="sm" className="h-9 shrink-0 gap-1.5 px-3 font-semibold" onClick={onView}>
-          <ExternalLink className="h-4 w-4" /> Ver loja
-        </Button>
+        <button
+          type="button"
+          onClick={onView}
+          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-secondary px-3.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Ver loja online
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+        </button>
       </div>
 
       <div ref={boxRef} className="relative overflow-hidden bg-muted" style={{ height: ready ? bodyH : 360 }}>
