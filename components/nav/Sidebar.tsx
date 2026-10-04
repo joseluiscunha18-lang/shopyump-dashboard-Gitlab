@@ -9,7 +9,7 @@ const items = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/produtos', label: 'Produtos', icon: Package },
   { href: '/pedidos', label: 'Pedidos', icon: ClipboardList },
-  { href: '/loja', label: 'Personalizar loja', icon: Store },
+  { href: '/personalizar', label: 'Personalizar loja', icon: Store },
 ];
 
 const secondaryItems = [
