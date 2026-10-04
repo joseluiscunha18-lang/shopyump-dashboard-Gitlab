@@ -5,7 +5,7 @@ import type {
   ExternalTarget,
   MediaAsset,
 } from "@/theme-editor/editor/contracts/types";
-import { demoCommerceManifest } from "@/theme-editor/themes/demo-commerce/manifest";
+import { DEFAULT_THEME_ID, resolveEditorTheme } from "@/theme-editor/themes/registry";
 import {
   mockCategories,
   mockCustomization,
@@ -45,7 +45,12 @@ function initialCustomization(): Customization {
   if (typeof window !== "undefined") {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw) as Customization;
+      if (raw) {
+        const saved = JSON.parse(raw) as Customization;
+        // Customizações guardadas por outro tema (ex.: o antigo "demo-commerce")
+        // não servem ao tema padrão: descarta-as e recomeça do padrão do Lume.
+        if (saved.themeId === DEFAULT_THEME_ID) return saved;
+      }
     } catch {
       /* ignora e usa o padrão */
     }
@@ -75,7 +80,7 @@ export const mockAdapter: EditorAdapter = {
   },
   async getThemeManifest() {
     await delay(60);
-    return demoCommerceManifest;
+    return resolveEditorTheme(memoryCustomization.themeId).manifest;
   },
   async getCustomization() {
     await delay(60);
