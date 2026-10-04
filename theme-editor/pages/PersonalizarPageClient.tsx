@@ -10,7 +10,8 @@ import { Button } from "@/theme-editor/ui/button";
 import { Skeleton } from "@/theme-editor/ui/skeleton";
 import { ThemeProvider } from "@/theme-editor/editor/sdk";
 import { mockAdapter, setAdapterExternalHandler } from "@/theme-editor/mocks/adapter";
-import { DemoCommerceRenderer, visibleSectionIds } from "@/theme-editor/themes/demo-commerce/Renderer";
+import { ThemeRenderer } from "@/theme-editor/themes/registry";
+import { visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import type { Customization, MediaAsset, ProductLite, CategoryLite, Store, ThemeManifest } from "@/theme-editor/editor/contracts/types";
 
 type Data = {
@@ -79,7 +80,7 @@ function ThemeMini({ data, pageId, only, scale }: { data: Data; pageId: string; 
       }}
     >
       <div style={{ width: PREVIEW_W, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-        <DemoCommerceRenderer pageId={pageId} only={only} />
+        <ThemeRenderer themeId={data.manifest!.id} pageId={pageId} only={only} />
       </div>
     </ThemeProvider>
   );
@@ -194,7 +195,7 @@ function MiniPreview({
                       onSelect: undefined,
                     }}
                   >
-                    <DemoCommerceRenderer pageId={pageId} only={only} />
+                    <ThemeRenderer themeId={manifest.id} pageId={pageId} only={only} />
                   </ThemeProvider>
                 </div>
               </>
