@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Component, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, Copy, ExternalLink, MoreHorizontal, Pencil, Eye, Palette } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/theme-editor/ui/dropdown-menu";
+import { Copy, ExternalLink, Pencil, Palette, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { EditorRoot } from "@/theme-editor/ui/editor-root";
 import { Toaster } from "@/theme-editor/ui/sonner";
@@ -11,7 +10,7 @@ import { Button } from "@/theme-editor/ui/button";
 import { Skeleton } from "@/theme-editor/ui/skeleton";
 import { ThemeProvider } from "@/theme-editor/editor/sdk";
 import { mockAdapter, setAdapterExternalHandler } from "@/theme-editor/mocks/adapter";
-import { DemoCommerceRenderer } from "@/theme-editor/themes/demo-commerce/Renderer";
+import { DemoCommerceRenderer, visibleSectionIds } from "@/theme-editor/themes/demo-commerce/Renderer";
 import type { Customization, MediaAsset, ProductLite, CategoryLite, Store, ThemeManifest } from "@/theme-editor/editor/contracts/types";
 
 type Data = {
@@ -23,8 +22,9 @@ type Data = {
   categories: CategoryLite[];
 };
 
-const PREVIEW_W = 390;
-const PREVIEW_H = 560;
+const PREVIEW_W = 390; // largura lógica (telemóvel) com que o tema é desenhado
+const CAPTION_H = 112; // altura da faixa de vidro com o nome da loja
+const EMPTY_H = 220; // altura mínima quando não há nenhuma seção para mostrar
 
 function relativeTime(iso?: string): string {
   if (!iso) return "Ainda não personalizada";
@@ -60,6 +60,31 @@ function PreviewUnavailable() {
   );
 }
 
+/** O tema desenhado em pequeno, sem interação. `only` limita a uma seção. */
+function ThemeMini({ data, pageId, only, scale }: { data: Data; pageId: string; only: string[]; scale: number }) {
+  return (
+    <ThemeProvider
+      value={{
+        manifest: data.manifest!,
+        customization: data.custom,
+        store: data.store,
+        media: data.media,
+        products: data.products,
+        categories: data.categories,
+        device: "mobile",
+        mode: "live",
+        showOverlays: false,
+        selectedPath: undefined,
+        onSelect: undefined,
+      }}
+    >
+      <div style={{ width: PREVIEW_W, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <DemoCommerceRenderer pageId={pageId} only={only} />
+      </div>
+    </ThemeProvider>
+  );
+}
+
 function MiniPreview({
   data,
   url,
@@ -73,93 +98,139 @@ function MiniPreview({
   onCopy: () => void;
   onView: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
+  const [naturalH, setNaturalH] = useState(0);
+
   useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
-    ro.observe(el);
-    setWidth(el.clientWidth);
+    const box = boxRef.current;
+    if (!box) return;
+    const ro = new ResizeObserver(() => setWidth(box.clientWidth));
+    ro.observe(box);
+    setWidth(box.clientWidth);
     return () => ro.disconnect();
   }, []);
+
+  const manifest = data.manifest;
+  const pageId = manifest?.pages.find((p) => p.supported)?.id ?? "home";
+  // Só a primeira seção visível da página (no tema de demonstração, o banner principal);
+  // a barra de anúncio e o cabeçalho da loja não entram na miniatura.
+  const first = manifest
+    ? visibleSectionIds(manifest, data.custom, pageId).page.find((id) => !data.custom.sections[id]?.hidden)
+    : undefined;
+  const only = first ? [first] : [];
   const scale = width ? width / PREVIEW_W : 0;
-  const pageId = data.manifest?.pages.find((p) => p.supported)?.id ?? "home";
+
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setNaturalH(el.offsetHeight));
+    ro.observe(el);
+    setNaturalH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, [scale, first, manifest]);
+
+  const heroH = first ? Math.round(naturalH * scale) : 0;
+  const bodyH = Math.max(heroH, first ? 0 : EMPTY_H - CAPTION_H) + CAPTION_H;
+  const ready = !!manifest && scale > 0 && (!first || naturalH > 0);
 
   return (
-    <div
-      ref={ref}
-      className="relative -mx-4 overflow-hidden bg-muted sm:-mx-6 md:mx-0 md:rounded-3xl"
-      style={{ height: PREVIEW_H }}
-    >
-      {!data.manifest ? (
-        <PreviewUnavailable />
-      ) : (
-        <PreviewBoundary fallback={<PreviewUnavailable />}>
-          {scale > 0 ? (
-            <div
-              aria-hidden
-              // @ts-expect-error inert é atributo HTML válido
-              inert=""
-              className="pointer-events-none select-none bg-background"
-              style={{ width: PREVIEW_W, transform: `scale(${scale})`, transformOrigin: "top left" }}
-            >
-              <ThemeProvider
-                value={{
-                  manifest: data.manifest,
-                  customization: data.custom,
-                  store: data.store,
-                  media: data.media,
-                  products: data.products,
-                  categories: data.categories,
-                  device: "mobile",
-                  mode: "live",
-                  showOverlays: false,
-                  selectedPath: undefined,
-                  onSelect: undefined,
-                }}
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-pill">
+      {/* Barra contextual: delimita a miniatura (sem o cabeçalho da loja) */}
+      <div className="flex h-12 items-center justify-between gap-2 border-b bg-card pl-4 pr-2">
+        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-tight">
+          <StoreIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="truncate">Sua loja</span>
+        </span>
+        <Button variant="ghost" size="sm" className="h-9 shrink-0 gap-1.5 px-3 font-semibold" onClick={onView}>
+          <ExternalLink className="h-4 w-4" /> Ver loja
+        </Button>
+      </div>
+
+      <div ref={boxRef} className="relative overflow-hidden bg-muted" style={{ height: ready ? bodyH : 360 }}>
+        {!manifest ? (
+          <PreviewUnavailable />
+        ) : (
+          <PreviewBoundary fallback={<PreviewUnavailable />}>
+            {scale > 0 && first ? (
+              <>
+                {/* Camada de fundo: a mesma seção, ampliada e desfocada, que continua por baixo da faixa de vidro */}
+                <div
+                  aria-hidden
+                  // @ts-expect-error inert é atributo HTML válido
+                  inert=""
+                  className="pointer-events-none absolute inset-0 select-none overflow-hidden"
+                >
+                  <div style={{ transform: "scale(1.4)", transformOrigin: "50% 80%", filter: "blur(22px) saturate(1.15) brightness(0.8)", width: "100%", height: "100%" }}>
+                    <ThemeMini data={data} pageId={pageId} only={only} scale={scale} />
+                  </div>
+                </div>
+                {/* Camada nítida: a seção na altura real */}
+                <div
+                  ref={innerRef}
+                  aria-hidden
+                  // @ts-expect-error inert é atributo HTML válido
+                  inert=""
+                  className="pointer-events-none absolute left-0 top-0 select-none"
+                  style={{ width: PREVIEW_W, transform: `scale(${scale})`, transformOrigin: "top left" }}
+                >
+                  <ThemeProvider
+                    value={{
+                      manifest,
+                      customization: data.custom,
+                      store: data.store,
+                      media: data.media,
+                      products: data.products,
+                      categories: data.categories,
+                      device: "mobile",
+                      mode: "live",
+                      showOverlays: false,
+                      selectedPath: undefined,
+                      onSelect: undefined,
+                    }}
+                  >
+                    <DemoCommerceRenderer pageId={pageId} only={only} />
+                  </ThemeProvider>
+                </div>
+              </>
+            ) : null}
+          </PreviewBoundary>
+        )}
+
+        {/* Toda a área abre o editor */}
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label="Abrir o editor da loja"
+          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        />
+
+        {/* Faixa de vidro com o nome da loja */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-3 bg-glass-dark px-5 text-glass-dark-foreground backdrop-blur-2xl backdrop-saturate-150"
+          style={{ height: CAPTION_H }}
+        >
+          {/* Transição suave entre a seção e a faixa */}
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-10 h-10 bg-gradient-to-b from-transparent to-glass-dark" />
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-lg font-semibold tracking-tight">{data.store.name}</h2>
+            <div className="mt-0.5 flex items-center gap-1">
+              <span className="truncate text-xs text-glass-dark-muted">{url.replace(/^https?:\/\//, "")}</span>
+              <button
+                type="button"
+                onClick={onCopy}
+                aria-label="Copiar endereço da loja"
+                className="pointer-events-auto grid h-7 w-7 shrink-0 place-items-center rounded-full text-glass-dark-muted hover:bg-glass-dark-line"
               >
-                <DemoCommerceRenderer pageId={pageId} />
-              </ThemeProvider>
+                <Copy className="h-3.5 w-3.5" />
+              </button>
             </div>
-          ) : null}
-        </PreviewBoundary>
-      )}
-
-      {/* Toda a área do preview abre o editor */}
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label="Abrir o editor da loja"
-        className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-      />
-
-      {/* Camada inferior de vidro escuro */}
-      <div className="absolute inset-x-0 bottom-0 bg-glass-dark px-5 pb-5 pt-4 text-glass-dark-foreground backdrop-blur-2xl backdrop-saturate-150">
-        {/* Transição suave entre a loja e a camada escura */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-40 h-40 bg-[linear-gradient(to_bottom,transparent_0%,oklch(0.18_0_0/0.15)_40%,oklch(0.18_0_0/0.4)_75%,var(--glass-dark)_100%)] backdrop-blur-lg [mask-image:linear-gradient(to_bottom,transparent,black_45%)]" />
-        <h2 className="truncate text-xl font-semibold tracking-tight">{data.store.name}</h2>
-        <p className="mt-0.5 truncate text-sm text-glass-dark-muted">{url.replace(/^https?:\/\//, "")}</p>
-        <p className="mt-0.5 text-xs text-glass-dark-muted">{relativeTime(data.custom.updatedAt)}</p>
-        <div className="mt-4 flex items-center gap-2">
-          <Button variant="glass" className="h-10 flex-1 px-5" onClick={onOpen}>
+            <p className="text-xs text-glass-dark-muted">{relativeTime(data.custom.updatedAt)}</p>
+          </div>
+          <Button variant="glass" className="pointer-events-auto h-10 shrink-0 px-4" onClick={onOpen}>
             <Pencil className="h-4 w-4" /> Editar loja
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="glassGhost" size="icon" className="h-10 w-12 bg-glass-dark-line" aria-label="Mais ações">
-                <MoreHorizontal className="h-6 w-6" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onSelect={onView}>
-                <ExternalLink className="h-4 w-4" /> Ver loja
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onCopy}>
-                <Copy className="h-4 w-4" /> Copiar endereço
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </div>
@@ -212,21 +283,12 @@ function PersonalizarPageInner() {
 
   return (
     <div>
-      <header className="pb-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">Personalizar loja</h1>
-          <Button variant="ghost" size="sm" onClick={() => toast(`Abriria ${url}`)}>
-            <Eye className="h-4 w-4" /> Ver loja
-          </Button>
-        </div>
-      </header>
-
-      <main className="mx-auto grid max-w-5xl grid-cols-1 gap-2 py-4 md:grid-cols-[minmax(0,440px)_1fr] md:gap-10 md:py-10">
+      <main className="mx-auto grid max-w-5xl grid-cols-1 gap-4 py-2 md:grid-cols-[minmax(0,440px)_1fr] md:gap-10 md:py-6">
         <section className="min-w-0">
           {data ? (
             <MiniPreview data={data} url={url} onOpen={openEditor} onCopy={copy} onView={() => toast(`Abriria ${url}`)} />
           ) : (
-            <Skeleton className="-mx-4 rounded-none sm:-mx-6 md:mx-0 md:rounded-3xl" style={{ height: PREVIEW_H }} />
+            <Skeleton className="rounded-2xl" style={{ height: 48 + 360 }} />
           )}
         </section>
 
