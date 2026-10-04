@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Component, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Copy, ExternalLink, Eye, Pencil, Palette } from "lucide-react";
+import { Copy, Pencil, Palette, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { EditorRoot } from "@/theme-editor/ui/editor-root";
 import { Toaster } from "@/theme-editor/ui/sonner";
@@ -139,17 +139,16 @@ function MiniPreview({
     <div className="overflow-hidden rounded-2xl border bg-card shadow-pill">
       {/* Barra contextual: delimita a miniatura (sem o cabeçalho da loja) */}
       <div className="flex h-14 items-center justify-between gap-3 border-b bg-card px-4">
-        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
-          <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="truncate">Prévia da loja</span>
+        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold leading-none tracking-tight text-foreground">
+          <StoreIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="truncate">Minha loja</span>
         </span>
         <button
           type="button"
           onClick={onView}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-secondary px-3.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-8 shrink-0 items-center justify-center rounded-full bg-secondary px-3.5 text-xs font-semibold leading-none text-secondary-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Ver loja online
-          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
 
