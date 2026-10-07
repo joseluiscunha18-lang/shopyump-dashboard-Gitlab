@@ -1,3 +1,4 @@
+import { linkToPage, pageAvailable, resolveOpenTarget } from "./openAction";
 import {
   createContext,
   useContext,
@@ -43,13 +44,17 @@ export interface EditorState extends EditorData {
   draft: Customization;
   page: PageId;
   previewProductId?: string | undefined;
+  previewState?: string | undefined;
+  previewOverlay?: string | undefined;
+  previewQuery: string;
   device: Device;
   panel: { stack: PanelFrame[]; snap: Snap };
   selectedPath?: NodePath | undefined;
+  selectedContext?: Record<string, string> | undefined;
   previewProductIdX?: undefined;
   history: { past: Customization[]; future: Customization[] };
   save: { status: "saved" | "dirty" | "saving" | "savedNow" | "error"; error?: string };
-  ui: { showOverlays: boolean; hintSeen: boolean; inspectorOpen: boolean };
+  ui: { showOverlays: boolean; hintSeen: boolean; inspectorOpen: boolean; openHintSeen?: boolean; pullHintSeen?: boolean };
 }
 
 export type Action =
@@ -69,9 +74,17 @@ export type Action =
   | { type: "toggleBlockHidden"; sectionId: string; blockId: string }
   | { type: "reorderBlocks"; sectionId: string; order: string[] }
   | { type: "setPage"; page: PageId }
+  | { type: "navigateLink"; link: any }
   | { type: "setPreviewProduct"; id: string }
+  | { type: "setPreviewState"; id: string }
+  | { type: "setPreviewQuery"; q: string }
+  | { type: "openOverlay"; id: string }
+  | { type: "closeOverlay" }
   | { type: "setDevice"; device: Device }
-  | { type: "select"; path: NodePath; title: string }
+  | { type: "select"; path: NodePath; title: string; context?: Record<string, string> }
+  | { type: "runOpen"; path: NodePath; context?: Record<string, string> }
+  | { type: "markOpenHintSeen" }
+  | { type: "markPullHintSeen" }
   | { type: "pushPanel"; frame: PanelFrame }
   | { type: "pushPanelRoot"; frame: PanelFrame }
   | { type: "popPanel" }
@@ -176,7 +189,15 @@ function pageOrder(state: EditorState, draft: Customization, page: PageId): stri
   return (def?.sections ?? []).map((s) => s.id);
 }
 
+export function isReadOnlyPreview(state: Pick<EditorState, "page" | "previewOverlay" | "manifest">): boolean {
+  if (state.previewOverlay) return false;
+  const page = state.manifest.pages.find((item) => item.id === state.page);
+  return page?.kind === "account" || page?.kind === "cart" || state.page === "profile";
+}
+
 export function reducer(state: EditorState, action: Action): EditorState {
+  const editingActions = ["select", "setValue", "applyValues", "resetKey", "resetNode", "resetAll", "toggleHidden", "reorderSections", "addSection", "duplicateSection", "removeSection", "addBlock", "duplicateBlock", "removeBlock", "toggleBlockHidden", "reorderBlocks"];
+  if (isReadOnlyPreview(state) && editingActions.includes(action.type)) return state;
   switch (action.type) {
     case "setValue": {
       const next = clone(state.draft);
@@ -313,23 +334,54 @@ export function reducer(state: EditorState, action: Action): EditorState {
       sec.blocks.order = action.order;
       return withHistory(state, next);
     }
-    case "setPage":
-      return { ...state, page: action.page, selectedPath: undefined, panel: { stack: [], snap: "closed" } };
+    case "setPage": {
+      const pg = state.manifest.pages.find((p) => p.id === action.page);
+      return { ...state, page: action.page, previewState: pg?.previewStates?.[0]?.id, previewOverlay: undefined, selectedPath: undefined, selectedContext: undefined, panel: { stack: [], snap: "closed" } };
+    }
+    case "setPreviewState":
+      return { ...state, previewState: action.id };
+    case "setPreviewQuery":
+      return { ...state, previewQuery: action.q };
+    case "openOverlay": {
+      const overlay = state.manifest.overlays?.find((item) => item.id === action.id);
+      const sectionId = overlay?.sectionIds[0];
+      if (!overlay || !sectionId) return state;
+      const path = `sections.${sectionId}.settings`;
+      return {
+        ...state,
+        previewOverlay: action.id,
+        selectedPath: path,
+        selectedContext: undefined,
+        ui: { ...state.ui, hintSeen: true },
+        panel: { stack: [{ kind: "node", path, title: overlay.label }], snap: "peek" },
+      };
+    }
+    case "closeOverlay":
+      return { ...state, previewOverlay: undefined, selectedPath: undefined, selectedContext: undefined, panel: { stack: [], snap: "closed" } };
     case "setPreviewProduct":
       return { ...state, previewProductId: action.id };
     case "setDevice":
       return { ...state, device: action.device };
-    case "select":
+    case "select": {
+      let overlay = state.previewOverlay;
+      if (overlay) {
+        const ov = state.manifest.overlays?.find((o) => o.id === overlay);
+        const sid = parsePath(action.path)?.sectionId;
+        if (!ov || !sid || !ov.sectionIds.includes(sid)) overlay = undefined;
+      }
       return {
         ...state,
+        previewOverlay: overlay,
         selectedPath: action.path,
+        selectedContext: action.context,
         ui: { ...state.ui, hintSeen: true },
         panel: { stack: [{ kind: "node", path: action.path, title: action.title }], snap: "peek" },
       };
+    }
     case "pushPanel":
       return { ...state, panel: { stack: [...state.panel.stack, action.frame], snap: state.panel.stack.length ? state.panel.snap : "peek" } };
     case "pushPanelRoot":
-      return { ...state, selectedPath: undefined, panel: { stack: [action.frame], snap: "peek" } };
+      return { ...state, panel: { stack: [action.frame], snap: "peek" } };
     case "popPanel": {
       const stack = state.panel.stack.slice(0, -1);
       const top = stack[stack.length - 1];
@@ -340,11 +392,29 @@ export function reducer(state: EditorState, action: Action): EditorState {
       };
     }
     case "closePanel":
-      return { ...state, selectedPath: undefined, panel: { stack: [], snap: "closed" } };
+      return { ...state, selectedPath: undefined, previewOverlay: undefined, panel: { stack: [], snap: "closed" } };
     case "setSnap":
       return { ...state, panel: { ...state.panel, snap: action.snap } };
     case "toggleOverlays":
       return { ...state, ui: { ...state.ui, showOverlays: !state.ui.showOverlays } };
+    case "runOpen": {
+      const t = resolveOpenTarget(state.manifest, state.draft, action.path, state.device, action.context ?? state.selectedContext);
+      if (!t || t.kind === "unavailable") return state;
+      if (t.kind === "overlay") return reducer(state, { type: "openOverlay", id: t.id });
+      const next = reducer(state, { type: "setPage", page: t.page });
+      const pid = t.productId ?? next.previewProductId ?? state.products[0]?.id;
+      return { ...next, previewProductId: pid };
+    }
+    case "navigateLink": {
+      const d = linkToPage(action.link);
+      if (!d || !pageAvailable(state.manifest, d.page)) return state;
+      const next = reducer({ ...state, previewOverlay: undefined }, { type: "setPage", page: d.page });
+      return { ...next, previewOverlay: undefined, previewProductId: d.productId ?? next.previewProductId ?? state.products[0]?.id };
+    }
+    case "markOpenHintSeen":
+      return { ...state, ui: { ...state.ui, openHintSeen: true } };
+    case "markPullHintSeen":
+      return { ...state, ui: { ...state.ui, pullHintSeen: true } };
     case "markHintSeen":
       return { ...state, ui: { ...state.ui, hintSeen: true } };
     case "toggleInspector":
@@ -395,6 +465,8 @@ export function initialState(data: EditorData, customization: Customization): Ed
     draft: normalized,
     page: firstSupported,
     previewProductId: data.products[0]?.id,
+    previewState: data.manifest.pages.find((p) => p.id === firstSupported)?.previewStates?.[0]?.id,
+    previewQuery: "camisa",
     device: "mobile",
     panel: { stack: [], snap: "closed" },
     history: { past: [], future: [] },

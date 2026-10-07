@@ -108,8 +108,11 @@ export function sectionTypeOf(manifest: ThemeManifest, custom: Customization, se
         ...p.topSections.map((id) => ({ id, type: id })),
         ...p.sections,
         ...p.bottomSections.map((id) => ({ id, type: id })),
+        ...(p.fixedSections ?? []).map((id) => ({ id, type: id })),
       ])
-      .find((s) => s.id === sectionId) ?? added;
+      .find((s) => s.id === sectionId) ??
+    added ??
+    (manifest.overlays?.some((o) => o.sectionIds.includes(sectionId)) ? { id: sectionId, type: sectionId } : undefined);
   const typeName = custom.sections[sectionId]?.type ?? added?.type ?? declared?.type;
   return manifest.sectionTypes.find((t) => t.type === typeName);
 }
@@ -117,21 +120,27 @@ export function sectionTypeOf(manifest: ThemeManifest, custom: Customization, se
 /**
  * Ids das seções de uma página, já na ordem final e sem as removidas.
  * Genérico: serve a qualquer tema (só lê manifesto + customização).
+ * `fixed` = seções coladas ao ecrã (barra inferior…); respeita `requires`.
  */
 export function visibleSectionIds(
   manifest: ThemeManifest,
   custom: Customization,
   pageId: string,
-): { top: string[]; page: string[]; bottom: string[] } {
+): { top: string[]; page: string[]; bottom: string[]; fixed: string[] } {
   const page = manifest.pages.find((p) => p.id === pageId);
-  if (!page) return { top: [], page: [], bottom: [] };
+  if (!page) return { top: [], page: [], bottom: [], fixed: [] };
+  const ok = (id: string) => {
+    const t = sectionTypeOf(manifest, custom, id);
+    return !t?.requires || !!manifest.capabilities[t.requires];
+  };
   const override = custom.structure.pages[pageId];
   const order = override?.order ?? page.sections.map((s) => s.id);
   const removed = new Set(override?.removed ?? []);
   return {
-    top: page.topSections.filter((id) => !removed.has(id)),
-    page: order.filter((id) => !removed.has(id)),
-    bottom: page.bottomSections.filter((id) => !removed.has(id)),
+    top: page.topSections.filter((id) => !removed.has(id) && ok(id)),
+    page: order.filter((id) => !removed.has(id) && ok(id)),
+    bottom: page.bottomSections.filter((id) => !removed.has(id) && ok(id)),
+    fixed: (page.fixedSections ?? []).filter((id) => !removed.has(id) && ok(id)),
   };
 }
 
