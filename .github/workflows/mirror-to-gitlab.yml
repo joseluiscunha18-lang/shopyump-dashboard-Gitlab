@@ -1,4 +1,4 @@
-name: Copia para GitLab
+name: Copia paara GitLab
 on:
   push:
     branches:
