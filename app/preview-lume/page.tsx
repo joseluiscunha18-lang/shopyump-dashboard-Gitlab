@@ -1,4 +1,4 @@
-import { LumeTheme } from '@/lib/store/themes/lume/LumeTheme';
+import { LumeTheme } from '@/lib/store/themes/lume';
 import type { LojaPublica } from '@/lib/queries/lojaPublica';
 import type { ProdutoPublico } from '@/lib/queries/produtosPublicos';
 
@@ -31,6 +31,7 @@ const lojaFicticia: LojaPublica = {
   conteudo_entrega: null,
   conteudo_termos: null,
   theme_id: 'lume',
+  tema_personalizacao: null,
 };
 
 const produtosFicticios: ProdutoPublico[] = [];
