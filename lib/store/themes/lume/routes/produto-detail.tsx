@@ -26,6 +26,7 @@ import {
   galeriaDoProduto,
 } from "../lib/store-data";
 import { useLumeLoja } from "../components/store/lume-loja-context";
+import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
@@ -55,6 +56,7 @@ function ProductPage() {
   const { addToCart, favourites, setCartOpen, toggleFavourite } = useStore();
   const { restockAlerts, requestRestockAlert } = useAuth();
   const { produtos: produtosContexto } = useLumeLoja();
+  const p = useLumePersonalizacao();
   const [quantity, setQuantity] = useState(1);
   const [selecao, setSelecao] = useState<Record<string, string>>({});
   const [awaitingAuth, setAwaitingAuth] = useState(false);
@@ -226,7 +228,7 @@ function ProductPage() {
               </Button>
             ) : available ? (
               <>
-                <Button size="lg" className="h-12 w-full rounded-full text-sm font-semibold" onClick={buyNow}>Comprar Agora</Button>
+                <Button size="lg" className="h-12 w-full rounded-full text-sm font-semibold" onClick={buyNow}>{p?.ui.buyNow ?? "Comprar Agora"}</Button>
                 <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5">
                   <div className="flex h-12 items-center rounded-full border border-border bg-card">
                     <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Diminuir quantidade" disabled={quantity === 1}><Minus /></Button>
@@ -259,12 +261,12 @@ function ProductPage() {
         </div>
       </div>
 
-      <section className="mt-14 sm:mt-20" aria-labelledby="recommendations-title">
-        <h2 id="recommendations-title" className="text-xl font-bold sm:text-2xl">Você também pode gostar</h2>
+      {(!p || p.showRecommendations) && <section className="mt-14 sm:mt-20" aria-labelledby="recommendations-title">
+        <h2 id="recommendations-title" className="text-xl font-bold sm:text-2xl">{p?.ui.recommendations ?? "Você também pode gostar"}</h2>
         <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-5 sm:gap-y-9">
           {recommendations.map((item) => <ProductCard key={item.id} product={item} />)}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }
