@@ -29,12 +29,18 @@ export interface LojaPublica {
   conteudo_entrega: string | null;
   conteudo_termos: string | null;
   theme_id: string;
+  /**
+   * Customização feita no editor (theme-editor). `null` = loja sem
+   * personalização (tema original). Validada/convertida por cada tema — ver
+   * lib/store/themes/lume/lib/personalizacao.ts.
+   */
+  tema_personalizacao: unknown | null;
 }
 
 const LOJA_PUBLICA_COLUNAS =
   'id, nome, slug, descricao, banner_url, whatsapp, instagram, facebook, tiktok, ' +
   'mostrar_instagram, mostrar_facebook, mostrar_tiktok, mostrar_sobre, mostrar_entrega, mostrar_termos, ' +
-  'conteudo_sobre, conteudo_entrega, conteudo_termos, theme_id';
+  'conteudo_sobre, conteudo_entrega, conteudo_termos, theme_id, tema_personalizacao';
 
 /**
  * `cache()` do React deduplica chamadas com o mesmo argumento DENTRO do
