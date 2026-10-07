@@ -12,5 +12,5 @@ export const Route = createFileRoute("/termos-e-privacidade")({
 
 function TermsRoute() {
   const { paginas } = useLumeLoja();
-  return <InstitutionalPage data={institutionalPages.privacy} textoLoja={paginas.termos.texto} />;
+  return <InstitutionalPage pageKey="terms" data={institutionalPages.privacy} textoLoja={paginas.termos.texto} />;
 }

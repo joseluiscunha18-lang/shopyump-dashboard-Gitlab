@@ -9,6 +9,7 @@ import { Sheet, SheetClose, SheetContent, SheetTitle } from "../components/ui/sh
 import { ProductCard } from "../components/store/product-card";
 import { categoryFromSlug, categorySlug } from "../lib/store-data";
 import { useLumeLoja } from "../components/store/lume-loja-context";
+import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
 
 const sorts = { relevancia: "Relevância", "preco-asc": "Preço: menor", "preco-desc": "Preço: maior", nome: "Nome A–Z" } as const;
 type Sort = keyof typeof sorts;
@@ -39,6 +40,7 @@ function CatalogPage() {
   const { categoria, ordenar } = Route.useSearch();
   const navigate = Route.useNavigate();
   const { produtos, categorias } = useLumeLoja();
+  const p = useLumePersonalizacao();
 
   const active = categoryFromSlug(categoria);
   const sort: Sort = ordenar ?? "relevancia";
@@ -70,13 +72,14 @@ function CatalogPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 pt-7 sm:px-6 sm:pt-10">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
-        <h1 className="truncate text-2xl font-bold sm:text-3xl">Produtos</h1>
+        <h1 className="truncate text-2xl font-bold sm:text-3xl">{p?.pages.collection?.title ?? "Produtos"}</h1>
         <Button variant="outline" onClick={() => setFilterOpen(true)} aria-label="Abrir filtros" className="h-8 shrink-0 rounded-full bg-background px-3 text-xs font-semibold shadow-none">
           <Settings2 className="!size-3.5" /> Filtrar
         </Button>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-7 lg:grid-cols-4">
+      {p?.pages.collection?.description && <p className="mt-2 text-sm text-muted-foreground">{p.pages.collection.description}</p>}
+      <div data-sy="catalog-grid" className="mt-6 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-7 lg:grid-cols-4">
         {list.slice(0, visible).map((p) => <div key={p.id} className="animate-in fade-in duration-500"><ProductCard product={p} /></div>)}
       </div>
       {visible < list.length && <div ref={sentinel} className="py-8 text-center text-xs text-muted-foreground">A carregar mais…</div>}

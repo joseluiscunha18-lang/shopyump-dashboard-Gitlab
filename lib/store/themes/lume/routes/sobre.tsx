@@ -20,7 +20,7 @@ function AboutPage() {
 
   return (
     <>
-      <PageHeading eyebrow="A marca" title="Sobre nós" description={`Conheça a ${nome} — quem somos, o que fazemos e como pode contar connosco.`} />
+      <PageHeading pageKey="about" eyebrow="A marca" title="Sobre nós" description={`Conheça a ${nome} — quem somos, o que fazemos e como pode contar connosco.`} />
       {textoPersonalizado ? (
         <section className="mx-auto max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
           <div className="grid gap-4 text-sm leading-7 text-muted-foreground sm:text-base">
