@@ -19,7 +19,8 @@ export type LinkRef = {
     | "whatsapp"
     | "phone"
     | "email"
-    | "anchor";
+    | "anchor"
+    | "themePage";
   value?: string;
   message?: string;
   newTab?: boolean;
@@ -57,7 +58,31 @@ export type ControlType =
   | "animationPreset"
   | "productPicker"
   | "categoryPicker"
+  | "navList"
   | "readonlyInfo";
+
+export type LinkType = NonNullable<LinkRef>["type"];
+
+export interface NavItem {
+  id: string;
+  label: string;
+  icon?: string;
+  link?: LinkRef;
+  hidden?: boolean;
+  locked?: boolean;
+  auto?: "categories";
+  autoCount?: number;
+  children?: NavItem[];
+}
+
+export interface NavListSpec {
+  maxItems: number;
+  maxDepth: 1 | 2;
+  minVisible?: number;
+  labelMaxLength: number;
+  iconEnabled: boolean;
+  linkTypes: LinkType[];
+}
 
 export type SettingGroup =
   | "content"
@@ -94,6 +119,10 @@ export interface SettingDef {
   };
   requires?: string;
   externalTarget?: ExternalTarget;
+  linkTypes?: LinkType[];
+  navList?: NavListSpec;
+  note?: string;
+  mobilePeek?: boolean;
   assist?: { contrastWith?: string; recommended?: { width: number; height: number } };
 }
 
@@ -124,11 +153,18 @@ export type SettingsSpec =
   | SettingDef[]
   | { preset: string; omit?: string[]; add?: SettingDef[]; override?: Record<string, Partial<SettingDef>> };
 
+/** Ação principal executada no segundo toque (declarada pelo tema). */
+export type OpenAction =
+  | { type: "overlay"; id: string }
+  | { type: "themePage"; page: PageId; productId?: string }
+  | { type: "link"; ref?: LinkRef; setting?: string };
+
 export interface ElementDef {
   id: string;
   kind: ElementKind;
   label: string;
   settings: SettingsSpec;
+  openAction?: OpenAction;
 }
 
 export interface BlockTypeDef {
@@ -152,7 +188,7 @@ export interface SectionTypeDef {
   label: string;
   description: string;
   icon: string;
-  scope: "global" | "page";
+  scope: "global" | "page" | "fixed" | "overlay";
   allowedPages?: PageId[];
   required: boolean;
   removable: boolean;
@@ -181,14 +217,30 @@ export interface SectionInstanceDef {
   hidden?: boolean;
 }
 
+export type PageKind = "home" | "product" | "collection" | "search" | "wishlist" | "cart" | "account" | "content";
+
 export interface PageDef {
   id: PageId;
   label: string;
   supported: boolean;
-  previewNeeds?: "product" | "collection";
+  kind?: PageKind;
+  group?: "main" | "info";
+  requires?: string;
+  previewNeeds?: "product" | "collection" | "search";
+  previewStates?: { id: string; label: string }[];
+  fixedSections?: string[];
   topSections: string[];
   sections: SectionInstanceDef[];
   bottomSections: string[];
+}
+
+export interface OverlayDef {
+  id: string;
+  label: string;
+  sectionIds: string[];
+  trigger?: string;
+  side: "left" | "right" | "bottom" | "full";
+  requires?: string;
 }
 
 export interface FontDef {
@@ -237,6 +289,7 @@ export interface ThemeManifest {
   stylePresets: StylePresetDef[];
   global: SettingGroupDef[];
   pages: PageDef[];
+  overlays?: OverlayDef[];
   sectionTypes: SectionTypeDef[];
   blockTypes: BlockTypeDef[];
   presets: Record<string, SettingDef[]>;
@@ -287,7 +340,9 @@ export type ExternalTarget =
   | "pages"
   | "shipping"
   | "payments"
-  | "media-library";
+  | "media-library"
+  | "domain"
+  | "seo";
 
 export interface MediaAsset {
   id: string;
