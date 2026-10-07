@@ -1,4 +1,4 @@
-# Shopyump Dashboard (Next.js)
+# Shopyump Dashboard (Next.js)h
 
 Phase 1 migration of the Shopyump seller dashboard from static HTML/JS to
 Next.js 15 (App Router, TypeScript, Tailwind 4), per
