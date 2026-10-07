@@ -1,5 +1,6 @@
 import type { ThemeManifest } from "@/theme-editor/editor/contracts/types";
 import { lumeManifest } from "./lume/manifest";
+import { DEFAULT_THEME_ID } from "./manifests";
 import { LumeRenderer } from "./lume/Renderer";
 import { demoCommerceManifest } from "./demo-commerce/manifest";
 import { DemoCommerceRenderer } from "./demo-commerce/Renderer";
@@ -25,8 +26,7 @@ const THEMES: Record<string, EditorThemeDefinition> = {
   "demo-commerce": { manifest: demoCommerceManifest, Renderer: DemoCommerceRenderer },
 };
 
-/** O tema padrão da plataforma. Lojas sem tema (ou com um id desconhecido) usam este. */
-export const DEFAULT_THEME_ID = "lume";
+export { DEFAULT_THEME_ID, createEmptyCustomization } from "./manifests";
 
 export function resolveEditorTheme(themeId: string | null | undefined): EditorThemeDefinition {
   return (themeId && THEMES[themeId]) || THEMES[DEFAULT_THEME_ID];
