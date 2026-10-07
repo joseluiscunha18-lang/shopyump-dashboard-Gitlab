@@ -20,6 +20,7 @@ import { useEditor, useEditorDispatch } from "@/theme-editor/editor/core/store";
 import { isResponsiveValue, pickResponsive, type NodePath } from "@/theme-editor/editor/core/paths";
 import { contrastRatio, hasOverride, rawValue, resolveColor } from "@/theme-editor/editor/core/resolve";
 import { mockAdapter, externalTargetLabel } from "@/theme-editor/mocks/adapter";
+import { NavListControl } from "./NavListControl";
 
 const DEVICES: { id: Device; label: string; icon: keyof typeof Icons }[] = [
   { id: "desktop", label: "Computador", icon: "Monitor" },
@@ -96,6 +97,7 @@ export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
       </div>
 
       {def.help ? <p className="text-xs text-muted-foreground">{def.help}</p> : null}
+      {def.note ? <p className="rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">{def.note}</p> : null}
 
       {responsiveOn ? (
         <div className="space-y-3 rounded-lg border border-border p-2">
@@ -332,7 +334,9 @@ function ControlBody({
     case "icon":
       return <IconControl value={value} onChange={onChange} />;
     case "link":
-      return <LinkControl value={value} onChange={onChange} />;
+      return <LinkControl value={value} onChange={onChange} allowed={def.linkTypes} />;
+    case "navList":
+      return <NavListControl def={def} value={value ?? []} onChange={onChange} />;
     case "visibilityByDevice":
       return <VisibilityControl value={value} onChange={onChange} />;
     case "animationPreset":
@@ -765,7 +769,7 @@ function OverlayControl({ value, onChange }: { value: any; onChange: (v: unknown
   );
 }
 
-function IconControl({ value, onChange }: { value: any; onChange: (v: unknown) => void }) {
+export function IconControl({ value, onChange }: { value: any; onChange: (v: unknown) => void }) {
   const { manifest } = useEditor();
   const [q, setQ] = useState("");
   const list = manifest.icons.filter((i) => i.includes(q.toLowerCase()));
@@ -788,6 +792,7 @@ function IconControl({ value, onChange }: { value: any; onChange: (v: unknown) =
 }
 
 const LINK_TYPES = [
+  { value: "themePage", label: "Páginas da loja" },
   { value: "home", label: "Início" },
   { value: "products", label: "Todos os produtos" },
   { value: "category", label: "Categoria" },
@@ -799,14 +804,17 @@ const LINK_TYPES = [
   { value: "email", label: "E-mail" },
 ];
 
-function LinkControl({ value, onChange }: { value: any; onChange: (v: unknown) => void }) {
+export function LinkControl({ value, onChange, allowed }: { value: any; onChange: (v: unknown) => void; allowed?: string[] }) {
   const state = useEditor();
-  const v = value ?? { type: "home" };
+  const types = LINK_TYPES.filter((l) => !allowed || allowed.includes(l.value));
+  const themePages = state.manifest.pages.filter((p) => p.supported && (!p.requires || state.manifest.capabilities[p.requires]));
+  const v = value ?? { type: types[0]?.value ?? "home" };
   const summary = useMemo(() => {
     const t = LINK_TYPES.find((l) => l.value === v.type)?.label ?? "Início";
     if (v.type === "category") return `${t} · ${state.categories.find((c) => c.id === v.value)?.name ?? "—"}`;
     if (v.type === "product") return `${t} · ${state.products.find((p) => p.id === v.value)?.name ?? "—"}`;
     if (v.type === "page") return `${t} · ${state.pages.find((p) => p.id === v.value)?.title ?? "—"}`;
+    if (v.type === "themePage") return `${t} · ${state.manifest.pages.find((p) => p.id === v.value)?.label ?? "—"}`;
     if (v.value) return `${t} · ${v.value}`;
     return t;
   }, [v, state]);
@@ -818,7 +826,7 @@ function LinkControl({ value, onChange }: { value: any; onChange: (v: unknown) =
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {LINK_TYPES.map((l) => (
+          {types.map((l) => (
             <SelectItem key={l.value} value={l.value}>
               {l.label}
             </SelectItem>
@@ -826,6 +834,16 @@ function LinkControl({ value, onChange }: { value: any; onChange: (v: unknown) =
         </SelectContent>
       </Select>
 
+      {v.type === "themePage" ? (
+        <Select value={v.value ?? ""} onValueChange={(id) => onChange({ ...v, value: id })}>
+          <SelectTrigger><SelectValue placeholder="Escolher página da loja" /></SelectTrigger>
+          <SelectContent>
+            {themePages.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
       {v.type === "category" ? (
         <Select value={v.value ?? ""} onValueChange={(id) => onChange({ ...v, value: id })}>
           <SelectTrigger><SelectValue placeholder="Escolher categoria" /></SelectTrigger>
