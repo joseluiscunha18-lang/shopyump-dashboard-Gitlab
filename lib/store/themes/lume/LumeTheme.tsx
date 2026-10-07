@@ -3,6 +3,8 @@
 import { LumeRouterProvider, RouteNotFoundBoundary, useCurrentLumeRoute } from './router';
 import { StoreShell } from './components/store/store-shell';
 import { LumeLojaProvider } from './components/store/lume-loja-context';
+import { LumePersonalizacaoProvider } from './components/store/lume-personalizacao-context';
+import type { LumePersonalizacao } from './lib/personalizacao';
 import type { StoreThemeProps } from '../types';
 
 import { Route as IndexRoute } from './routes/index';
@@ -86,12 +88,18 @@ function LumeThemeInterno() {
   );
 }
 
-export function LumeTheme({ loja, produtos }: StoreThemeProps) {
+/**
+ * Parte "cliente" do tema. Recebe a personalização JÁ resolvida pelo servidor
+ * (ver ./index.tsx) — `null` = sem personalização, visual original do Lume.
+ */
+export function LumeThemeClient({ loja, produtos, personalizacao }: StoreThemeProps & { personalizacao: LumePersonalizacao | null }) {
   return (
     <LumeLojaProvider loja={loja} produtos={produtos}>
-      <LumeRouterProvider>
-        <LumeThemeInterno />
-      </LumeRouterProvider>
+      <LumePersonalizacaoProvider value={personalizacao}>
+        <LumeRouterProvider>
+          <LumeThemeInterno />
+        </LumeRouterProvider>
+      </LumePersonalizacaoProvider>
     </LumeLojaProvider>
   );
 }
