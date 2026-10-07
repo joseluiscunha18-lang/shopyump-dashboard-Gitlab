@@ -2,15 +2,19 @@
 
 import { Check, Info, ShieldCheck } from "lucide-react";
 import type { InstitutionalPageData } from "../../lib/institutional-data";
+import type { LumePageKey } from "@/theme-editor/themes/lume/page-text";
+import { useLumePersonalizacao } from "./lume-personalizacao-context";
 
-export function InstitutionalPage({ data, textoLoja }: { data: InstitutionalPageData; textoLoja?: string }) {
+export function InstitutionalPage({ data, textoLoja, pageKey }: { data: InstitutionalPageData; textoLoja?: string; pageKey?: LumePageKey }) {
+  const over = useLumePersonalizacao()?.pages[pageKey ?? 'shipping'];
+  const o = pageKey ? over : undefined;
   return (
     <article>
       <header className="border-b border-border bg-muted/40">
         <div className="mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-20">
-          <p className="text-xs font-bold uppercase text-muted-foreground">{data.eyebrow}</p>
-          <h1 data-institutional-title className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight sm:text-5xl">{data.title}</h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">{data.introduction}</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">{o?.eyebrow ?? data.eyebrow}</p>
+          <h1 data-institutional-title className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight sm:text-5xl">{o?.title ?? data.title}</h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">{o?.description ?? data.introduction}</p>
           <p className="mt-7 text-xs text-muted-foreground">{data.updatedAt}</p>
         </div>
       </header>
