@@ -1,5 +1,6 @@
 import type { SettingDef, ThemeManifest } from "@/theme-editor/editor/contracts/types";
 import * as P from "./presets";
+import { extCapabilities, extOverlays, extPages, extSectionTypes, headerIconElements, productCardOpen } from "./manifest-ext";
 
 const B = "basic" as const;
 const A = "advanced" as const;
@@ -255,11 +256,11 @@ const responsive: SettingDef[] = [
   { key: "mobileFontScale", label: "Escala do texto no telemóvel", control: "slider", tier: A, group: "responsive", default: 100, min: 85, max: 115, unit: "%" },
 ];
 
-export const demoCommerceManifest: ThemeManifest = {
+const baseManifest: ThemeManifest = {
   schemaVersion: 1,
   id: "demo-commerce",
   name: "Demo Commerce",
-  version: "1.0.0",
+  version: "1.1.0",
   rendererId: "demo-commerce",
   capabilities: {
     stickyHeader: true,
@@ -277,6 +278,7 @@ export const demoCommerceManifest: ThemeManifest = {
     stickyBuyBarMobile: false,
     whatsappBuy: true,
     variantSwatches: false,
+    ...extCapabilities,
   },
   fonts: [
     { id: "inter", label: "Inter", family: "'Inter', system-ui, sans-serif", weights: [300, 400, 500, 600, 700], category: "sans" },
@@ -332,11 +334,13 @@ export const demoCommerceManifest: ThemeManifest = {
         { id: "benefits", type: "benefits" },
       ],
       bottomSections: ["footer"],
+      kind: "home",
+      group: "main",
+      fixedSections: ["bottomNav"],
     },
-    { id: "product", label: "Produto", supported: false, previewNeeds: "product", topSections: ["announcement", "header"], sections: [], bottomSections: ["footer"] },
-    { id: "collection", label: "Coleção", supported: false, topSections: [], sections: [], bottomSections: [] },
-    { id: "cart", label: "Carrinho", supported: false, topSections: [], sections: [], bottomSections: [] },
+    ...extPages,
   ],
+  overlays: extOverlays,
   blockTypes: [
     {
       type: "announcementMessage",
@@ -432,6 +436,7 @@ export const demoCommerceManifest: ThemeManifest = {
     "percent", "tag", "shopping-bag", "headphones", "award",
   ],
   sectionTypes: [
+    ...extSectionTypes,
     {
       type: "announcement",
       label: "Barra de anúncio",
@@ -481,9 +486,9 @@ export const demoCommerceManifest: ThemeManifest = {
           },
         },
         {
-          id: "menu",
+          id: "nav",
           kind: "menu",
-          label: "Menu",
+          label: "Links do menu",
           settings: [
             { key: "menuInfo", label: "Links do menu", control: "readonlyInfo", tier: B, group: "content", externalTarget: "navigation-menus", default: "Os links são geridos em Menus." },
             { key: "size", label: "Tamanho", control: "slider", tier: B, group: "typography", default: 15, min: 12, max: 20, unit: "px" },
@@ -493,16 +498,7 @@ export const demoCommerceManifest: ThemeManifest = {
             { key: "color", label: "Cor", control: "color", tier: A, group: "appearance", default: "token:text" },
           ],
         },
-        {
-          id: "icons",
-          kind: "icon",
-          label: "Ícones",
-          settings: [
-            { key: "iconSize", label: "Tamanho dos ícones", control: "slider", tier: B, group: "layout", default: 20, min: 16, max: 32, unit: "px" },
-            { key: "showCount", label: "Contador do carrinho", control: "toggle", tier: B, group: "behavior", default: true },
-            { key: "color", label: "Cor", control: "color", tier: A, group: "appearance", default: "token:text" },
-          ],
-        },
+        ...headerIconElements,
       ],
       settings: {
         preset: "container",
@@ -522,10 +518,6 @@ export const demoCommerceManifest: ThemeManifest = {
             ],
           },
           { key: "showStoreName", label: "Mostrar nome da loja", control: "toggle", tier: B, group: "content", default: false },
-          { key: "showSearch", label: "Mostrar pesquisa", control: "toggle", tier: B, group: "content", default: true },
-          { key: "showAccount", label: "Mostrar conta", control: "toggle", tier: B, group: "content", default: true },
-          { key: "showCart", label: "Mostrar carrinho", control: "toggle", tier: B, group: "content", default: true },
-          { key: "showWishlist", label: "Mostrar favoritos", control: "toggle", tier: B, group: "content", requires: "wishlist", default: false },
           {
             key: "sticky",
             label: "Cabeçalho fixo",
@@ -634,6 +626,7 @@ export const demoCommerceManifest: ThemeManifest = {
           id: "productCard",
           kind: "productCard",
           label: "Cartão de produto",
+          openAction: productCardOpen,
           settings: [
             { key: "showImage", label: "Mostrar imagem", control: "toggle", tier: B, group: "content", default: true },
             { key: "showName", label: "Mostrar nome", control: "toggle", tier: B, group: "content", default: true },
@@ -885,4 +878,17 @@ export const demoCommerceManifest: ThemeManifest = {
       },
     },
   ],
+};
+
+/** Botões com "Destino": o segundo toque segue esse destino no preview. */
+export const demoCommerceManifest: ThemeManifest = {
+  ...baseManifest,
+  sectionTypes: baseManifest.sectionTypes.map((t) => ({
+    ...t,
+    elements: t.elements.map((el) => {
+      const spec = el.settings;
+      const linked = el.kind === "button" && !Array.isArray(spec) && spec.preset === "button" && !spec.omit?.includes("link");
+      return linked && !el.openAction ? { ...el, openAction: { type: "link" as const, setting: "link" } } : el;
+    }),
+  })),
 };
