@@ -1,5 +1,5 @@
 import type { StoreThemeDefinition } from './types';
-import { LumeTheme } from './lume/LumeTheme';
+import { LumeTheme } from './lume';
 
 /**
  * Registo central de temas. Adicionar um tema novo no futuro (Minimal,
