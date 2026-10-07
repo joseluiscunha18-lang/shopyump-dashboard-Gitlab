@@ -43,6 +43,8 @@ export interface Loja {
    * (nunca um ecrã quebrado). Ver migrations/002_add_theme_id.sql.
    */
   theme_id: string;
+  /** Customização do tema feita no editor (JSON). null = sem personalização. */
+  tema_personalizacao: unknown | null;
   created_at: string;
 }
 
