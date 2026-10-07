@@ -7,6 +7,7 @@ import { cn } from "../../lib/utils";
 import type { Product } from "../../lib/store-data";
 import { productImage } from "./product-art";
 import { useStore, type CartVariantSelection } from "./store-context";
+import { useLumePersonalizacao } from "./lume-personalizacao-context";
 
 type Props = {
   product: Product;
@@ -27,10 +28,12 @@ export function AddToCartButton({
   className,
   variant = "outline",
   size = "lg",
-  label = "Adicionar ao Carrinho",
+  label,
   selectedVariant,
 }: Props) {
   const { addToCart, flyToCart } = useStore();
+  const p = useLumePersonalizacao();
+  label = label ?? p?.ui.addToCart ?? "Adicionar ao Carrinho";
   const buttonRef = useRef<HTMLButtonElement>(null);
   const timer = useRef<number | null>(null);
   const [added, setAdded] = useState(false);
