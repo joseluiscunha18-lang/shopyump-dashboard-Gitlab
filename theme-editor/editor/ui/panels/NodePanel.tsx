@@ -15,6 +15,7 @@ import {
 } from "@/theme-editor/editor/core/resolve";
 import type { SettingDef } from "@/theme-editor/editor/contracts/types";
 import { ControlRow } from "../controls/Controls";
+import { openActionOf, resolveOpenTarget } from "@/theme-editor/editor/core/openAction";
 
 const GROUP_LABELS: Record<string, string> = {
   layout: "Layout",
@@ -28,7 +29,7 @@ const GROUP_LABELS: Record<string, string> = {
 };
 const GROUP_ORDER = ["layout", "spacing", "typography", "appearance", "responsive", "behavior", "advanced", "content"];
 
-export function SettingsList({ path }: { path: NodePath }) {
+export function SettingsList({ path, mobilePeek = false }: { path: NodePath; mobilePeek?: boolean }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -37,7 +38,7 @@ export function SettingsList({ path }: { path: NodePath }) {
   const blockCount = p?.sectionId ? blockIdsOf(state.manifest, state.draft, p.sectionId).length : 0;
   const values: Record<string, unknown> = {};
   for (const d of defs) values[d.key] = resolveValue(state.manifest, state.draft, path, d, state.device);
-  const visible = defs.filter((d) => isSettingVisible(d, state.manifest, values, blockCount));
+  const visible = defs.filter((d) => isSettingVisible(d, state.manifest, values, blockCount) && (!mobilePeek || d.mobilePeek));
   const basic = visible.filter((d) => d.tier === "basic" && d.control !== "colorScheme");
   const basicColorSchemes = visible.filter((d) => d.tier === "basic" && d.control === "colorScheme");
   const advanced = visible.filter((d) => d.tier === "advanced");
@@ -138,20 +139,44 @@ function ElementRow({ path, label, kind }: { path: NodePath; label: string; kind
 }
 
 /** Painel de um nó selecionado (seção, elemento, bloco). */
-export function NodePanel({ path }: { path: NodePath }) {
+export function NodePanel({ path, mobileSheet = false }: { path: NodePath; mobileSheet?: boolean }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const p = parsePath(path);
   if (!p) return null;
 
-  const content = <SettingsList path={path} />;
+  const target = openActionOf(state.manifest, state.draft, path)
+    ? resolveOpenTarget(state.manifest, state.draft, path, state.device, state.selectedContext)
+    : undefined;
+  const content = (
+    <>
+      {target ? (
+        <button
+          disabled={target.kind === "unavailable"}
+          className="mb-3 flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 text-left text-sm font-medium disabled:opacity-60"
+          onClick={() => dispatch({ type: "runOpen", path, context: state.selectedContext })}>
+          <span>
+            Abrir
+            {target.kind === "unavailable" ? <span className="block text-xs font-normal text-muted-foreground">{target.reason}</span> : null}
+          </span>
+          <span className="text-muted-foreground">↗</span>
+        </button>
+      ) : null}
+      <SettingsList path={path} mobilePeek={mobileSheet && state.panel.snap === "peek" && Boolean(state.previewOverlay)} />
+    </>
+  );
 
   if (p.kind === "section") {
     const type = sectionTypeOf(state.manifest, state.draft, p.sectionId!);
     if (!type) return null;
     const ids = blockIdsOf(state.manifest, state.draft, p.sectionId!);
-    return (
-      <div className="space-y-4">
+    const overlay = state.previewOverlay
+      ? state.manifest.overlays?.find((item) => item.id === state.previewOverlay)
+      : undefined;
+    const deferChildren = Boolean(mobileSheet && overlay?.sectionIds.includes(p.sectionId!));
+    const showChildren = !deferChildren || state.panel.snap === "expanded";
+    const children = showChildren ? (
+      <>
         {type.elements.length ? (
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Elementos</p>
@@ -181,8 +206,8 @@ export function NodePanel({ path }: { path: NodePath }) {
                   const el = bt.elements.find((e) => e.id === bt.labelKey);
                   const defs = el ? settingsForPath(state.manifest, state.draft, blockElementPath(p.sectionId!, b, el.id)) : [];
                   const td = defs.find((d) => d.key === "text");
-                  if (td) {
-                    const t = resolveValue<string>(state.manifest, state.draft, blockElementPath(p.sectionId!, b, el!.id), td, state.device);
+                  if (td && el) {
+                    const t = resolveValue<string>(state.manifest, state.draft, blockElementPath(p.sectionId!, b, el.id), td, state.device);
                     if (t) summary = t;
                   }
                 }
@@ -243,10 +268,16 @@ export function NodePanel({ path }: { path: NodePath }) {
             </Button>
           </div>
         ) : null}
+      </>
+    ) : null;
+    return (
+      <div className="space-y-4">
+        {!deferChildren ? children : null}
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Opções da seção</p>
+          {!deferChildren ? <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Opções da seção</p> : null}
           {content}
         </div>
+        {deferChildren ? children : null}
       </div>
     );
   }
