@@ -12,5 +12,5 @@ jobs:
           fetch-depth: 0
       - name: Enviar para GitLab
         run: |
-          git remote add gitlab https://oauth2:${{glpat--SDg0U9KHPKeXaAhfUCYHmM6MQpvOjEKdTpwbzJmbQ8.01.170886s8i}}@gitlab.com/joseluiscunha18/shopyump-dashboard.git
+          git remote add gitlab https://oauth2:${{ secrets.glpat--SDg0U9KHPKeXaAhfUCYHmM6MQpvOjEKdTpwbzJmbQ8.01.170886s8i }}@gitlab.com/joseluiscunha18/shopyump-dashboard.git
           git push gitlab main --force
