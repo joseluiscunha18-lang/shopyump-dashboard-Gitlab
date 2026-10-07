@@ -27,6 +27,8 @@ const externalLabels: Record<ExternalTarget, string> = {
   shipping: "Entrega",
   payments: "Pagamentos",
   "media-library": "Biblioteca de imagens",
+  domain: "Domínio",
+  seo: "SEO",
 };
 
 export const externalTargetLabel = (t: ExternalTarget) => externalLabels[t];
@@ -73,7 +75,7 @@ export function setFailNextSave(v: boolean) {
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export const mockAdapter: EditorAdapter = {
+const baseAdapter: EditorAdapter = {
   async getStore() {
     await delay(60);
     return mockStore;
@@ -150,3 +152,26 @@ export const mockAdapter: EditorAdapter = {
     return "https://casa-aurora.exemplo";
   },
 };
+
+/**
+ * Implementação "viva" (loja real). Enquanto for null, o editor corre com os
+ * dados de demonstração acima; quando a página regista uma implementação
+ * (theme-editor/adapters/loja.ts), cada método passa a delegar nela.
+ * O nome `mockAdapter` mantém-se para o editor inteiro continuar a importar
+ * do mesmo sítio — é "o adaptador ativo".
+ */
+let liveAdapter: Partial<EditorAdapter> | null = null;
+export function configureAdapter(impl: Partial<EditorAdapter> | null) {
+  liveAdapter = impl;
+}
+
+export const mockAdapter = Object.fromEntries(
+  (Object.keys(baseAdapter) as (keyof EditorAdapter)[]).map((key) => [
+    key,
+    (...args: unknown[]) => {
+      const live = liveAdapter?.[key] as ((...a: unknown[]) => unknown) | undefined;
+      const base = baseAdapter[key] as unknown as (...a: unknown[]) => unknown;
+      return live ? live(...args) : base(...args);
+    },
+  ]),
+) as unknown as EditorAdapter;
