@@ -14,6 +14,9 @@ import { StoreProvider, useStore } from "./store-context";
 import { AuthProvider, getInitials, useAuth } from "./auth-context";
 import { AuthModal } from "./auth-modal";
 import { useLumeLoja } from "./lume-loja-context";
+import { LumePersonalizacaoStyle, useLumePersonalizacao } from "./lume-personalizacao-context";
+import { categorySlug } from "../../lib/store-data";
+import { THEME_PAGE_ROUTE } from "@/theme-editor/themes/lume/page-text";
 
 export function StoreShell({ children }: { children: ReactNode }) {
   return <StoreProvider><AuthProvider><ShellContent>{children}</ShellContent></AuthProvider></StoreProvider>;
@@ -28,6 +31,7 @@ function ShellContent({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [institutionalHeadingPassed, setInstitutionalHeadingPassed] = useState(false);
   const { produtos: produtosContexto, paginas, contactos } = useLumeLoja();
+  const p = useLumePersonalizacao();
   const nomeLoja = contactos.nome;
   const goBack = useGoBack();
   const results = produtosContexto.filter((product) => product.name.toLowerCase().includes(query.toLowerCase()));
@@ -46,7 +50,8 @@ function ShellContent({ children }: { children: ReactNode }) {
     "/trocas-e-devolucoes": "Trocas e Devoluções",
     "/termos-e-privacidade": "Termos e Privacidade",
   };
-  const institutionalTitle = institutionalTitles[pathname];
+  const institutionalKey = ({ "/envios-e-entregas": "shipping", "/trocas-e-devolucoes": "returns", "/termos-e-privacidade": "terms" } as Record<string, "shipping" | "returns" | "terms">)[pathname];
+  const institutionalTitle = (institutionalKey && p?.pages[institutionalKey]?.title) || institutionalTitles[pathname];
   useEffect(() => {
     setInstitutionalHeadingPassed(false);
     if (!institutionalTitle) return;
@@ -69,11 +74,12 @@ function ShellContent({ children }: { children: ReactNode }) {
   }, [institutionalTitle]);
   if (minimal) {
     return (
-      <div className="theme-lume min-h-screen bg-background text-foreground">
-        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur">
+      <div className="theme-lume min-h-screen bg-background text-foreground" style={p?.vars}>
+        {p && <LumePersonalizacaoStyle p={p} />}
+        <header data-sy="header" className="sticky top-0 z-40 bg-card/95 backdrop-blur">
           <div className="relative mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
             <Button asChild variant="ghost" size="icon" aria-label="Voltar"><Link to="/"><ArrowLeft size={20} strokeWidth={2.25} style={{ width: 20, height: 20 }} /></Link></Button>
-            <Link to="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
+            <Link to="/" data-sy="store-name" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
           </div>
         </header>
         <main className="pb-16">{children}</main>
@@ -84,9 +90,10 @@ function ShellContent({ children }: { children: ReactNode }) {
     );
   }
   return (
-    <div className="theme-lume min-h-screen bg-background text-foreground">
-      {pathname === "/" && <div className="bg-topbar px-4 py-3 text-center text-[10px] font-semibold uppercase text-topbar-foreground">Entregas em todo Moçambique</div>}
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur">
+    <div className="theme-lume min-h-screen bg-background text-foreground" style={p?.vars}>
+      {p && <LumePersonalizacaoStyle p={p} />}
+      {pathname === "/" && (!p || p.announcementVisible) && <div data-sy="announcement" className="bg-topbar px-4 py-3 text-center text-[10px] font-semibold uppercase text-topbar-foreground">{p?.text.announcement ?? "Entregas em todo Moçambique"}</div>}
+      <header data-sy="header" className="sticky top-0 z-40 bg-card/95 backdrop-blur">
         <div className={`relative mx-auto flex max-w-6xl items-center justify-between sm:px-6 ${productPage ? "h-[62px] px-3" : "h-16 px-4"}`}>
           {productPage || institutionalTitle ? (
             <Button variant="ghost" size="icon" aria-label="Voltar à página anterior" onClick={goBack}>
@@ -104,11 +111,13 @@ function ShellContent({ children }: { children: ReactNode }) {
               <SheetContent side="left" overlayClassName="menu-backdrop" className="menu-panel w-[min(84vw,340px)] border-r border-border p-5">
                 <SheetTitle className="menu-stagger-title text-xl font-extrabold">{nomeLoja}</SheetTitle>
                 <nav className="menu-stagger-list mt-10 grid gap-0.5">
+                  {p?.menuItems ? p.menuItems.map((item, index) => <MenuEntry key={`${item.label}-${index}`} item={item} pathname={pathname} onNavigate={() => setMenuOpen(false)} />) : <>
                   {navItems.map((item) => {
                     const active = pathname === item.to;
                     return <Link key={item.to} to={item.to} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)} className={`menu-stagger-item rounded-md px-3 py-2 text-lg transition-colors ${active ? "font-bold text-foreground" : "font-medium text-muted-foreground hover:text-foreground"}`}>{item.label}</Link>;
                   })}
                   <Link to="/favoritos" aria-current={pathname === "/favoritos" ? "page" : undefined} onClick={() => setMenuOpen(false)} className={`menu-stagger-item rounded-md px-3 py-2 text-lg transition-colors ${pathname === "/favoritos" ? "font-bold text-foreground" : "font-medium text-muted-foreground hover:text-foreground"}`}>Favoritos</Link>
+                  </>}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -131,16 +140,16 @@ function ShellContent({ children }: { children: ReactNode }) {
               </span>
             </div>
           ) : (
-            <Link to="/" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
+            <Link to="/" data-sy="store-name" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
           )}
           {productPage ? (
             <CartIconButton cartCount={cartCount} onClick={() => setCartOpen(true)} />
           ) : institutionalTitle ? (
-            <AccountButton />
+            <span data-sy="header-account" className="contents"><AccountButton /></span>
           ) : <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" aria-label="Pesquisar" onClick={() => setSearchOpen(true)} className="hidden sm:inline-flex"><Search size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Button>
-            <Button asChild variant="ghost" size="icon" aria-label="Favoritos" className="hidden sm:inline-flex"><Link to="/favoritos"><Heart size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Link></Button>
-            <AccountButton />
+            <Button variant="ghost" size="icon" aria-label="Pesquisar" data-sy="header-search" onClick={() => setSearchOpen(true)} className="hidden sm:inline-flex"><Search size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Button>
+            <Button asChild variant="ghost" size="icon" aria-label="Favoritos" data-sy="header-wishlist" className="hidden sm:inline-flex"><Link to="/favoritos"><Heart size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Link></Button>
+            <span data-sy="header-account" className="contents"><AccountButton /></span>
           </div>}
         </div>
       </header>
@@ -148,11 +157,11 @@ function ShellContent({ children }: { children: ReactNode }) {
       <StoreFooter productPage={productPage} />
       {!productPage && <nav aria-label="Navegação principal" className="premium-nav fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center sm:hidden">
         <BottomLink to="/" label="Início" active={pathname === "/"}><Home /></BottomLink>
-        <BottomAction label="Pesquisar" active={searchOpen} onClick={() => setSearchOpen(true)}><Search className="optical-lg" /></BottomAction>
-        <BottomLink to="/favoritos" label="Favoritos" active={pathname === "/favoritos"}><Heart className="optical-sm" /></BottomLink>
-        <BottomAction label="Carrinho" active={cartOpen} onClick={() => setCartOpen(true)} badge={cartCount} iconRef={navCartRef}><ShoppingCart className="optical-lg" /></BottomAction>
+        <BottomAction dataSy="bottom-search" label="Pesquisar" active={searchOpen} onClick={() => setSearchOpen(true)}><Search className="optical-lg" /></BottomAction>
+        <BottomLink dataSy="bottom-wishlist" to="/favoritos" label="Favoritos" active={pathname === "/favoritos"}><Heart className="optical-sm" /></BottomLink>
+        <BottomAction dataSy="bottom-cart" label="Carrinho" active={cartOpen} onClick={() => setCartOpen(true)} badge={cartCount} iconRef={navCartRef}><ShoppingCart className="optical-lg" /></BottomAction>
       </nav>}
-      {searchOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-background p-5 sm:p-10"><div className="mx-auto max-w-2xl"><div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Pesquisar produtos</h2><Button variant="ghost" size="icon" aria-label="Fechar pesquisa" onClick={() => setSearchOpen(false)}><X /></Button></div><div className="mt-7 relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="O que procura?" className="h-12 pl-10"/></div><div className="mt-6 grid gap-3">{results.map((product) => <Link key={product.id} to="/produto/$productId" params={{ productId: product.id }} onClick={() => setSearchOpen(false)} className="grid grid-cols-[56px_1fr] items-center gap-3 border-b border-border pb-3"><div className={`product-mini product-tone-${product.tone}`}><ProductArt kind={product.kind}/></div><div><p className="text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.category}</p></div></Link>)}</div></div></div>}
+      {searchOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-background p-5 sm:p-10"><div className="mx-auto max-w-2xl"><div className="flex items-center justify-between"><h2 className="text-lg font-semibold">{p?.ui.searchTitle ?? "Pesquisar produtos"}</h2><Button variant="ghost" size="icon" aria-label="Fechar pesquisa" onClick={() => setSearchOpen(false)}><X /></Button></div><div className="mt-7 relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={p?.ui.searchPlaceholder ?? "O que procura?"} className="h-12 pl-10"/></div><div className="mt-6 grid gap-3">{results.map((product) => <Link key={product.id} to="/produto/$productId" params={{ productId: product.id }} onClick={() => setSearchOpen(false)} className="grid grid-cols-[56px_1fr] items-center gap-3 border-b border-border pb-3"><div className={`product-mini product-tone-${product.tone}`}><ProductArt kind={product.kind}/></div><div><p className="text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.category}</p></div></Link>)}</div></div></div>}
       <CartDrawer />
       <AuthModal />
       <Toaster />
@@ -162,6 +171,7 @@ function ShellContent({ children }: { children: ReactNode }) {
 
 function StoreFooter({ productPage }: { productPage: boolean }) {
   const { contactos, paginas } = useLumeLoja();
+  const p = useLumePersonalizacao();
   const ano = new Date().getFullYear();
 
   // Só renderiza o botão/link se o campo estiver preenchido
@@ -179,31 +189,31 @@ function StoreFooter({ productPage }: { productPage: boolean }) {
 
   return (
     <footer className={`bg-background px-5 pt-4 text-footer-foreground sm:px-8 sm:pb-8 sm:pt-6 ${productPage ? "pb-10" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"}`}>
-      <div className="mx-auto max-w-6xl border-t border-border pt-6 sm:pt-7">
+      <div data-sy="footer-inner" className="mx-auto max-w-6xl border-t border-border pt-6 sm:pt-7">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-2 sm:gap-8">
           <div>
-            <h2 className="text-xs font-bold uppercase text-foreground">INFORMAÇÕES</h2>
+            <h2 className="text-xs font-bold uppercase text-foreground">{p?.text.footerHeading ?? "INFORMAÇÕES"}</h2>
             <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
-              {paginas.entrega.mostrar && <li><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>}
-              <li><Link to="/trocas-e-devolucoes" className="transition-colors hover:text-foreground">Trocas e Devoluções</Link></li>
-              {paginas.termos.mostrar && <li><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>}
+              {paginas.entrega.mostrar && <li data-sy="link-envios"><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>}
+              <li data-sy="link-trocas"><Link to="/trocas-e-devolucoes" className="transition-colors hover:text-foreground">Trocas e Devoluções</Link></li>
+              {paginas.termos.mostrar && <li data-sy="link-termos"><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>}
             </ul>
           </div>
           {hasSocial && (
             <div>
               <div className="flex gap-1 sm:gap-2">
                 {instagramUrl && (
-                  <Button variant="footer" size="icon" aria-label="Instagram" className="max-sm:size-8" asChild>
+                  <Button variant="footer" size="icon" aria-label="Instagram" data-sy="social-instagram" className="max-sm:size-8" asChild>
                     <a href={instagramUrl} target="_blank" rel="noreferrer"><Instagram /></a>
                   </Button>
                 )}
                 {facebookUrl && (
-                  <Button variant="footer" size="icon" aria-label="Facebook" className="max-sm:size-8" asChild>
+                  <Button variant="footer" size="icon" aria-label="Facebook" data-sy="social-facebook" className="max-sm:size-8" asChild>
                     <a href={facebookUrl} target="_blank" rel="noreferrer"><Facebook /></a>
                   </Button>
                 )}
                 {tiktokUrl && (
-                  <Button variant="footer" size="icon" aria-label="TikTok" className="max-sm:size-8" asChild>
+                  <Button variant="footer" size="icon" aria-label="TikTok" data-sy="social-tiktok" className="max-sm:size-8" asChild>
                     <a href={tiktokUrl} target="_blank" rel="noreferrer"><Music2 /></a>
                   </Button>
                 )}
@@ -213,8 +223,8 @@ function StoreFooter({ productPage }: { productPage: boolean }) {
         </div>
         <div className="mt-6 border-t border-border/60 pt-5 text-center sm:text-left">
           <div className="flex flex-col items-center gap-1 text-xs">
-            <p>© {ano} {contactos.nome}. Todos os direitos reservados.</p>
-            <p className="text-footer-muted">Criado com Shopyump</p>
+            <p>{p?.text.copyright ? p.text.copyright.replace("{ano}", String(ano)).replace("{loja}", contactos.nome) : `© ${ano} ${contactos.nome}. Todos os direitos reservados.`}</p>
+            {(!p || p.showCredit) && <p className="text-footer-muted">Criado com Shopyump</p>}
           </div>
         </div>
       </div>
@@ -273,11 +283,22 @@ function MenuTwoLines({ size = 22, strokeWidth = 2 }: { size?: number; strokeWid
   );
 }
 
-function BottomLink({ to, label, active, children }: { to: "/" | "/favoritos"; label: string; active: boolean; children: ReactNode }) {
-  return <Link to={to} aria-label={label} aria-current={active ? "page" : undefined} className={`premium-nav-item ${active ? "is-active" : ""}`}><span className="premium-nav-icon">{children}</span><span className="premium-nav-label">{label}</span></Link>;
+function BottomLink({ to, label, active, children, dataSy }: { to: "/" | "/favoritos"; label: string; active: boolean; children: ReactNode; dataSy?: string }) {
+  return <Link to={to} data-sy={dataSy} aria-label={label} aria-current={active ? "page" : undefined} className={`premium-nav-item ${active ? "is-active" : ""}`}><span className="premium-nav-icon">{children}</span><span className="premium-nav-label">{label}</span></Link>;
 }
 
-function BottomAction({ label, active, onClick, badge = 0, iconRef, children }: { label: string; active: boolean; onClick: () => void; badge?: number; iconRef?: RefObject<HTMLSpanElement | null>; children: ReactNode }) {
-  return <Button variant="nav" aria-label={label} aria-pressed={active} onClick={onClick} className={`premium-nav-item ${active ? "is-active" : ""}`}><span ref={iconRef} className="premium-nav-icon">{children}</span><span className="premium-nav-label">{label}</span>{badge > 0 && <span key={badge} className="premium-nav-badge cart-count-slide">{badge > 9 ? "9+" : badge}</span>}</Button>;
+function BottomAction({ label, active, onClick, badge = 0, iconRef, children, dataSy }: { dataSy?: string; label: string; active: boolean; onClick: () => void; badge?: number; iconRef?: RefObject<HTMLSpanElement | null>; children: ReactNode }) {
+  return <Button variant="nav" data-sy={dataSy} aria-label={label} aria-pressed={active} onClick={onClick} className={`premium-nav-item ${active ? "is-active" : ""}`}><span ref={iconRef} className="premium-nav-icon">{children}</span><span className="premium-nav-label">{label}</span>{badge > 0 && <span key={badge} className="premium-nav-badge cart-count-slide">{badge > 9 ? "9+" : badge}</span>}</Button>;
 }
 
+
+
+/** Link do menu lateral personalizado no editor (página do tema, categoria ou endereço). */
+function MenuEntry({ item, pathname, onNavigate }: { item: { label: string; kind: 'page' | 'category' | 'url'; value: string }; pathname: string; onNavigate: () => void }) {
+  const cls = (active: boolean) => `menu-stagger-item rounded-md px-3 py-2 text-lg transition-colors ${active ? "font-bold text-foreground" : "font-medium text-muted-foreground hover:text-foreground"}`;
+  if (item.kind === 'url') return <a href={item.value} target="_blank" rel="noopener noreferrer" onClick={onNavigate} className={cls(false)}>{item.label}</a>;
+  if (item.kind === 'category') return <Link to="/produtos" search={{ categoria: categorySlug(item.value) }} onClick={onNavigate} className={cls(false)}>{item.label}</Link>;
+  const route = THEME_PAGE_ROUTE[item.value];
+  if (!route || item.value === 'cart') return null;
+  return <Link to={route as '/'} aria-current={pathname === route ? "page" : undefined} onClick={onNavigate} className={cls(pathname === route)}>{item.label}</Link>;
+}
