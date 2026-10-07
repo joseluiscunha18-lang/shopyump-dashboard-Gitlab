@@ -12,5 +12,5 @@ export const Route = createFileRoute("/envios-e-entregas")({
 
 function ShippingRoute() {
   const { paginas } = useLumeLoja();
-  return <InstitutionalPage data={institutionalPages.shipping} textoLoja={paginas.entrega.texto} />;
+  return <InstitutionalPage pageKey="shipping" data={institutionalPages.shipping} textoLoja={paginas.entrega.texto} />;
 }
