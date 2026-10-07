@@ -14,10 +14,11 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/theme-editor/ui/alert-dialog";
 import { cn } from "@/theme-editor/lib/utils";
-import { useEditor, useEditorDispatch, type PanelFrame } from "@/theme-editor/editor/core/store";
+import { useEditor, useEditorDispatch, isReadOnlyPreview, type PanelFrame } from "@/theme-editor/editor/core/store";
 import { parsePath, sectionPath } from "@/theme-editor/editor/core/paths";
 import { blockIdsOf, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { ThemeProvider } from "@/theme-editor/editor/sdk";
+import { openActionOf } from "@/theme-editor/editor/core/openAction";
 import { ThemeRenderer } from "@/theme-editor/themes/registry";
 import { mockAdapter, setFailNextSave } from "@/theme-editor/mocks/adapter";
 import { NodePanel, SettingsList } from "../panels/NodePanel";
@@ -41,6 +42,8 @@ export function EditorShell() {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const isDesktop = useIsDesktop();
+  const [sheetHeight, setSheetHeight] = useState(72);
+  const [fixedReserve, setFixedReserve] = useState(0);
   const debug = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1";
 
   // atalhos
@@ -65,16 +68,16 @@ export function EditorShell() {
     <div className="ed-root flex h-dvh flex-col bg-ed-canvas text-foreground">
       <TopBar isDesktop={isDesktop} debug={debug} />
       <div className="relative flex min-h-0 flex-1">
-        <Preview isDesktop={isDesktop} />
+        <Preview isDesktop={isDesktop} sheetHeight={sheetHeight} onFixedReserve={setFixedReserve} />
         {isDesktop ? (
           <aside className="w-[380px] shrink-0 border-l border-border bg-background">
             {state.panel.stack.length ? <PanelContent /> : <EmptySidebar />}
           </aside>
         ) : (
-          <BottomSheet />
+          <BottomSheet onHeightChange={setSheetHeight} fixedReserve={fixedReserve} />
         )}
       </div>
-      <BottomBar isDesktop={isDesktop} hidden={!isDesktop && state.panel.stack.length > 0 && state.panel.snap !== "closed"} />
+      {isDesktop ? <BottomBar isDesktop={isDesktop} hidden={false} /> : null}
       {debug && state.ui.inspectorOpen ? <Inspector /> : null}
     </div>
   );
@@ -125,11 +128,20 @@ function TopBar({ isDesktop, debug }: { isDesktop: boolean; debug: boolean }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {state.manifest.pages.map((p) => (
-            <DropdownMenuItem key={p.id} disabled={!p.supported} onClick={() => dispatch({ type: "setPage", page: p.id })}>
-              {p.label} {!p.supported ? <span className="ml-auto text-xs text-muted-foreground">Em breve</span> : null}
-            </DropdownMenuItem>
-          ))}
+          {(["main", "info"] as const).map((g) => {
+            const list = state.manifest.pages.filter((p) => (p.group ?? "main") === g && (p.supported || debug) && (!p.requires || state.manifest.capabilities[p.requires]));
+            if (!list.length) return null;
+            return (
+              <div key={g}>
+                <p className="px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{g === "main" ? "Principais" : "Informativas"}</p>
+                {list.map((p) => (
+                  <DropdownMenuItem key={p.id} disabled={!p.supported} onClick={() => dispatch({ type: "setPage", page: p.id })}>
+                    {p.label} {!p.supported ? <span className="ml-auto text-xs text-muted-foreground">Em breve</span> : null}
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -151,6 +163,18 @@ function TopBar({ isDesktop, debug }: { isDesktop: boolean; debug: boolean }) {
             {state.ui.showOverlays ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             {state.ui.showOverlays ? "Ver sem editar" : "Voltar a editar"}
           </DropdownMenuItem>
+          {!isDesktop ? (
+            <>
+              <DropdownMenuSeparator />
+              <p className="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Dispositivo</p>
+              {([["mobile", "Telemóvel", Smartphone], ["tablet", "Tablet", Tablet], ["desktop", "Computador", Monitor]] as const).map(([id, label, Icon]) => (
+                <DropdownMenuItem key={id} onClick={() => dispatch({ type: "setDevice", device: id })}>
+                  <Icon className="size-4" /> {label} {state.device === id ? <Check className="ml-auto size-4" /> : null}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+            </>
+          ) : null}
           <DropdownMenuItem onClick={() => setConfirmReset(true)}><RotateCcw className="size-4" /> Restaurar tudo</DropdownMenuItem>
           {debug ? (
             <>
@@ -251,17 +275,50 @@ function BarBtn({ icon, label, onClick, active }: { icon: ReactNode; label: stri
 
 /* ------------------------------ Preview ------------------------------ */
 
-function Preview({ isDesktop }: { isDesktop: boolean }) {
+function MobileDeviceChip() {
+  const { device } = useEditor();
+  const dispatch = useEditorDispatch();
+  const devices = [
+    { id: "mobile", label: "Telemóvel", Icon: Smartphone },
+    { id: "tablet", label: "Tablet", Icon: Tablet },
+    { id: "desktop", label: "Computador", Icon: Monitor },
+  ] as const;
+  const current = devices.find((item) => item.id === device) ?? devices[0];
+  return (
+    <div className="absolute right-2 top-2 z-20">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 bg-background/95 shadow-sm" aria-label={`Dispositivo de pré-visualização: ${current.label}`}>
+            <current.Icon /> {current.label} ▾
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {devices.map(({ id, label, Icon }) => (
+            <DropdownMenuItem key={id} onSelect={() => dispatch({ type: "setDevice", device: id })}>
+              <Icon className="size-4" /> {label} {device === id ? <Check className="ml-auto size-4" /> : null}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolean; sheetHeight: number; onFixedReserve: (height: number) => void }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const wrapRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
   const [avail, setAvail] = useState(390);
+  const [boxH, setBoxH] = useState(800);
+  const [fixedHeight, setFixedHeight] = useState(0);
 
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setAvail(el.clientWidth));
+    const ro = new ResizeObserver(() => { setAvail(el.clientWidth); setBoxH(el.clientHeight); });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -269,7 +326,21 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
   const logical = WIDTH[state.device];
   const pad = isDesktop ? 48 : 0;
   const scale = Math.min(1, (avail - pad) / logical);
-  const sheetPad = !isDesktop ? (state.panel.snap === "expanded" ? "94%" : state.panel.snap === "medium" ? "70%" : state.panel.snap === "peek" ? "50%" : "0px") : "0px";
+  const sheetRatio = isDesktop ? 0 : Math.min(1, sheetHeight / boxH);
+  const sheetInsetPx = (boxH * sheetRatio) / scale;
+  const viewportH = (boxH * (1 - sheetRatio)) / scale;
+  const fixedViewportH = (boxH - (isDesktop ? 0 : 72)) / scale;
+  useEffect(() => { onFixedReserve(isDesktop ? 0 : fixedHeight * scale); }, [fixedHeight, scale, isDesktop, onFixedReserve]);
+  const page = state.manifest.pages.find((p) => p.id === state.page);
+  const overlay = state.manifest.overlays?.find((o) => o.id === state.previewOverlay);
+  useEffect(() => {
+    if (!state.previewOverlay) return;
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") dispatch({ type: "closeOverlay" }); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [state.previewOverlay, dispatch]);
+  useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }); }, [state.page]);
+  const sheetPad = isDesktop ? "0px" : `${sheetHeight}px`;
 
   // auto-scroll até à seleção
   useEffect(() => {
@@ -277,7 +348,7 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
     const el = scrollRef.current.querySelector(`[data-sy-path="${CSS.escape(state.selectedPath)}"]`) as HTMLElement | null;
     if (!el) return;
     const container = scrollRef.current;
-    const visibleH = isDesktop ? container.clientHeight : container.clientHeight * (state.panel.snap === "expanded" ? 0.06 : state.panel.snap === "medium" ? 0.3 : state.panel.snap === "peek" ? 0.5 : 1);
+    const visibleH = isDesktop ? container.clientHeight : Math.max(0, container.clientHeight - sheetHeight - fixedHeight * scale);
     const r = el.getBoundingClientRect();
     const c = container.getBoundingClientRect();
     const top = r.top - c.top + container.scrollTop;
@@ -287,9 +358,19 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
 
   return (
     <div ref={wrapRef} className="relative min-w-0 flex-1">
-      <div ref={scrollRef} className="absolute inset-0 overflow-y-auto" onClick={() => dispatch({ type: "closePanel" })} style={{ paddingBottom: sheetPad }}>
+      <div
+        ref={scrollRef}
+        className="absolute inset-0 overflow-y-auto"
+        onScroll={(e) => {
+          const offset = Math.max(0, e.currentTarget.scrollTop / scale - (isDesktop ? 24 / scale : 0));
+          frameRef.current?.style.setProperty("--ed-scroll-top", `${offset}px`);
+          if (!state.ui.hintSeen) dispatch({ type: "markHintSeen" });
+        }}
+        onClick={() => dispatch({ type: "closePanel" })}
+        style={{ paddingBottom: sheetPad }}
+      >
         <div className={cn("mx-auto", isDesktop ? "py-6" : "")} style={{ width: logical * scale }}>
-          <div className="origin-top-left overflow-hidden bg-background shadow-ed-frame" style={{ width: logical, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+          <div ref={frameRef} className="relative origin-top-left bg-background shadow-ed-frame" style={{ width: logical, transform: `scale(${scale})`, transformOrigin: "top left", ["--ed-viewport-h" as string]: `${viewportH}px`, ["--ed-fixed-viewport-h" as string]: `${fixedViewportH}px`, ["--ed-sheet-inset" as string]: `${sheetInsetPx}px`, ["--ed-scroll-top" as string]: "0px" } as React.CSSProperties}>
             <ThemeProvider
               value={{
                 manifest: state.manifest,
@@ -300,9 +381,23 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
                 categories: state.categories,
                 device: state.device,
                 mode: "edit",
-                showOverlays: state.ui.showOverlays,
+                showOverlays: state.ui.showOverlays && !isReadOnlyPreview(state),
+                readOnly: isReadOnlyPreview(state),
+                onCloseOverlay: () => dispatch({ type: "closeOverlay" }),
                 selectedPath: state.selectedPath,
-                onSelect: state.ui.showOverlays ? (path, title) => dispatch({ type: "select", path, title }) : undefined,
+                onSelect: state.ui.showOverlays ? (path, title, context) => dispatch({ type: "select", path, title, context }) : undefined,
+                onNavigateLink: (link: any) => dispatch({ type: "navigateLink", link }),
+                onOpen: state.ui.showOverlays && !isDesktop ? (path, context) => dispatch({ type: "runOpen", path, context }) : undefined,
+                previewState: state.previewState,
+                previewOverlay: state.previewOverlay,
+                previewQuery: state.previewQuery,
+                previewProductId: state.previewProductId,
+                viewportH,
+                sheetInset: sheetInsetPx,
+                pinFixedSections: !isDesktop,
+                fixedHeight,
+                onFixedHeightChange: setFixedHeight,
+                overlayHost,
               }}
             >
               <ThemeRenderer themeId={state.manifest.id} pageId={state.page} />
@@ -310,8 +405,45 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
           </div>
         </div>
       </div>
-      {!state.ui.hintSeen ? (
-        <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-xs text-background shadow-lg">
+      <div
+        className={cn("pointer-events-none absolute z-40 overflow-hidden", isDesktop ? "top-6" : "top-0")}
+        style={{ left: "50%", width: logical * scale, height: (isDesktop ? boxH - 48 : boxH - sheetHeight + 24), transform: "translateX(-50%)" }}
+      >
+        <div
+          ref={setOverlayHost}
+          style={{ position: "relative", width: logical, height: viewportH + (isDesktop ? 0 : 24 / scale), transform: `scale(${scale})`, transformOrigin: "top left" }}
+        />
+      </div>
+      {page?.previewStates?.length || page?.previewNeeds === "search" ? (
+        <div className={cn("absolute left-2 z-10 flex flex-col items-start gap-1.5", isDesktop ? "top-2" : "top-12")} onClick={(e) => e.stopPropagation()}>
+          {page.previewStates?.length ? (
+            <div className="flex gap-1 rounded-lg bg-background/95 p-1 shadow-md">
+              {page.previewStates.map((ps) => (
+                <button key={ps.id} onClick={() => dispatch({ type: "setPreviewState", id: ps.id })}
+                  className={cn("rounded-md px-2.5 py-1 text-xs", state.previewState === ps.id ? "bg-foreground text-background" : "text-muted-foreground")}>{ps.label}</button>
+              ))}
+            </div>
+          ) : null}
+          {page.previewNeeds === "search" ? (
+            <label className="flex items-center gap-1 rounded-lg bg-background/95 px-2 py-1 text-xs shadow-md">
+              Pré-visualizar a pesquisa:
+              <input className="w-24 rounded border border-border bg-background px-1" value={state.previewQuery} onChange={(e) => dispatch({ type: "setPreviewQuery", q: e.target.value })} />
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+      {overlay ? (
+        <button className={cn("absolute left-1/2 z-20 -translate-x-1/2 rounded-full bg-foreground px-4 py-1.5 text-xs text-background shadow-lg", isDesktop ? "top-3" : "top-12")}
+          onClick={(e) => { e.stopPropagation(); dispatch({ type: "closeOverlay" }); }}>
+          Fechar {overlay.label.toLowerCase()} ✕
+        </button>
+      ) : null}
+      {isDesktop || boxH - sheetHeight - fixedHeight * scale > 100 ? <span className="pointer-events-none absolute right-2 z-10 rounded-full bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground shadow" style={{ bottom: `calc(${sheetPad} + ${isDesktop ? 0 : fixedHeight * scale}px + 8px)` }}>
+        Dados de demonstração
+      </span> : null}
+      {!isDesktop ? <OpenHint /> : null}
+      {!state.ui.hintSeen && (isDesktop || state.panel.snap === "closed") ? (
+        <div className={cn("pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-xs text-background shadow-lg", isDesktop ? "top-4" : "top-12")}>
           Toque numa parte da loja para editar
         </div>
       ) : null}
@@ -319,23 +451,60 @@ function Preview({ isDesktop }: { isDesktop: boolean }) {
   );
 }
 
+/** Dica única por sessão: aparece na primeira seleção de um elemento com ação de abrir. */
+function OpenHint() {
+  const state = useEditor();
+  const dispatch = useEditorDispatch();
+  const has = !!openActionOf(state.manifest, state.draft, state.selectedPath);
+  const show = has && !state.ui.openHintSeen;
+  useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(() => dispatch({ type: "markOpenHintSeen" }), 3000);
+    return () => clearTimeout(t);
+  }, [show, dispatch]);
+  if (!show) return null;
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-12 z-30 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-xs text-background shadow-lg">
+      Toque de novo para abrir
+    </div>
+  );
+}
+
 /* ------------------------------ Bottom sheet ------------------------------ */
 
-const SNAP_RATIO = { peek: 0.5, medium: 0.7, expanded: 0.94 } as const;
+const SNAP_RATIO = { peek: 0.4, medium: 0.7, expanded: 0.94 } as const;
 const SNAP_ORDER = ["peek", "medium", "expanded"] as const;
 const DRAG_DISTANCE = 48;
 const DRAG_VELOCITY = 0.5;
 
-function BottomSheet() {
+function BottomSheet({ onHeightChange, fixedReserve }: { onHeightChange: (height: number) => void; fixedReserve: number }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const sheetRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointerId: number; startY: number; lastY: number; lastAt: number; velocity: number; baseHeight: number } | null>(null);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const open = state.panel.stack.length > 0 && state.panel.snap !== "closed";
+  const activeTab = state.panel.stack[0]?.kind === "sections" || !state.panel.stack.length ? "sections" : "settings";
+  const lateralPeek = Boolean(state.previewOverlay && state.panel.snap === "peek");
+  const showContent = open || dragHeight !== null;
+  const compact = lateralPeek && (dragHeight === null || dragHeight <= 76);
+  const showPullHint = open && !state.ui.pullHintSeen;
+  useEffect(() => {
+    if (!showPullHint) return;
+    const timer = window.setTimeout(() => dispatch({ type: "markPullHintSeen" }), 3000);
+    return () => window.clearTimeout(timer);
+  }, [showPullHint, dispatch]);
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => onHeightChange(el.getBoundingClientRect().height));
+    observer.observe(el);
+    onHeightChange(el.getBoundingClientRect().height);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
 
   const onDown = (e: React.PointerEvent) => {
-    if (!sheetRef.current || !open) return;
+    if (!sheetRef.current) return;
     const now = performance.now();
     drag.current = {
       pointerId: e.pointerId,
@@ -357,7 +526,7 @@ function BottomSheet() {
     current.velocity = (e.clientY - current.lastY) / elapsed;
     current.lastY = e.clientY;
     current.lastAt = now;
-    const nextHeight = Math.min(parentHeight * SNAP_RATIO.expanded, Math.max(0, current.baseHeight - (e.clientY - current.startY)));
+    const nextHeight = Math.min(parentHeight * SNAP_RATIO.expanded, Math.max(72, current.baseHeight - (e.clientY - current.startY)));
     setDragHeight(nextHeight);
   };
 
@@ -370,6 +539,10 @@ function BottomSheet() {
     setDragHeight(null);
     if (!intentional) return;
 
+    if (!open) {
+      if (dy < 0) dispatch({ type: "pushPanelRoot", frame: { kind: "sections", title: "Seções" } });
+      return;
+    }
     const idx = SNAP_ORDER.indexOf(state.panel.snap === "closed" ? "peek" : state.panel.snap);
     if (dy > 0 || current.velocity > DRAG_VELOCITY) {
       if (idx === 0) dispatch({ type: "closePanel" });
@@ -384,25 +557,37 @@ function BottomSheet() {
     setDragHeight(null);
   };
 
-  const snappedHeight = state.panel.snap === "closed" ? "0%" : `${SNAP_RATIO[state.panel.snap] * 100}%`;
+  const snappedHeight = lateralPeek ? "76px" : state.panel.snap === "closed" ? "0%" : `${SNAP_RATIO[state.panel.snap] * 100}%`;
 
   return (
     <div
       ref={sheetRef}
-      className={cn("absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-t-2xl border-t border-border bg-background shadow-ed-sheet", dragHeight === null && "ed-sheet")}
-      style={{ height: open ? (dragHeight ?? snappedHeight) : 0, visibility: open ? "visible" : "hidden" }}
+      className={cn("absolute inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden rounded-t-2xl bg-background shadow-ed-sheet", dragHeight === null && "ed-sheet", !open && state.previewOverlay && "hidden")}
+      style={{ height: dragHeight ?? (open ? snappedHeight : 72), minHeight: 72, maxHeight: `calc(100% - ${fixedReserve + 44}px)` }}
     >
       <div
-        className="touch-none cursor-grab px-4 pb-2 pt-3 active:cursor-grabbing"
+        className="relative grid h-7 min-h-7 shrink-0 touch-none cursor-grab place-items-center active:cursor-grabbing"
         aria-label="Arrastar painel"
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onCancel}
       >
-        <div className="mx-auto h-1.5 w-10 rounded-full bg-muted-foreground/40" />
+        <div className={cn("h-1.5 w-7 rounded-full bg-muted-foreground/40", showPullHint && "ed-pull-hint")} />
+        {showPullHint ? <span className="pointer-events-none absolute top-4 text-[10px] text-muted-foreground">Puxe para cima</span> : null}
       </div>
-      {open ? <PanelContent /> : null}
+      {(!open || state.panel.stack[0]?.kind !== "node") ? (
+        <>
+          {open ? <Button size="icon" variant="ghost" className="ed-sheet-top-close size-7" aria-label="Fechar painel" onClick={() => dispatch({ type: "closePanel" })}><X className="size-4" /></Button> : null}
+          <div className="grid h-9 min-h-9 shrink-0 grid-cols-2 items-center gap-1 px-10" role="tablist" aria-label="Editor da loja">
+            {([ ["sections", "Secções"], ["settings", "Definições"] ] as const).map(([kind, title]) => (
+              <Button key={kind} variant="ghost" role="tab" aria-selected={activeTab === kind} className={cn("h-9 rounded-lg px-1 text-sm", activeTab === kind ? "bg-accent text-primary font-semibold" : "text-muted-foreground")}
+                onClick={() => dispatch({ type: "pushPanelRoot", frame: { kind, title } })}>{title}</Button>
+            ))}
+          </div>
+        </>
+      ) : null}
+      {showContent ? <PanelContent mobileSheet compact={compact} previewClosed={!open} /> : null}
     </div>
   );
 }
@@ -442,10 +627,10 @@ function goUpPath(state: ReturnType<typeof useEditor>, path: string): string | n
   return null;
 }
 
-function PanelContent() {
+function PanelContent({ mobileSheet = false, compact = false, previewClosed = false }: { mobileSheet?: boolean; compact?: boolean; previewClosed?: boolean } = {}) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
-  const frame = state.panel.stack[state.panel.stack.length - 1];
+  const frame: PanelFrame | undefined = previewClosed ? { kind: "sections", title: "Secções" } : state.panel.stack[state.panel.stack.length - 1];
   if (!frame) return null;
   const crumbs = breadcrumb(state, frame);
   const canBack = state.panel.stack.length > 1 || (frame.kind === "node" && goUpPath(state, frame.path));
@@ -464,22 +649,18 @@ function PanelContent() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-1 border-b border-border px-2 py-2">
-        {canBack ? <Button size="icon" variant="ghost" className="size-9" onClick={back}><ChevronLeft className="size-5" /></Button> : null}
-        <div className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm">
-          {crumbs.map((c, i) => (
-            <span key={i} className="flex items-center gap-1 truncate">
-              {i > 0 ? <span className="text-muted-foreground">›</span> : null}
-              <button className={cn("truncate", i === crumbs.length - 1 ? "font-semibold" : "text-muted-foreground")}
-                onClick={() => c.path && dispatch({ type: "select", path: c.path, title: c.label })}>{c.label}</button>
-            </span>
-          ))}
+      {frame.kind !== "sections" && frame.kind !== "settings" ? (
+        <div className={cn("ed-panel-heading", mobileSheet && "ed-panel-heading-sheet")}>
+          <div className="ed-panel-leading">{canBack ? <Button size="icon" variant="ghost" className="size-9" aria-label="Voltar" onClick={back}><ChevronLeft className="size-5" /></Button> : null}</div>
+          <span className="truncate text-center text-sm font-semibold">{compact && state.previewOverlay ? state.manifest.overlays?.find((item) => item.id === state.previewOverlay)?.label.replace(" lateral", "") : crumbs[crumbs.length - 1]?.label}</span>
+          <div className="ed-panel-actions">
+            {frame.kind === "node" ? <NodeMenu path={frame.path} /> : null}
+            <Button size="icon" variant="ghost" className="size-9" aria-label="Fechar painel" onClick={() => dispatch({ type: "closePanel" })}><X className="size-4" /></Button>
+          </div>
         </div>
-        {frame.kind === "node" ? <NodeMenu path={frame.path} /> : null}
-        <Button size="icon" variant="ghost" className="size-9" onClick={() => dispatch({ type: "closePanel" })}><X className="size-4" /></Button>
-      </div>
-      <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-4 py-3">
-        {frame.kind === "node" ? <NodePanel key={frame.path} path={frame.path} /> : null}
+      ) : null}
+      <div className={cn("min-h-0 flex-1 overscroll-contain overflow-y-auto px-4 py-3", mobileSheet && compact && "hidden")}>
+        {frame.kind === "node" ? <NodePanel key={frame.path} path={frame.path} mobileSheet={mobileSheet} /> : null}
         {frame.kind === "sections" ? <SectionsPanel /> : null}
         {frame.kind === "settings" ? <SettingsMenu /> : null}
         {frame.kind === "settingsGroup" ? <GlobalGroupPanel groupId={frame.groupId} /> : null}
@@ -495,7 +676,7 @@ function NodeMenu({ path }: { path: string }) {
   const type = p?.sectionId ? sectionTypeOf(state.manifest, state.draft, p.sectionId) : undefined;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="size-9"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="size-9" aria-label="Opções do elemento"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => { dispatch({ type: "resetNode", path }); toast("Restaurado", { action: { label: "Desfazer", onClick: () => dispatch({ type: "undo" }) } }); }}>
           <RotateCcw className="size-4" /> Restaurar padrão
@@ -518,7 +699,9 @@ function SectionsPanel() {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const [adding, setAdding] = useState(false);
+  if (isReadOnlyPreview(state)) return <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"><Lock className="size-4" />{state.manifest.pages.find((page) => page.id === state.page)?.label}</div>;
   const ids = visibleSectionIds(state.manifest, state.draft, state.page);
+  const overlays = (state.manifest.overlays ?? []).filter((o) => !o.requires || state.manifest.capabilities[o.requires]);
 
   const row = (id: string, locked: boolean, index?: number) => {
     const type = sectionTypeOf(state.manifest, state.draft, id);
@@ -564,6 +747,17 @@ function SectionsPanel() {
       <Group label="Topo">{ids.top.map((id) => row(id, true))}</Group>
       <Group label="Página">{ids.page.map((id, i) => row(id, false, i))}</Group>
       <Group label="Rodapé">{ids.bottom.map((id) => row(id, true))}</Group>
+      {ids.fixed.length ? <Group label="Fixos">{ids.fixed.map((id) => row(id, true))}</Group> : null}
+      {overlays.length ? (
+        <Group label="Painéis">
+          {overlays.map((o) => (
+            <button key={o.id} className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 text-left text-sm"
+              onClick={() => dispatch({ type: "openOverlay", id: o.id })}>
+              {o.label} <span className="text-muted-foreground">›</span>
+            </button>
+          ))}
+        </Group>
+      ) : null}
       <Button className="w-full" variant="outline" onClick={() => setAdding(true)}><Plus className="size-4" /> Adicionar seção</Button>
     </div>
   );
