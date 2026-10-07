@@ -1,13 +1,17 @@
-import { Fragment, type CSSProperties } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import * as Icons from "lucide-react";
 import {
   Editable,
+  FixedShell,
+  OverlayShell,
   SectionShell,
   useColors,
+  useEditorPreview,
   useGlobalGroup,
   useNodeValues,
   useTheme,
 } from "@/theme-editor/editor/sdk";
+import { HEADING_SECTION, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, type LumePageKey } from "./page-text";
 import { resolveColor, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
 import type { ProductLite } from "@/theme-editor/editor/contracts/types";
@@ -144,30 +148,16 @@ function useSectionFrame(sectionId: string) {
   const layout = useGlobalGroup("layout");
   const scheme = useScheme(v.colorScheme ?? "light");
   const colors = useColors();
-  const bg = v.background ? resolveColor(v.background, colors) : undefined;
-  const maxWidth = (key: unknown) => {
-    if (key === "full") return undefined;
-    if (key === "narrow") return 960;
-    if (key === "wide") return 1344;
-    return layout.contentWidth || undefined;
-  };
-  const outer: CSSProperties = {
-    background: bg,
-    color: colors.text,
-    paddingTop: v.spacing,
-    paddingBottom: v.spacing,
-    paddingLeft: v.padding ?? layout.pagePadding,
-    paddingRight: v.padding ?? layout.pagePadding,
-    minHeight: v.minHeight || undefined,
-  };
-  const inner: CSSProperties = {
-    maxWidth: maxWidth(v.contentWidth),
-    margin: "0 auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: v.gap,
-  };
-  return { v, outer, inner, scheme, colors, layout };
+  const { device } = useTheme();
+  const mobile = device === "mobile";
+  // Mesmos espaçamentos da loja pública (px-4/sm:px-6 …), sem controlo do lojista.
+  const pad = (mTop: number, mBottom: number, dTop: number, dBottom: number, mSide = 16, dSide = 24): CSSProperties => ({
+    paddingTop: mobile ? mTop : dTop,
+    paddingBottom: mobile ? mBottom : dBottom,
+    paddingLeft: mobile ? mSide : dSide,
+    paddingRight: mobile ? mSide : dSide,
+  });
+  return { v, scheme, colors, layout, pad, mobile };
 }
 
 /* ------------------------------ sections ------------------------------ */
@@ -188,7 +178,6 @@ function AnnouncementSection({ id }: { id: string }) {
         padding: "0 16px",
         textAlign: "center",
         fontWeight: 600,
-        letterSpacing: "0.02em",
       }}
     >
       <TextEl path={elementPath(id, "message")} label="Mensagem" fallbackTag="span" />
@@ -196,17 +185,22 @@ function AnnouncementSection({ id }: { id: string }) {
   );
 }
 
+function HeaderIcon({ sectionId, el, label, children }: { sectionId: string; el: string; label: string; children: ReactNode }) {
+  const v = useNodeValues(elementPath(sectionId, el));
+  if (v.show === false) return null;
+  return (
+    <Editable path={elementPath(sectionId, el)} label={label} as="span" style={{ display: "inline-flex", padding: 8 }}>
+      {children}
+    </Editable>
+  );
+}
+
 function HeaderSection({ id }: { id: string }) {
-  const { v, layout, colors } = useSectionFrame(id);
-  const { store, device, media } = useTheme();
+  const { v, layout, colors, mobile } = useSectionFrame(id);
+  const { store } = useTheme();
   const name = useNodeValues(elementPath(id, "name"));
-  const logo = useNodeValues(elementPath(id, "logo"));
-  const icons = useNodeValues(elementPath(id, "icons"));
   const fonts = Object.fromEntries(useTheme().manifest.fonts.map((f) => [f.id, f.family]));
-  const isMobile = device === "mobile";
-  const iconColor = resolveColor(icons.color, colors);
-  const logoUrl = logo.image?.mediaId ? media.find((m) => m.id === logo.image.mediaId)?.url : undefined;
-  const sz = icons.iconSize;
+  const sz = 18;
 
   return (
     <SectionShell
@@ -230,29 +224,31 @@ function HeaderSection({ id }: { id: string }) {
           height: v.height,
           maxWidth: layout.contentWidth || undefined,
           margin: "0 auto",
-          padding: `0 ${v.padding ?? layout.pagePadding}px`,
+          padding: mobile ? "0 8px" : "0 24px",
         }}
       >
-        <Editable path={elementPath(id, "icons")} label="Ícones" as="span" style={{ display: "inline-flex", alignItems: "center", gap: 14, color: iconColor }}>
-          <Icons.Menu size={sz + 4} strokeWidth={2.25} />
-        </Editable>
-
+        <HeaderIcon sectionId={id} el="menu" label="Menu lateral">
+          <Icons.Menu size={sz + 2} strokeWidth={2.25} />
+        </HeaderIcon>
         <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", maxWidth: "55%" }}>
-          {logoUrl ? (
-            <Editable path={elementPath(id, "logo")} label="Logótipo" as="span" style={{ display: "inline-block" }}>
-              <img src={logoUrl} alt={store.name} style={{ height: logo.height, width: "auto", display: "block", maxWidth: "100%" }} />
-            </Editable>
-          ) : name.show === false ? null : (
-            <Editable path={elementPath(id, "name")} label="Nome da loja" as="span" style={{ display: "inline-block" }}>
-              <span style={{ ...textStyle(name, colors, fonts), whiteSpace: "nowrap", letterSpacing: "0", display: "block" }}>{store.name}</span>
-            </Editable>
-          )}
+          <Editable path={elementPath(id, "name")} label="Nome da loja" as="span" style={{ display: "inline-block" }}>
+            <span style={{ ...textStyle(name, colors, fonts), whiteSpace: "nowrap", display: "block" }}>{store.name}</span>
+          </Editable>
         </div>
-
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 14, color: iconColor }}>
-          {!isMobile && v.showSearch ? <Icons.Search size={sz} strokeWidth={2.25} /> : null}
-          {!isMobile && v.showWishlist ? <Icons.Heart size={sz} strokeWidth={2.25} /> : null}
-          {v.showCart ? <Icons.ShoppingCart size={sz + 2} strokeWidth={2.25} /> : null}
+        <span style={{ display: "inline-flex", alignItems: "center" }}>
+          {!mobile ? (
+            <HeaderIcon sectionId={id} el="search" label="Pesquisa">
+              <Icons.Search size={sz} strokeWidth={2.25} />
+            </HeaderIcon>
+          ) : null}
+          {!mobile ? (
+            <HeaderIcon sectionId={id} el="wishlist" label="Favoritos">
+              <Icons.Heart size={sz} strokeWidth={2.25} />
+            </HeaderIcon>
+          ) : null}
+          <HeaderIcon sectionId={id} el="account" label="Conta">
+            <Icons.User size={sz} strokeWidth={2.25} />
+          </HeaderIcon>
         </span>
       </div>
     </SectionShell>
@@ -283,64 +279,48 @@ function HeroIllustration({ color, mobile }: { color: string; mobile: boolean })
 }
 
 function HeroSection({ id }: { id: string }) {
-  const { v, layout, colors } = useSectionFrame(id);
-  const { device, media } = useTheme();
-  const image = useNodeValues(elementPath(id, "image"));
-  const isMobile = device === "mobile";
-  const useImage = v.backgroundMode === "image";
-  const url = useImage && image.image?.mediaId ? media.find((m) => m.id === image.image.mediaId)?.url : undefined;
-  const focal = image.focalPoint ?? { x: 50, y: 50 };
+  const { v, layout, colors, mobile } = useSectionFrame(id);
 
   return (
     <SectionShell
       path={sectionPath(id)}
       label="Banner principal"
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        background: `linear-gradient(120deg, ${colors.heroFrom}, ${colors.heroTo})`,
-      }}
+      style={{ position: "relative", overflow: "hidden", background: `linear-gradient(120deg, ${colors.heroFrom}, ${colors.heroTo})` }}
     >
-      {url ? (
-        <>
-          <img src={url} alt={image.alt || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: image.fit ?? "cover", objectPosition: `${focal.x}% ${focal.y}%`, pointerEvents: "none" }} />
-          <span style={{ position: "absolute", inset: 0, background: v.overlay?.color ?? "#000", opacity: (v.overlay?.opacity ?? 0) / 100, pointerEvents: "none" }} />
-        </>
-      ) : null}
       <div
         style={{
           position: "relative",
-          display: isMobile ? "flex" : "grid",
-          gridTemplateColumns: isMobile ? undefined : "minmax(0,1.05fr) minmax(300px,0.95fr)",
+          display: mobile ? "flex" : "grid",
+          gridTemplateColumns: mobile ? undefined : "minmax(0,1.05fr) minmax(300px,0.95fr)",
           alignItems: "center",
           gap: 40,
           minHeight: v.height,
           maxWidth: layout.contentWidth || undefined,
           margin: "0 auto",
-          padding: isMobile ? "56px 20px" : "64px 48px",
+          padding: mobile ? "56px 20px" : "64px 48px",
         }}
       >
-        <div style={{ position: "relative", zIndex: 1, maxWidth: isMobile ? "80%" : 576, alignSelf: "center" }}>
-          <div style={isMobile ? { whiteSpace: "nowrap" } : undefined}>
+        <div style={{ position: "relative", zIndex: 1, maxWidth: mobile ? "80%" : 576, alignSelf: "center" }}>
+          <div style={mobile ? { whiteSpace: "nowrap" } : undefined}>
             <TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h1" />
           </div>
           <div style={{ marginTop: 8 }}>
             <TextEl path={elementPath(id, "subtitle")} label="Descrição" />
           </div>
-          <div style={{ marginTop: isMobile ? 24 : 32 }}>
+          <div style={{ marginTop: mobile ? 24 : 32 }}>
             <ButtonEl path={elementPath(id, "button")} label="Botão" />
           </div>
         </div>
-        {!url && v.showIllustration ? (
+        {v.showIllustration ? (
           <div
             aria-hidden
             style={
-              isMobile
+              mobile
                 ? { position: "absolute", top: 0, bottom: 0, right: 0, width: "44%", display: "flex", alignItems: "center", justifyContent: "flex-end", pointerEvents: "none" }
                 : { display: "flex", alignItems: "center", justifyContent: "flex-end", height: "100%", pointerEvents: "none" }
             }
           >
-            <HeroIllustration color={colors.secondary} mobile={isMobile} />
+            <HeroIllustration color={colors.secondary} mobile={mobile} />
           </div>
         ) : null}
       </div>
@@ -362,7 +342,7 @@ function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, s
   const align = v.align === "center" ? "center" : v.align === "right" ? "right" : "left";
   const photo = product.images[0];
   return (
-    <Editable path={cardPath} label="Cartão de produto" style={{ minWidth: 0 }}>
+    <Editable path={cardPath} label="Cartão de produto" openContext={{ productId: product.id }} style={{ minWidth: 0 }}>
       <article style={{ minWidth: 0 }}>
         <div style={{ position: "relative" }}>
           <div
@@ -397,8 +377,8 @@ function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, s
                 top: 8,
                 zIndex: 1,
                 borderRadius: 999,
-                background: colors.badgeBg,
-                color: colors.badgeText,
+                background: colors.text,
+                color: colors.background,
                 padding: "4px 10px",
                 fontSize: 10,
                 fontWeight: 600,
@@ -435,7 +415,7 @@ function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, s
             <p style={{ fontSize: v.nameSize, fontWeight: 500, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0 }}>{product.name}</p>
           ) : null}
           {v.showPrice ? (
-            <p style={{ marginTop: 4, fontSize: v.priceSize, fontWeight: 700, color: resolveColor(v.priceColor, colors), margin: v.showName ? "4px 0 0" : 0 }}>
+            <p style={{ marginTop: 4, fontSize: v.priceSize, fontWeight: 700, color: colors.text, margin: v.showName ? "4px 0 0" : 0 }}>
               {formatPrice(product.price, currency)}
             </p>
           ) : null}
@@ -446,7 +426,7 @@ function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, s
 }
 
 function ProductsSection({ id }: { id: string }) {
-  const { v, outer, inner, colors } = useSectionFrame(id);
+  const { v, colors, pad, layout, mobile } = useSectionFrame(id);
   const { products, store, manifest } = useTheme();
   const card = useNodeValues(elementPath(id, "productCard"));
   const styleG = useGlobalGroup("style");
@@ -459,13 +439,13 @@ function ProductsSection({ id }: { id: string }) {
   const cols = v.columns ?? 2;
 
   return (
-    <SectionShell path={sectionPath(id)} label="Produtos" style={outer}>
-      <div style={inner}>
+    <SectionShell path={sectionPath(id)} label="Produtos" style={{ ...pad(32, 24, 44, 32), background: colors.background, color: colors.text }}>
+      <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto" }}>
         <TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h2" />
         {list.length === 0 ? (
           <p style={{ opacity: 0.6, fontSize: 14 }}>Nenhum produto para mostrar.</p>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, columnGap: v.gap, rowGap: Math.round(v.gap * 1.5) }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, columnGap: layout.gridGap, rowGap: Math.round(layout.gridGap * (mobile ? 2 : 1.6)), marginTop: 20 }}>
             {list.map((p) => (
               <ProductCard
                 key={p.id}
@@ -482,7 +462,7 @@ function ProductsSection({ id }: { id: string }) {
             ))}
           </div>
         )}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
           <ButtonEl path={elementPath(id, "viewAll")} label="Botão explorar mais" />
         </div>
       </div>
@@ -491,7 +471,7 @@ function ProductsSection({ id }: { id: string }) {
 }
 
 function WhatsappCtaSection({ id }: { id: string }) {
-  const { v, outer, colors } = useSectionFrame(id);
+  const { v, colors, pad } = useSectionFrame(id);
   const { store, device, mode } = useTheme();
   const styleG = useGlobalGroup("style");
   const hasNumber = !!store.whatsapp?.trim();
@@ -500,7 +480,7 @@ function WhatsappCtaSection({ id }: { id: string }) {
   const filled = v.cardStyle !== "border";
 
   return (
-    <SectionShell path={sectionPath(id)} label="Contacto por WhatsApp" style={outer}>
+    <SectionShell path={sectionPath(id)} label="Contacto por WhatsApp" style={{ ...pad(24, 24, 32, 36, 20, 24), background: colors.background, color: colors.text }}>
       <div
         style={{
           maxWidth: 768,
@@ -537,7 +517,7 @@ function TikTokIcon({ size }: { size: number }) {
 }
 
 function FooterSection({ id }: { id: string }) {
-  const { v, outer, colors, layout } = useSectionFrame(id);
+  const { v, colors, layout } = useSectionFrame(id);
   const { store, device } = useTheme();
   const policy = useNodeValues(elementPath(id, "policyLinks"));
   const social = useNodeValues(elementPath(id, "socialLinks"));
@@ -563,14 +543,14 @@ function FooterSection({ id }: { id: string }) {
     .replace("{loja}", store.name);
 
   return (
-    <SectionShell path={sectionPath(id)} label="Rodapé" style={{ ...outer, background: outer.background ?? colors.background }}>
+    <SectionShell path={sectionPath(id)} label="Rodapé" style={{ background: colors.background, color: colors.text, padding: device === "mobile" ? "16px 20px 32px" : "24px 32px 32px" }}>
       <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto", borderTop: v.borderTop ? `1px solid ${colors.border}` : undefined, paddingTop: mobile ? 24 : 28 }}>
         <div style={{ display: "grid", gridTemplateColumns: mobile ? "minmax(0,1fr) auto" : "1fr 1fr", gap: mobile ? 12 : 32, alignItems: "start" }}>
           <div>
             <TextEl path={elementPath(id, "heading")} label="Título da coluna" fallbackTag="h2" />
             <Editable path={elementPath(id, "policyLinks")} label="Links de informação" as="ul" style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "grid", gap: 6 }}>
               {links.map((l) => (
-                <li key={l} style={{ fontSize: 14, color: resolveColor(policy.color, colors) }}>
+                <li key={l} style={{ fontSize: 14, color: colors.secondary }}>
                   {l}
                 </li>
               ))}
@@ -584,7 +564,7 @@ function FooterSection({ id }: { id: string }) {
                   aria-label={label}
                   style={{ width: mobile ? 32 : 36, height: mobile ? 32 : 36, display: "grid", placeItems: "center", borderRadius: 999, border: `1px solid ${colors.border}`, background: colors.cardBg, color: colors.text }}
                 >
-                  <Icon size={social.size} />
+                  <Icon size={16} />
                 </span>
               ))}
             </Editable>
@@ -603,6 +583,326 @@ function FooterSection({ id }: { id: string }) {
   );
 }
 
+/* ------------------------------ Extensão: páginas, painéis e barra inferior ------------------------------ */
+
+const pageKeyOfHeading = (sectionId: string): LumePageKey | undefined =>
+  (Object.entries(HEADING_SECTION).find(([, sid]) => sid === sectionId)?.[0] as LumePageKey | undefined);
+
+function usePreviewProduct(): ProductLite | undefined {
+  const { products } = useTheme();
+  const { productId } = useEditorPreview();
+  return products.find((p) => p.id === productId) ?? products[0];
+}
+
+function PageHeadingSection({ id }: { id: string }) {
+  const { colors, layout, mobile } = useSectionFrame(id);
+  const { store } = useTheme();
+  const eyebrow = useNodeValues(elementPath(id, "eyebrow"));
+  const title = useNodeValues(elementPath(id, "title"));
+  const description = useNodeValues(elementPath(id, "description"));
+  const key = pageKeyOfHeading(id);
+  const dflt = key ? PAGE_TEXT[key] : { eyebrow: "", title: "", description: "" };
+  const fill = (t: string) => t.replace("{loja}", store.name);
+  const pick = (v: Record<string, any>, d: string) => fill(v.text && String(v.text).trim() ? String(v.text) : d);
+  const e = pick(eyebrow, dflt.eyebrow);
+  const t = pick(title, dflt.title);
+  const d = pick(description, dflt.description);
+  const institutional = key === "shipping" || key === "returns" || key === "terms";
+  const collection = key === "collection";
+
+  return (
+    <SectionShell
+      path={sectionPath(id)}
+      label="Título da página"
+      style={{ borderBottom: collection ? undefined : `1px solid ${colors.border}`, background: institutional ? `color-mix(in srgb, ${colors.surfaceAlt} 40%, transparent)` : colors.cardBg, color: colors.text }}
+    >
+      <div style={{ maxWidth: institutional ? 896 : layout.contentWidth || undefined, margin: "0 auto", padding: collection ? (mobile ? "28px 16px 0" : "40px 24px 0") : institutional ? (mobile ? "48px 20px" : "80px 32px") : mobile ? "36px 20px" : "48px 24px" }}>
+        {e ? (
+          <Editable path={elementPath(id, "eyebrow")} label="Etiqueta" as="div">
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: colors.secondary }}>{e}</p>
+          </Editable>
+        ) : null}
+        <Editable path={elementPath(id, "title")} label="Título" as="div">
+          <h1 style={{ marginTop: e ? 8 : 0, fontSize: institutional ? (mobile ? 30 : 48) : collection ? (mobile ? 24 : 30) : 24, fontWeight: institutional ? 800 : 700 }}>{t}</h1>
+        </Editable>
+        {d ? (
+          <Editable path={elementPath(id, "description")} label="Descrição" as="div">
+            <p style={{ marginTop: 8, fontSize: institutional ? 16 : 14, color: colors.secondary, maxWidth: 640 }}>{d}</p>
+          </Editable>
+        ) : null}
+        {collection ? (
+          <span style={{ position: "absolute", right: mobile ? 16 : 24, top: mobile ? 28 : 40, display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600 }}>
+            <Icons.Settings2 size={14} /> Filtrar
+          </span>
+        ) : null}
+      </div>
+    </SectionShell>
+  );
+}
+
+function CatalogGridSection({ id }: { id: string }) {
+  const { v, colors, layout, mobile } = useSectionFrame(id);
+  const { products, store, manifest } = useTheme();
+  const card = useNodeValues(elementPath("products", "productCard"));
+  const styleG = useGlobalGroup("style");
+  const list = products.slice(0, id === "wishlistProducts" ? 4 : 8);
+  return (
+    <SectionShell path={sectionPath(id)} label="Grelha de produtos" style={{ background: colors.background, color: colors.text, padding: mobile ? "24px 16px 32px" : "28px 24px 32px" }}>
+      <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto", display: "grid", gridTemplateColumns: `repeat(${v.columns ?? 2}, minmax(0,1fr))`, columnGap: layout.gridGap, rowGap: Math.round(layout.gridGap * 1.6) }}>
+        {list.map((p) => (
+          <ProductCard
+            key={p.id}
+            product={p}
+            cardPath={elementPath(id, "productCard")}
+            v={card}
+            colors={colors}
+            imageRadius={styleG.imageRadius}
+            borderWidth={styleG.borderWidth}
+            shadow={styleG.shadowStrength}
+            currency={store.currency}
+            wishlist={!!manifest.capabilities.wishlist}
+          />
+        ))}
+      </div>
+    </SectionShell>
+  );
+}
+
+function ProductGallerySection({ id }: { id: string }) {
+  const { colors, mobile } = useSectionFrame(id);
+  const styleG = useGlobalGroup("style");
+  const product = usePreviewProduct();
+  const img = product?.images[0];
+  return (
+    <SectionShell path={sectionPath(id)} label="Galeria do produto" style={{ background: colors.background, padding: mobile ? "16px 16px 0" : "28px 24px 0" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+        <div style={{ aspectRatio: "1/1", background: colors.gallery, borderRadius: styleG.imageRadius, border: `1px solid rgba(32,32,32,.1)`, overflow: "hidden", display: "grid", placeItems: "center" }}>
+          {img ? <img src={img} alt={product?.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Icons.ImageIcon size={32} color={colors.secondary} />}
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+function ProductInfoSection({ id }: { id: string }) {
+  const { colors, mobile } = useSectionFrame(id);
+  const { store } = useTheme();
+  const product = usePreviewProduct();
+  if (!product) return null;
+  return (
+    <SectionShell path={sectionPath(id)} label="Informações do produto" style={{ background: colors.background, color: colors.text, padding: mobile ? "16px" : "20px 24px" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto", display: "grid", gap: 10 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700 }}>{product.name}</h1>
+        <p style={{ fontSize: 18, fontWeight: 700 }}>{formatPrice(product.price, store.currency)}</p>
+        <div style={{ display: "grid", gap: 10, marginTop: 6 }}>
+          <ButtonEl path={elementPath(id, "buyNow")} label="Botão comprar agora" />
+          <ButtonEl path={elementPath(id, "addToCart")} label="Botão adicionar" />
+        </div>
+        <p style={{ fontSize: 14, color: colors.secondary }}>{product.shortDescription ?? "Uma peça versátil, confortável e fácil de combinar."}</p>
+      </div>
+    </SectionShell>
+  );
+}
+
+function RecommendationsSection({ id }: { id: string }) {
+  const { colors, mobile, layout } = useSectionFrame(id);
+  const { products, store, manifest } = useTheme();
+  const title = useNodeValues(elementPath(id, "title"));
+  const card = useNodeValues(elementPath("products", "productCard"));
+  const styleG = useGlobalGroup("style");
+  const current = usePreviewProduct();
+  const list = products.filter((p) => p.id !== current?.id).slice(0, 4);
+  return (
+    <SectionShell path={sectionPath(id)} label="Você também pode gostar" style={{ background: colors.background, color: colors.text, padding: mobile ? "32px 16px" : "48px 24px" }}>
+      <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto" }}>
+        {title.show !== false ? (
+          <Editable path={elementPath(id, "title")} label="Título" as="div">
+            <h2 style={{ fontSize: mobile ? 20 : 24, fontWeight: 700 }}>{title.text || UI_TEXT.recommendations}</h2>
+          </Editable>
+        ) : null}
+        <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: layout.gridGap }}>
+          {list.map((p) => (
+            <ProductCard key={p.id} product={p} cardPath={sectionPath(id)} v={card} colors={colors} imageRadius={styleG.imageRadius} borderWidth={styleG.borderWidth} shadow={styleG.shadowStrength} currency={store.currency} wishlist={!!manifest.capabilities.wishlist} />
+          ))}
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+function ContentBlockSection({ id }: { id: string }) {
+  const { colors, mobile } = useSectionFrame(id);
+  return (
+    <SectionShell path={sectionPath(id)} label="Conteúdo" style={{ background: colors.background, color: colors.text, padding: mobile ? "32px 20px" : "48px 32px" }}>
+      <div style={{ maxWidth: 768, margin: "0 auto", display: "grid", gap: 12 }}>
+        {[88, 100, 72, 94].map((w, i) => (
+          <span key={i} style={{ display: "block", height: 10, width: `${w}%`, borderRadius: 999, background: colors.surfaceAlt }} />
+        ))}
+        <p style={{ fontSize: 12, color: colors.secondary }}>O texto desta página é gerido em Páginas e políticas.</p>
+      </div>
+    </SectionShell>
+  );
+}
+
+function ContactFormSection({ id }: { id: string }) {
+  const { colors, mobile, layout, v } = useSectionFrame(id);
+  const { store } = useTheme();
+  void v;
+  const field = (label: string, tall = false) => (
+    <div style={{ display: "grid", gap: 6, fontSize: 14, fontWeight: 600 }}>
+      {label}
+      <span style={{ display: "block", height: tall ? 96 : 40, border: `1px solid ${colors.border}`, borderRadius: 8, background: colors.cardBg }} />
+    </div>
+  );
+  return (
+    <SectionShell path={sectionPath(id)} label="Formulário de contacto" style={{ background: colors.background, color: colors.text, padding: mobile ? "32px 20px" : "40px 24px" }}>
+      <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto", display: "grid", gap: 32, gridTemplateColumns: mobile ? "1fr" : "1fr .8fr" }}>
+        <div style={{ display: "grid", gap: 16 }}>
+          {field("Nome")}
+          {field("Email")}
+          {field("Mensagem", true)}
+          <ButtonEl path={elementPath(id, "submit")} label="Botão enviar" />
+        </div>
+        <div style={{ display: "grid", gap: 4, alignContent: "start" }}>
+          {store.whatsapp ? <p style={{ borderBottom: `1px solid ${colors.border}`, padding: "16px 0", fontSize: 14 }}>WhatsApp · {store.whatsapp}</p> : null}
+          {store.email ? <p style={{ borderBottom: `1px solid ${colors.border}`, padding: "16px 0", fontSize: 14 }}>Email · {store.email}</p> : null}
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+function ReadOnlyPageSection({ id, kind }: { id: string; kind: "checkout" | "account" }) {
+  const { colors, mobile } = useSectionFrame(id);
+  return (
+    <SectionShell path={sectionPath(id)} label={kind === "checkout" ? "Finalizar compra" : "Conta"} style={{ background: colors.background, color: colors.text, padding: mobile ? "28px 16px" : "40px 24px", minHeight: 360 }}>
+      <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gap: 12 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700 }}>{kind === "checkout" ? "Finalizar compra" : "A minha conta"}</h1>
+        {[1, 2, 3].map((n) => (
+          <span key={n} style={{ display: "block", height: 44, border: `1px solid ${colors.border}`, borderRadius: 8, background: colors.cardBg }} />
+        ))}
+        <p style={{ fontSize: 12, color: colors.secondary }}>Esta página é só de leitura: pagamentos e dados do cliente não se editam aqui.</p>
+      </div>
+    </SectionShell>
+  );
+}
+
+/** Barra inferior (só telemóvel): a "pílula" escura do Lume. */
+function BottomNavSection({ id }: { id: string }) {
+  const v = useNodeValues(sectionPath(id));
+  const { device, manifest, onNavigateLink } = useTheme();
+  if (device !== "mobile") return null;
+  const cap = manifest.capabilities;
+  const items = [
+    { key: "home", label: "Início", Icon: Icons.Home, on: true, link: { type: "home" } as unknown },
+    { key: "search", label: "Pesquisar", Icon: Icons.Search, on: v.showSearch !== false && !!cap.search, link: null },
+    { key: "wishlist", label: "Favoritos", Icon: Icons.Heart, on: v.showWishlist !== false && !!cap.wishlist, link: { type: "themePage", value: "wishlist" } as unknown },
+    { key: "cart", label: "Carrinho", Icon: Icons.ShoppingCart, on: v.showCart !== false && !!cap.cart, link: null },
+  ].filter((i) => i.on);
+  return (
+    <FixedShell path={sectionPath(id)} label="Barra inferior" style={{ display: "flex", justifyContent: "center", padding: "0 0 16px", pointerEvents: "none" }}>
+      <nav aria-label="Navegação principal" style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 4, padding: 6, borderRadius: 999, background: "linear-gradient(180deg,#303030,#1a1a19)", boxShadow: "0 18px 30px rgba(20,20,18,.3), inset 0 1px 0 rgba(255,255,255,.12)" }}>
+        {items.map(({ key, label, Icon, link }, i) => (
+          <span
+            key={key}
+            aria-label={label}
+            onClickCapture={() => link && onNavigateLink?.(link)}
+            style={{ display: "grid", placeItems: "center", width: 48, height: 44, borderRadius: 999, color: i === 0 ? "#141412" : "#f5f5f5", background: i === 0 ? "#fafafa" : "transparent" }}
+          >
+            <Icon size={20} />
+          </span>
+        ))}
+      </nav>
+    </FixedShell>
+  );
+}
+
+function SideMenuSection({ id }: { id: string }) {
+  const v = useNodeValues(sectionPath(id));
+  const colors = useColors();
+  const { store, categories, onNavigateLink } = useTheme();
+  const items = ((v.items ?? []) as any[]).filter((i) => !i.hidden);
+  const go = (link: unknown) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onNavigateLink?.(link);
+  };
+  return (
+    <OverlayShell id="sideMenu" path={sectionPath(id)} label="Menu lateral" side="left" width={300} scrim={35} style={{ background: colors.background, color: colors.text, padding: 20 }}>
+      <p style={{ fontSize: 20, fontWeight: 800, marginBottom: 32 }}>{store.name}</p>
+      <nav style={{ display: "grid", gap: 2 }}>
+        {items.map((it) => (
+          <span key={it.id} onClick={go(it.link)} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 6, fontSize: 18, color: colors.secondary, fontWeight: it.link?.value === "home" ? 700 : 500 }}>
+            {it.label}
+            {it.link?.type === "category" ? null : null}
+          </span>
+        ))}
+      </nav>
+      <span hidden>{categories.length}</span>
+    </OverlayShell>
+  );
+}
+
+function SearchOverlaySection({ id }: { id: string }) {
+  const colors = useColors();
+  const { products, store } = useTheme();
+  const title = useNodeValues(elementPath(id, "title"));
+  const placeholder = useNodeValues(elementPath(id, "placeholder"));
+  return (
+    <OverlayShell id="searchOverlay" path={sectionPath(id)} label="Pesquisa" side="full" scrim={0} style={{ background: colors.background, color: colors.text, padding: 20 }}>
+      <div style={{ maxWidth: 672, margin: "0 auto" }}>
+        <Editable path={elementPath(id, "title")} label="Título" as="div">
+          <h2 style={{ fontSize: 18, fontWeight: 600 }}>{title.text || UI_TEXT.searchTitle}</h2>
+        </Editable>
+        <Editable path={elementPath(id, "placeholder")} label="Texto do campo" as="div" style={{ marginTop: 24 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 8, height: 48, padding: "0 12px", border: `1px solid ${colors.border}`, borderRadius: 8, color: colors.secondary, fontSize: 14 }}>
+            <Icons.Search size={16} /> {placeholder.text || UI_TEXT.searchPlaceholder}
+          </span>
+        </Editable>
+        <div style={{ marginTop: 24, display: "grid", gap: 12 }}>
+          {products.slice(0, 3).map((p) => (
+            <div key={p.id} style={{ display: "grid", gridTemplateColumns: "56px 1fr", gap: 12, alignItems: "center", borderBottom: `1px solid ${colors.border}`, paddingBottom: 12 }}>
+              <span style={{ width: 56, height: 56, borderRadius: 8, overflow: "hidden", background: colors.gallery }}>{p.images[0] ? <img src={p.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}</span>
+              <span style={{ fontSize: 14 }}><strong style={{ display: "block", fontWeight: 600 }}>{p.name}</strong>{formatPrice(p.price, store.currency)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </OverlayShell>
+  );
+}
+
+function CartDrawerSection({ id }: { id: string }) {
+  const colors = useColors();
+  const { products, store } = useTheme();
+  const title = useNodeValues(elementPath(id, "title"));
+  const description = useNodeValues(elementPath(id, "description"));
+  const lines = products.slice(0, 2);
+  const subtotal = lines.reduce((n, p) => n + p.price, 0);
+  return (
+    <OverlayShell id="cartDrawer" path={sectionPath(id)} label="Carrinho lateral" side="right" width={340} scrim={35} style={{ background: colors.background, color: colors.text, display: "flex", flexDirection: "column" }}>
+      <div style={{ borderBottom: `1px solid ${colors.border}`, padding: "20px" }}>
+        <Editable path={elementPath(id, "title")} label="Título" as="div"><h2 style={{ fontSize: 18, fontWeight: 600 }}>{title.text || UI_TEXT.cartTitle}</h2></Editable>
+        <Editable path={elementPath(id, "description")} label="Descrição" as="div"><p style={{ marginTop: 4, fontSize: 14, color: colors.secondary }}>{description.text || UI_TEXT.cartDescription}</p></Editable>
+      </div>
+      <div style={{ flex: 1, padding: 20, display: "grid", gap: 16, alignContent: "start" }}>
+        {lines.map((p) => (
+          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "76px 1fr", gap: 12, borderBottom: `1px solid ${colors.border}`, paddingBottom: 16 }}>
+            <span style={{ width: 76, height: 76, borderRadius: 8, overflow: "hidden", background: colors.gallery }}>{p.images[0] ? <img src={p.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}</span>
+            <span style={{ fontSize: 14 }}><strong style={{ display: "block", fontWeight: 600 }}>{p.name}</strong><span style={{ fontSize: 12, color: colors.secondary }}>{formatPrice(p.price, store.currency)}</span></span>
+          </div>
+        ))}
+      </div>
+      <div style={{ borderTop: `1px solid ${colors.border}`, padding: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, fontSize: 14 }}>
+          <span style={{ color: colors.secondary }}>Subtotal</span>
+          <strong style={{ fontSize: 18 }}>{formatPrice(subtotal, store.currency)}</strong>
+        </div>
+        <ButtonEl path={elementPath(id, "checkout")} label="Botão finalizar" />
+      </div>
+    </OverlayShell>
+  );
+}
+
 /* ------------------------------ registry + root ------------------------------ */
 
 const SECTION_COMPONENTS: Record<string, (p: { id: string }) => React.ReactElement | null> = {
@@ -612,54 +912,75 @@ const SECTION_COMPONENTS: Record<string, (p: { id: string }) => React.ReactEleme
   products: ProductsSection,
   whatsappCta: WhatsappCtaSection,
   footer: FooterSection,
+  bottomNav: BottomNavSection,
+  pageHeading: PageHeadingSection,
+  catalogGrid: CatalogGridSection,
+  productGallery: ProductGallerySection,
+  productInfo: ProductInfoSection,
+  recommendations: RecommendationsSection,
+  contentBlock: ContentBlockSection,
+  contactForm: ContactFormSection,
+  checkoutPage: ({ id }) => <ReadOnlyPageSection id={id} kind="checkout" />,
+  accountPage: ({ id }) => <ReadOnlyPageSection id={id} kind="account" />,
+};
+
+const OVERLAY_COMPONENTS: Record<string, (p: { id: string }) => React.ReactElement | null> = {
+  sideMenu: SideMenuSection,
+  searchOverlay: SearchOverlaySection,
+  cartDrawer: CartDrawerSection,
 };
 
 /**
  * `only`: se indicado, desenha apenas estas seções (ex.: a miniatura da página
  * "Personalizar loja" mostra só a primeira seção da página). Sem `only`,
- * desenha a página completa.
+ * desenha a página completa, a barra fixa e os painéis abertos.
  */
 export function LumeRenderer({ pageId, only }: { pageId: string; only?: string[] }) {
-  const { manifest, customization, device } = useTheme();
+  const { manifest, customization } = useTheme();
+  const preview = useEditorPreview();
   const colors = useColors();
   const typo = useGlobalGroup("typography");
-  const resp = useGlobalGroup("responsive");
   const ids = visibleSectionIds(manifest, customization, pageId);
   const every = [...ids.top, ...ids.page, ...ids.bottom];
   const all = only ? every.filter((id) => only.includes(id)) : every;
   const fonts = Object.fromEntries(manifest.fonts.map((f) => [f.id, f.family]));
-  const scale = device === "mobile" ? (resp.mobileFontScale ?? 100) / 100 : 1;
+  const overlays = only ? [] : (manifest.overlays ?? []).filter((o) => !o.requires || manifest.capabilities[o.requires]);
 
   const rootStyle = {
-    "--sy-color-primary": colors.primary,
-    "--sy-color-background": colors.background,
-    "--sy-color-text": colors.text,
     "--sy-font-heading": fonts[typo.headingFont],
-    "--sy-font-body": fonts[typo.bodyFont],
+    "--sy-color-background": colors.background,
     background: colors.background,
     color: colors.text,
     fontFamily: fonts[typo.bodyFont],
     fontWeight: typo.bodyWeight,
-    fontSize: typo.baseSize * scale,
-    lineHeight: typo.lineHeightBody,
+    fontSize: 16,
+    lineHeight: 1.5,
+    position: preview.pinFixedSections ? "relative" : undefined,
+    paddingBottom: preview.pinFixedSections ? preview.fixedHeight : undefined,
+    minHeight: preview.pinFixedSections ? preview.viewportH : undefined,
   } as CSSProperties;
+
+  const render = (id: string) => {
+    const type = sectionTypeOf(manifest, customization, id);
+    const Cmp = type ? SECTION_COMPONENTS[type.type] : undefined;
+    if (!Cmp || customization.sections[id]?.hidden) return null;
+    return <Fragment key={id}><Cmp id={id} /></Fragment>;
+  };
 
   return (
     <div className="sy-root" style={rootStyle}>
-      <style>{`.sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-family:var(--sy-font-heading);line-height:${typo.lineHeightHeading};letter-spacing:${typo.letterSpacingHeading}em;text-transform:${typo.headingTransform === "none" ? "none" : typo.headingTransform};margin:0}
-      .sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-weight:${typo.headingWeight}}
+      <style>{`.sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-family:var(--sy-font-heading);line-height:1.25;text-transform:${typo.headingTransform === "none" ? "none" : typo.headingTransform};margin:0}
+      .sy-root h1{letter-spacing:-0.025em}
       .sy-root p,.sy-root ul{margin:0}`}</style>
-      {all.map((id) => {
-        const type = sectionTypeOf(manifest, customization, id);
-        const Cmp = type ? SECTION_COMPONENTS[type.type] : undefined;
-        if (!Cmp) return null;
-        if (customization.sections[id]?.hidden) return null;
-        return (
-          <Fragment key={id}>
-            <Cmp id={id} />
-          </Fragment>
-        );
+      {all.map(render)}
+      {only ? null : ids.fixed.map(render)}
+      {overlays.map((o) => {
+        const Cmp = OVERLAY_COMPONENTS[o.id];
+        return Cmp ? <Fragment key={o.id}><Cmp id={o.sectionIds[0]!} /></Fragment> : null;
       })}
     </div>
   );
 }
+
+/** Rota pública do Lume para uma página do tema (usado por quem precisa de ligar editor ↔ loja). */
+export const lumeRouteOf = (page: string) => THEME_PAGE_ROUTE[page];

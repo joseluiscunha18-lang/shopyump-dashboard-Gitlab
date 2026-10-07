@@ -1,5 +1,6 @@
 import type { SettingDef, ThemeManifest } from "@/theme-editor/editor/contracts/types";
 import * as P from "./presets";
+import { extCapabilities, extOverlays, extPages, extSectionTypes, headerIconElements, productCardOpen } from "./manifest-ext";
 
 /**
  * Manifesto do tema LUME — o tema padrão da plataforma Shopyump.
@@ -13,6 +14,18 @@ import * as P from "./presets";
 const B = "basic" as const;
 const A = "advanced" as const;
 
+/**
+ * REGRA DE OURO deste manifesto: só se oferece ao lojista o que a LOJA PÚBLICA
+ * (lib/store/themes/lume + lib/store/themes/lume/lib/personalizacao.ts) realmente
+ * aplica. Um controlo que muda o editor mas não a loja é uma mentira — por isso
+ * os presets são aparados com listas "keep" (tudo o resto é omitido).
+ */
+const CONTAINER_KEYS = ["colorScheme", "align", "contentWidth", "spacing", "padding", "gap", "background", "radius", "shadow", "minHeight", "visibility", "animation", "anchorId"];
+const HEADING_KEYS = ["text", "show", "align", "color", "size", "htmlTag", "font", "weight", "lineHeight", "letterSpacing", "transform", "maxLines", "marginBottom", "opacity", "visibility"];
+const TEXT_KEYS = ["text", "show", "align", "color", "size", "font", "weight", "lineHeight", "letterSpacing", "transform", "maxLines", "marginBottom", "opacity", "visibility"];
+const BUTTON_KEYS = ["show", "label", "link", "variant", "size", "bg", "textColor", "radius", "width", "weight", "transform", "icon", "visibility"];
+const except = (all: string[], keep: string[]) => all.filter((k) => !keep.includes(k));
+
 const colors: SettingDef[] = [
   { key: "primary", label: "Cor principal", control: "color", tier: B, group: "appearance", default: "#202020" },
   { key: "background", label: "Fundo", control: "color", tier: B, group: "appearance", default: "#FFFFFF" },
@@ -22,11 +35,6 @@ const colors: SettingDef[] = [
   { key: "buttonText", label: "Texto dos botões", control: "color", tier: B, group: "appearance", default: "#FFFFFF", assist: { contrastWith: "buttonBg" } },
   { key: "heroFrom", label: "Banner: cor inicial", control: "color", tier: B, group: "appearance", default: "#F9F1E5" },
   { key: "heroTo", label: "Banner: cor final", control: "color", tier: B, group: "appearance", default: "#D2D8DF" },
-  { key: "link", label: "Links", control: "color", tier: A, group: "appearance", default: "token:primary" },
-  { key: "price", label: "Preço", control: "color", tier: A, group: "appearance", default: "token:text" },
-  { key: "comparePrice", label: "Preço anterior", control: "color", tier: A, group: "appearance", default: "#8C8C8C" },
-  { key: "badgeBg", label: "Etiqueta (fundo)", control: "color", tier: A, group: "appearance", default: "#202020" },
-  { key: "badgeText", label: "Etiqueta (texto)", control: "color", tier: A, group: "appearance", default: "#FFFFFF" },
   { key: "border", label: "Bordas", control: "color", tier: A, group: "appearance", default: "#D8D8D8" },
   { key: "cardBg", label: "Fundo dos cartões", control: "color", tier: A, group: "appearance", default: "#FFFFFF" },
   { key: "surfaceAlt", label: "Fundo secundário", control: "color", tier: A, group: "appearance", default: "#EFEFEF" },
@@ -36,12 +44,7 @@ const colors: SettingDef[] = [
 const typography: SettingDef[] = [
   { key: "headingFont", label: "Fonte dos títulos", control: "font", tier: B, group: "typography", default: "manrope" },
   { key: "bodyFont", label: "Fonte do texto", control: "font", tier: B, group: "typography", default: "manrope" },
-  { key: "baseSize", label: "Tamanho geral", control: "slider", tier: B, group: "typography", default: 16, min: 14, max: 20, unit: "px" },
-  { key: "headingWeight", label: "Peso dos títulos", control: "fontWeight", tier: A, group: "typography", default: 800 },
   { key: "bodyWeight", label: "Peso do texto", control: "fontWeight", tier: A, group: "typography", default: 400 },
-  { key: "lineHeightHeading", label: "Altura de linha (títulos)", control: "slider", tier: A, group: "typography", default: 1.25, min: 0.9, max: 1.6, step: 0.05 },
-  { key: "lineHeightBody", label: "Altura de linha (corpo)", control: "slider", tier: A, group: "typography", default: 1.5, min: 1.2, max: 2.2, step: 0.05 },
-  { key: "letterSpacingHeading", label: "Espaçamento de letras (títulos)", control: "slider", tier: A, group: "typography", default: -0.025, min: -0.05, max: 0.2, step: 0.005, unit: "em" },
   {
     key: "headingTransform",
     label: "Transformação dos títulos",
@@ -92,28 +95,24 @@ const layout: SettingDef[] = [
       { value: 0, label: "Total" },
     ],
   },
-  { key: "pagePadding", label: "Margens laterais", control: "slider", tier: B, group: "spacing", responsive: true, default: { $r: { desktop: 24, mobile: 16 } }, min: 12, max: 64, unit: "px" },
   { key: "gridGap", label: "Espaço entre itens", control: "slider", tier: A, group: "spacing", responsive: true, default: { $r: { desktop: 20, mobile: 12 } }, min: 4, max: 48, unit: "px" },
-];
-
-const responsive: SettingDef[] = [
-  { key: "mobileFontScale", label: "Escala do texto no telemóvel", control: "slider", tier: A, group: "responsive", default: 100, min: 85, max: 115, unit: "%" },
 ];
 
 /** Botão do Lume: pílula (arredondamento total). */
 const pill = { radius: { default: 999 } };
 
-export const lumeManifest: ThemeManifest = {
+const baseManifest: ThemeManifest = {
   schemaVersion: 1,
   id: "lume",
   name: "Lume",
-  version: "1.0.0",
+  version: "1.1.0",
   rendererId: "lume",
   capabilities: {
     colorSchemes: true,
     animations: false,
     wishlist: true,
     floatingWhatsApp: true,
+    ...extCapabilities,
   },
   fonts: [
     { id: "manrope", label: "Manrope", family: "'Manrope', system-ui, sans-serif", weights: [400, 500, 600, 700, 800], category: "sans" },
@@ -147,13 +146,15 @@ export const lumeManifest: ThemeManifest = {
     { id: "typography", label: "Tipografia", icon: "type", settings: typography },
     { id: "style", label: "Estilo", icon: "sparkles", settings: style },
     { id: "layout", label: "Layout", icon: "layout", settings: layout },
-    { id: "responsive", label: "Responsividade", icon: "smartphone", settings: responsive },
   ],
   pages: [
     {
       id: "home",
       label: "Início",
       supported: true,
+      kind: "home",
+      group: "main",
+      fixedSections: ["bottomNav"],
       topSections: ["announcement", "header"],
       sections: [
         { id: "hero", type: "hero" },
@@ -162,10 +163,9 @@ export const lumeManifest: ThemeManifest = {
       ],
       bottomSections: ["footer"],
     },
-    { id: "product", label: "Produto", supported: false, previewNeeds: "product", topSections: [], sections: [], bottomSections: [] },
-    { id: "collection", label: "Todos os produtos", supported: false, topSections: [], sections: [], bottomSections: [] },
-    { id: "cart", label: "Carrinho", supported: false, topSections: [], sections: [], bottomSections: [] },
+    ...extPages,
   ],
+  overlays: extOverlays,
   blockTypes: [],
   presets: {
     container: P.container,
@@ -178,6 +178,7 @@ export const lumeManifest: ThemeManifest = {
   },
   icons: ["truck", "shield-check", "message-circle", "credit-card", "gift", "heart", "star", "package", "refresh-cw", "clock", "phone", "mail", "map-pin", "sparkles", "tag", "shopping-bag", "arrow-right"],
   sectionTypes: [
+    ...extSectionTypes,
     /* ------------------------------ Barra de anúncio ------------------------------ */
     {
       type: "announcement",
@@ -198,7 +199,7 @@ export const lumeManifest: ThemeManifest = {
           label: "Mensagem",
           settings: {
             preset: "text",
-            omit: ["maxLines", "opacity", "marginBottom", "align", "lineHeight", "letterSpacing", "font", "weight"],
+            omit: except(TEXT_KEYS, ["text", "color", "size", "transform"]),
             override: {
               text: { default: "Entregas em todo Moçambique" },
               size: { default: 10 },
@@ -210,7 +211,7 @@ export const lumeManifest: ThemeManifest = {
       ],
       settings: {
         preset: "container",
-        omit: ["spacing", "contentWidth", "minHeight", "radius", "shadow", "gap", "align", "padding"],
+        omit: except(CONTAINER_KEYS, ["colorScheme"]),
         override: { colorScheme: { default: "dark" } },
         add: [{ key: "height", label: "Altura", control: "slider", tier: B, group: "layout", default: 36, min: 24, max: 64, unit: "px" }],
       },
@@ -220,7 +221,7 @@ export const lumeManifest: ThemeManifest = {
     {
       type: "header",
       label: "Cabeçalho",
-      description: "Nome (ou logótipo), menu e carrinho.",
+      description: "Nome da loja, menu e ícones.",
       icon: "panel-top",
       scope: "global",
       required: true,
@@ -235,39 +236,18 @@ export const lumeManifest: ThemeManifest = {
           label: "Nome da loja",
           settings: {
             preset: "text",
-            omit: ["text", "maxLines", "marginBottom", "align", "opacity", "lineHeight"],
+            omit: except(TEXT_KEYS, ["color", "size", "weight"]),
             override: { size: { default: 18 }, weight: { default: 800 }, color: { default: "token:text" } },
           },
         },
-        {
-          id: "logo",
-          kind: "logo",
-          label: "Logótipo",
-          settings: {
-            preset: "image",
-            omit: ["aspectRatio", "fit", "focalPoint", "overlay", "opacity", "show"],
-            add: [{ key: "height", label: "Altura", control: "slider", tier: B, group: "layout", default: 28, min: 16, max: 64, unit: "px" }],
-          },
-        },
-        {
-          id: "icons",
-          kind: "icon",
-          label: "Ícones",
-          settings: [
-            { key: "iconSize", label: "Tamanho dos ícones", control: "slider", tier: B, group: "layout", default: 18, min: 14, max: 28, unit: "px" },
-            { key: "color", label: "Cor", control: "color", tier: A, group: "appearance", default: "token:text" },
-          ],
-        },
+        ...headerIconElements,
       ],
       settings: {
         preset: "container",
-        omit: ["spacing", "align", "minHeight", "radius", "shadow", "gap", "animation", "contentWidth"],
+        omit: [...CONTAINER_KEYS],
         add: [
-          { key: "showSearch", label: "Mostrar pesquisa", control: "toggle", tier: B, group: "content", default: true },
-          { key: "showWishlist", label: "Mostrar favoritos", control: "toggle", tier: B, group: "content", requires: "wishlist", default: true },
-          { key: "showCart", label: "Mostrar carrinho", control: "toggle", tier: B, group: "content", default: true },
           { key: "sticky", label: "Cabeçalho fixo", control: "toggle", tier: B, group: "behavior", default: true },
-          { key: "height", label: "Altura", control: "slider", tier: A, group: "layout", responsive: true, default: 64, min: 48, max: 120, unit: "px" },
+          { key: "height", label: "Altura", control: "slider", tier: A, group: "layout", default: 64, min: 48, max: 96, unit: "px" },
           { key: "borderBottom", label: "Linha inferior", control: "toggle", tier: A, group: "appearance", default: false },
         ],
       },
@@ -293,10 +273,9 @@ export const lumeManifest: ThemeManifest = {
           label: "Título",
           settings: {
             preset: "heading",
-            omit: ["align", "maxLines"],
+            omit: except(HEADING_KEYS, ["text", "color", "size", "weight"]),
             override: {
               text: { default: "BEM-VINDO À LOJA" },
-              htmlTag: { default: "h1" },
               size: { default: { $r: { desktop: 48, mobile: 22 } } },
               weight: { default: 800 },
               color: { default: "token:text" },
@@ -309,7 +288,7 @@ export const lumeManifest: ThemeManifest = {
           label: "Descrição",
           settings: {
             preset: "text",
-            omit: ["maxLines"],
+            omit: except(TEXT_KEYS, ["text", "show", "color", "size"]),
             override: {
               text: { default: "Descubra a nova colecção." },
               show: { default: false },
@@ -324,47 +303,21 @@ export const lumeManifest: ThemeManifest = {
           label: "Botão",
           settings: {
             preset: "button",
+            omit: except(BUTTON_KEYS, ["label", "bg", "textColor"]),
             override: {
               label: { default: "Ver Produtos" },
-              link: { default: { type: "anchor", value: "produtos" } },
-              variant: { default: "solid" },
               bg: { default: "#FFFFFF" },
               textColor: { default: "#202020" },
-              size: { default: "lg" },
-              ...pill,
             },
-          },
-        },
-        {
-          id: "image",
-          kind: "image",
-          label: "Imagem de fundo",
-          settings: {
-            preset: "image",
-            omit: ["aspectRatio", "radius", "opacity", "show"],
-            override: { image: { assist: { recommended: { width: 1920, height: 800 } } } },
           },
         },
       ],
       settings: {
         preset: "container",
-        omit: ["spacing", "gap", "colorScheme", "contentWidth", "padding", "radius", "shadow", "background", "minHeight"],
+        omit: [...CONTAINER_KEYS],
         add: [
           { key: "height", label: "Altura", control: "slider", tier: B, group: "layout", responsive: true, default: { $r: { desktop: 403, mobile: 263 } }, min: 200, max: 800, unit: "px" },
-          {
-            key: "backgroundMode",
-            label: "Fundo",
-            control: "segmented",
-            tier: B,
-            group: "appearance",
-            default: "gradient",
-            options: [
-              { value: "gradient", label: "Degradê" },
-              { value: "image", label: "Imagem" },
-            ],
-          },
-          { key: "overlay", label: "Escurecer imagem", control: "overlay", tier: B, group: "appearance", visibleWhen: { key: "backgroundMode", equals: "image" }, default: { color: "#000000", opacity: 25 } },
-          { key: "showIllustration", label: "Mostrar ilustração", control: "toggle", tier: B, group: "appearance", visibleWhen: { key: "backgroundMode", equals: "gradient" }, default: true },
+          { key: "showIllustration", label: "Mostrar ilustração", control: "toggle", tier: B, group: "appearance", default: true },
         ],
       },
     },
@@ -379,10 +332,10 @@ export const lumeManifest: ThemeManifest = {
       allowedPages: ["home"],
       required: false,
       removable: true,
-      duplicable: true,
+      duplicable: false,
       reorderable: true,
       hideable: true,
-      maxInstances: 3,
+      maxInstances: 1,
       dataSource: { kind: "products", modes: ["all", "manual"], sort: ["recent", "priceAsc", "priceDesc"], maxItems: { min: 2, max: 24 } },
       elements: [
         {
@@ -391,10 +344,9 @@ export const lumeManifest: ThemeManifest = {
           label: "Título",
           settings: {
             preset: "heading",
-            omit: ["maxLines"],
+            omit: except(HEADING_KEYS, ["text", "color", "size", "weight"]),
             override: {
-              text: { default: "Lançamentos" },
-              htmlTag: { default: "h2" },
+              text: { default: "Produtos" },
               size: { default: { $r: { desktop: 24, mobile: 20 } } },
               weight: { default: 700 },
               color: { default: "token:text" },
@@ -407,32 +359,24 @@ export const lumeManifest: ThemeManifest = {
           label: "Botão explorar mais",
           settings: {
             preset: "button",
-            override: {
-              label: { default: "Explorar mais" },
-              link: { default: { type: "products" } },
-              variant: { default: "outline" },
-              bg: { default: "token:secondary" },
-              size: { default: "md" },
-              weight: { default: 600 },
-              icon: { default: "arrow-right" },
-              ...pill,
-            },
+            omit: except(BUTTON_KEYS, ["label"]),
+            override: { label: { default: "Explorar mais" } },
           },
         },
         {
           id: "productCard",
           kind: "productCard",
           label: "Cartão de produto",
+          openAction: productCardOpen,
           settings: [
             { key: "showName", label: "Mostrar nome", control: "toggle", tier: B, group: "content", default: true },
             { key: "showPrice", label: "Mostrar preço", control: "toggle", tier: B, group: "content", default: true },
             { key: "showBadge", label: "Mostrar etiqueta (esgotado)", control: "toggle", tier: B, group: "content", default: true },
             { key: "showWishlist", label: "Mostrar favorito", control: "toggle", tier: B, group: "content", requires: "wishlist", default: true },
-            { key: "aspectRatio", label: "Proporção da imagem", control: "aspectRatio", tier: A, group: "layout", responsive: true, default: "1/1", options: [{ value: "1/1", label: "1:1" }, { value: "4/5", label: "4:5" }, { value: "3/4", label: "3:4" }] },
+            { key: "aspectRatio", label: "Proporção da imagem", control: "aspectRatio", tier: A, group: "layout", default: "1/1", options: [{ value: "1/1", label: "1:1" }, { value: "4/5", label: "4:5" }, { value: "3/4", label: "3:4" }] },
             { key: "align", label: "Alinhamento", control: "align", tier: A, group: "layout", default: "left" },
             { key: "nameSize", label: "Tamanho do nome", control: "slider", tier: A, group: "typography", default: 14, min: 11, max: 24, unit: "px" },
             { key: "priceSize", label: "Tamanho do preço", control: "slider", tier: A, group: "typography", default: 14, min: 12, max: 32, unit: "px" },
-            { key: "priceColor", label: "Cor do preço", control: "color", tier: A, group: "appearance", default: "token:price" },
             { key: "imageBg", label: "Fundo da foto", control: "color", tier: A, group: "appearance", default: "token:gallery" },
             { key: "imageBorder", label: "Borda da foto", control: "toggle", tier: A, group: "appearance", default: true },
             { key: "productsInfo", label: "Produtos", control: "readonlyInfo", tier: B, group: "content", externalTarget: "products", default: "Nome, preço e imagem são geridos em Produtos." },
@@ -441,11 +385,7 @@ export const lumeManifest: ThemeManifest = {
       ],
       settings: {
         preset: "container",
-        omit: ["colorScheme"],
-        override: {
-          spacing: { default: { $r: { desktop: 40, mobile: 28 } } },
-          gap: { default: 20 },
-        },
+        omit: [...CONTAINER_KEYS],
         add: [
           { key: "mode", label: "Origem", control: "segmented", tier: B, group: "content", default: "all", options: [{ value: "all", label: "Todos" }, { value: "manual", label: "Manual" }] },
           { key: "picked", label: "Produtos", control: "productPicker", tier: B, group: "content", visibleWhen: { key: "mode", equals: "manual" }, default: [] },
@@ -477,10 +417,9 @@ export const lumeManifest: ThemeManifest = {
           label: "Título",
           settings: {
             preset: "heading",
-            omit: ["maxLines", "align"],
+            omit: except(HEADING_KEYS, ["text", "color", "size", "weight"]),
             override: {
               text: { default: "Ficou com alguma dúvida sobre os produtos?" },
-              htmlTag: { default: "h2" },
               size: { default: { $r: { desktop: 18, mobile: 16 } } },
               weight: { default: 600 },
               color: { default: "token:text" },
@@ -493,7 +432,7 @@ export const lumeManifest: ThemeManifest = {
           label: "Descrição",
           settings: {
             preset: "text",
-            omit: ["maxLines", "align"],
+            omit: except(TEXT_KEYS, ["text", "color", "size"]),
             override: { text: { default: "Fale diretamente connosco." }, size: { default: 14 }, color: { default: "token:secondary" } },
           },
         },
@@ -503,23 +442,14 @@ export const lumeManifest: ThemeManifest = {
           label: "Botão",
           settings: {
             preset: "button",
-            omit: ["link"],
-            override: {
-              label: { default: "Falar no WhatsApp" },
-              variant: { default: "outline" },
-              bg: { default: "token:text" },
-              size: { default: "lg" },
-              icon: { default: "message-circle" },
-              weight: { default: 600 },
-              ...pill,
-            },
+            omit: except(BUTTON_KEYS, ["label"]),
+            override: { label: { default: "Falar no WhatsApp" } },
           },
         },
       ],
       settings: {
         preset: "container",
-        omit: ["colorScheme", "align", "gap", "contentWidth", "radius", "shadow", "minHeight", "background"],
-        override: { spacing: { default: { $r: { desktop: 32, mobile: 24 } } } },
+        omit: [...CONTAINER_KEYS],
         add: [
           { key: "whatsappInfo", label: "Número de WhatsApp", control: "readonlyInfo", tier: B, group: "content", externalTarget: "store-info", default: "O número é gerido em Informações da loja. Sem número, esta secção não aparece na loja." },
           {
@@ -557,8 +487,8 @@ export const lumeManifest: ThemeManifest = {
           label: "Título da coluna",
           settings: {
             preset: "heading",
-            omit: ["maxLines", "align", "htmlTag", "lineHeight", "marginBottom"],
-            override: { text: { default: "INFORMAÇÕES" }, size: { default: 12 }, weight: { default: 700 }, color: { default: "token:text" } },
+            omit: except(HEADING_KEYS, ["text"]),
+            override: { text: { default: "INFORMAÇÕES" } },
           },
         },
         {
@@ -569,7 +499,6 @@ export const lumeManifest: ThemeManifest = {
             { key: "shipping", label: "Envios e Entregas", control: "toggle", tier: B, group: "content", default: true },
             { key: "returns", label: "Trocas e Devoluções", control: "toggle", tier: B, group: "content", default: true },
             { key: "terms", label: "Termos e Privacidade", control: "toggle", tier: B, group: "content", default: true },
-            { key: "color", label: "Cor", control: "color", tier: A, group: "appearance", default: "token:secondary" },
             { key: "policiesInfo", label: "Conteúdo", control: "readonlyInfo", tier: B, group: "content", externalTarget: "policies", default: "O conteúdo é gerido em Páginas e políticas." },
           ],
         },
@@ -581,7 +510,6 @@ export const lumeManifest: ThemeManifest = {
             { key: "instagram", label: "Instagram", control: "toggle", tier: B, group: "content", default: true },
             { key: "facebook", label: "Facebook", control: "toggle", tier: B, group: "content", default: true },
             { key: "tiktok", label: "TikTok", control: "toggle", tier: B, group: "content", default: true },
-            { key: "size", label: "Tamanho", control: "slider", tier: B, group: "layout", default: 16, min: 14, max: 32, unit: "px" },
             { key: "socialInfo", label: "Endereços", control: "readonlyInfo", tier: B, group: "content", externalTarget: "social-links", default: "Só aparecem as redes que preencheu em Redes sociais." },
           ],
         },
@@ -591,8 +519,8 @@ export const lumeManifest: ThemeManifest = {
           label: "Direitos de autor",
           settings: {
             preset: "text",
-            omit: ["maxLines", "align"],
-            override: { text: { default: "© {ano} {loja}. Todos os direitos reservados.", maxLength: 120 }, size: { default: 12 }, color: { default: "token:text" } },
+            omit: except(TEXT_KEYS, ["text"]),
+            override: { text: { default: "© {ano} {loja}. Todos os direitos reservados.", maxLength: 120 } },
           },
         },
         {
@@ -604,10 +532,12 @@ export const lumeManifest: ThemeManifest = {
       ],
       settings: {
         preset: "container",
-        omit: ["minHeight", "radius", "animation", "colorScheme", "align", "gap", "contentWidth", "shadow"],
-        override: { spacing: { default: { $r: { desktop: 32, mobile: 24 } } } },
+        omit: [...CONTAINER_KEYS],
         add: [{ key: "borderTop", label: "Linha superior", control: "toggle", tier: A, group: "appearance", default: true }],
       },
     },
   ],
 };
+
+/** Botões com "Destino" abrem esse destino no segundo toque (ver openAction). */
+export const lumeManifest: ThemeManifest = baseManifest;
