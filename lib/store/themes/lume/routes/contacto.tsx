@@ -7,6 +7,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { PageHeading } from "../components/store/page-heading";
 import { useLumeLoja } from "../components/store/lume-loja-context";
+import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
 
 export const Route = createFileRoute("/contacto")({
   head: () => ({ meta: [{ title: "Contacto — LUME." }, { name: "description", content: "Fale com a equipa da loja por mensagem, WhatsApp ou email." }, { property: "og:title", content: "Contacto — LUME." }, { property: "og:description", content: "Fale com a equipa da loja por mensagem, WhatsApp ou email." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/contacto")({
 
 function ContactPage() {
   const { contactos } = useLumeLoja();
+  const p = useLumePersonalizacao();
 
   const sendMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,13 +36,13 @@ function ContactPage() {
 
   return (
     <>
-      <PageHeading eyebrow="Fale connosco" title="Contacto" description="Envie uma mensagem ou escolha um dos canais diretos da loja." />
+      <PageHeading pageKey="contact" eyebrow="Fale connosco" title="Contacto" description="Envie uma mensagem ou escolha um dos canais diretos da loja." />
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-10 sm:px-6 md:grid-cols-[1fr_.8fr]">
         <form className="grid gap-4" onSubmit={sendMessage}>
           <label className="grid gap-2 text-sm font-semibold">Nome<Input name="name" required placeholder="O seu nome" /></label>
           <label className="grid gap-2 text-sm font-semibold">Email<Input name="email" type="email" required placeholder="nome@exemplo.com" /></label>
           <label className="grid gap-2 text-sm font-semibold">Mensagem<Textarea name="message" required className="min-h-32" placeholder="Como podemos ajudar?" /></label>
-          <Button size="lg" type="submit">Enviar mensagem</Button>
+          <Button size="lg" type="submit">{p?.ui.contactSubmit ?? "Enviar mensagem"}</Button>
         </form>
         <div className="grid content-start gap-3">
           {whatsappUrl && (
