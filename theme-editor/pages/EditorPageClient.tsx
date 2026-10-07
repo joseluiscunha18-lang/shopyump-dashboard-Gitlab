@@ -6,10 +6,19 @@ import { EditorRoot } from "@/theme-editor/ui/editor-root";
 import { Toaster } from "@/theme-editor/ui/sonner";
 import { EditorProvider, type EditorData } from "@/theme-editor/editor/core/store";
 import { EditorShell } from "@/theme-editor/editor/ui/shell/EditorShell";
-import { mockAdapter, setAdapterNavigator } from "@/theme-editor/mocks/adapter";
+import { configureAdapter, mockAdapter, setAdapterNavigator } from "@/theme-editor/mocks/adapter";
+import { createLojaAdapter, type LojaEditorInit } from "@/theme-editor/adapters/loja";
+import { saveTemaPersonalizacao } from "@/lib/mutations/personalizacao";
 import type { Customization } from "@/theme-editor/editor/contracts/types";
 
-function EditorPageInner() {
+function EditorPageInner({ initial }: { initial?: LojaEditorInit }) {
+  // Liga o editor à loja real ANTES do primeiro carregamento (idempotente).
+  // Sem cleanup de propósito: ao navegar entre páginas do editor o novo ecrã monta
+  // ANTES de o antigo desmontar, e um cleanup apagaria a ligação acabada de criar.
+  useState(() => {
+    configureAdapter(initial ? createLojaAdapter(initial, saveTemaPersonalizacao) : null);
+    return null;
+  });
   const [loaded, setLoaded] = useState<{ data: EditorData; custom: Customization } | null>(null);
   const [error, setError] = useState(false);
 
@@ -55,10 +64,10 @@ function EditorPageInner() {
   );
 }
 
-export default function EditorPageClient() {
+export default function EditorPageClient({ initial }: { initial?: LojaEditorInit }) {
   return (
     <EditorRoot page>
-      <EditorPageInner />
+      <EditorPageInner initial={initial} />
     </EditorRoot>
   );
 }

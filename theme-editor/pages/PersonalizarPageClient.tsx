@@ -9,7 +9,9 @@ import { Toaster } from "@/theme-editor/ui/sonner";
 import { Button } from "@/theme-editor/ui/button";
 import { Skeleton } from "@/theme-editor/ui/skeleton";
 import { ThemeProvider } from "@/theme-editor/editor/sdk";
-import { mockAdapter, setAdapterExternalHandler } from "@/theme-editor/mocks/adapter";
+import { configureAdapter, mockAdapter, setAdapterExternalHandler } from "@/theme-editor/mocks/adapter";
+import { createLojaAdapter, type LojaEditorInit } from "@/theme-editor/adapters/loja";
+import { saveTemaPersonalizacao } from "@/lib/mutations/personalizacao";
 import { ThemeRenderer } from "@/theme-editor/themes/registry";
 import { visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import type { Customization, MediaAsset, ProductLite, CategoryLite, Store, ThemeManifest } from "@/theme-editor/editor/contracts/types";
@@ -242,8 +244,13 @@ function MiniPreview({
   );
 }
 
-function PersonalizarPageInner() {
+function PersonalizarPageInner({ initial }: { initial?: LojaEditorInit }) {
   const router = useRouter();
+  // Liga o editor à loja real ANTES do primeiro carregamento (idempotente; sem cleanup — ver EditorPageClient).
+  useState(() => {
+    configureAdapter(initial ? createLojaAdapter(initial, saveTemaPersonalizacao) : null);
+    return null;
+  });
   useEffect(() => {
     setAdapterExternalHandler((target) => {
       if (target !== "themes") return false;
@@ -318,10 +325,10 @@ function PersonalizarPageInner() {
   );
 }
 
-export default function PersonalizarPageClient() {
+export default function PersonalizarPageClient({ initial }: { initial?: LojaEditorInit }) {
   return (
     <EditorRoot>
-      <PersonalizarPageInner />
+      <PersonalizarPageInner initial={initial} />
     </EditorRoot>
   );
 }
