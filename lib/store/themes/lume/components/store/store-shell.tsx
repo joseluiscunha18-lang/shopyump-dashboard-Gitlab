@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, useGoBack, useRouterState } from "../../router";
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, Facebook, Heart, Home, Instagram, MessageCircle, Music2, Search, ShoppingCart, User, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -17,7 +17,8 @@ import { useLumeLoja } from "./lume-loja-context";
 import { LumePersonalizacaoStyle, useLumePersonalizacao } from "./lume-personalizacao-context";
 import { categorySlug } from "../../lib/store-data";
 import { THEME_PAGE_ROUTE, lumePageKindOf } from "@/theme-editor/themes/lume/page-text";
-import { getVisiblePolicyLinks, headerActionsFor, resolveHeaderMode } from "@/lib/store/shared/storefront-logic";
+import { BOTTOM_NAV_DEFAULTS, getVisiblePolicyLinks, headerActionsFor, headerShortcutsOnMobile, resolveHeaderMode } from "@/lib/store/shared/storefront-logic";
+import { BottomNavView, type BottomNavEntry } from "./bottom-nav-view";
 
 /** Marca da loja no cabeçalho: logótipo (se o lojista enviou um), nome, ou os dois. */
 function Brand({ nome, className }: { nome: string; className: string }) {
@@ -65,6 +66,10 @@ function ShellContent({ children }: { children: ReactNode }) {
   // regra aqui muda-a automaticamente nos dois sítios.
   const headerMode = resolveHeaderMode(lumePageKindOf(pathname));
   const headerActions = headerActionsFor(headerMode);
+  // Barra inferior: o lojista pode removê-la. Sem ela, Pesquisa e Favoritos passam a
+  // aparecer no cabeçalho também em telemóvel (regra partilhada com o editor).
+  const bottomNavVisible = p?.bottomNav?.visible ?? true;
+  const shortcutVisibility = headerShortcutsOnMobile(bottomNavVisible) ? "inline-flex" : "hidden sm:inline-flex";
   const institutionalTitles: Record<string, string> = {
     "/envios-e-entregas": "Envios e Entregas",
     "/trocas-e-devolucoes": "Trocas e Devoluções",
@@ -109,6 +114,19 @@ function ShellContent({ children }: { children: ReactNode }) {
       </div>
     );
   }
+  // Itens da barra inferior pela ordem e com os nomes do lojista (ou os originais).
+  const navEntries: BottomNavEntry[] = (p?.bottomNav?.items ?? BOTTOM_NAV_DEFAULTS).map(({ key, label }): BottomNavEntry => {
+    switch (key) {
+      case "home":
+        return { key, label, icon: <Home />, active: pathname === "/", semantics: "link", "data-sy": "bottom-home", renderItem: (props) => <Link to="/" {...props} /> };
+      case "search":
+        return { key, label, icon: <Search className="optical-lg" />, active: searchOpen, semantics: "button", "data-sy": "bottom-search", renderItem: (props) => <Button variant="nav" onClick={() => setSearchOpen(true)} {...props} /> };
+      case "wishlist":
+        return { key, label, icon: <Heart className="optical-sm" />, active: pathname === "/favoritos", semantics: "link", "data-sy": "bottom-wishlist", renderItem: (props) => <Link to="/favoritos" {...props} /> };
+      case "cart":
+        return { key, label, icon: <ShoppingCart className="optical-lg" />, active: cartOpen, badge: cartCount, iconRef: navCartRef, semantics: "button", "data-sy": "bottom-cart", renderItem: (props) => <Button variant="nav" onClick={() => setCartOpen(true)} {...props} /> };
+    }
+  });
   return (
     <div className="theme-lume min-h-screen bg-background text-foreground" style={p?.vars}>
       {p && <LumePersonalizacaoStyle p={p} />}
@@ -167,20 +185,15 @@ function ShellContent({ children }: { children: ReactNode }) {
           ) : !headerActions.search && !headerActions.wishlist ? (
             <span data-sy="header-account" className="contents"><AccountButton /></span>
           ) : <div className="flex items-center gap-1">
-            {headerActions.search && <Button variant="ghost" size="icon" aria-label="Pesquisar" data-sy="header-search" onClick={() => setSearchOpen(true)} className="hidden sm:inline-flex"><Search size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Button>}
-            {headerActions.wishlist && <Button asChild variant="ghost" size="icon" aria-label="Favoritos" data-sy="header-wishlist" className="hidden sm:inline-flex"><Link to="/favoritos"><Heart size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Link></Button>}
+            {headerActions.search && <Button variant="ghost" size="icon" aria-label="Pesquisar" data-sy="header-search" onClick={() => setSearchOpen(true)} className={shortcutVisibility}><Search size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Button>}
+            {headerActions.wishlist && <Button asChild variant="ghost" size="icon" aria-label="Favoritos" data-sy="header-wishlist" className={shortcutVisibility}><Link to="/favoritos"><Heart size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Link></Button>}
             {headerActions.account && <span data-sy="header-account" className="contents"><AccountButton /></span>}
           </div>}
         </div>
       </header>
       <main className={pathname === "/" || productPage ? "pb-0" : "pb-12 sm:pb-0"}>{children}</main>
       <StoreFooter productPage={productPage} />
-      {!productPage && <nav aria-label="Navegação principal" className="premium-nav fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center sm:hidden">
-        <BottomLink to="/" label="Início" active={pathname === "/"}><Home /></BottomLink>
-        <BottomAction dataSy="bottom-search" label="Pesquisar" active={searchOpen} onClick={() => setSearchOpen(true)}><Search className="optical-lg" /></BottomAction>
-        <BottomLink dataSy="bottom-wishlist" to="/favoritos" label="Favoritos" active={pathname === "/favoritos"}><Heart className="optical-sm" /></BottomLink>
-        <BottomAction dataSy="bottom-cart" label="Carrinho" active={cartOpen} onClick={() => setCartOpen(true)} badge={cartCount} iconRef={navCartRef}><ShoppingCart className="optical-lg" /></BottomAction>
-      </nav>}
+      {!productPage && bottomNavVisible && <BottomNavView items={navEntries} className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2 sm:hidden" />}
       {searchOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-background p-5 sm:p-10"><div className="mx-auto max-w-2xl"><div className="flex items-center justify-between"><h2 className="text-lg font-semibold">{p?.ui.searchTitle ?? "Pesquisar produtos"}</h2><Button variant="ghost" size="icon" aria-label="Fechar pesquisa" onClick={() => setSearchOpen(false)}><X /></Button></div><div className="mt-7 relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={p?.ui.searchPlaceholder ?? "O que procura?"} className="h-12 pl-10"/></div><div className="mt-6 grid gap-3">{results.map((product) => <Link key={product.id} to="/produto/$productId" params={{ productId: product.id }} onClick={() => setSearchOpen(false)} className="grid grid-cols-[56px_1fr] items-center gap-3 border-b border-border pb-3"><div className={`product-mini product-tone-${product.tone}`}><ProductArt kind={product.kind}/></div><div><p className="text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.category}</p></div></Link>)}</div></div></div>}
       <CartDrawer />
       <AuthModal />
@@ -211,7 +224,7 @@ function StoreFooter({ productPage }: { productPage: boolean }) {
   const visiblePolicyIds = new Set(getVisiblePolicyLinks(paginas).map((link) => link.id));
 
   return (
-    <footer className={`bg-background px-5 pt-4 text-footer-foreground sm:px-8 sm:pb-8 sm:pt-6 ${productPage ? "pb-10" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"}`}>
+    <footer data-sy="footer" className={`bg-background px-5 pt-4 text-footer-foreground sm:px-8 sm:pb-8 sm:pt-6 ${productPage ? "pb-10" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"}`}>
       <div data-sy="footer-inner" className="mx-auto max-w-6xl border-t border-border pt-6 sm:pt-7">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-2 sm:gap-8">
           <div>
@@ -308,16 +321,6 @@ function MenuTwoLines({ size = 22, strokeWidth = 2 }: { size?: number; strokeWid
     </svg>
   );
 }
-
-function BottomLink({ to, label, active, children, dataSy }: { to: "/" | "/favoritos"; label: string; active: boolean; children: ReactNode; dataSy?: string }) {
-  return <Link to={to} data-sy={dataSy} aria-label={label} aria-current={active ? "page" : undefined} className={`premium-nav-item ${active ? "is-active" : ""}`}><span className="premium-nav-icon">{children}</span><span className="premium-nav-label">{label}</span></Link>;
-}
-
-function BottomAction({ label, active, onClick, badge = 0, iconRef, children, dataSy }: { dataSy?: string; label: string; active: boolean; onClick: () => void; badge?: number; iconRef?: RefObject<HTMLSpanElement | null>; children: ReactNode }) {
-  return <Button variant="nav" data-sy={dataSy} aria-label={label} aria-pressed={active} onClick={onClick} className={`premium-nav-item ${active ? "is-active" : ""}`}><span ref={iconRef} className="premium-nav-icon">{children}</span><span className="premium-nav-label">{label}</span>{badge > 0 && <span key={badge} className="premium-nav-badge cart-count-slide">{badge > 9 ? "9+" : badge}</span>}</Button>;
-}
-
-
 
 /** Link do menu lateral personalizado no editor (página do tema, categoria ou endereço). */
 function MenuEntry({ item, pathname, onNavigate }: { item: { label: string; kind: 'page' | 'category' | 'url'; value: string }; pathname: string; onNavigate: () => void }) {
