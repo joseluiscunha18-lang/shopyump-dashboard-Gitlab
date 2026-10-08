@@ -82,7 +82,7 @@ export function NavListControl({ def, value, onChange }: { def: SettingDef; valu
           <button className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left text-sm" onClick={() => setOpen(isOpen ? null : it.id)}>
             {spec.iconEnabled ? <Icon name={it.icon} className="size-4 shrink-0" /> : null}
             <span className="truncate">{depth > 0 ? "↳ " : ""}{it.label}</span>
-            {it.locked ? <Icons.Lock className="size-3 text-muted-foreground" /> : null}
+            {it.locked && !spec.fixed ? <Icons.Lock className="size-3 text-muted-foreground" /> : null}
           </button>
           <Button size="icon" variant="ghost" className="size-8" disabled={blockHide} title={blockHide ? `Mínimo de ${spec.minVisible} itens visíveis` : undefined}
             onClick={() => update((l) => { const f = locate(l, it.id); if (f) f.arr[f.i].hidden = !f.arr[f.i].hidden; })}>
@@ -104,12 +104,12 @@ export function NavListControl({ def, value, onChange }: { def: SettingDef; valu
                   ))}
                 </>
               ) : null}
-              {!it.locked && (depth > 0 || items.length < spec.maxItems) ? (
+              {!spec.fixed && !it.locked && (depth > 0 || items.length < spec.maxItems) ? (
                 <DropdownMenuItem onClick={() => update((l) => { const f = locate(l, it.id); if (f) f.arr.splice(f.i + 1, 0, { ...clone(f.arr[f.i]), id: uid(), locked: false, auto: undefined, children: f.arr[f.i].children?.map((c) => ({ ...c, id: uid() })) }); })}>
                   <Icons.Copy className="size-4" /> Duplicar
                 </DropdownMenuItem>
               ) : null}
-              {!it.locked ? (
+              {!spec.fixed && !it.locked ? (
                 <DropdownMenuItem onClick={() => update((l) => { const f = locate(l, it.id); if (f) f.arr.splice(f.i, 1); })}>
                   <Icons.Trash2 className="size-4" /> Remover
                 </DropdownMenuItem>
@@ -132,7 +132,7 @@ export function NavListControl({ def, value, onChange }: { def: SettingDef; valu
                 <IconControl value={it.icon} onChange={(v) => update((l) => { const f = locate(l, it.id); if (f) f.arr[f.i].icon = v as string; })} />
               </div>
             ) : null}
-            {it.auto === "categories" ? (
+            {spec.fixed ? null : it.auto === "categories" ? (
               <div className="space-y-2">
                 <p className="text-xs font-medium">Quantas categorias mostrar</p>
                 <Input type="number" min={1} max={12} value={it.autoCount ?? 6}
@@ -175,10 +175,10 @@ export function NavListControl({ def, value, onChange }: { def: SettingDef; valu
   return (
     <div className="space-y-1.5">
       {items.map((it) => row(it, 0))}
-      <Button variant="outline" size="sm" className="w-full" disabled={items.length >= spec.maxItems}
+      {spec.fixed ? null : <Button variant="outline" size="sm" className="w-full" disabled={items.length >= spec.maxItems}
         onClick={() => update((l) => l.push({ id: uid(), label: "Novo item", icon: spec.iconEnabled ? "circle" : undefined, link: spec.linkTypes.includes("themePage") ? { type: "themePage", value: "home" } : { type: spec.linkTypes[0] } }))}>
         <Icons.Plus className="size-4" /> {items.length >= spec.maxItems ? `Máximo de ${spec.maxItems} itens` : "Adicionar item"}
-      </Button>
+      </Button>}
     </div>
   );
 }
