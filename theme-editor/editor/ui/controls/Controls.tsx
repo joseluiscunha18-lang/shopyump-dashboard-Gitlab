@@ -42,16 +42,19 @@ function Icon({ name, ...rest }: { name: string } & Record<string, unknown>) {
 export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
-  const [perDevice, setPerDevice] = useState(false);
+  // Por omissão só se mostra o controlo do dispositivo que está a ser editado
+  // (o do próprio aparelho — ver detectDevice). Os outros ficam a um toque.
+  const [showAll, setShowAll] = useState(false);
 
   const raw = rawValue(state.manifest, state.draft, path, def);
   const overridden = hasOverride(state.manifest, state.draft, path, def);
-  const responsiveOn = isResponsiveValue(raw) || perDevice;
+  const isResp = isResponsiveValue(raw);
   const current = pickResponsive(raw, state.device);
+  const dev = DEVICES.find((d) => d.id === state.device) ?? DEVICES[0];
 
   const commit = (v: unknown, device?: Device, gestureId?: string) => {
-    if (responsiveOn || device) {
-      const base = isResponsiveValue(raw) ? { ...(raw as any).$r } : { desktop: current };
+    if (isResp || device) {
+      const base = isResp ? { ...(raw as any).$r } : { desktop: current };
       base[device ?? state.device] = v;
       dispatch({ type: "setValue", path, key: def.key, value: { $r: base }, gestureId });
     } else {
@@ -76,6 +79,9 @@ export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
     );
   }
 
+  const r = isResp ? (raw as any).$r : {};
+  const inheritedHere = isResp && r[state.device] === undefined && state.device !== "desktop";
+
   return (
     <div className="space-y-2 py-2">
       <div className="flex min-h-6 items-center justify-between gap-2">
@@ -84,6 +90,15 @@ export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
           {overridden ? <span className="size-1.5 rounded-full bg-primary" aria-label="personalizado" /> : null}
         </label>
         <div className="flex items-center gap-1">
+          {isResp && !showAll ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+              title={`A editar o valor para: ${dev.label}`}
+            >
+              <Icon name={dev.icon as string} className="size-3" />
+              {dev.label}
+            </span>
+          ) : null}
           {overridden ? (
             <button
               className="rounded p-1 text-muted-foreground hover:text-foreground"
@@ -99,10 +114,9 @@ export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
       {def.help ? <p className="text-xs text-muted-foreground">{def.help}</p> : null}
       {def.note ? <p className="rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">{def.note}</p> : null}
 
-      {responsiveOn ? (
+      {isResp && showAll ? (
         <div className="space-y-3 rounded-lg border border-border p-2">
           {DEVICES.map((d) => {
-            const r = isResponsiveValue(raw) ? (raw as any).$r : {};
             const inherited = r[d.id] === undefined;
             const value = pickResponsive(raw, d.id);
             return (
@@ -116,6 +130,7 @@ export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
                   {!inherited && d.id !== "desktop" ? (
                     <button
                       className="hover:text-foreground"
+                      title="Voltar a herdar"
                       onClick={() => {
                         const next = { ...r };
                         delete next[d.id];
@@ -130,28 +145,44 @@ export function ControlRow({ def, path }: { def: SettingDef; path: NodePath }) {
               </div>
             );
           })}
-          <button
-            className="text-xs text-muted-foreground underline"
-            onClick={() => {
-              setPerDevice(false);
-              dispatch({ type: "setValue", path, key: def.key, value: current });
-            }}
-          >
-            Usar um valor só
-          </button>
+          <div className="flex items-center justify-between">
+            <button className="text-xs text-muted-foreground underline" onClick={() => setShowAll(false)}>
+              Mostrar só {dev.label.toLowerCase()}
+            </button>
+            <button
+              className="text-xs text-muted-foreground underline"
+              onClick={() => {
+                setShowAll(false);
+                dispatch({ type: "setValue", path, key: def.key, value: current });
+              }}
+            >
+              Usar um valor só
+            </button>
+          </div>
         </div>
       ) : (
         <>
           <ControlBody def={def} value={current} onChange={(v, g) => commit(v, undefined, g)} path={path} />
-          {def.responsive ? (
+          {isResp ? (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{inheritedHere ? "Igual ao computador até alterar." : ""}</span>
+              <button className="underline" onClick={() => setShowAll(true)}>
+                Ver todos os dispositivos
+              </button>
+            </div>
+          ) : def.responsive ? (
             <button
               className="text-xs text-muted-foreground underline"
               onClick={() => {
-                setPerDevice(true);
-                dispatch({ type: "setValue", path, key: def.key, value: { $r: { desktop: current } } });
+                if (state.device === "desktop") {
+                  dispatch({ type: "setValue", path, key: def.key, value: { $r: { desktop: current } } });
+                  setShowAll(true);
+                } else {
+                  dispatch({ type: "setValue", path, key: def.key, value: { $r: { desktop: current, [state.device]: current } } });
+                }
               }}
             >
-              Ajustar separadamente por dispositivo
+              {state.device === "desktop" ? "Ajustar por dispositivo" : `Alterar só no ${dev.label.toLowerCase()}`}
             </button>
           ) : null}
         </>
@@ -619,6 +650,7 @@ function ImageControl({
   const dispatch = useEditorDispatch();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const current = state.media.find((m) => m.id === value?.mediaId);
   const list = state.media.filter((m) => filter === "all" || m.tags.includes(filter));
@@ -628,10 +660,18 @@ function ImageControl({
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
       { toast.error("Formato não suportado", { description: "Use JPG, PNG ou WebP." }); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error("Ficheiro muito grande", { description: "Máximo 5 MB." }); return; }
-    const asset = await mockAdapter.uploadMedia(file);
-    dispatch({ type: "addMedia", asset });
-    onChange({ mediaId: asset.id });
-    setOpen(false);
+    setUploading(true);
+    try {
+      const asset = await mockAdapter.uploadMedia(file, def.assist?.kind);
+      dispatch({ type: "addMedia", asset });
+      onChange({ mediaId: asset.id });
+      setOpen(false);
+    } catch (e) {
+      toast.error("Não foi possível enviar a imagem", { description: (e as Error).message });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   return (
@@ -654,7 +694,7 @@ function ImageControl({
       {rec ? (
         <p className="text-xs text-muted-foreground">
           Recomendado: {rec.width}×{rec.height}
-          {current && current.width < rec.width ? " · esta imagem pode ficar desfocada" : ""}
+          {current && current.width > 0 && current.width < rec.width ? " · esta imagem pode ficar desfocada" : ""}
         </p>
       ) : null}
 
@@ -664,11 +704,9 @@ function ImageControl({
             <DialogTitle>Selecionar imagem</DialogTitle>
           </DialogHeader>
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => fileRef.current?.click()}>
-              <Icons.Upload className="size-4" /> Enviar imagem
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => mockAdapter.openExternal("media-library")}>
-              Gerir biblioteca
+            <Button size="sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+              {uploading ? <Icons.Loader2 className="size-4 animate-spin" /> : <Icons.Upload className="size-4" />}
+              {uploading ? "A enviar…" : "Enviar imagem"}
             </Button>
             <input
               ref={fileRef}
@@ -681,9 +719,9 @@ function ImageControl({
           <div className="flex gap-1">
             {[
               { id: "all", label: "Todas" },
-              { id: "banner", label: "Banner" },
-              { id: "product", label: "Produtos" },
               { id: "logo", label: "Logo" },
+              { id: "banner", label: "Banner" },
+              { id: "image", label: "Outras" },
             ].map((f) => (
               <button
                 key={f.id}
@@ -694,6 +732,11 @@ function ImageControl({
               </button>
             ))}
           </div>
+          {list.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Ainda não há imagens aqui. Use “Enviar imagem” (JPG, PNG ou WebP, até 5 MB).
+            </p>
+          ) : null}
           <div className="grid max-h-80 grid-cols-3 gap-2 overflow-y-auto">
             {list.map((m) => (
               <button
