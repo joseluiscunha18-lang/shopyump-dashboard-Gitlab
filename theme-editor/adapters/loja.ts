@@ -7,6 +7,7 @@ import type {
   Store,
 } from "@/theme-editor/editor/contracts/types";
 import { resolveEditorTheme } from "@/theme-editor/themes/registry";
+import { migrateLumeCustomization } from "@/theme-editor/themes/lume/migrate";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKETS } from "@/lib/storageBuckets";
 import { mockPages } from "@/theme-editor/mocks/data";
@@ -77,7 +78,9 @@ export function createLojaAdapter(
   init: LojaEditorInit,
   save: (c: Customization) => Promise<{ ok: boolean; error?: string }>,
 ): Partial<EditorAdapter> {
-  let current: Customization = pickNewest(init.customization, lastSaved.get(init.storeUrl));
+  const newest = pickNewest(init.customization, lastSaved.get(init.storeUrl));
+  // Converte formatos antigos do tema (ex.: interruptores da barra inferior) antes de o editor os ler.
+  let current: Customization = newest.themeId === "lume" ? migrateLumeCustomization(newest) : newest;
   return {
     async getStore() {
       return init.store;
