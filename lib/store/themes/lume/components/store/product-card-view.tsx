@@ -25,6 +25,8 @@ export interface ProductCardAppearance {
   imageRadius?: number;
   /** Largura da borda da foto; 0 = sem borda. */
   borderWidth?: number;
+  /** Cor da borda da foto, só quando o lojista a mudou (ausente = a do tema). */
+  borderColor?: string;
   shadow?: string;
   align?: "left" | "center" | "right";
   nameSize?: number;
@@ -78,6 +80,7 @@ export function ProductCardView({
         background: a.imageBg,
         borderRadius: a.imageRadius,
         borderWidth: a.borderWidth,
+        borderColor: a.borderColor,
         boxShadow: a.shadow,
       }
     : undefined;
