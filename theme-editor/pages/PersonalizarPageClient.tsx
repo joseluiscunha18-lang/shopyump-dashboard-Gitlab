@@ -298,7 +298,7 @@ function PersonalizarPageInner({ initial }: { initial?: LojaEditorInit }) {
       <main className="mx-auto grid max-w-5xl grid-cols-1 gap-4 py-2 md:grid-cols-[minmax(0,440px)_1fr] md:gap-10 md:py-6">
         <section className="min-w-0">
           {data ? (
-            <MiniPreview data={data} url={url} onOpen={openEditor} onCopy={copy} onView={() => toast(`Abriria ${url}`)} />
+            <MiniPreview data={data} url={url} onOpen={openEditor} onCopy={copy} onView={() => window.open(url, "_blank", "noopener,noreferrer")} />
           ) : (
             <Skeleton className="rounded-2xl" style={{ height: 48 + 360 }} />
           )}
