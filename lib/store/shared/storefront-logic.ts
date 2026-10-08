@@ -190,3 +190,80 @@ export function getRecommendations<T extends { id: string }>(
 export function shouldShowRecommendations(recommendations: readonly unknown[], enabled: boolean = true): boolean {
   return enabled && recommendations.length > 0;
 }
+
+/* ------------------------------------------------------------------ */
+/* 5. Barra inferior (telemóvel)                                       */
+/* ------------------------------------------------------------------ */
+
+export type BottomNavKey = "home" | "search" | "wishlist" | "cart";
+
+/** Um item da barra inferior, já ordenado e com o nome final. Itens ocultos não aparecem. */
+export interface BottomNavItemConfig {
+  key: BottomNavKey;
+  label: string;
+}
+
+/** Ordem e nomes originais do Lume. */
+export const BOTTOM_NAV_DEFAULTS: readonly BottomNavItemConfig[] = [
+  { key: "home", label: "Início" },
+  { key: "search", label: "Pesquisar" },
+  { key: "wishlist", label: "Favoritos" },
+  { key: "cart", label: "Carrinho" },
+];
+
+const BOTTOM_NAV_KEYS = new Set<string>(BOTTOM_NAV_DEFAULTS.map((i) => i.key));
+export const BOTTOM_NAV_LABEL_MAX = 10;
+
+/** Os 3 interruptores antigos da barra (antes de existir a lista de itens). */
+export interface LegacyBottomNavToggles {
+  showSearch?: unknown;
+  showWishlist?: unknown;
+  showCart?: unknown;
+}
+
+/**
+ * Itens a desenhar na barra inferior: ORDEM, NOMES e o que está oculto.
+ *
+ * `raw` é o valor guardado de `bottomNav.items` (lista de `{ id, label, hidden }`),
+ * `undefined` se o lojista nunca mexeu. Aceita lixo sem rebentar (vem da base de
+ * dados). Lojas guardadas antes da lista existir ainda trazem `showSearch/
+ * showWishlist/showCart`: lêem-se aqui como fallback para ficarem iguais.
+ * Devolve só os itens VISÍVEIS, pela ordem do lojista.
+ */
+export function resolveBottomNavItems(raw: unknown, legacy: LegacyBottomNavToggles = {}): BottomNavItemConfig[] {
+  const defaults = new Map(BOTTOM_NAV_DEFAULTS.map((i) => [i.key, i.label] as const));
+  const seen = new Set<string>();
+  const ordered: { key: BottomNavKey; label: string; hidden: boolean }[] = [];
+  if (Array.isArray(raw)) {
+    for (const it of raw) {
+      if (!it || typeof it !== "object") continue;
+      const { id, label, hidden } = it as { id?: unknown; label?: unknown; hidden?: unknown };
+      if (typeof id !== "string" || !BOTTOM_NAV_KEYS.has(id) || seen.has(id)) continue;
+      seen.add(id);
+      const key = id as BottomNavKey;
+      const name = typeof label === "string" ? label.trim().slice(0, BOTTOM_NAV_LABEL_MAX) : "";
+      ordered.push({ key, label: name || defaults.get(key)!, hidden: hidden === true });
+    }
+  }
+  // Itens que faltem na lista guardada entram no fim, com o nome original.
+  for (const d of BOTTOM_NAV_DEFAULTS) if (!seen.has(d.key)) ordered.push({ key: d.key, label: d.label, hidden: false });
+
+  const legacyOff: Partial<Record<BottomNavKey, boolean>> = {
+    search: legacy.showSearch === false,
+    wishlist: legacy.showWishlist === false,
+    cart: legacy.showCart === false,
+  };
+  const useLegacy = !Array.isArray(raw);
+  return ordered
+    .filter((i) => !i.hidden && !(useLegacy && legacyOff[i.key]))
+    .map(({ key, label }) => ({ key, label }));
+}
+
+/**
+ * Em telemóvel, Pesquisa e Favoritos vivem na barra inferior. Sem barra (o
+ * lojista removeu-a), passam para o cabeçalho — senão o cliente ficava sem
+ * maneira de pesquisar ou de ver os favoritos. Fonte única: loja e editor.
+ */
+export function headerShortcutsOnMobile(bottomNavVisible: boolean): boolean {
+  return !bottomNavVisible;
+}
