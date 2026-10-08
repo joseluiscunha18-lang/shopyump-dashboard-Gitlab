@@ -137,6 +137,9 @@ function MiniPreview({
   const heroH = first ? Math.round(naturalH * scale) : 0;
   const bodyH = Math.max(heroH, first ? 0 : EMPTY_H - CAPTION_H) + CAPTION_H;
   const ready = !!manifest && scale > 0 && (!first || naturalH > 0);
+  // A cópia desfocada nasce no topo e tem de crescer até tapar TODA a área, inclusive
+  // por baixo da faixa de vidro (senão a faixa fica sobre o fundo liso e perde a transparência).
+  const blurScale = heroH > 0 ? Math.max(1.4, (bodyH / heroH) * 1.1) : 1.4;
 
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-pill">
@@ -169,7 +172,7 @@ function MiniPreview({
                   inert=""
                   className="pointer-events-none absolute inset-0 select-none overflow-hidden"
                 >
-                  <div style={{ transform: "scale(1.4)", transformOrigin: "50% 80%", filter: "blur(22px) saturate(1.15) brightness(0.8)", width: "100%", height: "100%" }}>
+                  <div style={{ transform: `scale(${blurScale})`, transformOrigin: "50% 0%", filter: "blur(22px) saturate(1.15) brightness(0.8)", width: "100%", height: "100%" }}>
                     <ThemeMini data={data} pageId={pageId} only={only} scale={scale} />
                   </div>
                 </div>
