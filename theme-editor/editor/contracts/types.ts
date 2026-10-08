@@ -83,6 +83,12 @@ export interface NavListSpec {
   labelMaxLength: number;
   iconEnabled: boolean;
   linkTypes: LinkType[];
+  /**
+   * Lista de itens FIXOS: o lojista só muda a ordem, a visibilidade e o nome.
+   * Não pode adicionar, duplicar, remover nem trocar o destino (cada item é uma
+   * função da loja — pesquisa, carrinho… — e não uma ligação).
+   */
+  fixed?: boolean;
 }
 
 export type SettingGroup =
@@ -165,7 +171,20 @@ export type OpenAction =
   | { type: "themePage"; page: PageId; productId?: string }
   | { type: "link"; ref?: LinkRef; setting?: string };
 
-export interface ElementDef {
+/**
+ * Em que aparelhos um elemento/seção EXISTE na loja pública. Omisso = todos.
+ * Serve para o editor avisar "isto só aparece no computador" em vez de deixar o
+ * lojista a procurar no preview de telemóvel algo que lá não é desenhado.
+ */
+export interface DeviceAvailability {
+  devices?: Device[];
+  /** Aparelhos onde passa a existir quando a seção indicada está oculta (ex.: sem barra inferior, o telemóvel mostra Pesquisa e Favoritos no cabeçalho). */
+  alsoWhenHidden?: { section: string; devices: Device[] };
+  /** Frase curta para o aviso (o que acontece nos outros aparelhos). */
+  devicesNote?: string;
+}
+
+export interface ElementDef extends DeviceAvailability {
   id: string;
   kind: ElementKind;
   label: string;
@@ -189,7 +208,7 @@ export interface DataSourceDef {
   maxItems: { min: number; max: number };
 }
 
-export interface SectionTypeDef {
+export interface SectionTypeDef extends DeviceAvailability {
   type: string;
   label: string;
   description: string;
@@ -201,6 +220,8 @@ export interface SectionTypeDef {
   duplicable: boolean;
   reorderable: boolean;
   hideable: boolean;
+  /** Para seções fixas ocultáveis: o que acontece à loja quando se oculta (aparece junto do interruptor "Mostrar"). */
+  hideNote?: string;
   maxInstances?: number;
   settings: SettingsSpec;
   elements: ElementDef[];
