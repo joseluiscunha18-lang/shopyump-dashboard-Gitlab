@@ -70,7 +70,10 @@ export const headerIconElements: ElementDef[] = [
   { ...headerIcon("menu", "Menu lateral"), openAction: { type: "overlay", id: "sideMenu" } },
   { ...headerIcon("search", "Pesquisa"), openAction: { type: "overlay", id: "searchOverlay" } },
   { ...headerIcon("wishlist", "Favoritos"), openAction: { type: "themePage", page: "wishlist" } },
-  { ...headerIcon("account", "Conta"), openAction: { type: "themePage", page: "account" } },
+  // Na loja real, sem sessão iniciada este ícone abre o modal de entrar/criar
+  // conta (auth-modal.tsx) — nunca navega para a página "/conta". Por isso
+  // aqui abre o overlay "authOverlay" (espelho do modal), não a themePage.
+  { ...headerIcon("account", "Conta"), openAction: { type: "overlay", id: "authOverlay" } },
 ];
 
 /** Segundo toque no cartão de produto: abre a página Produto com o produto tocado. */
@@ -228,6 +231,18 @@ export const extSectionTypes: SectionTypeDef[] = [
   {
     ...base,
     hideable: false,
+    type: "authOverlay",
+    label: "Entrar ou criar conta",
+    description: "Modal de início de sessão (só leitura — espelha o que o cliente vê na loja real).",
+    icon: "user",
+    scope: "overlay",
+    requires: "account",
+    elements: [],
+    settings: noContainer(),
+  },
+  {
+    ...base,
+    hideable: false,
     type: "checkoutPage",
     label: "Finalizar compra",
     description: "Página de pagamento (só leitura).",
@@ -280,4 +295,5 @@ export const extOverlays: OverlayDef[] = [
   { id: "sideMenu", label: "Menu lateral", sectionIds: ["sideMenu"], trigger: "sections.header.elements.menu", side: "left", requires: "sideMenu" },
   { id: "searchOverlay", label: "Pesquisa", sectionIds: ["searchOverlay"], trigger: "sections.header.elements.search", side: "full", requires: "search" },
   { id: "cartDrawer", label: "Carrinho lateral", sectionIds: ["cartDrawer"], side: "right", requires: "cartDrawer" },
+  { id: "authOverlay", label: "Entrar ou criar conta", sectionIds: ["authOverlay"], trigger: "sections.header.elements.account", side: "bottom", requires: "account" },
 ];
