@@ -9,10 +9,8 @@ import { createClient } from '@/lib/supabase/client';
  * assumed from the storage URLs seen in the legacy manifest.json
  * ("Logo") — confirm against the real project and adjust BUCKETS below.
  */
-export const BUCKETS = {
-  produtos: 'produtos',
-  lojas: 'Logo',
-} as const;
+import { BUCKETS } from '@/lib/storageBuckets';
+export { BUCKETS };
 
 export async function uploadImage(
   bucket: (typeof BUCKETS)[keyof typeof BUCKETS],
