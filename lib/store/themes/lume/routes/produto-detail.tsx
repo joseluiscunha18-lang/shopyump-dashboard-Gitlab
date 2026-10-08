@@ -1,33 +1,19 @@
 'use client';
 
 import { createFileRoute, notFound, useNavigate } from "../router";
-import { BellRing, Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "../components/ui/button";
 import { AddToCartButton } from "../components/store/add-to-cart-button";
-import { FavouriteButton } from "../components/store/favourite-button";
+import { ProductPurchasePanel } from "../components/store/product-purchase-panel";
 import { ProductGallery } from "../components/store/product-gallery";
 import { ProductCard } from "../components/store/product-card";
 import { useAuth } from "../components/store/auth-context";
 import { useStore } from "../components/store/store-context";
-import {
-  formatPrice,
-  getProduct,
-  isInStock,
-  maxQuantity,
-  caracteristicasDoProduto,
-  valoresParaCaracteristica,
-  encontrarVersao,
-  versaoInicial,
-  precoDaVersao,
-  estoqueDaVersao,
-  imagensDaVersao,
-  galeriaDoProduto,
-} from "../lib/store-data";
+import { formatPrice, getProduct } from "../lib/store-data";
+import { useProductGallery, useProductSelection } from "../lib/use-product-selection";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
-import { getRecommendations, resolveBuyState, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
+import { getRecommendations, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
@@ -58,8 +44,6 @@ function ProductPage() {
   const { restockAlerts, requestRestockAlert } = useAuth();
   const { produtos: produtosContexto } = useLumeLoja();
   const p = useLumePersonalizacao();
-  const [quantity, setQuantity] = useState(1);
-  const [selecao, setSelecao] = useState<Record<string, string>>({});
   const [awaitingAuth, setAwaitingAuth] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
 
@@ -75,66 +59,14 @@ function ProductPage() {
   const recommendations = getRecommendations(produtosContexto, product.id);
   const alertActive = restockAlerts.includes(product.id);
 
-  const caracteristicas = caracteristicasDoProduto(product);
-  const temVariantes = caracteristicas.length > 0;
-  const versaoAtual = temVariantes ? encontrarVersao(product, selecao) : undefined;
-  const selecaoCompleta = temVariantes ? caracteristicas.every((c) => Boolean(selecao[c.nome])) : true;
-
-  const price = precoDaVersao(product, versaoAtual);
-  const stock = estoqueDaVersao(product, versaoAtual);
-  const galleryImages = imagensDaVersao(product, versaoAtual);
+  // Variante escolhida, quantidade, preço, stock e "pode comprar?" — o MESMO hook
+  // que o editor usa no preview (theme-editor/themes/lume/Renderer.tsx).
+  const selection = useProductSelection(product);
+  const { caracteristicas, temVariantes, versaoAtual, price, quantity, images: galleryImages } = selection;
   // Galeria com TODAS as fotos (scroll livre); trocar de cor posiciona-a na
   // foto dessa cor, e fazer swipe para a foto de outra cor atualiza a cor.
-  const galeria = galeriaDoProduto(product, versaoAtual);
-  const aoMudarFoto = (indice: number) => {
-    const dono = galeria.donos[indice];
-    const nomeCar = galeria.caracteristica;
-    if (!nomeCar || dono == null || selecao[nomeCar] === dono) return;
-    setSelecao((atual) => {
-      const proxima = { ...atual, [nomeCar]: dono };
-      const pos = caracteristicas.findIndex((c) => c.nome === nomeCar);
-      for (const c of caracteristicas.slice(pos + 1)) {
-        if (!valoresParaCaracteristica(product, c.nome, proxima).includes(proxima[c.nome])) delete proxima[c.nome];
-      }
-      return proxima;
-    });
-  };
-  // Fonte única da regra "pode comprar?" — a mesma função que o editor usa
-  // para decidir o que mostrar no seletor de variantes e nos botões de
-  // compra (ver theme-editor/themes/lume/Renderer.tsx). Isto garante que o
-  // editor nunca mostra "Comprar Agora" ativo quando a loja real pediria
-  // primeiro a escolha de variante, e nunca omite o seletor quando o
-  // produto tem variantes.
-  const buyState = resolveBuyState({
-    hasVariants: temVariantes,
-    selectionComplete: selecaoCompleta,
-    versionActive: versaoAtual?.ativa,
-    stock,
-  });
-  const available = buyState.status === "available" && isInStock(product, 1, stock);
-  const limit = maxQuantity(product, stock);
-
-  // Ao trocar de produto, reinicia quantidade e escolhe a primeira versão
-  // ativa/em estoque (se o produto tiver variantes).
-  useEffect(() => {
-    setQuantity(1);
-    const inicial = versaoInicial(product);
-    setSelecao(inicial ? { ...inicial.valores } : {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product.id]);
-
-  const escolher = (nomeCaracteristica: string, valor: string) => {
-    setSelecao((atual) => {
-      const proxima = { ...atual, [nomeCaracteristica]: valor };
-      // Limpa as escolhas das características seguintes se deixarem de
-      // ser válidas para o novo valor (ex: trocou a cor e o tamanho
-      // selecionado não existe nessa cor).
-      const indice = caracteristicas.findIndex((c) => c.nome === nomeCaracteristica);
-      for (const c of caracteristicas.slice(indice + 1)) delete proxima[c.nome];
-      return proxima;
-    });
-  };
-
+  // Mesmo hook que o editor usa.
+  const { galeria, aoMudarFoto } = useProductGallery(product, selection);
   useEffect(() => {
     if (awaitingAuth && alertActive) {
       setAwaitingAuth(false);
@@ -170,108 +102,20 @@ function ProductPage() {
         </div>
 
 
-        <div className="flex flex-col justify-center">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-bold">{product.name}</h1>
-            <FavouriteButton productName={product.name} liked={liked} onToggle={() => toggleFavourite(product.id)} className="size-10 [&_svg]:size-5!" />
-          </div>
-          <p className="mt-1 text-lg font-semibold">{formatPrice(price)}</p>
-
-          {temVariantes && (
-            <div className="mt-3 space-y-3">
-              {caracteristicas.map((caracteristica) => {
-                const valores = valoresParaCaracteristica(product, caracteristica.nome, selecao);
-                const isCor = caracteristica.nome === "Cor";
-                return (
-                  <div key={caracteristica.nome} className="min-w-0">
-                    <p className="text-xs font-semibold uppercase">
-                      {caracteristica.nome}
-                      {selecao[caracteristica.nome] && (
-                        <span className="ml-1 font-normal normal-case text-muted-foreground">{selecao[caracteristica.nome]}</span>
-                      )}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2.5" role="group" aria-label={`Escolher ${caracteristica.nome}`}>
-                      {valores.map((valor) => {
-                        const ativo = selecao[caracteristica.nome] === valor;
-                        const hex = caracteristica.cores?.[valor];
-                        if (isCor) {
-                          return (
-                            <button
-                              key={valor}
-                              type="button"
-                              onClick={() => escolher(caracteristica.nome, valor)}
-                              aria-label={valor}
-                              aria-pressed={ativo}
-                              className={`grid size-8 place-items-center rounded-full transition-shadow ${ativo ? "ring-1 ring-foreground ring-offset-2 ring-offset-background" : "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2"}`}
-                            >
-                              <span
-                                className="size-full rounded-full border border-border"
-                                style={hex ? { backgroundColor: hex } : undefined}
-                                aria-hidden="true"
-                              />
-                            </button>
-                          );
-                        }
-                        return (
-                          <Button
-                            key={valor}
-                            variant={ativo ? "default" : "outline"}
-                            onClick={() => escolher(caracteristica.nome, valor)}
-                            aria-pressed={ativo}
-                            className="min-h-10 min-w-10 rounded-2xl px-3.5 shadow-none"
-                          >
-                            {valor}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-              {!selecaoCompleta && (
-                <p className="text-xs text-muted-foreground">Escolha as opções acima para continuar.</p>
-              )}
-            </div>
-          )}
-
-          <div className="mt-4 grid gap-2.5">
-            {!selecaoCompleta ? (
-              <Button size="lg" disabled className="h-12 w-full rounded-full text-sm font-semibold">
-                Escolha as opções
-              </Button>
-            ) : available ? (
-              <>
-                <Button size="lg" className="h-12 w-full rounded-full text-sm font-semibold" onClick={buyNow}>{p?.ui.buyNow ?? "Comprar Agora"}</Button>
-                <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5">
-                  <div className="flex h-12 items-center rounded-full border border-border bg-card">
-                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Diminuir quantidade" disabled={quantity === 1}><Minus /></Button>
-                    <span className="min-w-6 text-center text-sm font-semibold" aria-live="polite">{quantity}</span>
-                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setQuantity(Math.min(limit, quantity + 1))} aria-label="Aumentar quantidade" disabled={quantity >= limit}><Plus /></Button>
-                  </div>
-                   <AddToCartButton product={product} quantity={quantity} flyFrom={galleryRef} selectedVariant={variantSelecionada} className="h-12 w-full rounded-full font-semibold" />
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Esgotado de momento</p>
-                <Button
-                  size="lg"
-                  onClick={notifyMe}
-                  aria-pressed={alertActive}
-                  className="add-to-cart-button h-12 w-full gap-2 rounded-full text-sm font-semibold"
-                >
-                  <BellRing aria-hidden="true" />
-                  {alertActive ? "Já será avisado" : "Avisar-me quando chegar"}
-                </Button>
-              </>
-            )}
-          </div>
-
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            {product.description ??
-              "Uma peça versátil, confortável e fácil de combinar. Apresentação demonstrativa pronta para receber os detalhes reais do seu produto."}
-          </p>
-        </div>
+        <ProductPurchasePanel
+          name={product.name}
+          priceLabel={formatPrice(price)}
+          description={product.description}
+          product={product}
+          selection={selection}
+          labels={{ buyNow: p?.ui.buyNow ?? "Comprar Agora", addToCart: p?.ui.addToCart ?? "Adicionar ao Carrinho" }}
+          liked={liked}
+          onToggleFavourite={() => toggleFavourite(product.id)}
+          onBuyNow={buyNow}
+          onNotify={notifyMe}
+          alertActive={alertActive}
+          addToCartSlot={<AddToCartButton product={product} quantity={quantity} flyFrom={galleryRef} selectedVariant={variantSelecionada} className="h-12 w-full rounded-full font-semibold" />}
+        />
       </div>
 
       {shouldShowRecommendations(recommendations, !p || p.showRecommendations) && <section className="mt-14 sm:mt-20" aria-labelledby="recommendations-title">
