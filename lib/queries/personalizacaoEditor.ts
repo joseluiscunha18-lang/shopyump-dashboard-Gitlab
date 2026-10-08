@@ -1,5 +1,6 @@
 import { getProdutosPublicos } from '@/lib/queries/produtosPublicos';
 import { getStoreUrl } from '@/lib/storeUrl';
+import { totalEstoque } from '@/lib/variantes';
 import { isValidLumeCustomization } from '@/lib/store/themes/lume/lib/personalizacao';
 import { createEmptyCustomization } from "@/theme-editor/themes/manifests";
 import { mockCategories, mockProducts } from '@/theme-editor/mocks/data';
@@ -28,6 +29,13 @@ export async function getEditorInit(loja: Loja): Promise<LojaEditorInit> {
       images: p.fotos ?? [],
       categoryId: p.categoria,
       inStock: true,
+      description: p.descricao ?? undefined,
+      // Mesmo dado que a loja pública recebe — é o que permite ao editor
+      // desenhar o seletor de variantes (Cor, Tamanho...) e o stock por versão.
+      variantes: p.variantes,
+      // Mesma regra de lume-loja-context.tsx: com versões, o stock é a soma das
+      // ativas; sem versões, undefined = disponível.
+      stock: p.variantes?.versoes?.length ? totalEstoque(p.variantes.versoes) : undefined,
     }));
     const counts = new Map<string, number>();
     for (const p of products) counts.set(p.categoryId, (counts.get(p.categoryId) ?? 0) + 1);
