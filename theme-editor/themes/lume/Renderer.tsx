@@ -801,8 +801,38 @@ function ContactFormSection({ id }: { id: string }) {
   );
 }
 
+/**
+ * Conta: espelho exato do que o cliente vê na loja sem sessão iniciada
+ * (rotas/conta.tsx). Não é editável: nem o título nem o botão — por isso não
+ * usa SectionShell/Editable (nada aqui se pode selecionar).
+ */
+function AccountPreview({ id }: { id: string }) {
+  const { colors, layout, mobile } = useSectionFrame(id);
+  const btn = buttonStyle({ variant: "solid", radius: 999 }, colors);
+  return (
+    <div style={{ background: colors.background, color: colors.text }}>
+      <div style={{ borderBottom: `1px solid ${colors.border}`, background: colors.cardBg }}>
+        <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto", padding: mobile ? "36px 20px" : "48px 24px" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: colors.secondary }}>Área pessoal</p>
+          <h1 style={{ marginTop: 8, fontSize: 24, fontWeight: 700 }}>A minha conta</h1>
+          <p style={{ marginTop: 8, maxWidth: 576, fontSize: 14, lineHeight: "24px", color: colors.secondary }}>Inicie sessão para ver pedidos, dados e favoritos.</p>
+        </div>
+      </div>
+      <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto", minHeight: 360, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: mobile ? "56px 16px" : "56px 24px" }}>
+        <span style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: 999, background: colors.surfaceAlt }}>
+          <Icons.User size={24} />
+        </span>
+        <h2 style={{ marginTop: 16, fontSize: 18, fontWeight: 600 }}>Ainda não iniciou sessão</h2>
+        <p style={{ marginTop: 8, maxWidth: 384, fontSize: 14, color: colors.secondary }}>Entre com o seu e-mail — enviamos um código de 6 dígitos, sem palavra-passe.</p>
+        <span style={{ ...btn, height: 36, padding: "0 16px", marginTop: 20, fontWeight: 500 }}>Entrar ou criar conta</span>
+      </div>
+    </div>
+  );
+}
+
 function ReadOnlyPageSection({ id, kind }: { id: string; kind: "checkout" | "account" }) {
   const { colors, mobile } = useSectionFrame(id);
+  if (kind === "account") return <AccountPreview id={id} />;
   return (
     <SectionShell path={sectionPath(id)} label={kind === "checkout" ? "Finalizar compra" : "Conta"} style={{ background: colors.background, color: colors.text, padding: mobile ? "28px 16px" : "40px 24px", minHeight: 360 }}>
       <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gap: 12 }}>
