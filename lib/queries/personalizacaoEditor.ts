@@ -56,6 +56,16 @@ export async function getEditorInit(loja: Loja): Promise<LojaEditorInit> {
       currency: 'MT',
       social,
       menus: [],
+      // MESMA regra que `lume-loja-context.tsx` usa para a loja pública
+      // (`mostrar !== false` → por omissão visível). Antes desta alteração
+      // este campo não existia aqui, por isso o editor nunca sabia se
+      // "Envios e Entregas" / "Termos e Privacidade" estavam desligados na
+      // loja real — é a causa do rodapé do editor mostrar links que a loja
+      // real escondia.
+      paginas: {
+        entrega: { mostrar: loja.mostrar_entrega !== false },
+        termos: { mostrar: loja.mostrar_termos !== false },
+      },
     },
     products,
     categories,
