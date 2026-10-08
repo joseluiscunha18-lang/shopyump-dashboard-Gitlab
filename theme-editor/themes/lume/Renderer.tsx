@@ -1,4 +1,4 @@
-import { createContext, Fragment, useContext, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, Fragment, useContext, type CSSProperties, type ReactNode } from "react";
 import * as Icons from "lucide-react";
 import {
   Editable,
@@ -16,17 +16,13 @@ import { HEADING_SECTION, LUME_CATEGORIES, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT,
 import { resolveColor, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
 import type { PageKind, ProductLite } from "@/theme-editor/editor/contracts/types";
-import { getRecommendations, getVisiblePolicyLinks, headerActionsFor, resolveBuyState, resolveHeaderMode, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
-import {
-  caracteristicasDoProduto,
-  encontrarVersao,
-  estoqueDaVersao,
-  imagensDaVersao,
-  precoDaVersao,
-  valoresParaCaracteristica,
-  versaoInicial,
-  type ProdutoComVariantes,
-} from "@/lib/store/themes/lume/lib/store-data";
+import { getRecommendations, getVisiblePolicyLinks, headerActionsFor, resolveHeaderMode, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
+import type { ProdutoComVariantes } from "@/lib/store/themes/lume/lib/store-data";
+import { useProductGallery, useProductSelection, type ProductSelection } from "@/lib/store/themes/lume/lib/use-product-selection";
+import { lumeColorVars } from "@/lib/store/themes/lume/lib/color-vars";
+import { ProductPurchasePanel, type PurchaseButtonId } from "@/lib/store/themes/lume/components/store/product-purchase-panel";
+import { ProductCardView } from "@/lib/store/themes/lume/components/store/product-card-view";
+import { ProductGallery } from "@/lib/store/themes/lume/components/store/product-gallery";
 
 /**
  * Renderer do tema LUME para o editor e para o preview do "Personalizar loja".
@@ -34,9 +30,12 @@ import {
  * Desenha o mesmo visual do tema público (lib/store/themes/lume), mas lê TUDO
  * da customização (cores, tipografia, textos, secções) através do SDK do editor.
  *
- * IMPORTANTE: nada aqui usa as classes semânticas do Tailwind (bg-background,
- * text-foreground…). Dentro de `.ed-root` essas variáveis têm os valores do
- * editor, não os do Lume — por isso as cores vêm sempre dos tokens resolvidos.
+ * IMPORTANTE: dentro de `.ed-root` as classes semânticas do Tailwind (bg-background,
+ * text-foreground…) têm os valores do editor, não os do Lume. As secções desenhadas
+ * aqui usam por isso as cores resolvidas (tokens). A EXCEÇÃO são os componentes
+ * partilhados com a loja pública (ex.: `ProductPurchasePanel`): esses usam as
+ * classes da loja e são desenhados dentro de `<LumeScope>`, que lhes dá as
+ * variáveis CSS com a paleta do lojista.
  */
 
 /* ------------------------------ page kind ------------------------------ */
@@ -397,6 +396,11 @@ function HeroSection({ id }: { id: string }) {
   );
 }
 
+/**
+ * Cartão de produto: o MESMO componente da loja pública (`ProductCardView`).
+ * Aqui só se liga aos nós editáveis e se aplica a personalização do cartão
+ * inline (a loja recebe-a por CSS injetado, ver personalizacao.ts).
+ */
 function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, shadow, currency, wishlist }: {
   product: ProductLite;
   cardPath: string;
@@ -409,87 +413,34 @@ function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, s
   wishlist: boolean;
 }) {
   const align = v.align === "center" ? "center" : v.align === "right" ? "right" : "left";
-  const photo = product.images[0];
   return (
     <Editable path={cardPath} label="Cartão de produto" openContext={{ productId: product.id }} style={{ minWidth: 0 }}>
-      <article style={{ minWidth: 0 }}>
-        <div style={{ position: "relative" }}>
-          <div
-            style={{
-              position: "relative",
-              overflow: "hidden",
-              aspectRatio: v.aspectRatio && v.aspectRatio !== "auto" ? v.aspectRatio : "1/1",
-              background: resolveColor(v.imageBg, colors),
-              borderRadius: imageRadius,
-              border: v.imageBorder && borderWidth ? `${borderWidth}px solid rgba(32,32,32,.1)` : undefined,
-              boxShadow: shadowOf(shadow),
-            }}
-          >
-            {photo ? (
-              <img
-                src={photo}
-                alt={product.name}
-                loading="lazy"
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
-            ) : (
-              <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: colors.secondary }}>
-                <Icons.ImageIcon size={28} />
-              </div>
-            )}
-          </div>
-          {!product.inStock && v.showBadge ? (
-            <span
-              style={{
-                position: "absolute",
-                left: 8,
-                top: 8,
-                zIndex: 1,
-                borderRadius: 999,
-                background: colors.text,
-                color: colors.background,
-                padding: "4px 10px",
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-              }}
-            >
-              Esgotado
-            </span>
-          ) : null}
-          {wishlist && v.showWishlist ? (
-            <span
-              style={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-                zIndex: 1,
-                width: 32,
-                height: 32,
-                display: "grid",
-                placeItems: "center",
-                borderRadius: 999,
-                background: "rgba(255,255,255,.85)",
-                border: `1px solid ${colors.border}`,
-                color: colors.text,
-              }}
-            >
-              <Icons.Heart size={14} />
-            </span>
-          ) : null}
-        </div>
-        <div style={{ marginTop: 12, minWidth: 0, textAlign: align }}>
-          {v.showName ? (
-            <p style={{ fontSize: v.nameSize, fontWeight: 500, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0 }}>{product.name}</p>
-          ) : null}
-          {v.showPrice ? (
-            <p style={{ marginTop: 4, fontSize: v.priceSize, fontWeight: 700, color: colors.text, margin: v.showName ? "4px 0 0" : 0 }}>
-              {formatPrice(product.price, currency)}
-            </p>
-          ) : null}
-        </div>
-      </article>
+      <LumeScope>
+        <ProductCardView
+          name={product.name}
+          priceLabel={formatPrice(product.price, currency)}
+          photo={product.images[0]}
+          fallback={<Icons.ImageIcon size={28} color={colors.secondary} />}
+          available={product.inStock}
+          showFavourite={wishlist}
+          // Sem navegação no editor: o "link" é só um bloco.
+          renderLink={({ children, "aria-label": _label, ...rest }) => <div {...rest}>{children}</div>}
+          appearance={{
+            aspectRatio: v.aspectRatio && v.aspectRatio !== "auto" ? v.aspectRatio : "1/1",
+            imageBg: resolveColor(v.imageBg, colors),
+            imageRadius,
+            borderWidth: v.imageBorder ? borderWidth : 0,
+            shadow: shadowOf(shadow),
+            align,
+            nameSize: typeof v.nameSize === "number" ? v.nameSize : undefined,
+            priceSize: typeof v.priceSize === "number" ? v.priceSize : undefined,
+            showName: v.showName !== false,
+            showPrice: v.showPrice !== false,
+            showBadge: !!v.showBadge,
+            showWishlist: !!v.showWishlist,
+          }}
+        />
+      </LumeScope>
     </Editable>
   );
 }
@@ -744,244 +695,133 @@ function CatalogGridSection({ id }: { id: string }) {
 
 /**
  * `ProductLite` → a forma que os helpers de variantes da loja pública esperam
- * (`lib/store/themes/lume/lib/store-data.ts`). O editor usa as MESMAS funções
- * (características, versões, preço/stock/imagens por versão) — não tem uma
- * cópia própria da lógica de variantes.
+ * (`lib/store/themes/lume/lib/store-data.ts`).
  */
-function asVariantSource(p: ProductLite): ProdutoComVariantes {
-  return { price: p.price, stock: p.stock ?? (p.inStock === false ? 0 : undefined), images: p.images, variantes: p.variantes };
+function asVariantSource(p: ProductLite): ProdutoComVariantes & { id: string } {
+  return { id: p.id, price: p.price, stock: p.stock ?? (p.inStock === false ? 0 : undefined), images: p.images, variantes: p.variantes };
 }
 
 /**
- * Estado de compra do preview: variante escolhida + quantidade. É partilhado
- * entre a galeria (a foto muda com a cor) e as informações do produto, tal
- * como na loja pública. Recomeça sempre que o produto de pré-visualização muda
- * (o provider leva `key={product.id}`).
+ * Âmbito "loja pública" dentro do editor.
+ *
+ * Os componentes partilhados com a loja (`ProductPurchasePanel`, …) usam as
+ * classes semânticas do Tailwind (bg-card, text-muted-foreground, border-border…),
+ * lidas das variáveis CSS do wrapper `.theme-lume`. Dentro de `.ed-root` essas
+ * variáveis têm os valores do EDITOR — por isso este wrapper volta a defini-las
+ * com a paleta, o raio e a fonte do LOJISTA, exatamente como a loja pública faz
+ * (ver `buildLumePersonalizacao`). Os raios sm/md/lg/xl voltam aos da loja em
+ * theme-editor/editor.css (`.ed-root .theme-lume`).
+ */
+function LumeScope({ children }: { children: ReactNode }) {
+  const colors = useColors();
+  const styleG = useGlobalGroup("style");
+  const typo = useGlobalGroup("typography");
+  const { manifest } = useTheme();
+  const bodyFont = manifest.fonts.find((f) => f.id === typo.bodyFont);
+  const vars = {
+    ...lumeColorVars(colors),
+    "--radius": typeof styleG.radius === "number" ? `${styleG.radius}px` : undefined,
+    "--font-sans": bodyFont?.family,
+  } as CSSProperties;
+  return (
+    <div className="theme-lume bg-background text-foreground" style={vars}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Estado de compra do preview (variante + quantidade): o MESMO hook que a loja
+ * pública usa (`useProductSelection`). Partilhado entre a galeria (a foto muda
+ * com a cor) e o painel de compra. `key={product.id}` recomeça-o ao trocar de produto.
  */
 interface BuyPreview {
-  selecao: Record<string, string>;
-  escolher: (nomeCaracteristica: string, valor: string) => void;
-  quantity: number;
-  setQuantity: (q: number) => void;
+  source: ProdutoComVariantes & { id: string };
+  selection: ProductSelection;
 }
 const BuyPreviewCtx = createContext<BuyPreview | null>(null);
 
 function BuyPreviewProvider({ product, children }: { product: ProductLite; children: ReactNode }) {
   const source = asVariantSource(product);
-  const [selecao, setSelecao] = useState<Record<string, string>>(() => {
-    const inicial = versaoInicial(source);
-    return inicial ? { ...inicial.valores } : {};
-  });
-  const [quantity, setQuantity] = useState(1);
-  const escolher = (nome: string, valor: string) =>
-    setSelecao((atual) => {
-      const proxima = { ...atual, [nome]: valor };
-      // Igual à loja pública: ao trocar uma característica, as seguintes
-      // (ex: Tamanho depois de Cor) têm de ser escolhidas de novo.
-      const caracteristicas = caracteristicasDoProduto(source);
-      const indice = caracteristicas.findIndex((c) => c.nome === nome);
-      for (const c of caracteristicas.slice(indice + 1)) delete proxima[c.nome];
-      return proxima;
-    });
-  return <BuyPreviewCtx.Provider value={{ selecao, escolher, quantity, setQuantity }}>{children}</BuyPreviewCtx.Provider>;
+  const selection = useProductSelection(source);
+  return <BuyPreviewCtx.Provider value={{ source, selection }}>{children}</BuyPreviewCtx.Provider>;
 }
 
-/** Num produto de pré-visualização: versão escolhida, preço, stock e fotos — via helpers da loja. */
-function useBuyView(product: ProductLite | undefined) {
-  const buy = useContext(BuyPreviewCtx);
-  if (!product) return null;
-  const source = asVariantSource(product);
-  const caracteristicas = caracteristicasDoProduto(source);
-  const temVariantes = caracteristicas.length > 0;
-  const selecao = buy?.selecao ?? {};
-  const versao = temVariantes ? encontrarVersao(source, selecao) : undefined;
-  const selecaoCompleta = temVariantes ? caracteristicas.every((c) => Boolean(selecao[c.nome])) : true;
-  const stock = estoqueDaVersao(source, versao);
-  return {
-    buy,
-    source,
-    caracteristicas,
-    temVariantes,
-    selecao,
-    selecaoCompleta,
-    price: precoDaVersao(source, versao),
-    stock,
-    images: imagensDaVersao(source, versao),
-    // MESMA função que a loja pública usa para decidir "comprar / escolher opções / esgotado".
-    buyState: resolveBuyState({ hasVariants: temVariantes, selectionComplete: selecaoCompleta, versionActive: versao?.ativa, stock }),
-  };
-}
-
+/** Galeria: é o MESMO componente da loja pública (carrossel, swipe, bolinhas) — aqui só recebe as fotos da variante escolhida e o estilo do lojista. */
 function ProductGallerySection({ id }: { id: string }) {
   const { colors, mobile } = useSectionFrame(id);
   const styleG = useGlobalGroup("style");
+  const card = useNodeValues(elementPath("products", "productCard"));
   const product = usePreviewProduct();
-  const view = useBuyView(product);
-  const img = view?.images[0] ?? product?.images[0];
+  const buy = useContext(BuyPreviewCtx);
+  const placeholder = <Icons.ImageIcon size={32} color={colors.secondary} />;
   return (
-    <SectionShell path={sectionPath(id)} label="Galeria do produto" style={{ background: colors.background, padding: mobile ? "16px 16px 0" : "28px 24px 0" }}>
+    <SectionShell path={sectionPath(id)} label="Galeria do produto" style={{ background: colors.background, padding: mobile ? "16px 0 0" : "28px 12px 0" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <div style={{ aspectRatio: "1/1", background: colors.gallery, borderRadius: styleG.imageRadius, border: `1px solid rgba(32,32,32,.1)`, overflow: "hidden", display: "grid", placeItems: "center" }}>
-          {img ? <img src={img} alt={product?.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Icons.ImageIcon size={32} color={colors.secondary} />}
-        </div>
+        {product && buy ? (
+          <LumeScope>
+            <GalleryPreview
+              product={product}
+              buy={buy}
+              slideStyle={{
+                borderRadius: styleG.imageRadius,
+                borderWidth: card.imageBorder === false ? 0 : styleG.borderWidth,
+                boxShadow: shadowOf(styleG.shadowStrength),
+                background: resolveColor(card.imageBg, colors),
+              }}
+              placeholder={placeholder}
+            />
+          </LumeScope>
+        ) : null}
       </div>
     </SectionShell>
   );
 }
 
-/** Botão de compra (Comprar agora / Adicionar ao carrinho): largura total, 48px, como na loja pública. */
-function PurchaseButton({ path, label, outline }: { path: string; label: string; outline?: boolean }) {
-  const v = useNodeValues(path);
-  const colors = useColors();
-  if (v.show === false) return null;
-  const base = buttonStyle({ ...v, size: "lg", width: "full" }, colors);
-  const style: CSSProperties = {
-    ...base,
-    height: 48,
-    width: "100%",
-    fontSize: 14,
-    ...(outline ? { background: colors.cardBg, color: colors.text, border: `1px solid ${colors.border}` } : null),
-  };
-  const icon = v.icon ? <LucideIcon name={v.icon} size={16} /> : outline ? <Icons.ShoppingCart size={16} /> : null;
+function GalleryPreview({ product, buy, slideStyle, placeholder }: { product: ProductLite; buy: BuyPreview; slideStyle: CSSProperties; placeholder: ReactNode }) {
+  // Mesmo hook que a página de produto da loja: a foto segue a cor e vice-versa.
+  const { galeria, aoMudarFoto } = useProductGallery(buy.source, buy.selection);
   return (
-    <Editable path={path} label={label} as="div" style={{ display: "block", width: "100%", minWidth: 0 }}>
-      <span style={style}>
-        {icon}
-        {v.label}
-      </span>
-    </Editable>
+    <ProductGallery
+      product={{ id: product.id, name: product.name }}
+      images={galeria.imagens}
+      alvos={galeria.alvos}
+      onSelectIndex={aoMudarFoto}
+      appearance={{ slideStyle, placeholder }}
+    />
   );
 }
 
-/** Evita que clicar numa variante/quantidade seleccione a secção inteira no editor. */
-const interactive = (fn: () => void) => (e: React.MouseEvent) => {
-  e.stopPropagation();
-  fn();
-};
-
+/** Painel de compra: é o MESMO componente da loja pública — aqui só se liga ao preview e aos nós editáveis. */
 function ProductInfoSection({ id }: { id: string }) {
   const { colors, mobile } = useSectionFrame(id);
   const { store, manifest } = useTheme();
   const product = usePreviewProduct();
-  const view = useBuyView(product);
+  const buy = useContext(BuyPreviewCtx);
+  const buyNow = useNodeValues(elementPath(id, "buyNow"));
   const addToCart = useNodeValues(elementPath(id, "addToCart"));
-  if (!product || !view) return null;
-
-  const { buy, source, caracteristicas, temVariantes, selecao, selecaoCompleta, price, stock, buyState } = view;
-  const quantity = buy?.quantity ?? 1;
-  const limit = stock === undefined ? 99 : Math.max(0, stock);
-  const qtyBtn = (disabled: boolean): CSSProperties => ({
-    display: "inline-grid",
-    placeItems: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    border: 0,
-    background: "transparent",
-    color: colors.text,
-    cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? 0.4 : 1,
-    padding: 0,
-  });
-
+  if (!product || !buy) return null;
+  const buttonLabels: Record<PurchaseButtonId, string> = { buyNow: "Botão comprar agora", addToCart: "Botão adicionar" };
   return (
     <SectionShell path={sectionPath(id)} label="Informações do produto" style={{ background: colors.background, color: colors.text, padding: mobile ? "16px" : "20px 24px" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700 }}>{product.name}</h1>
-          {manifest.capabilities.wishlist ? (
-            <span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 40, height: 40, flexShrink: 0 }}>
-              <Icons.Heart size={20} strokeWidth={2.25} />
-            </span>
-          ) : null}
-        </div>
-        <p style={{ marginTop: 4, fontSize: 18, fontWeight: 600 }}>{formatPrice(price, store.currency)}</p>
-
-        {temVariantes ? (
-          <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
-            {caracteristicas.map((caracteristica) => {
-              const valores = valoresParaCaracteristica(source, caracteristica.nome, selecao);
-              const isCor = caracteristica.nome === "Cor";
-              return (
-                <div key={caracteristica.nome} style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase" }}>
-                    {caracteristica.nome}
-                    {selecao[caracteristica.nome] ? (
-                      <span style={{ marginLeft: 4, fontWeight: 400, textTransform: "none", color: colors.secondary }}>{selecao[caracteristica.nome]}</span>
-                    ) : null}
-                  </p>
-                  <div role="group" aria-label={`Escolher ${caracteristica.nome}`} style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    {valores.map((valor) => {
-                      const ativo = selecao[caracteristica.nome] === valor;
-                      const onPick = interactive(() => buy?.escolher(caracteristica.nome, valor));
-                      if (isCor) {
-                        const hex = caracteristica.cores?.[valor];
-                        return (
-                          <button
-                            key={valor}
-                            type="button"
-                            aria-label={valor}
-                            aria-pressed={ativo}
-                            onClick={onPick}
-                            style={{ display: "grid", placeItems: "center", width: 32, height: 32, padding: 0, border: 0, borderRadius: 999, background: "transparent", cursor: "pointer", boxShadow: ativo ? `0 0 0 2px ${colors.background}, 0 0 0 3px ${colors.text}` : undefined }}
-                          >
-                            <span style={{ width: "100%", height: "100%", borderRadius: 999, border: `1px solid ${colors.border}`, background: hex }} />
-                          </button>
-                        );
-                      }
-                      return (
-                        <button
-                          key={valor}
-                          type="button"
-                          aria-pressed={ativo}
-                          onClick={onPick}
-                          style={{ minHeight: 40, minWidth: 40, padding: "0 14px", borderRadius: 16, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ativo ? colors.buttonBg : "transparent", color: ativo ? colors.buttonText : colors.text, border: `1px solid ${ativo ? colors.buttonBg : colors.border}` }}
-                        >
-                          {valor}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-            {!selecaoCompleta ? <p style={{ fontSize: 12, color: colors.secondary }}>Escolha as opções acima para continuar.</p> : null}
-          </div>
-        ) : null}
-
-        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-          {buyState.status === "needsSelection" ? (
-            <span style={{ ...buttonStyle({ ...addToCart, size: "lg", width: "full" }, colors), height: 48, width: "100%", fontSize: 14, opacity: 0.5 }}>Escolha as opções</span>
-          ) : buyState.status === "available" ? (
-            <>
-              <PurchaseButton path={elementPath(id, "buyNow")} label="Botão comprar agora" />
-              <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", alignItems: "center", gap: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", height: 48, borderRadius: 999, border: `1px solid ${colors.border}`, background: colors.cardBg }}>
-                  <button type="button" aria-label="Diminuir quantidade" disabled={quantity === 1} onClick={interactive(() => buy?.setQuantity(Math.max(1, quantity - 1)))} style={qtyBtn(quantity === 1)}>
-                    <Icons.Minus size={16} />
-                  </button>
-                  <span aria-live="polite" style={{ minWidth: 24, textAlign: "center", fontSize: 14, fontWeight: 600 }}>{quantity}</span>
-                  <button type="button" aria-label="Aumentar quantidade" disabled={quantity >= limit} onClick={interactive(() => buy?.setQuantity(Math.min(limit, quantity + 1)))} style={qtyBtn(quantity >= limit)}>
-                    <Icons.Plus size={16} />
-                  </button>
-                </div>
-                <PurchaseButton path={elementPath(id, "addToCart")} label="Botão adicionar" outline />
-              </div>
-            </>
-          ) : (
-            <>
-              <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: colors.secondary }}>Esgotado de momento</p>
-              <span style={{ ...buttonStyle({ size: "lg", width: "full" }, colors), height: 48, width: "100%", fontSize: 14 }}>
-                <Icons.BellRing size={16} />
-                Avisar-me quando chegar
-              </span>
-            </>
-          )}
-        </div>
-
-        <p style={{ marginTop: 16, fontSize: 14, lineHeight: "24px", color: colors.secondary }}>
-          {product.description ?? product.shortDescription ?? "Uma peça versátil, confortável e fácil de combinar. Apresentação demonstrativa pronta para receber os detalhes reais do seu produto."}
-        </p>
+        <LumeScope>
+          <ProductPurchasePanel
+            name={product.name}
+            priceLabel={formatPrice(buy.selection.price, store.currency)}
+            description={product.description ?? product.shortDescription}
+            product={buy.source}
+            selection={buy.selection}
+            labels={{ buyNow: String(buyNow.label ?? UI_TEXT.buyNow), addToCart: String(addToCart.label ?? UI_TEXT.addToCart) }}
+            showFavourite={!!manifest.capabilities.wishlist}
+            stopClickPropagation
+            wrapButton={(which, node) => (
+              <Editable path={elementPath(id, which)} label={buttonLabels[which]} as="div" style={{ display: "block", width: "100%", minWidth: 0 }}>
+                {node}
+              </Editable>
+            )}
+          />
+        </LumeScope>
       </div>
     </SectionShell>
   );
