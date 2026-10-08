@@ -160,3 +160,33 @@ export function resolveBuyState(input: ResolveBuyStateInput): BuyState {
   if (!inStock || input.versionActive === false) return { status: "outOfStock" };
   return { status: "available" };
 }
+
+/* ------------------------------------------------------------------ */
+/* 4. Produto — "Você também pode gostar"                              */
+/* ------------------------------------------------------------------ */
+
+/** Nº máximo de produtos sugeridos no fim da página do produto. */
+export const RECOMMENDATIONS_LIMIT = 4;
+
+/**
+ * Produtos sugeridos para `currentId`: todos os outros, até ao limite.
+ * Com um único produto na loja a lista é vazia.
+ */
+export function getRecommendations<T extends { id: string }>(
+  products: readonly T[],
+  currentId: string | undefined,
+  limit: number = RECOMMENDATIONS_LIMIT,
+): T[] {
+  return products.filter((p) => p.id !== currentId).slice(0, limit);
+}
+
+/**
+ * A secção "Você também pode gostar" só faz sentido quando existe pelo menos
+ * um OUTRO produto para sugerir — numa loja com 1 produto não aparece
+ * (nem o título, nem a grelha vazia). `enabled` é o interruptor do lojista.
+ *
+ * Loja pública e editor chamam esta função — a regra vive num só sítio.
+ */
+export function shouldShowRecommendations(recommendations: readonly unknown[], enabled: boolean = true): boolean {
+  return enabled && recommendations.length > 0;
+}
