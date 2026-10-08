@@ -18,6 +18,20 @@ import { LumePersonalizacaoStyle, useLumePersonalizacao } from "./lume-personali
 import { categorySlug } from "../../lib/store-data";
 import { THEME_PAGE_ROUTE } from "@/theme-editor/themes/lume/page-text";
 
+/** Marca da loja no cabeçalho: logótipo (se o lojista enviou um), nome, ou os dois. */
+function Brand({ nome, className }: { nome: string; className: string }) {
+  const p = useLumePersonalizacao();
+  const logo = p?.logo;
+  if (!logo) return <Link to="/" data-sy="store-name" className={className}>{nome}</Link>;
+  return (
+    <Link to="/" aria-label={nome} className={`${className} flex items-center gap-2`}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- imagem do bucket da loja */}
+      <img data-sy="store-logo" src={logo.url} alt={nome} style={{ height: logo.height, width: 'auto', maxWidth: '55vw' }} className="block object-contain" />
+      {logo.showName && <span data-sy="store-name">{nome}</span>}
+    </Link>
+  );
+}
+
 export function StoreShell({ children }: { children: ReactNode }) {
   return <StoreProvider><AuthProvider><ShellContent>{children}</ShellContent></AuthProvider></StoreProvider>;
 }
@@ -79,7 +93,7 @@ function ShellContent({ children }: { children: ReactNode }) {
         <header data-sy="header" className="sticky top-0 z-40 bg-card/95 backdrop-blur">
           <div className="relative mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
             <Button asChild variant="ghost" size="icon" aria-label="Voltar"><Link to="/"><ArrowLeft size={20} strokeWidth={2.25} style={{ width: 20, height: 20 }} /></Link></Button>
-            <Link to="/" data-sy="store-name" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
+            <Brand nome={nomeLoja} className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal" />
           </div>
         </header>
         <main className="pb-16">{children}</main>
@@ -140,7 +154,7 @@ function ShellContent({ children }: { children: ReactNode }) {
               </span>
             </div>
           ) : (
-            <Link to="/" data-sy="store-name" className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal">{nomeLoja}</Link>
+            <Brand nome={nomeLoja} className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal" />
           )}
           {productPage ? (
             <CartIconButton cartCount={cartCount} onClick={() => setCartOpen(true)} />
