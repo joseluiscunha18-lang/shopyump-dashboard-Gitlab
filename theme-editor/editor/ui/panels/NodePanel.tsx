@@ -1,21 +1,24 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Eye, EyeOff, Copy, Trash2, Plus, MoreHorizontal, GripVertical, Image as ImageIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff, Copy, Trash2, Plus, MoreHorizontal, GripVertical, Image as ImageIcon, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/theme-editor/ui/button";
+import { Switch } from "@/theme-editor/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/theme-editor/ui/dropdown-menu";
 import { useEditor, useEditorDispatch } from "@/theme-editor/editor/core/store";
 import { blockElementPath, blockPath, elementPath, parsePath, sectionPath, type NodePath } from "@/theme-editor/editor/core/paths";
 import {
   blockIdsOf,
   blockTypeOf,
+  deviceListLabel,
+  devicesOf,
   hasOverride,
   isSettingVisible,
   resolveValue,
   sectionTypeOf,
   settingsForPath,
 } from "@/theme-editor/editor/core/resolve";
-import type { SettingDef } from "@/theme-editor/editor/contracts/types";
+import type { DeviceAvailability, SettingDef } from "@/theme-editor/editor/contracts/types";
 import { ControlRow } from "../controls/Controls";
-import { openActionOf, resolveOpenTarget } from "@/theme-editor/editor/core/openAction";
+import { elementDefOf, openActionOf, resolveOpenTarget } from "@/theme-editor/editor/core/openAction";
 
 const GROUP_LABELS: Record<string, string> = {
   layout: "Layout",
@@ -115,10 +118,40 @@ function elementPreview(state: ReturnType<typeof useEditor>, path: NodePath, kin
   return { text: typeof value === "string" && value.trim() ? value : undefined };
 }
 
+/**
+ * Aviso de que o nó que se está a editar não existe no aparelho do preview
+ * (ex.: o ícone de Favoritos do cabeçalho em vista de telemóvel). As opções
+ * continuam editáveis; o botão leva o preview para um aparelho onde se vê.
+ */
+function DeviceNotice({ def }: { def: DeviceAvailability | undefined }) {
+  const state = useEditor();
+  const dispatch = useEditorDispatch();
+  if (!def?.devices) return null;
+  const devices = devicesOf(def, state.draft);
+  if (devices.includes(state.device)) return null;
+  const target = devices.includes("desktop") ? "desktop" : devices[0]!;
+  const Icon = target === "mobile" ? Smartphone : Monitor;
+  return (
+    <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-border bg-muted/50 p-3 text-sm" role="note">
+      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p>
+          Isto só aparece no {deviceListLabel(devices)}.{def.devicesNote ? ` ${def.devicesNote}` : ""}
+        </p>
+        <button className="mt-1.5 text-sm font-medium underline" onClick={() => dispatch({ type: "setDevice", device: target })}>
+          Ver no {deviceListLabel([target])}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ElementRow({ path, label, kind }: { path: NodePath; label: string; kind: string }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const preview = elementPreview(state, path, kind);
+  const availability = elementDefOf(state.manifest, state.draft, path);
+  const devices = availability?.devices ? devicesOf(availability, state.draft) : null;
   return (
     <button
       className="flex w-full items-center gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-accent"
@@ -132,9 +165,26 @@ function ElementRow({ path, label, kind }: { path: NodePath; label: string; kind
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium">{label}</span>
         {preview.text ? <span className="block truncate text-xs text-muted-foreground">{preview.text}</span> : null}
+        {devices && devices.length < 3 ? <span className="block text-[11px] text-muted-foreground">Só no {deviceListLabel(devices)}</span> : null}
       </span>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
     </button>
+  );
+}
+
+/** Interruptor \"Mostrar\" de uma seção fixa ocultável (ex.: barra inferior): sem ele, a única forma de a retirar era um menu escondido. */
+function FixedSectionSwitch({ sectionId, label, note }: { sectionId: string; label: string; note?: string }) {
+  const state = useEditor();
+  const dispatch = useEditorDispatch();
+  const hidden = !!state.draft.sections[sectionId]?.hidden;
+  return (
+    <label className="mb-3 flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
+      <span className="min-w-0 text-sm font-medium">
+        Mostrar {label.toLowerCase()}
+        {note ? <span className="block text-xs font-normal text-muted-foreground">{note}</span> : null}
+      </span>
+      <Switch checked={!hidden} onCheckedChange={() => dispatch({ type: "toggleHidden", sectionId })} aria-label={`Mostrar ${label.toLowerCase()}`} />
+    </label>
   );
 }
 
@@ -148,8 +198,14 @@ export function NodePanel({ path, mobileSheet = false }: { path: NodePath; mobil
   const target = openActionOf(state.manifest, state.draft, path)
     ? resolveOpenTarget(state.manifest, state.draft, path, state.device, state.selectedContext)
     : undefined;
+  const sectionType = p.kind === "section" ? sectionTypeOf(state.manifest, state.draft, p.sectionId!) : undefined;
+  const elementDef = p.kind === "element" ? elementDefOf(state.manifest, state.draft, path) : undefined;
   const content = (
     <>
+      <DeviceNotice def={sectionType ?? elementDef} />
+      {sectionType && sectionType.scope === "fixed" && sectionType.hideable ? (
+        <FixedSectionSwitch sectionId={p.sectionId!} label={sectionType.label} note={sectionType.hideNote} />
+      ) : null}
       {target ? (
         <button
           disabled={target.kind === "unavailable"}
