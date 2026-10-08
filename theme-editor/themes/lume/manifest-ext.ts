@@ -295,5 +295,5 @@ export const extOverlays: OverlayDef[] = [
   { id: "sideMenu", label: "Menu lateral", sectionIds: ["sideMenu"], trigger: "sections.header.elements.menu", side: "left", requires: "sideMenu" },
   { id: "searchOverlay", label: "Pesquisa", sectionIds: ["searchOverlay"], trigger: "sections.header.elements.search", side: "full", requires: "search" },
   { id: "cartDrawer", label: "Carrinho lateral", sectionIds: ["cartDrawer"], side: "right", requires: "cartDrawer" },
-  { id: "authOverlay", label: "Entrar ou criar conta", sectionIds: ["authOverlay"], trigger: "sections.header.elements.account", side: "bottom", requires: "account" },
+  { id: "authOverlay", label: "Entrar ou criar conta", sectionIds: ["authOverlay"], trigger: "sections.header.elements.account", side: "full", requires: "account" },
 ];

@@ -972,20 +972,22 @@ function AuthOverlaySection({ id }: { id: string }) {
   const colors = useColors();
   const btn = buttonStyle({ variant: "solid", radius: 999 }, colors);
   return (
-    <OverlayShell id="authOverlay" path={sectionPath(id)} label="Entrar ou criar conta" side="bottom" width={360} scrim={35} style={{ background: colors.cardBg, color: colors.text, padding: 24 }}>
-      <div style={{ paddingRight: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700 }}>Entrar ou criar conta</h2>
-        <p style={{ marginTop: 8, fontSize: 14, lineHeight: "20px", color: colors.secondary }}>Digite o seu e-mail para aceder à sua conta ou criar uma nova.</p>
+    <OverlayShell id="authOverlay" path={sectionPath(id)} label="Entrar ou criar conta" side="full" scrim={35} style={{ background: colors.background, color: colors.text, padding: 20 }}>
+      <div style={{ maxWidth: 420, margin: "40px auto 0" }}>
+        <div style={{ paddingRight: 32 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700 }}>Entrar ou criar conta</h2>
+          <p style={{ marginTop: 8, fontSize: 14, lineHeight: "20px", color: colors.secondary }}>Digite o seu e-mail para aceder à sua conta ou criar uma nova.</p>
+        </div>
+        <div style={{ marginTop: 20, display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: colors.secondary }}>E-mail</span>
+          <span style={{ display: "block", height: 48, border: `1px solid ${colors.border}`, borderRadius: 8, background: colors.cardBg }} />
+        </div>
+        <span style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 14, fontSize: 12, lineHeight: "16px", color: colors.secondary }}>
+          <span style={{ width: 16, height: 16, borderRadius: 4, border: `1px solid ${colors.border}`, flexShrink: 0 }} />
+          Quero receber novidades e ofertas
+        </span>
+        <span style={{ ...btn, display: "block", textAlign: "center", height: 48, lineHeight: "48px", marginTop: 20, fontWeight: 600 }}>Continuar com e-mail</span>
       </div>
-      <div style={{ marginTop: 20, display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: colors.secondary }}>E-mail</span>
-        <span style={{ display: "block", height: 48, border: `1px solid ${colors.border}`, borderRadius: 8, background: colors.background }} />
-      </div>
-      <span style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 14, fontSize: 12, lineHeight: "16px", color: colors.secondary }}>
-        <span style={{ width: 16, height: 16, borderRadius: 4, border: `1px solid ${colors.border}`, flexShrink: 0 }} />
-        Quero receber novidades e ofertas
-      </span>
-      <span style={{ ...btn, display: "block", textAlign: "center", height: 48, lineHeight: "48px", marginTop: 20, fontWeight: 600 }}>Continuar com e-mail</span>
     </OverlayShell>
   );
 }
