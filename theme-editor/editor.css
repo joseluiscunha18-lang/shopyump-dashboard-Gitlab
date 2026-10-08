@@ -68,6 +68,19 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+  Componentes partilhados com a loja pública (ver `LumeScope` em
+  themes/lume/Renderer.tsx). A loja usa os raios globais da app
+  (app/globals.css, :root); `.ed-root` redefine-os para o painel — aqui voltam
+  aos valores da loja. Manter iguais aos de app/globals.css.
+*/
+.ed-root .theme-lume {
+  --radius-sm: 10px;
+  --radius-md: 13px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+}
+
 /* Editor em ecrã inteiro (fora da moldura do painel) */
 .ed-root-page {
   background-color: var(--background);
