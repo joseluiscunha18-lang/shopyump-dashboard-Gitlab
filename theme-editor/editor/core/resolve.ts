@@ -1,4 +1,4 @@
-import type { Customization, Device, SettingDef, ThemeManifest } from "../contracts/types";
+import type { Customization, DeviceAvailability, Device, SettingDef, ThemeManifest } from "../contracts/types";
 import { expandSettings, isResponsiveValue, parsePath, pickResponsive, readBag, type NodePath } from "./paths";
 
 /** Valor cru (pode ser ResponsiveValue) depois de defaults + presets + override. */
@@ -239,4 +239,21 @@ export function isSettingVisible(
   if (w.gt !== undefined) return typeof v === "number" && v > w.gt;
   if (w.lt !== undefined) return typeof v === "number" && v < w.lt;
   return true;
+}
+
+const ALL_DEVICES: Device[] = ["mobile", "tablet", "desktop"];
+
+/** Aparelhos onde um elemento/seção existe, já a contar com `alsoWhenHidden`. */
+export function devicesOf(def: DeviceAvailability | undefined, custom: Customization): Device[] {
+  if (!def?.devices) return ALL_DEVICES;
+  const extra = def.alsoWhenHidden && custom.sections[def.alsoWhenHidden.section]?.hidden ? def.alsoWhenHidden.devices : [];
+  return ALL_DEVICES.filter((d) => def.devices!.includes(d) || extra.includes(d));
+}
+
+export const DEVICE_LABEL: Record<Device, string> = { mobile: "telemóvel", tablet: "tablet", desktop: "computador" };
+
+/** "computador e tablet", "telemóvel"… para frases do editor. */
+export function deviceListLabel(devices: Device[]): string {
+  const names = ALL_DEVICES.slice().reverse().filter((d) => devices.includes(d)).map((d) => DEVICE_LABEL[d]);
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}` : names[0] ?? "";
 }
