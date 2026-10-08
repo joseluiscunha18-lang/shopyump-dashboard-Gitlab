@@ -43,6 +43,7 @@ export async function getEditorInit(loja: Loja): Promise<LojaEditorInit> {
   if (loja.tiktok) social.tiktok = loja.tiktok;
 
   return {
+    lojaId: loja.id,
     store: {
       name: loja.nome,
       description: loja.descricao ?? '',
