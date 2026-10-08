@@ -1,3 +1,4 @@
+import type { ProdutoVariantes } from "@/types/database";
 // Contratos universais do editor. Nenhum nome de tema aparece aqui.
 
 export type Device = "desktop" | "tablet" | "mobile";
@@ -368,6 +369,16 @@ export interface ProductLite {
   categoryId: string;
   inStock: boolean;
   shortDescription?: string;
+  /** Descrição completa do produto (a que a loja pública mostra). */
+  description?: string;
+  /**
+   * Variantes reais (cor/tamanho/...) — a mesma estrutura que a loja pública
+   * usa (`produtos.variantes`). Sem isto o editor não consegue desenhar o
+   * seletor de variantes que a loja mostra. undefined/null = sem variantes.
+   */
+  variantes?: ProdutoVariantes | null;
+  /** Stock sem variantes. undefined = sem controlo de stock (sempre disponível). */
+  stock?: number;
 }
 
 export interface CategoryLite {
