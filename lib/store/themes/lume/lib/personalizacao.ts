@@ -3,7 +3,9 @@ import { lumeManifest as M } from "@/theme-editor/themes/lume/manifest";
 import { resolveColor, resolveValue, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
 import { settingsForPath } from "@/theme-editor/editor/core/resolve";
-import { DEFAULT_MENU_ITEMS, HEADING_SECTION, PAGE_TEXT, UI_TEXT, type LumePageKey } from "@/theme-editor/themes/lume/page-text";
+import { DEFAULT_MENU_ITEMS, HEADING_SECTION, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, type LumePageKey } from "@/theme-editor/themes/lume/page-text";
+import { sectionTypeOf } from "@/theme-editor/editor/core/resolve";
+import { BUCKETS } from "@/lib/storageBuckets";
 
 /**
  * PERSONALIZAÇÃO DO TEMA LUME NA LOJA PÚBLICA
@@ -46,6 +48,8 @@ export interface LumePersonalizacao {
     whatsButton: string;
     footerHeading: string;
     copyright: string;
+    /** Mensagem já escrita quando o cliente abre o WhatsApp pelo cartão. */
+    whatsMessage: string;
   }>;
   /** Título/etiqueta/descrição das páginas internas (só o que o lojista escreveu). */
   pages: Partial<Record<LumePageKey, Partial<{ eyebrow: string; title: string; description: string }>>>;
@@ -67,13 +71,56 @@ export interface LumePersonalizacao {
   showHeroSubtitle: boolean;
   showCredit: boolean;
   announcementVisible: boolean;
-  /** Ordem das seções da página inicial (já sem as removidas/ocultas). */
-  homeOrder: HomeSectionId[];
+  /** Logótipo do cabeçalho (null = mostra só o nome da loja). */
+  logo: { url: string; height: number; showName: boolean } | null;
+  /** Banner: imagem de fundo (null = fundo em cores + ilustração) e alinhamento. */
+  hero: { image: { url: string; x: number; y: number; overlay: number } | null; center: boolean };
+  /** Destino dos botões, só quando o lojista o mudou (ausente = destino original). */
+  links: Partial<Record<"heroButton" | "viewAll", LumeLink>>;
+  /** Ordem da página inicial: ids das seções de base ("hero"…) e das adicionadas (chaves de `extras`). */
+  homeOrder: string[];
+  /** Seções adicionadas pelo lojista, já resolvidas e validadas. */
+  extras: Record<string, LumeExtraSection>;
   /** Presente só se o lojista mexeu na origem/quantidade/ordem dos produtos. */
   productsQuery: { mode: "all" | "manual"; picked: string[]; count: number; sort: "recent" | "priceAsc" | "priceDesc" } | null;
 }
 
 export type HomeSectionId = "hero" | "products" | "whatsappCta";
+
+/** Destino de um botão, já validado. `page` = id de página do tema (ver THEME_PAGE_ROUTE). */
+export interface LumeLink {
+  kind: "page" | "category" | "url" | "whatsapp";
+  value: string;
+  message?: string;
+}
+
+export interface LumeExtraButton {
+  show: boolean;
+  label: string;
+  link: LumeLink | null;
+  variant: "solid" | "outline" | "text";
+  bg: string;
+  fg: string;
+  radius: number;
+  size: "sm" | "md" | "lg";
+}
+
+export interface LumeExtraSection {
+  id: string;
+  type: "categories" | "imageText" | "richText";
+  /** Cores do fundo escolhido (claro/suave/escuro), já em hex. */
+  bg: string;
+  fg: string;
+  title: { show: boolean; text: string; sizeD: number; sizeM: number };
+  text?: { show: boolean; text: string };
+  button?: LumeExtraButton;
+  image?: { url: string | null; ratio: string };
+  side?: "left" | "right";
+  align?: "left" | "center";
+  columns?: { d: number; m: number };
+  shape?: "square" | "round";
+  showCount?: boolean;
+}
 const DEFAULT_HOME_ORDER: HomeSectionId[] = ["hero", "products", "whatsappCta"];
 
 /* ------------------------------ validação ------------------------------ */
@@ -102,6 +149,41 @@ const num = (v: unknown, min: number, max: number): number | null => {
 const hex = (v: unknown): string | null => (typeof v === "string" && HEX.test(v) ? v : null);
 const str = (v: unknown, max = 200): string | null => (typeof v === "string" ? v.slice(0, max) : null);
 const bool = (v: unknown): boolean => v === true;
+
+/**
+ * Caminho de uma imagem enviada no editor: `<id-da-loja>/<logo|banner|image>-<uuid>.<ext>`.
+ * Só caminhos com esta forma exata viram URL (nada vindo do JSON é concatenado "às cegas").
+ */
+const MEDIA_PATH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(logo|banner|image)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
+function mediaUrl(ref: unknown): string | null {
+  const id = ref && typeof ref === "object" ? (ref as { mediaId?: unknown }).mediaId : null;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (typeof id !== "string" || !MEDIA_PATH.test(id) || !base) return null;
+  return `${base.replace(/\/$/, "")}/storage/v1/object/public/${BUCKETS.lojas}/${id}`;
+}
+
+/** Destino de um botão (LinkRef do editor) → destino seguro da loja pública. */
+function resolveLink(ref: unknown): LumeLink | null {
+  if (!ref || typeof ref !== "object") return null;
+  const r = ref as { type?: unknown; value?: unknown; message?: unknown };
+  const v = typeof r.value === "string" ? r.value : "";
+  switch (r.type) {
+    case "home":
+      return { kind: "page", value: "home" };
+    case "products":
+      return { kind: "page", value: "collection" };
+    case "themePage":
+      return v in THEME_PAGE_ROUTE && v !== "cart" ? { kind: "page", value: v } : null;
+    case "category":
+      return v ? { kind: "category", value: v.slice(0, 80) } : null;
+    case "url":
+      return /^https?:\/\//i.test(v) && v.length <= 300 ? { kind: "url", value: v } : null;
+    case "whatsapp":
+      return { kind: "whatsapp", value: "", message: str(r.message, 300)?.trim() || undefined };
+    default:
+      return null;
+  }
+}
 
 /* ------------------------------ resolução ------------------------------ */
 
@@ -137,7 +219,7 @@ interface Snapshot {
   style: Bag;
   layout: Resolved;
   announcement: { s: Resolved; message: Resolved };
-  header: { s: Resolved; name: Resolved; search: Resolved; wishlist: Resolved; account: Resolved };
+  header: { s: Resolved; name: Resolved; logo: Resolved; search: Resolved; wishlist: Resolved; account: Resolved };
   hero: { s: Resolved; title: Resolved; subtitle: Resolved; button: Resolved };
   products: { s: Resolved; title: Resolved; viewAll: Resolved; card: Resolved };
   whats: { s: Resolved; title: Resolved; text: Resolved; button: Resolved; cardStyle: unknown };
@@ -170,7 +252,7 @@ function snapshot(custom: Customization): Snapshot {
     style: read(custom, "global.style").d,
     layout: read(custom, "global.layout"),
     announcement: { s: announcement, message: el("announcement", "message") },
-    header: { s: sec("header"), name: el("header", "name"), search: el("header", "search"), wishlist: el("header", "wishlist"), account: el("header", "account") },
+    header: { s: sec("header"), name: el("header", "name"), logo: el("header", "logo"), search: el("header", "search"), wishlist: el("header", "wishlist"), account: el("header", "account") },
     hero: { s: sec("hero"), title: el("hero", "title"), subtitle: el("hero", "subtitle"), button: el("hero", "button") },
     products: { s: sec("products"), title: el("products", "title"), viewAll: el("products", "viewAll"), card: el("products", "productCard") },
     whats: { s: sec("whatsappCta"), title: el("whatsappCta", "title"), text: el("whatsappCta", "text"), button: el("whatsappCta", "button"), cardStyle: sec("whatsappCta").d.cardStyle },
@@ -245,11 +327,6 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   const imgBg = resolveColor(cur.products.card.d.imageBg, c);
   const imgBgDef = resolveColor(def.products.card.d.imageBg, d);
   if (imgBg !== imgBgDef) setVars(["--product-gallery"], hex(imgBg));
-  // Botão do banner.
-  const hb = resolveColor(cur.hero.button.d.bg, c);
-  const hbt = resolveColor(cur.hero.button.d.textColor, c);
-  if (hb !== resolveColor(def.hero.button.d.bg, d)) setVars(["--hero-button"], hex(hb));
-  if (hbt !== resolveColor(def.hero.button.d.textColor, d)) setVars(["--hero-button-foreground"], hex(hbt));
   // Barra de anúncio.
   if (cur.scheme.background !== def.scheme.background) setVars(["--topbar"], hex(cur.scheme.background));
   if (cur.scheme.text !== def.scheme.text) setVars(["--topbar-foreground"], hex(cur.scheme.text));
@@ -314,6 +391,53 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
       rule(selector, [`text-transform:${curR.d.transform}`]);
     if (curR.d.size !== undefined) responsiveRule(selector, (v) => [`font-size:${v}px`], curR, defR, "size", 8, 96);
   };
+  /* ---- botões (banner, "Explorar mais", WhatsApp): cor, estilo, cantos, tamanho ---- */
+  const SIZES = { sm: "height:34px;padding:0 16px;font-size:13px", md: "height:40px;padding:0 20px;font-size:14px", lg: "height:48px;padding:0 28px;font-size:15px" } as const;
+  const buttonRules = (selector: string, curR: Resolved, defR: Resolved) => {
+    const a = curR.d;
+    const b = defR.d;
+    if (a.show === false) {
+      rule(selector, ["display:none!important"]);
+      return;
+    }
+    const bgNow = resolveColor(a.bg, c);
+    const fgNow = resolveColor(a.textColor, c);
+    const variant = ["solid", "outline", "text"].includes(a.variant) ? (a.variant as string) : (b.variant as string);
+    const colorsChanged = bgNow !== resolveColor(b.bg, d) || fgNow !== resolveColor(b.textColor, d);
+    if (variant !== b.variant || colorsChanged) {
+      const bg = hex(bgNow);
+      const fg = hex(fgNow);
+      const decls: string[] = [];
+      if (variant === "solid") {
+        if (bg) decls.push(`background:${bg}!important`);
+      } else if (variant === "outline") {
+        decls.push("background:transparent!important");
+        if (bg) decls.push(`border-color:${bg}`);
+      } else {
+        decls.push("background:transparent!important", "border-color:transparent", "box-shadow:none", "text-decoration:underline", "height:auto", "padding:6px 0");
+      }
+      if (fg) decls.push(`color:${fg}`);
+      rule(selector, decls);
+    }
+    const r = num(a.radius, 0, 999);
+    if (r !== null && a.radius !== b.radius) rule(selector, [`border-radius:${r}px`]);
+    if (variant !== "text" && a.size !== b.size && a.size in SIZES) rule(selector, [SIZES[a.size as keyof typeof SIZES]]);
+  };
+  buttonRules("[data-sy=hero-button]", cur.hero.button, def.hero.button);
+  buttonRules("[data-sy=viewall-button]", cur.products.viewAll, def.products.viewAll);
+  buttonRules("[data-sy=whats-button]", cur.whats.button, def.whats.button);
+
+  /* ---- banner com imagem: cor do texto por cima da imagem (as cores do lojista, se mudou, vêm depois e ganham) ---- */
+  const heroImageUrl = mediaUrl(cur.hero.s.d.image);
+  if (heroImageUrl && cur.hero.s.d.textTone !== "dark") {
+    rule("[data-sy=hero-title]", ["color:#fff"]);
+    rule("[data-sy=hero-subtitle]", ["color:rgba(255,255,255,.85)"]);
+  }
+  if (cur.hero.s.d.align === "center") {
+    rule("[data-sy=hero]>div", ["display:flex!important", "justify-content:center"]);
+    rule("[data-sy=hero-content]", ["text-align:center", "margin:0 auto", "max-width:36rem"]);
+  }
+
   textRules("[data-sy=announcement]", cur.announcement.message, def.announcement.message);
   textRules("[data-sy=store-name]", cur.header.name, def.header.name);
   textRules("[data-sy=hero-title]", cur.hero.title, def.hero.title);
@@ -383,6 +507,8 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   text.whatsTitle = changed(cur.whats.title, def.whats.title, "text", 160);
   text.whatsText = changed(cur.whats.text, def.whats.text, "text", 240);
   text.whatsButton = changed(cur.whats.button, def.whats.button, "label", 60);
+  const wm = str(cur.whats.button.d.message, 200)?.trim();
+  if (wm) text.whatsMessage = wm;
   text.footerHeading = changed(cur.footer.heading, def.footer.heading, "text", 60);
   text.copyright = changed(cur.footer.copyright, def.footer.copyright, "text", 160);
   for (const k of Object.keys(text) as (keyof typeof text)[]) if (text[k] === undefined) delete text[k];
@@ -434,13 +560,93 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
     menuItems = list.length ? list : null;
   }
 
-  /* ---- seções da página inicial ---- */
+  /* ---- seções da página inicial (de base + adicionadas pelo lojista) ---- */
   const ids = visibleSectionIds(M, custom, "home");
   const hidden = (id: string) => bool((custom.sections as Record<string, { hidden?: boolean }>)[id]?.hidden);
-  const known = new Set<string>(DEFAULT_HOME_ORDER);
-  const order = ids.page.filter((id): id is HomeSectionId => known.has(id) && !hidden(id));
+  const EXTRA_TYPES = ["categories", "imageText", "richText"] as const;
+  type ExtraType = (typeof EXTRA_TYPES)[number];
+  const extraType = (id: string): ExtraType | null => {
+    const t = sectionTypeOf(M, custom, id)?.type;
+    return EXTRA_TYPES.includes(t as ExtraType) ? (t as ExtraType) : null;
+  };
+  const toneColors = (tone: unknown): { bg: string; fg: string } => {
+    const sd = M.colorSchemes.find((x) => x.id === tone);
+    const bg = hex(tone === "light" || !sd ? c.background : sd.colors.background) ?? "#FFFFFF";
+    const fg = hex(tone === "light" || !sd ? c.text : sd.colors.text) ?? "#202020";
+    return { bg, fg };
+  };
+  const extras: Record<string, LumeExtraSection> = {};
+  const order: string[] = [];
+  for (const id of ids.page) {
+    if (hidden(id)) continue;
+    if (id === "hero" || id === "products" || id === "whatsappCta") {
+      order.push(id);
+      continue;
+    }
+    const type = extraType(id);
+    if (!type) continue;
+    const sv = read(custom, sectionPath(id));
+    const title = read(custom, elementPath(id, "title"));
+    const tone = toneColors(sv.d.tone);
+    const ex: LumeExtraSection = {
+      id,
+      type,
+      ...tone,
+      title: { show: title.d.show !== false, text: str(title.d.text, 80) ?? "", sizeD: num(title.d.size, 12, 72) ?? 24, sizeM: num(title.m.size, 12, 72) ?? 20 },
+    };
+    if (type !== "categories") {
+      const t = read(custom, elementPath(id, "text"));
+      ex.text = { show: t.d.show !== false, text: str(t.d.text, 600) ?? "" };
+      const b = read(custom, elementPath(id, "button")).d;
+      const variant = ["solid", "outline", "text"].includes(b.variant) ? b.variant : "solid";
+      ex.button = {
+        show: b.show === true,
+        label: str(b.label, 32)?.trim() || "Saber mais",
+        link: resolveLink(b.link) ?? { kind: "page", value: "collection" },
+        variant,
+        bg: hex(resolveColor(b.bg, c)) ?? "#202020",
+        fg: hex(resolveColor(b.textColor, c)) ?? "#FFFFFF",
+        radius: num(b.radius, 0, 999) ?? 999,
+        size: ["sm", "md", "lg"].includes(b.size) ? b.size : "md",
+      };
+    }
+    if (type === "imageText") {
+      const im = read(custom, elementPath(id, "image")).d;
+      ex.image = { url: mediaUrl(im.image), ratio: ["1/1", "4/5", "16/9"].includes(im.ratio) ? im.ratio : "4/5" };
+      ex.side = sv.d.side === "right" ? "right" : "left";
+    }
+    if (type === "richText") ex.align = sv.d.align === "left" ? "left" : "center";
+    if (type === "categories") {
+      ex.columns = { d: num(sv.d.columns, 2, 6) ?? 4, m: num(sv.m.columns, 1, 4) ?? 2 };
+      ex.shape = sv.d.shape === "round" ? "round" : "square";
+      ex.showCount = sv.d.showCount !== false;
+    }
+    extras[id] = ex;
+    order.push(id);
+  }
   const homeOrder = same(order, DEFAULT_HOME_ORDER) ? DEFAULT_HOME_ORDER : order;
   const announcementVisible = ids.top.includes("announcement") && !hidden("announcement");
+
+  /* ---- logótipo, banner e destinos ---- */
+  const logoUrl = mediaUrl(cur.header.logo.d.image);
+  const logo = logoUrl ? { url: logoUrl, height: num(cur.header.logo.d.height, 16, 56) ?? 32, showName: bool(cur.header.logo.d.showName) } : null;
+  const heroImage = heroImageUrl
+    ? {
+        url: heroImageUrl,
+        x: num(cur.hero.s.d.focalPoint?.x, 0, 100) ?? 50,
+        y: num(cur.hero.s.d.focalPoint?.y, 0, 100) ?? 50,
+        overlay: num(cur.hero.s.d.overlay, 0, 80) ?? 0,
+      }
+    : null;
+  const links: LumePersonalizacao["links"] = {};
+  if (!same(cur.hero.button.d.link, def.hero.button.d.link)) {
+    const l = resolveLink(cur.hero.button.d.link);
+    if (l) links.heroButton = l;
+  }
+  if (!same(cur.products.viewAll.d.link, def.products.viewAll.d.link)) {
+    const l = resolveLink(cur.products.viewAll.d.link);
+    if (l) links.viewAll = l;
+  }
 
   const ps0 = cur.products.s.d;
   const psDef = def.products.s.d;
@@ -467,7 +673,11 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
     showHeroSubtitle: bool(cur.hero.subtitle.d.show),
     showCredit: cur.footer.credit.d.show !== false,
     announcementVisible,
+    logo,
+    hero: { image: heroImage, center: cur.hero.s.d.align === "center" },
+    links,
     homeOrder,
+    extras,
     productsQuery,
   };
 }
