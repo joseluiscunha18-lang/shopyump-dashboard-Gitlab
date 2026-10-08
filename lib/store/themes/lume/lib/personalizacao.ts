@@ -7,6 +7,8 @@ import { DEFAULT_MENU_ITEMS, HEADING_SECTION, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TE
 import { sectionTypeOf } from "@/theme-editor/editor/core/resolve";
 import { BUCKETS } from "@/lib/storageBuckets";
 import { LUME_COLOR_VARS } from "./color-vars";
+import { bottomNavVars, isBottomNavTone } from "./bottom-nav-style";
+import { resolveBottomNavItems, BOTTOM_NAV_DEFAULTS, type BottomNavItemConfig } from "@/lib/store/shared/storefront-logic";
 
 /**
  * PERSONALIZAÇÃO DO TEMA LUME NA LOJA PÚBLICA
@@ -72,6 +74,12 @@ export interface LumePersonalizacao {
   showHeroSubtitle: boolean;
   showCredit: boolean;
   announcementVisible: boolean;
+  /**
+   * Barra inferior: só presente se o lojista a mudou (ausente = a original, com os
+   * 4 itens). `visible:false` = removida (o cabeçalho passa a mostrar Pesquisa e
+   * Favoritos em telemóvel). `items` já vêm ordenados, sem os ocultos.
+   */
+  bottomNav: { visible: boolean; items: BottomNavItemConfig[] } | null;
   /** Logótipo do cabeçalho (null = mostra só o nome da loja). */
   logo: { url: string; height: number; showName: boolean } | null;
   /** Banner: imagem de fundo (null = fundo em cores + ilustração) e alinhamento. */
@@ -451,9 +459,14 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   if (cur.header.wishlist.d.show === false) rule("[data-sy=header-wishlist]", ["display:none!important"]);
   if (cur.header.account.d.show === false) rule("[data-sy=header-account]", ["display:none!important"]);
   /* ---- barra inferior ---- */
-  if (cur.bottomNav.d.showSearch === false) rule("[data-sy=bottom-search]", ["display:none!important"]);
-  if (cur.bottomNav.d.showWishlist === false) rule("[data-sy=bottom-wishlist]", ["display:none!important"]);
-  if (cur.bottomNav.d.showCart === false) rule("[data-sy=bottom-cart]", ["display:none!important"]);
+  // Itens (ordem, nomes, ocultos) e "remover a barra" não são CSS: a loja decide o
+  // que desenha (ver `bottomNav` abaixo). Aqui só as cores e o espaço que sobra.
+  const navTone = isBottomNavTone(cur.bottomNav.d.tone) ? cur.bottomNav.d.tone : "dark";
+  const navVars = bottomNavVars(navTone);
+  rule("[data-sy=bottom-nav]", Object.entries(navVars).map(([k, v]) => `${k}:${v}`));
+  const navRemoved = custom.sections.bottomNav?.hidden === true;
+  // Sem barra, o rodapé deixa de precisar do espaço reservado para ela (só telemóvel).
+  if (navRemoved) rules.push(`${XS}{${W} [data-sy=footer]{padding-bottom:2.5rem}}`);
   /* ---- grelhas de coleção e favoritos ---- */
   responsiveRule("[data-sy=catalog-grid]", (v) => [`grid-template-columns:repeat(${Math.round(v)},minmax(0,1fr))`], cur.catalog, def.catalog, "columns", 1, 6);
   responsiveRule("[data-sy=wishlist-grid]", (v) => [`grid-template-columns:repeat(${Math.round(v)},minmax(0,1fr))`], cur.wishlistGrid, def.wishlistGrid, "columns", 1, 6);
@@ -620,6 +633,13 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   const homeOrder = same(order, DEFAULT_HOME_ORDER) ? DEFAULT_HOME_ORDER : order;
   const announcementVisible = ids.top.includes("announcement") && !hidden("announcement");
 
+  // Barra inferior: lista só quando difere da original (loja sem mexer = null).
+  const navRaw = (custom.sections.bottomNav?.settings ?? {}) as Bag;
+  const navItems = resolveBottomNavItems(navRaw.items, navRaw);
+  const navDefault = BOTTOM_NAV_DEFAULTS.map(({ key, label }) => ({ key, label }));
+  const navVisible = custom.sections.bottomNav?.hidden !== true;
+  const bottomNav = !navVisible || !same(navItems, navDefault) ? { visible: navVisible, items: navItems } : null;
+
   /* ---- logótipo, banner e destinos ---- */
   const logoUrl = mediaUrl(cur.header.logo.d.image);
   const logo = logoUrl ? { url: logoUrl, height: num(cur.header.logo.d.height, 16, 56) ?? 32, showName: bool(cur.header.logo.d.showName) } : null;
@@ -666,6 +686,7 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
     showHeroSubtitle: bool(cur.hero.subtitle.d.show),
     showCredit: cur.footer.credit.d.show !== false,
     announcementVisible,
+    bottomNav,
     logo,
     hero: { image: heroImage, center: cur.hero.s.d.align === "center" },
     links,
