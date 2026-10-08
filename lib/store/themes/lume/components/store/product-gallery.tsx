@@ -1,25 +1,38 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ProductArt } from "./product-art";
-import type { Product } from "../../lib/store-data";
+import type { Product, ProductKind } from "../../lib/store-data";
+
+/** O mínimo que a galeria precisa — a loja passa um `Product`, o editor um `ProductLite`. */
+export type GalleryProduct = Pick<Product, "id" | "name"> & { kind?: ProductKind; images?: string[] };
+
+/** Extras só para o editor: a loja pública personaliza estes pontos por CSS injetado (personalizacao.ts). */
+export interface GalleryAppearance {
+  /** Desenhado quando uma foto falta (a loja usa a ilustração do `kind`). */
+  placeholder?: ReactNode;
+  /** Estilo inline de cada slide (raio, borda, sombra, fundo). */
+  slideStyle?: CSSProperties;
+}
 
 export function ProductGallery({
   product,
   images,
   alvos,
   onSelectIndex,
+  appearance,
 }: {
-  product: Product;
+  product: GalleryProduct;
   images?: string[];
   /** Índices das fotos da variante selecionada — a galeria posiciona-se numa delas. */
   alvos?: number[];
   /** Chamado quando o utilizador muda de foto (swipe/scroll). */
   onSelectIndex?: (index: number) => void;
+  appearance?: GalleryAppearance;
 }) {
   const photos = images ?? product.images ?? [];
-  return <Gallery key={product.id + "|" + photos.join("|")} product={product} photos={photos} alvos={alvos} onSelectIndex={onSelectIndex} />;
+  return <Gallery key={product.id + "|" + photos.join("|")} product={product} photos={photos} alvos={alvos} onSelectIndex={onSelectIndex} appearance={appearance} />;
 }
 
 function Gallery({
@@ -27,11 +40,13 @@ function Gallery({
   photos,
   alvos,
   onSelectIndex,
+  appearance,
 }: {
-  product: Product;
+  product: GalleryProduct;
   photos: string[];
   alvos?: number[];
   onSelectIndex?: (index: number) => void;
+  appearance?: GalleryAppearance;
 }) {
   const slides = photos.length > 0 ? photos : [undefined];
   const [selected, setSelected] = useState(0);
@@ -150,6 +165,7 @@ function Gallery({
               aria-roledescription="imagem"
               aria-label={`Imagem ${index + 1} de ${slides.length} de ${product.name}`}
               aria-hidden={selected !== index}
+              style={appearance?.slideStyle}
             >
               {src ? (
                 // eslint-disable-next-line @next/next/no-img-element -- ver nota em product-card.tsx
@@ -159,9 +175,11 @@ function Gallery({
                   aria-hidden={index !== 0 && undefined}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
-              ) : (
+              ) : appearance?.placeholder ? (
+                <div className="absolute inset-0 grid place-items-center">{appearance.placeholder}</div>
+              ) : product.kind ? (
                 <ProductArt kind={product.kind} className="absolute inset-0" />
-              )}
+              ) : null}
             </div>
           ))}
         </div>
