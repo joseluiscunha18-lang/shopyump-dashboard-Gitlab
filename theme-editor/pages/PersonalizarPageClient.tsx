@@ -172,7 +172,7 @@ function MiniPreview({
                   inert=""
                   className="pointer-events-none absolute inset-0 select-none overflow-hidden"
                 >
-                  <div style={{ transform: `scale(${blurScale})`, transformOrigin: "50% 0%", filter: "blur(22px) saturate(1.15) brightness(0.8)", width: "100%", height: "100%" }}>
+                  <div style={{ transform: `scale(${blurScale})`, transformOrigin: "50% 0%", filter: "blur(22px) saturate(1.15)", width: "100%", height: "100%" }}>
                     <ThemeMini data={data} pageId={pageId} only={only} scale={scale} />
                   </div>
                 </div>
