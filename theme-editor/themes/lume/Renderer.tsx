@@ -1,4 +1,4 @@
-import { createContext, Fragment, useContext, type CSSProperties, type ReactNode } from "react";
+import { createContext, Fragment, useContext, useState, type CSSProperties, type ReactNode } from "react";
 import * as Icons from "lucide-react";
 import {
   Editable,
@@ -16,7 +16,17 @@ import { HEADING_SECTION, LUME_CATEGORIES, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT,
 import { resolveColor, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
 import type { PageKind, ProductLite } from "@/theme-editor/editor/contracts/types";
-import { getVisiblePolicyLinks, headerActionsFor, resolveHeaderMode } from "@/lib/store/shared/storefront-logic";
+import { getRecommendations, getVisiblePolicyLinks, headerActionsFor, resolveBuyState, resolveHeaderMode, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
+import {
+  caracteristicasDoProduto,
+  encontrarVersao,
+  estoqueDaVersao,
+  imagensDaVersao,
+  precoDaVersao,
+  valoresParaCaracteristica,
+  versaoInicial,
+  type ProdutoComVariantes,
+} from "@/lib/store/themes/lume/lib/store-data";
 
 /**
  * Renderer do tema LUME para o editor e para o preview do "Personalizar loja".
@@ -730,11 +740,84 @@ function CatalogGridSection({ id }: { id: string }) {
   );
 }
 
+/* ------------------------------ página de produto ------------------------------ */
+
+/**
+ * `ProductLite` → a forma que os helpers de variantes da loja pública esperam
+ * (`lib/store/themes/lume/lib/store-data.ts`). O editor usa as MESMAS funções
+ * (características, versões, preço/stock/imagens por versão) — não tem uma
+ * cópia própria da lógica de variantes.
+ */
+function asVariantSource(p: ProductLite): ProdutoComVariantes {
+  return { price: p.price, stock: p.stock ?? (p.inStock === false ? 0 : undefined), images: p.images, variantes: p.variantes };
+}
+
+/**
+ * Estado de compra do preview: variante escolhida + quantidade. É partilhado
+ * entre a galeria (a foto muda com a cor) e as informações do produto, tal
+ * como na loja pública. Recomeça sempre que o produto de pré-visualização muda
+ * (o provider leva `key={product.id}`).
+ */
+interface BuyPreview {
+  selecao: Record<string, string>;
+  escolher: (nomeCaracteristica: string, valor: string) => void;
+  quantity: number;
+  setQuantity: (q: number) => void;
+}
+const BuyPreviewCtx = createContext<BuyPreview | null>(null);
+
+function BuyPreviewProvider({ product, children }: { product: ProductLite; children: ReactNode }) {
+  const source = asVariantSource(product);
+  const [selecao, setSelecao] = useState<Record<string, string>>(() => {
+    const inicial = versaoInicial(source);
+    return inicial ? { ...inicial.valores } : {};
+  });
+  const [quantity, setQuantity] = useState(1);
+  const escolher = (nome: string, valor: string) =>
+    setSelecao((atual) => {
+      const proxima = { ...atual, [nome]: valor };
+      // Igual à loja pública: ao trocar uma característica, as seguintes
+      // (ex: Tamanho depois de Cor) têm de ser escolhidas de novo.
+      const caracteristicas = caracteristicasDoProduto(source);
+      const indice = caracteristicas.findIndex((c) => c.nome === nome);
+      for (const c of caracteristicas.slice(indice + 1)) delete proxima[c.nome];
+      return proxima;
+    });
+  return <BuyPreviewCtx.Provider value={{ selecao, escolher, quantity, setQuantity }}>{children}</BuyPreviewCtx.Provider>;
+}
+
+/** Num produto de pré-visualização: versão escolhida, preço, stock e fotos — via helpers da loja. */
+function useBuyView(product: ProductLite | undefined) {
+  const buy = useContext(BuyPreviewCtx);
+  if (!product) return null;
+  const source = asVariantSource(product);
+  const caracteristicas = caracteristicasDoProduto(source);
+  const temVariantes = caracteristicas.length > 0;
+  const selecao = buy?.selecao ?? {};
+  const versao = temVariantes ? encontrarVersao(source, selecao) : undefined;
+  const selecaoCompleta = temVariantes ? caracteristicas.every((c) => Boolean(selecao[c.nome])) : true;
+  const stock = estoqueDaVersao(source, versao);
+  return {
+    buy,
+    source,
+    caracteristicas,
+    temVariantes,
+    selecao,
+    selecaoCompleta,
+    price: precoDaVersao(source, versao),
+    stock,
+    images: imagensDaVersao(source, versao),
+    // MESMA função que a loja pública usa para decidir "comprar / escolher opções / esgotado".
+    buyState: resolveBuyState({ hasVariants: temVariantes, selectionComplete: selecaoCompleta, versionActive: versao?.ativa, stock }),
+  };
+}
+
 function ProductGallerySection({ id }: { id: string }) {
   const { colors, mobile } = useSectionFrame(id);
   const styleG = useGlobalGroup("style");
   const product = usePreviewProduct();
-  const img = product?.images[0];
+  const view = useBuyView(product);
+  const img = view?.images[0] ?? product?.images[0];
   return (
     <SectionShell path={sectionPath(id)} label="Galeria do produto" style={{ background: colors.background, padding: mobile ? "16px 16px 0" : "28px 24px 0" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
@@ -746,21 +829,159 @@ function ProductGallerySection({ id }: { id: string }) {
   );
 }
 
+/** Botão de compra (Comprar agora / Adicionar ao carrinho): largura total, 48px, como na loja pública. */
+function PurchaseButton({ path, label, outline }: { path: string; label: string; outline?: boolean }) {
+  const v = useNodeValues(path);
+  const colors = useColors();
+  if (v.show === false) return null;
+  const base = buttonStyle({ ...v, size: "lg", width: "full" }, colors);
+  const style: CSSProperties = {
+    ...base,
+    height: 48,
+    width: "100%",
+    fontSize: 14,
+    ...(outline ? { background: colors.cardBg, color: colors.text, border: `1px solid ${colors.border}` } : null),
+  };
+  const icon = v.icon ? <LucideIcon name={v.icon} size={16} /> : outline ? <Icons.ShoppingCart size={16} /> : null;
+  return (
+    <Editable path={path} label={label} as="div" style={{ display: "block", width: "100%", minWidth: 0 }}>
+      <span style={style}>
+        {icon}
+        {v.label}
+      </span>
+    </Editable>
+  );
+}
+
+/** Evita que clicar numa variante/quantidade seleccione a secção inteira no editor. */
+const interactive = (fn: () => void) => (e: React.MouseEvent) => {
+  e.stopPropagation();
+  fn();
+};
+
 function ProductInfoSection({ id }: { id: string }) {
   const { colors, mobile } = useSectionFrame(id);
-  const { store } = useTheme();
+  const { store, manifest } = useTheme();
   const product = usePreviewProduct();
-  if (!product) return null;
+  const view = useBuyView(product);
+  const addToCart = useNodeValues(elementPath(id, "addToCart"));
+  if (!product || !view) return null;
+
+  const { buy, source, caracteristicas, temVariantes, selecao, selecaoCompleta, price, stock, buyState } = view;
+  const quantity = buy?.quantity ?? 1;
+  const limit = stock === undefined ? 99 : Math.max(0, stock);
+  const qtyBtn = (disabled: boolean): CSSProperties => ({
+    display: "inline-grid",
+    placeItems: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    border: 0,
+    background: "transparent",
+    color: colors.text,
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.4 : 1,
+    padding: 0,
+  });
+
   return (
     <SectionShell path={sectionPath(id)} label="Informações do produto" style={{ background: colors.background, color: colors.text, padding: mobile ? "16px" : "20px 24px" }}>
-      <div style={{ maxWidth: 520, margin: "0 auto", display: "grid", gap: 10 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>{product.name}</h1>
-        <p style={{ fontSize: 18, fontWeight: 700 }}>{formatPrice(product.price, store.currency)}</p>
-        <div style={{ display: "grid", gap: 10, marginTop: 6 }}>
-          <ButtonEl path={elementPath(id, "buyNow")} label="Botão comprar agora" />
-          <ButtonEl path={elementPath(id, "addToCart")} label="Botão adicionar" />
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700 }}>{product.name}</h1>
+          {manifest.capabilities.wishlist ? (
+            <span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 40, height: 40, flexShrink: 0 }}>
+              <Icons.Heart size={20} strokeWidth={2.25} />
+            </span>
+          ) : null}
         </div>
-        <p style={{ fontSize: 14, color: colors.secondary }}>{product.shortDescription ?? "Uma peça versátil, confortável e fácil de combinar."}</p>
+        <p style={{ marginTop: 4, fontSize: 18, fontWeight: 600 }}>{formatPrice(price, store.currency)}</p>
+
+        {temVariantes ? (
+          <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+            {caracteristicas.map((caracteristica) => {
+              const valores = valoresParaCaracteristica(source, caracteristica.nome, selecao);
+              const isCor = caracteristica.nome === "Cor";
+              return (
+                <div key={caracteristica.nome} style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase" }}>
+                    {caracteristica.nome}
+                    {selecao[caracteristica.nome] ? (
+                      <span style={{ marginLeft: 4, fontWeight: 400, textTransform: "none", color: colors.secondary }}>{selecao[caracteristica.nome]}</span>
+                    ) : null}
+                  </p>
+                  <div role="group" aria-label={`Escolher ${caracteristica.nome}`} style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {valores.map((valor) => {
+                      const ativo = selecao[caracteristica.nome] === valor;
+                      const onPick = interactive(() => buy?.escolher(caracteristica.nome, valor));
+                      if (isCor) {
+                        const hex = caracteristica.cores?.[valor];
+                        return (
+                          <button
+                            key={valor}
+                            type="button"
+                            aria-label={valor}
+                            aria-pressed={ativo}
+                            onClick={onPick}
+                            style={{ display: "grid", placeItems: "center", width: 32, height: 32, padding: 0, border: 0, borderRadius: 999, background: "transparent", cursor: "pointer", boxShadow: ativo ? `0 0 0 2px ${colors.background}, 0 0 0 3px ${colors.text}` : undefined }}
+                          >
+                            <span style={{ width: "100%", height: "100%", borderRadius: 999, border: `1px solid ${colors.border}`, background: hex }} />
+                          </button>
+                        );
+                      }
+                      return (
+                        <button
+                          key={valor}
+                          type="button"
+                          aria-pressed={ativo}
+                          onClick={onPick}
+                          style={{ minHeight: 40, minWidth: 40, padding: "0 14px", borderRadius: 16, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ativo ? colors.buttonBg : "transparent", color: ativo ? colors.buttonText : colors.text, border: `1px solid ${ativo ? colors.buttonBg : colors.border}` }}
+                        >
+                          {valor}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            {!selecaoCompleta ? <p style={{ fontSize: 12, color: colors.secondary }}>Escolha as opções acima para continuar.</p> : null}
+          </div>
+        ) : null}
+
+        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+          {buyState.status === "needsSelection" ? (
+            <span style={{ ...buttonStyle({ ...addToCart, size: "lg", width: "full" }, colors), height: 48, width: "100%", fontSize: 14, opacity: 0.5 }}>Escolha as opções</span>
+          ) : buyState.status === "available" ? (
+            <>
+              <PurchaseButton path={elementPath(id, "buyNow")} label="Botão comprar agora" />
+              <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", height: 48, borderRadius: 999, border: `1px solid ${colors.border}`, background: colors.cardBg }}>
+                  <button type="button" aria-label="Diminuir quantidade" disabled={quantity === 1} onClick={interactive(() => buy?.setQuantity(Math.max(1, quantity - 1)))} style={qtyBtn(quantity === 1)}>
+                    <Icons.Minus size={16} />
+                  </button>
+                  <span aria-live="polite" style={{ minWidth: 24, textAlign: "center", fontSize: 14, fontWeight: 600 }}>{quantity}</span>
+                  <button type="button" aria-label="Aumentar quantidade" disabled={quantity >= limit} onClick={interactive(() => buy?.setQuantity(Math.min(limit, quantity + 1)))} style={qtyBtn(quantity >= limit)}>
+                    <Icons.Plus size={16} />
+                  </button>
+                </div>
+                <PurchaseButton path={elementPath(id, "addToCart")} label="Botão adicionar" outline />
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: colors.secondary }}>Esgotado de momento</p>
+              <span style={{ ...buttonStyle({ size: "lg", width: "full" }, colors), height: 48, width: "100%", fontSize: 14 }}>
+                <Icons.BellRing size={16} />
+                Avisar-me quando chegar
+              </span>
+            </>
+          )}
+        </div>
+
+        <p style={{ marginTop: 16, fontSize: 14, lineHeight: "24px", color: colors.secondary }}>
+          {product.description ?? product.shortDescription ?? "Uma peça versátil, confortável e fácil de combinar. Apresentação demonstrativa pronta para receber os detalhes reais do seu produto."}
+        </p>
       </div>
     </SectionShell>
   );
@@ -773,7 +994,10 @@ function RecommendationsSection({ id }: { id: string }) {
   const card = useNodeValues(elementPath("products", "productCard"));
   const styleG = useGlobalGroup("style");
   const current = usePreviewProduct();
-  const list = products.filter((p) => p.id !== current?.id).slice(0, 4);
+  const list = getRecommendations(products, current?.id);
+  // Mesma regra da loja pública: com um único produto na loja não há nada a
+  // sugerir, por isso nem o título "Você também pode gostar" aparece.
+  if (!shouldShowRecommendations(list)) return null;
   return (
     <SectionShell path={sectionPath(id)} label="Você também pode gostar" style={{ background: colors.background, color: colors.text, padding: mobile ? "32px 16px" : "48px 24px" }}>
       <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto" }}>
@@ -1148,8 +1372,10 @@ const OVERLAY_COMPONENTS: Record<string, (p: { id: string }) => React.ReactEleme
  * desenha a página completa, a barra fixa e os painéis abertos.
  */
 export function LumeRenderer({ pageId, only }: { pageId: string; only?: string[] }) {
-  const { manifest, customization } = useTheme();
+  const { manifest, customization, device } = useTheme();
   const preview = useEditorPreview();
+  const layoutG = useGlobalGroup("layout");
+  const previewProduct = usePreviewProduct();
   const pageKind: PageKind = manifest.pages.find((p) => p.id === pageId)?.kind ?? "home";
   const colors = useColors();
   const typo = useGlobalGroup("typography");
@@ -1180,19 +1406,40 @@ export function LumeRenderer({ pageId, only }: { pageId: string; only?: string[]
     return <Fragment key={id}><Cmp id={id} /></Fragment>;
   };
 
-  return (
-    <PageKindCtx.Provider value={pageKind}>
-      <div className="sy-root" style={rootStyle}>
-        <style>{`.sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-family:var(--sy-font-heading);line-height:1.25;text-transform:${typo.headingTransform === "none" ? "none" : typo.headingTransform};margin:0}
+  // Loja pública, desktop: galeria à esquerda e informações (variantes, botões
+  // de compra) à direita, lado a lado. Em telemóvel ficam empilhadas.
+  const renderList = (list: string[]) => {
+    const gi = list.indexOf("productGallery");
+    if (!(pageKind === "product" && device !== "mobile" && gi >= 0 && list[gi + 1] === "productInfo")) return list.map(render);
+    return [
+      ...list.slice(0, gi).map(render),
+      <div key="product-split" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", alignItems: "center", maxWidth: layoutG.contentWidth || undefined, margin: "0 auto" }}>
+        {render("productGallery")}
+        {render("productInfo")}
+      </div>,
+      ...list.slice(gi + 2).map(render),
+    ];
+  };
+
+  const body = (
+    <div className="sy-root" style={rootStyle}>
+      <style>{`.sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-family:var(--sy-font-heading);line-height:1.25;text-transform:${typo.headingTransform === "none" ? "none" : typo.headingTransform};margin:0}
         .sy-root h1{letter-spacing:-0.025em}
         .sy-root p,.sy-root ul{margin:0}`}</style>
-        {all.map(render)}
-        {only ? null : ids.fixed.map(render)}
-        {overlays.map((o) => {
-          const Cmp = OVERLAY_COMPONENTS[o.id];
-          return Cmp ? <Fragment key={o.id}><Cmp id={o.sectionIds[0]!} /></Fragment> : null;
-        })}
-      </div>
+      {renderList(all)}
+      {only ? null : ids.fixed.map(render)}
+      {overlays.map((o) => {
+        const Cmp = OVERLAY_COMPONENTS[o.id];
+        return Cmp ? <Fragment key={o.id}><Cmp id={o.sectionIds[0]!} /></Fragment> : null;
+      })}
+    </div>
+  );
+
+  return (
+    <PageKindCtx.Provider value={pageKind}>
+      {/* Variante escolhida + quantidade: partilhadas entre galeria e informações,
+          e recomeçam quando o produto de pré-visualização muda. */}
+      {pageKind === "product" && previewProduct ? <BuyPreviewProvider key={previewProduct.id} product={previewProduct}>{body}</BuyPreviewProvider> : body}
     </PageKindCtx.Provider>
   );
 }
