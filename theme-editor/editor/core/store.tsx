@@ -456,6 +456,18 @@ export function reducer(state: EditorState, action: Action): EditorState {
   }
 }
 
+/**
+ * Dispositivo com que o editor arranca: o do próprio aparelho de quem edita.
+ * Telemóvel → pré-visualização de telemóvel e controlos só de telemóvel; ecrã
+ * grande → computador. Os outros continuam a um toque (seletor do topo).
+ * Mesmos limites do shell (`useIsDesktop` = 1024px).
+ */
+export function detectDevice(): Device {
+  if (typeof window === "undefined") return "mobile";
+  const w = window.innerWidth;
+  return w >= 1024 ? "desktop" : w >= 640 ? "tablet" : "mobile";
+}
+
 export function initialState(data: EditorData, customization: Customization): EditorState {
   const firstSupported = data.manifest.pages.find((p) => p.supported)?.id ?? "home";
   const normalized = normalizeCustomization(data.manifest, customization);
@@ -467,7 +479,7 @@ export function initialState(data: EditorData, customization: Customization): Ed
     previewProductId: data.products[0]?.id,
     previewState: data.manifest.pages.find((p) => p.id === firstSupported)?.previewStates?.[0]?.id,
     previewQuery: "camisa",
-    device: "mobile",
+    device: detectDevice(),
     panel: { stack: [], snap: "closed" },
     history: { past: [], future: [] },
     save: { status: "saved" },
