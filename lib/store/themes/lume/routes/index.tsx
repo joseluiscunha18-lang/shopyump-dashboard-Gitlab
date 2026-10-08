@@ -4,6 +4,8 @@ import { Fragment } from "react";
 import { createFileRoute, Link } from "../router";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { ExtraSection } from "../components/store/extra-sections";
+import { SmartLink } from "../components/store/smart-link";
 import { ProductCard } from "../components/store/product-card";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
@@ -70,7 +72,7 @@ function HomePage() {
   const sections: ProductSection[] = p?.productsQuery
     ? [{ title: "Produtos", products: applyProductsQuery(produtos, p.productsQuery) }]
     : getHomeSections(produtos, categorias);
-  const order = p?.homeOrder ?? (["hero", "products", "whatsappCta"] as const);
+  const order: string[] = p?.homeOrder ?? ["hero", "products", "whatsappCta"];
 
   const whatsappUrl = contactos.whatsapp
     ? `https://wa.me/${contactos.whatsapp.replace(/\D/g, "")}`
@@ -78,14 +80,25 @@ function HomePage() {
 
   const blocks = {
     hero: <>
-    <section data-sy="hero" className="bg-hero">
+    <section data-sy="hero" className="bg-hero relative overflow-hidden">
+      {p?.hero.image && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- imagem do bucket da loja */}
+          <img data-sy="hero-image" src={p.hero.image.url} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: `${p.hero.image.x}% ${p.hero.image.y}%` }} />
+          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${p.hero.image.overlay / 100})` }} />
+        </>
+      )}
       <div className="relative mx-auto flex min-h-[263px] max-w-6xl items-center overflow-hidden px-5 py-14 text-left sm:min-h-[403px] sm:grid sm:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)] sm:gap-10 sm:px-12 sm:py-16">
-        <div className="relative z-10 max-w-[80%] self-center sm:max-w-xl">
+        <div data-sy="hero-content" className="relative z-10 max-w-[80%] self-center sm:max-w-xl">
           <h1 data-sy="hero-title" className="whitespace-nowrap text-[22px] font-extrabold leading-tight tracking-tight text-foreground sm:whitespace-normal sm:text-5xl">{p?.text.heroTitle ?? "BEM-VINDO À LOJA"}</h1>
           {p?.showHeroSubtitle && <p data-sy="hero-subtitle" className="mt-2 text-sm text-muted-foreground sm:text-lg">{p.text.heroSubtitle ?? "Descubra a nova colecção."}</p>}
-          <Button asChild variant="hero" size="lg" className="mt-6 rounded-full px-6 sm:mt-8"><a href="#produtos">{p?.text.heroButton ?? "Ver Produtos"} <ArrowRight /></a></Button>
+          <Button asChild variant="hero" size="lg" className="mt-6 rounded-full px-6 sm:mt-8">
+            {p?.links.heroButton
+              ? <SmartLink link={p.links.heroButton} data-sy="hero-button">{p?.text.heroButton ?? "Ver Produtos"} <ArrowRight /></SmartLink>
+              : <a data-sy="hero-button" href="#produtos">{p?.text.heroButton ?? "Ver Produtos"} <ArrowRight /></a>}
+          </Button>
         </div>
-        <div data-sy="hero-illustration" className="pointer-events-none absolute inset-y-0 right-0 flex w-[44%] items-center justify-end sm:static sm:h-full sm:w-auto" aria-hidden="true">
+        {!p?.hero.image && !p?.hero.center && <div data-sy="hero-illustration" className="pointer-events-none absolute inset-y-0 right-0 flex w-[44%] items-center justify-end sm:static sm:h-full sm:w-auto" aria-hidden="true">
           <svg viewBox="0 0 480 360" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-auto w-[190px] max-w-full text-muted-foreground opacity-30 sm:w-full sm:max-w-[440px] sm:opacity-55">
             <circle cx="330" cy="180" r="150" strokeWidth="1.5" />
             <circle cx="86" cy="52" r="30" strokeWidth="1.5" />
@@ -94,7 +107,7 @@ function HomePage() {
             <rect x="238" y="208" width="130" height="112" rx="18" />
             <path d="M270 208v-22a33 33 0 0 1 66 0v22" />
           </svg>
-        </div>
+        </div>}
       </div>
     </section>
     </>,
@@ -108,9 +121,11 @@ function HomePage() {
             <div data-sy="product-grid" className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8">
               {section.products.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
-            <Link to="/produtos" search={search} className="mx-auto mt-6 flex w-fit items-center gap-1.5 rounded-full border border-border bg-transparent px-5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground sm:mt-7">
-              {p?.text.viewAll ?? "Explorar mais"} <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
+            {p?.links.viewAll
+              ? <SmartLink link={p.links.viewAll} data-sy="viewall-button" className="mx-auto mt-6 flex w-fit items-center gap-1.5 rounded-full border border-border bg-transparent px-5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground sm:mt-7">{p?.text.viewAll ?? "Explorar mais"} <ArrowRight className="size-4" aria-hidden="true" /></SmartLink>
+              : <Link to="/produtos" search={search} data-sy="viewall-button" className="mx-auto mt-6 flex w-fit items-center gap-1.5 rounded-full border border-border bg-transparent px-5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground sm:mt-7">
+                {p?.text.viewAll ?? "Explorar mais"} <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>}
           </section>
         );
       })}
@@ -119,12 +134,21 @@ function HomePage() {
     whatsappCta: <PreFooter whatsappUrl={whatsappUrl} />,
   };
 
-  return <>{order.map((id) => <Fragment key={id}>{blocks[id]}</Fragment>)}</>;
+  return (
+    <>
+      {order.map((id) => {
+        const extra = p?.extras[id];
+        if (extra) return <Fragment key={id}><ExtraSection x={extra} /></Fragment>;
+        return <Fragment key={id}>{(blocks as Record<string, React.ReactNode>)[id] ?? null}</Fragment>;
+      })}
+    </>
+  );
 }
 
 function PreFooter({ whatsappUrl }: { whatsappUrl: string | null }) {
   const p = useLumePersonalizacao();
   if (!whatsappUrl) return null;
+  const href = p?.text.whatsMessage ? `${whatsappUrl}?text=${encodeURIComponent(p.text.whatsMessage)}` : whatsappUrl;
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-3xl px-5 pb-6 pt-6 sm:px-6 sm:pb-9 sm:pt-8">
@@ -134,7 +158,7 @@ function PreFooter({ whatsappUrl }: { whatsappUrl: string | null }) {
             <p data-sy="whats-text" className="mt-1 text-sm text-muted-foreground">{p?.text.whatsText ?? "Fale diretamente connosco."}</p>
           </div>
           <Button asChild variant="whatsapp" size="lg" className="shrink-0 rounded-full px-5">
-            <a href={whatsappUrl} target="_blank" rel="noreferrer">
+            <a data-sy="whats-button" href={href} target="_blank" rel="noreferrer">
               <MessageCircle className="size-4" aria-hidden="true" />
               {p?.text.whatsButton ?? "Falar no WhatsApp"}
             </a>
