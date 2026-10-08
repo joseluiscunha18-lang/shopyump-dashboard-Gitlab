@@ -27,7 +27,7 @@ import {
 } from "../lib/store-data";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
-import { resolveBuyState } from "@/lib/store/shared/storefront-logic";
+import { getRecommendations, resolveBuyState, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
@@ -72,7 +72,7 @@ function ProductPage() {
   if (!product) throw new (class extends Error { constructor() { super("not-found"); } })();
 
   const liked = favourites.includes(product.id);
-  const recommendations = produtosContexto.filter((item) => item.id !== product.id).slice(0, 4);
+  const recommendations = getRecommendations(produtosContexto, product.id);
   const alertActive = restockAlerts.includes(product.id);
 
   const caracteristicas = caracteristicasDoProduto(product);
@@ -274,7 +274,7 @@ function ProductPage() {
         </div>
       </div>
 
-      {(!p || p.showRecommendations) && <section className="mt-14 sm:mt-20" aria-labelledby="recommendations-title">
+      {shouldShowRecommendations(recommendations, !p || p.showRecommendations) && <section className="mt-14 sm:mt-20" aria-labelledby="recommendations-title">
         <h2 id="recommendations-title" className="text-xl font-bold sm:text-2xl">{p?.ui.recommendations ?? "Você também pode gostar"}</h2>
         <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-5 sm:gap-y-9">
           {recommendations.map((item) => <ProductCard key={item.id} product={item} />)}
