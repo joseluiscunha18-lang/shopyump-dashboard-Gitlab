@@ -16,10 +16,12 @@ import { HEADING_SECTION, LUME_CATEGORIES, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT,
 import { resolveColor, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
 import type { PageKind, ProductLite } from "@/theme-editor/editor/contracts/types";
-import { getRecommendations, getVisiblePolicyLinks, headerActionsFor, resolveHeaderMode, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
+import { getRecommendations, getVisiblePolicyLinks, headerActionsFor, headerShortcutsOnMobile, resolveBottomNavItems, resolveHeaderMode, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
 import type { ProdutoComVariantes } from "@/lib/store/themes/lume/lib/store-data";
 import { useProductGallery, useProductSelection, type ProductSelection } from "@/lib/store/themes/lume/lib/use-product-selection";
 import { lumeColorVars } from "@/lib/store/themes/lume/lib/color-vars";
+import { bottomNavVars, isBottomNavTone } from "@/lib/store/themes/lume/lib/bottom-nav-style";
+import { BottomNavView, type BottomNavEntry } from "@/lib/store/themes/lume/components/store/bottom-nav-view";
 import { ProductPurchasePanel, type PurchaseButtonId } from "@/lib/store/themes/lume/components/store/product-purchase-panel";
 import { ProductCardView } from "@/lib/store/themes/lume/components/store/product-card-view";
 import { ProductGallery } from "@/lib/store/themes/lume/components/store/product-gallery";
@@ -239,6 +241,10 @@ function HeaderSection({ id }: { id: string }) {
   // consoante a página. Sem isto, o editor mostrava sempre "Conta", mesmo a
   // editar a página de Produto — onde a loja real mostra o Carrinho.
   const actions = headerActionsFor(resolveHeaderMode(usePageKind()));
+  // Pesquisa e Favoritos: em telemóvel vivem na barra inferior; sem ela passam para
+  // aqui. MESMA regra da loja (`headerShortcutsOnMobile`).
+  const { customization } = useTheme();
+  const shortcutsHere = !mobile || headerShortcutsOnMobile(customization.sections.bottomNav?.hidden !== true);
 
   return (
     <SectionShell
@@ -287,12 +293,12 @@ function HeaderSection({ id }: { id: string }) {
             </HeaderIcon>
           ) : (
             <>
-              {!mobile && actions.search ? (
+              {shortcutsHere && actions.search ? (
                 <HeaderIcon sectionId={id} el="search" label="Pesquisa">
                   <Icons.Search size={sz} strokeWidth={2.25} />
                 </HeaderIcon>
               ) : null}
-              {!mobile && actions.wishlist ? (
+              {shortcutsHere && actions.wishlist ? (
                 <HeaderIcon sectionId={id} el="wishlist" label="Favoritos">
                   <Icons.Heart size={sz} strokeWidth={2.25} />
                 </HeaderIcon>
@@ -712,7 +718,7 @@ function asVariantSource(p: ProductLite): ProdutoComVariantes & { id: string } {
  * (ver `buildLumePersonalizacao`). Os raios sm/md/lg/xl voltam aos da loja em
  * theme-editor/editor.css (`.ed-root .theme-lume`).
  */
-function LumeScope({ children }: { children: ReactNode }) {
+function LumeScope({ children, transparent = false }: { children: ReactNode; transparent?: boolean }) {
   const colors = useColors();
   const styleG = useGlobalGroup("style");
   const typo = useGlobalGroup("typography");
@@ -724,7 +730,7 @@ function LumeScope({ children }: { children: ReactNode }) {
     "--font-sans": bodyFont?.family,
   } as CSSProperties;
   return (
-    <div className="theme-lume bg-background text-foreground" style={vars}>
+    <div className={transparent ? "theme-lume text-foreground" : "theme-lume bg-background text-foreground"} style={vars}>
       {children}
     </div>
   );
@@ -943,32 +949,45 @@ function ReadOnlyPageSection({ id, kind }: { id: string; kind: "checkout" | "acc
   );
 }
 
-/** Barra inferior (só telemóvel): a "pílula" escura do Lume. */
+/**
+ * Barra inferior (só telemóvel): é o MESMO componente da loja (`BottomNavView`),
+ * com a ordem/nomes/cor do lojista. As regras (itens, cores) vêm das funções
+ * partilhadas `resolveBottomNavItems` e `bottomNavVars`.
+ */
 function BottomNavSection({ id }: { id: string }) {
   const v = useNodeValues(sectionPath(id));
-  const { device, manifest, onNavigateLink } = useTheme();
+  const { device, manifest, customization, onNavigateLink } = useTheme();
+  const pageKind = usePageKind();
   if (device !== "mobile") return null;
   const cap = manifest.capabilities;
-  const items = [
-    { key: "home", label: "Início", Icon: Icons.Home, on: true, link: { type: "home" } as unknown },
-    { key: "search", label: "Pesquisar", Icon: Icons.Search, on: v.showSearch !== false && !!cap.search, link: null },
-    { key: "wishlist", label: "Favoritos", Icon: Icons.Heart, on: v.showWishlist !== false && !!cap.wishlist, link: { type: "themePage", value: "wishlist" } as unknown },
-    { key: "cart", label: "Carrinho", Icon: Icons.ShoppingCart, on: v.showCart !== false && !!cap.cart, link: null },
-  ].filter((i) => i.on);
+  const stored = (customization.sections[id]?.settings ?? {}) as Record<string, unknown>;
+  const allowed: Record<string, boolean> = { home: true, search: !!cap.search, wishlist: !!cap.wishlist, cart: !!cap.cart };
+  const tone = isBottomNavTone(v.tone) ? v.tone : "dark";
+  const icons: Record<string, ReactNode> = {
+    home: <Icons.Home />,
+    search: <Icons.Search className="optical-lg" />,
+    wishlist: <Icons.Heart className="optical-sm" />,
+    cart: <Icons.ShoppingCart className="optical-lg" />,
+  };
+  const links: Record<string, unknown> = { home: { type: "home" }, wishlist: { type: "themePage", value: "wishlist" } };
+  const activeKey = pageKind === "home" ? "home" : pageKind === "wishlist" ? "wishlist" : null;
+  const items: BottomNavEntry[] = resolveBottomNavItems(stored.items, stored)
+    .filter((i) => allowed[i.key])
+    .map((i) => ({
+      key: i.key,
+      label: i.label,
+      icon: icons[i.key],
+      active: i.key === activeKey,
+      semantics: i.key === "home" || i.key === "wishlist" ? "link" : "button",
+      "data-sy": `bottom-${i.key}`,
+      // No editor tocar navega (início/favoritos) ou não faz nada: sem router nem carrinho.
+      renderItem: (props) => <span {...props} onClickCapture={() => links[i.key] && onNavigateLink?.(links[i.key])} />,
+    }));
   return (
     <FixedShell path={sectionPath(id)} label="Barra inferior" style={{ display: "flex", justifyContent: "center", padding: "0 0 16px", pointerEvents: "none" }}>
-      <nav aria-label="Navegação principal" style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 4, padding: 6, borderRadius: 999, background: "linear-gradient(180deg,#303030,#1a1a19)", boxShadow: "0 18px 30px rgba(20,20,18,.3), inset 0 1px 0 rgba(255,255,255,.12)" }}>
-        {items.map(({ key, label, Icon, link }, i) => (
-          <span
-            key={key}
-            aria-label={label}
-            onClickCapture={() => link && onNavigateLink?.(link)}
-            style={{ display: "grid", placeItems: "center", width: 48, height: 44, borderRadius: 999, color: i === 0 ? "#141412" : "#f5f5f5", background: i === 0 ? "#fafafa" : "transparent" }}
-          >
-            <Icon size={20} />
-          </span>
-        ))}
-      </nav>
+      <LumeScope transparent>
+        <BottomNavView items={items} style={{ pointerEvents: "auto", ...(bottomNavVars(tone) as CSSProperties) }} />
+      </LumeScope>
     </FixedShell>
   );
 }

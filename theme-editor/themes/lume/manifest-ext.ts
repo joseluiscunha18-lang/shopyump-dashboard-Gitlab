@@ -1,5 +1,6 @@
 import type { ElementDef, LinkType, NavItem, OverlayDef, PageDef, SectionTypeDef, SettingDef } from "@/theme-editor/editor/contracts/types";
 import { DEFAULT_MENU_ITEMS, HEADING_SECTION, PAGE_TEXT, UI_TEXT } from "./page-text";
+import { BOTTOM_NAV_DEFAULTS, BOTTOM_NAV_LABEL_MAX } from "@/lib/store/shared/storefront-logic";
 
 /**
  * Extensão do manifesto do Lume para as funcionalidades novas do editor:
@@ -68,8 +69,23 @@ const headerIcon = (id: string, label: string): ElementDef => ({
 });
 export const headerIconElements: ElementDef[] = [
   { ...headerIcon("menu", "Menu lateral"), openAction: { type: "overlay", id: "sideMenu" } },
-  { ...headerIcon("search", "Pesquisa"), openAction: { type: "overlay", id: "searchOverlay" } },
-  { ...headerIcon("wishlist", "Favoritos"), openAction: { type: "themePage", page: "wishlist" } },
+  // Pesquisa e Favoritos só estão no cabeçalho em tablet/computador: em telemóvel
+  // vivem na barra inferior — e passam para o cabeçalho se o lojista a remover
+  // (ver `headerShortcutsOnMobile` em storefront-logic.ts).
+  {
+    ...headerIcon("search", "Pesquisa"),
+    openAction: { type: "overlay", id: "searchOverlay" },
+    devices: ["desktop", "tablet"],
+    alsoWhenHidden: { section: "bottomNav", devices: ["mobile"] },
+    devicesNote: "No telemóvel, a pesquisa está na barra inferior.",
+  },
+  {
+    ...headerIcon("wishlist", "Favoritos"),
+    openAction: { type: "themePage", page: "wishlist" },
+    devices: ["desktop", "tablet"],
+    alsoWhenHidden: { section: "bottomNav", devices: ["mobile"] },
+    devicesNote: "No telemóvel, os favoritos estão na barra inferior.",
+  },
   // Na loja real, sem sessão iniciada este ícone abre o modal de entrar/criar
   // conta (auth-modal.tsx) — nunca navega para a página "/conta". Por isso
   // aqui abre o overlay "authOverlay" (espelho do modal), não a themePage.
@@ -92,11 +108,34 @@ export const extSectionTypes: SectionTypeDef[] = [
     icon: "panel-bottom",
     scope: "fixed",
     requires: "bottomNavigation",
+    devices: ["mobile"],
+    devicesNote: "Em tablet e computador a loja usa o cabeçalho.",
+    hideNote: "Sem a barra, a Pesquisa e os Favoritos passam a aparecer no cabeçalho do telemóvel.",
     elements: [],
     settings: [
-      { key: "showSearch", label: "Mostrar pesquisa", control: "toggle", tier: B, group: "content", default: true },
-      { key: "showWishlist", label: "Mostrar favoritos", control: "toggle", tier: B, group: "content", requires: "wishlist", default: true },
-      { key: "showCart", label: "Mostrar carrinho", control: "toggle", tier: B, group: "content", requires: "cart", default: true },
+      {
+        key: "items",
+        label: "Botões da barra",
+        help: "Arraste para mudar a ordem, esconda os que não quer ou mude o nome.",
+        control: "navList",
+        tier: B,
+        group: "content",
+        default: BOTTOM_NAV_DEFAULTS.map(({ key, label }) => ({ id: key, label, locked: true })) as NavItem[],
+        navList: { maxItems: 4, maxDepth: 1, minVisible: 2, labelMaxLength: BOTTOM_NAV_LABEL_MAX, iconEnabled: false, linkTypes: [], fixed: true },
+      },
+      {
+        key: "tone",
+        label: "Cor da barra",
+        control: "segmented",
+        tier: B,
+        group: "appearance",
+        default: "dark",
+        options: [
+          { value: "dark", label: "Escura" },
+          { value: "light", label: "Clara" },
+          { value: "brand", label: "Cor dos botões" },
+        ],
+      },
     ],
   },
   {
