@@ -71,3 +71,15 @@ export const THEME_PAGE_ROUTE: Record<string, string> = {
   account: "/conta",
   cart: "/checkout",
 };
+
+/**
+ * Categorias que o Lume público mostra (os produtos reais com outro nome caem em
+ * "Destaques" — ver lume-loja-context.tsx). O preview usa a mesma regra para
+ * mostrar exatamente o que a loja mostra.
+ */
+export const LUME_CATEGORIES = ["Destaques", "Vestuário", "Acessórios"] as const;
+
+export function lumeCategoryOf(name: string | undefined): (typeof LUME_CATEGORIES)[number] {
+  const n = (name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return n === "vestuario" ? "Vestuário" : n === "acessorios" ? "Acessórios" : "Destaques";
+}

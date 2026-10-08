@@ -1,6 +1,8 @@
 import type { SettingDef, ThemeManifest } from "@/theme-editor/editor/contracts/types";
 import * as P from "./presets";
 import { extCapabilities, extOverlays, extPages, extSectionTypes, headerIconElements, productCardOpen } from "./manifest-ext";
+import { LOOK, buttonSettings } from "./elements";
+import { addableSectionTypes } from "./manifest-sections";
 
 /**
  * Manifesto do tema LUME — o tema padrão da plataforma Shopyump.
@@ -23,7 +25,6 @@ const A = "advanced" as const;
 const CONTAINER_KEYS = ["colorScheme", "align", "contentWidth", "spacing", "padding", "gap", "background", "radius", "shadow", "minHeight", "visibility", "animation", "anchorId"];
 const HEADING_KEYS = ["text", "show", "align", "color", "size", "htmlTag", "font", "weight", "lineHeight", "letterSpacing", "transform", "maxLines", "marginBottom", "opacity", "visibility"];
 const TEXT_KEYS = ["text", "show", "align", "color", "size", "font", "weight", "lineHeight", "letterSpacing", "transform", "maxLines", "marginBottom", "opacity", "visibility"];
-const BUTTON_KEYS = ["show", "label", "link", "variant", "size", "bg", "textColor", "radius", "width", "weight", "transform", "icon", "visibility"];
 const except = (all: string[], keep: string[]) => all.filter((k) => !keep.includes(k));
 
 const colors: SettingDef[] = [
@@ -179,6 +180,7 @@ const baseManifest: ThemeManifest = {
   icons: ["truck", "shield-check", "message-circle", "credit-card", "gift", "heart", "star", "package", "refresh-cw", "clock", "phone", "mail", "map-pin", "sparkles", "tag", "shopping-bag", "arrow-right"],
   sectionTypes: [
     ...extSectionTypes,
+    ...addableSectionTypes,
     /* ------------------------------ Barra de anúncio ------------------------------ */
     {
       type: "announcement",
@@ -231,6 +233,25 @@ const baseManifest: ThemeManifest = {
       hideable: false,
       elements: [
         {
+          id: "logo",
+          kind: "logo",
+          label: "Logótipo",
+          settings: [
+            {
+              key: "image",
+              label: "Imagem do logótipo",
+              help: "PNG com fundo transparente fica melhor. Sem logótipo, aparece o nome da loja.",
+              control: "image",
+              tier: B,
+              group: "content",
+              default: null,
+              assist: { kind: "logo", recommended: { width: 400, height: 120 } },
+            },
+            { key: "height", label: "Altura do logótipo", control: "slider", tier: B, group: "layout", default: 32, min: 16, max: 56, unit: "px", visibleWhen: { key: "image", truthy: true } },
+            { key: "showName", label: "Mostrar também o nome da loja", control: "toggle", tier: A, group: "content", default: false, visibleWhen: { key: "image", truthy: true } },
+          ],
+        },
+        {
           id: "name",
           kind: "text",
           label: "Nome da loja",
@@ -238,6 +259,7 @@ const baseManifest: ThemeManifest = {
             preset: "text",
             omit: except(TEXT_KEYS, ["color", "size", "weight"]),
             override: { size: { default: 18 }, weight: { default: 800 }, color: { default: "token:text" } },
+            add: [{ key: "nameInfo", label: "Nome", control: "readonlyInfo", tier: B, group: "content", externalTarget: "store-info", default: "O nome da loja é gerido em Informações da loja." }],
           },
         },
         ...headerIconElements,
@@ -301,23 +323,29 @@ const baseManifest: ThemeManifest = {
           id: "button",
           kind: "button",
           label: "Botão",
-          settings: {
-            preset: "button",
-            omit: except(BUTTON_KEYS, ["label", "bg", "textColor"]),
-            override: {
-              label: { default: "Ver Produtos" },
-              bg: { default: "#FFFFFF" },
-              textColor: { default: "#202020" },
-            },
-          },
+          settings: buttonSettings({ label: "Ver Produtos", look: LOOK.hero, link: { type: "products" }, canHide: true }),
         },
       ],
       settings: {
         preset: "container",
         omit: [...CONTAINER_KEYS],
         add: [
+          {
+            key: "image",
+            label: "Imagem de fundo",
+            help: "Substitui o fundo em cores e a ilustração.",
+            control: "image",
+            tier: B,
+            group: "content",
+            default: null,
+            assist: { kind: "banner", recommended: { width: 1600, height: 900 } },
+          },
+          { key: "textTone", label: "Cor do texto sobre a imagem", control: "segmented", tier: B, group: "appearance", default: "light", options: [{ value: "light", label: "Clara" }, { value: "dark", label: "Escura" }], visibleWhen: { key: "image", truthy: true } },
+          { key: "overlay", label: "Escurecer a imagem", help: "Ajuda o texto a ler-se melhor.", control: "slider", tier: B, group: "appearance", default: 35, min: 0, max: 80, unit: "%", visibleWhen: { key: "image", truthy: true } },
+          { key: "align", label: "Alinhar texto", control: "segmented", tier: B, group: "layout", default: "left", options: [{ value: "left", label: "Esquerda" }, { value: "center", label: "Centro" }] },
           { key: "height", label: "Altura", control: "slider", tier: B, group: "layout", responsive: true, default: { $r: { desktop: 403, mobile: 263 } }, min: 200, max: 800, unit: "px" },
-          { key: "showIllustration", label: "Mostrar ilustração", control: "toggle", tier: B, group: "appearance", default: true },
+          { key: "focalPoint", label: "Ponto de foco da imagem", help: "A parte da imagem que nunca deve ser cortada.", control: "focalPoint", tier: A, group: "layout", default: { x: 50, y: 50 }, visibleWhen: { key: "image", truthy: true } },
+          { key: "showIllustration", label: "Mostrar ilustração", control: "toggle", tier: B, group: "appearance", default: true, visibleWhen: { key: "image", truthy: false } },
         ],
       },
     },
@@ -357,11 +385,7 @@ const baseManifest: ThemeManifest = {
           id: "viewAll",
           kind: "button",
           label: "Botão explorar mais",
-          settings: {
-            preset: "button",
-            omit: except(BUTTON_KEYS, ["label"]),
-            override: { label: { default: "Explorar mais" } },
-          },
+          settings: buttonSettings({ label: "Explorar mais", look: LOOK.viewAll, link: { type: "products" }, canHide: true }),
         },
         {
           id: "productCard",
@@ -440,11 +464,7 @@ const baseManifest: ThemeManifest = {
           id: "button",
           kind: "button",
           label: "Botão",
-          settings: {
-            preset: "button",
-            omit: except(BUTTON_KEYS, ["label"]),
-            override: { label: { default: "Falar no WhatsApp" } },
-          },
+          settings: buttonSettings({ label: "Falar no WhatsApp", look: LOOK.whatsapp, message: true }),
         },
       ],
       settings: {

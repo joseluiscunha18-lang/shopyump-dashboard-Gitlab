@@ -8,10 +8,11 @@ import {
   useColors,
   useEditorPreview,
   useGlobalGroup,
+  useMediaUrl,
   useNodeValues,
   useTheme,
 } from "@/theme-editor/editor/sdk";
-import { HEADING_SECTION, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, type LumePageKey } from "./page-text";
+import { HEADING_SECTION, LUME_CATEGORIES, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, lumeCategoryOf, type LumePageKey } from "./page-text";
 import { resolveColor, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
 import type { ProductLite } from "@/theme-editor/editor/contracts/types";
@@ -49,7 +50,7 @@ function useScheme(schemeId: string) {
 
 function textStyle(v: Record<string, any>, colors: Record<string, string>, fonts: Record<string, string>): CSSProperties {
   const s: CSSProperties = {
-    color: resolveColor(v.color, colors),
+    color: v.color === undefined ? undefined : resolveColor(v.color, colors),
     fontSize: v.size,
     fontWeight: v.weight,
     lineHeight: v.lineHeight,
@@ -69,28 +70,34 @@ function textStyle(v: Record<string, any>, colors: Record<string, string>, fonts
   return s;
 }
 
-/** Botão do Lume: pílula; "outline" usa a cor de borda do tema (como o original). */
-function buttonStyle(v: Record<string, any>, colors: Record<string, string>): CSSProperties {
-  const bg = resolveColor(v.bg, colors);
-  const fg = resolveColor(v.textColor, colors);
-  const pad = v.size === "sm" ? "8px 14px" : v.size === "lg" ? "12px 24px" : "10px 20px";
+/**
+ * Botão do Lume. Nunca fica invisível: sem cor definida usa o botão principal do
+ * tema (antes, `resolveColor(undefined)` dava "transparent" e o texto sumia).
+ * Cheio: fundo = `bg`. Contorno: linha = `bg`, texto = `textColor`. Só texto: sublinhado.
+ */
+export function buttonStyle(v: Record<string, any>, colors: Record<string, string>): CSSProperties {
+  const bg = resolveColor(v.bg ?? "token:buttonBg", colors);
+  const fg = resolveColor(v.textColor ?? "token:buttonText", colors);
+  const size = v.size === "sm" ? { h: 34, px: 16, fs: 13 } : v.size === "lg" ? { h: 48, px: 28, fs: 15 } : { h: 40, px: 20, fs: 14 };
   const base: CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
-    padding: pad,
-    borderRadius: v.radius,
+    height: size.h,
+    padding: `0 ${size.px}px`,
+    borderRadius: v.radius ?? 999,
     fontWeight: v.weight ?? 600,
-    fontSize: v.size === "sm" ? 13 : v.size === "lg" ? 15 : 14,
+    fontSize: size.fs,
     textTransform: v.transform && v.transform !== "none" ? v.transform : undefined,
     width: v.width === "full" ? "100%" : undefined,
-    justifyContent: v.width === "full" ? "center" : undefined,
     cursor: "default",
     whiteSpace: "nowrap",
+    color: fg,
   };
-  if (v.variant === "outline") return { ...base, background: "transparent", color: bg, border: `1px solid ${colors.border}` };
-  if (v.variant === "text") return { ...base, background: "transparent", color: bg, padding: "6px 0", textDecoration: "underline" };
-  return { ...base, background: bg, color: fg, border: `1px solid ${colors.border}`, boxShadow: "0 2px 6px rgba(32,32,32,.08)" };
+  if (v.variant === "outline") return { ...base, background: "transparent", border: `1px solid ${bg}` };
+  if (v.variant === "text") return { ...base, background: "transparent", border: "1px solid transparent", height: "auto", padding: "6px 0", textDecoration: "underline" };
+  return { ...base, background: bg, border: `1px solid ${colors.border}` };
 }
 
 function shadowOf(preset: unknown): string | undefined {
@@ -113,7 +120,7 @@ function formatPrice(value: number, currency: string): string {
 
 /* ------------------------------ atoms ------------------------------ */
 
-function TextEl({ path, label, fallbackTag = "p", text }: { path: string; label: string; fallbackTag?: string; text?: string }) {
+function TextEl({ path, label, fallbackTag = "p", text, tone }: { path: string; label: string; fallbackTag?: string; text?: string; tone?: { color: string; whenDefault: string } }) {
   const v = useNodeValues(path);
   const colors = useColors();
   const { manifest } = useTheme();
@@ -122,7 +129,7 @@ function TextEl({ path, label, fallbackTag = "p", text }: { path: string; label:
   const Tag = (v.htmlTag || fallbackTag) as any;
   return (
     <Editable path={path} label={label} as="div">
-      <Tag style={textStyle(v, colors, fonts)}>{text ?? v.text}</Tag>
+      <Tag style={{ ...textStyle(v, colors, fonts), ...(tone && v.color === tone.whenDefault ? { color: tone.color } : null) }}>{text ?? v.text}</Tag>
     </Editable>
   );
 }
@@ -199,6 +206,8 @@ function HeaderSection({ id }: { id: string }) {
   const { v, layout, colors, mobile } = useSectionFrame(id);
   const { store } = useTheme();
   const name = useNodeValues(elementPath(id, "name"));
+  const logo = useNodeValues(elementPath(id, "logo"));
+  const logoUrl = useMediaUrl(logo.image);
   const fonts = Object.fromEntries(useTheme().manifest.fonts.map((f) => [f.id, f.family]));
   const sz = 18;
 
@@ -230,10 +239,17 @@ function HeaderSection({ id }: { id: string }) {
         <HeaderIcon sectionId={id} el="menu" label="Menu lateral">
           <Icons.Menu size={sz + 2} strokeWidth={2.25} />
         </HeaderIcon>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", maxWidth: "55%" }}>
-          <Editable path={elementPath(id, "name")} label="Nome da loja" as="span" style={{ display: "inline-block" }}>
-            <span style={{ ...textStyle(name, colors, fonts), whiteSpace: "nowrap", display: "block" }}>{store.name}</span>
-          </Editable>
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", maxWidth: "55%", display: "flex", alignItems: "center", gap: 8 }}>
+          {logoUrl ? (
+            <Editable path={elementPath(id, "logo")} label="Logótipo" as="span" style={{ display: "inline-flex" }}>
+              <img src={logoUrl} alt={store.name} style={{ height: logo.height ?? 32, width: "auto", maxWidth: "100%", display: "block", objectFit: "contain" }} />
+            </Editable>
+          ) : null}
+          {!logoUrl || logo.showName ? (
+            <Editable path={elementPath(id, "name")} label="Nome da loja" as="span" style={{ display: "inline-block" }}>
+              <span style={{ ...textStyle(name, colors, fonts), whiteSpace: "nowrap", display: "block" }}>{store.name}</span>
+            </Editable>
+          ) : null}
         </div>
         <span style={{ display: "inline-flex", alignItems: "center" }}>
           {!mobile ? (
@@ -280,6 +296,12 @@ function HeroIllustration({ color, mobile }: { color: string; mobile: boolean })
 
 function HeroSection({ id }: { id: string }) {
   const { v, layout, colors, mobile } = useSectionFrame(id);
+  const imageUrl = useMediaUrl(v.image);
+  const center = v.align === "center";
+  const light = !!imageUrl && v.textTone !== "dark";
+  const fp = v.focalPoint ?? { x: 50, y: 50 };
+  const titleTone = light ? { color: "#FFFFFF", whenDefault: "token:text" } : undefined;
+  const subTone = light ? { color: "rgba(255,255,255,.85)", whenDefault: "token:secondary" } : undefined;
 
   return (
     <SectionShell
@@ -287,11 +309,18 @@ function HeroSection({ id }: { id: string }) {
       label="Banner principal"
       style={{ position: "relative", overflow: "hidden", background: `linear-gradient(120deg, ${colors.heroFrom}, ${colors.heroTo})` }}
     >
+      {imageUrl ? (
+        <>
+          <img src={imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: `${fp.x}% ${fp.y}%` }} />
+          <div style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${(v.overlay ?? 0) / 100})` }} />
+        </>
+      ) : null}
       <div
         style={{
           position: "relative",
-          display: mobile ? "flex" : "grid",
-          gridTemplateColumns: mobile ? undefined : "minmax(0,1.05fr) minmax(300px,0.95fr)",
+          display: mobile || center ? "flex" : "grid",
+          justifyContent: center ? "center" : undefined,
+          gridTemplateColumns: mobile || center ? undefined : "minmax(0,1.05fr) minmax(300px,0.95fr)",
           alignItems: "center",
           gap: 40,
           minHeight: v.height,
@@ -300,18 +329,18 @@ function HeroSection({ id }: { id: string }) {
           padding: mobile ? "56px 20px" : "64px 48px",
         }}
       >
-        <div style={{ position: "relative", zIndex: 1, maxWidth: mobile ? "80%" : 576, alignSelf: "center" }}>
-          <div style={mobile ? { whiteSpace: "nowrap" } : undefined}>
-            <TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h1" />
+        <div style={{ position: "relative", zIndex: 1, maxWidth: mobile && !center ? "80%" : 576, alignSelf: "center", textAlign: center ? "center" : undefined }}>
+          <div style={mobile && !center ? { whiteSpace: "nowrap" } : undefined}>
+            <TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h1" tone={titleTone} />
           </div>
           <div style={{ marginTop: 8 }}>
-            <TextEl path={elementPath(id, "subtitle")} label="Descrição" />
+            <TextEl path={elementPath(id, "subtitle")} label="Descrição" tone={subTone} />
           </div>
-          <div style={{ marginTop: mobile ? 24 : 32 }}>
+          <div style={{ marginTop: mobile ? 24 : 32, display: "flex", justifyContent: center ? "center" : undefined }}>
             <ButtonEl path={elementPath(id, "button")} label="Botão" />
           </div>
         </div>
-        {v.showIllustration ? (
+        {v.showIllustration && !imageUrl && !center ? (
           <div
             aria-hidden
             style={
@@ -903,6 +932,92 @@ function CartDrawerSection({ id }: { id: string }) {
   );
 }
 
+/* ------------------------------ Seções adicionáveis ------------------------------ */
+
+function SectionFrame({ id, label, tone, children }: { id: string; label: string; tone: string; children: ReactNode }) {
+  const { layout, mobile } = useSectionFrame(id);
+  const sch = useScheme(tone);
+  return (
+    <SectionShell path={sectionPath(id)} label={label} style={{ background: sch.background, color: sch.text, padding: mobile ? "32px 16px" : "48px 24px" }}>
+      <div style={{ maxWidth: layout.contentWidth || undefined, margin: "0 auto" }}>{children}</div>
+    </SectionShell>
+  );
+}
+
+function CategoriesSection({ id }: { id: string }) {
+  const { v, mobile, colors } = useSectionFrame(id);
+  const { products, categories, mode } = useTheme();
+  const nameOf = (categoryId: string) => categories.find((c) => c.id === categoryId)?.name ?? categoryId;
+  // Mesma regra da loja pública: 3 categorias fixas, com a 1.ª foto de cada uma.
+  const list = LUME_CATEGORIES.map((name) => {
+    const items = products.filter((p) => lumeCategoryOf(nameOf(p.categoryId)) === name);
+    return { id: name, name, productCount: items.length, cover: items.find((p) => p.images[0])?.images[0] };
+  }).filter((c) => c.productCount > 0);
+  if (list.length === 0 && mode === "live") return null;
+  const round = v.shape === "round";
+  return (
+    <SectionFrame id={id} label="Categorias" tone={v.tone ?? "light"}>
+      <div style={{ fontWeight: 700 }}><TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h2" /></div>
+      {list.length === 0 ? (
+        <p style={{ marginTop: 12, fontSize: 14, opacity: 0.6 }}>Ainda não tem categorias. Elas aparecem quando criar produtos.</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${v.columns ?? (mobile ? 2 : 4)}, minmax(0,1fr))`, gap: mobile ? 12 : 20, marginTop: 20 }}>
+          {list.map((c) => {
+            const cover = c.cover;
+            return (
+              <div key={c.id} style={{ textAlign: "center", minWidth: 0 }}>
+                <div style={{ aspectRatio: "1/1", overflow: "hidden", borderRadius: round ? 999 : 16, background: colors.gallery, border: `1px solid ${colors.border}` }}>
+                  {cover ? <img src={cover} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : null}
+                </div>
+                <p style={{ marginTop: 8, fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</p>
+                {v.showCount ? <p style={{ fontSize: 12, opacity: 0.6 }}>{c.productCount} {c.productCount === 1 ? "produto" : "produtos"}</p> : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </SectionFrame>
+  );
+}
+
+function ImageTextSection({ id }: { id: string }) {
+  const { v, mobile, colors } = useSectionFrame(id);
+  const styleG = useGlobalGroup("style");
+  const img = useNodeValues(elementPath(id, "image"));
+  const url = useMediaUrl(img.image);
+  const right = v.side === "right";
+  return (
+    <SectionFrame id={id} label="Imagem e texto" tone={v.tone ?? "light"}>
+      <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: mobile ? 20 : 48, alignItems: "center" }}>
+        <Editable path={elementPath(id, "image")} label="Imagem" style={{ order: !mobile && right ? 2 : 0 }}>
+          <div style={{ aspectRatio: img.ratio ?? "4/5", overflow: "hidden", background: colors.gallery, borderRadius: styleG.imageRadius, display: "grid", placeItems: "center", color: colors.secondary }}>
+            {url ? <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <Icons.ImageIcon size={32} />}
+          </div>
+        </Editable>
+        <div>
+          <div style={{ fontWeight: 700 }}><TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h2" /></div>
+          <div style={{ marginTop: 12 }}><TextEl path={elementPath(id, "text")} label="Texto" /></div>
+          <div style={{ marginTop: 20 }}><ButtonEl path={elementPath(id, "button")} label="Botão" /></div>
+        </div>
+      </div>
+    </SectionFrame>
+  );
+}
+
+function RichTextSection({ id }: { id: string }) {
+  const { v } = useSectionFrame(id);
+  const center = v.align !== "left";
+  return (
+    <SectionFrame id={id} label="Texto livre" tone={v.tone ?? "light"}>
+      <div style={{ maxWidth: 720, margin: center ? "0 auto" : undefined, textAlign: center ? "center" : "left" }}>
+        <div style={{ fontWeight: 700 }}><TextEl path={elementPath(id, "title")} label="Título" fallbackTag="h2" /></div>
+        <div style={{ marginTop: 12 }}><TextEl path={elementPath(id, "text")} label="Texto" /></div>
+        <div style={{ marginTop: 20, display: "flex", justifyContent: center ? "center" : undefined }}><ButtonEl path={elementPath(id, "button")} label="Botão" /></div>
+      </div>
+    </SectionFrame>
+  );
+}
+
 /* ------------------------------ registry + root ------------------------------ */
 
 const SECTION_COMPONENTS: Record<string, (p: { id: string }) => React.ReactElement | null> = {
@@ -911,6 +1026,9 @@ const SECTION_COMPONENTS: Record<string, (p: { id: string }) => React.ReactEleme
   hero: HeroSection,
   products: ProductsSection,
   whatsappCta: WhatsappCtaSection,
+  categories: CategoriesSection,
+  imageText: ImageTextSection,
+  richText: RichTextSection,
   footer: FooterSection,
   bottomNav: BottomNavSection,
   pageHeading: PageHeadingSection,
