@@ -53,6 +53,12 @@ export const mockStore: Store = {
       ],
     },
   ],
+  // Demo: as duas páginas opcionais ligadas, para o preview de demonstração
+  // mostrar o mesmo conjunto de links que a loja real mostraria por omissão.
+  paginas: {
+    entrega: { mostrar: true },
+    termos: { mostrar: true },
+  },
 };
 
 export const mockCategories: CategoryLite[] = [
