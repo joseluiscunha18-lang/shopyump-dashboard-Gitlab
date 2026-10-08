@@ -189,12 +189,12 @@ export const formatPrice = (value: number) => `${new Intl.NumberFormat("pt-PT").
 
 export const getProduct = (id: string) => products.find((product) => product.id === id);
 
-export const isInStock = (product: Product, quantity = 1, stockOverride?: number) => {
+export const isInStock = (product: Pick<Product, "stock">, quantity = 1, stockOverride?: number) => {
   const stock = stockOverride !== undefined ? stockOverride : product.stock;
   return stock === undefined || stock >= quantity;
 };
 
-export const maxQuantity = (product: Product, stockOverride?: number) => {
+export const maxQuantity = (product: Pick<Product, "stock">, stockOverride?: number) => {
   const stock = stockOverride !== undefined ? stockOverride : product.stock;
   return stock === undefined ? 99 : Math.max(0, stock);
 };

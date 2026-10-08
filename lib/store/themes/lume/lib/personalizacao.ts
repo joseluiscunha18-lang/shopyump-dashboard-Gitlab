@@ -6,6 +6,7 @@ import { settingsForPath } from "@/theme-editor/editor/core/resolve";
 import { DEFAULT_MENU_ITEMS, HEADING_SECTION, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, type LumePageKey } from "@/theme-editor/themes/lume/page-text";
 import { sectionTypeOf } from "@/theme-editor/editor/core/resolve";
 import { BUCKETS } from "@/lib/storageBuckets";
+import { LUME_COLOR_VARS } from "./color-vars";
 
 /**
  * PERSONALIZAÇÃO DO TEMA LUME NA LOJA PÚBLICA
@@ -305,16 +306,8 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   /* ---- cores ---- */
   const c = cur.colors;
   const d = def.colors;
-  const colorMap: Record<string, string[]> = {
-    background: ["--background", "--popover", "--footer"],
-    text: ["--foreground", "--card-foreground", "--popover-foreground", "--secondary-foreground", "--accent-foreground", "--footer-foreground", "--hero-foreground"],
-    secondary: ["--muted-foreground", "--footer-muted", "--hero-muted", "--ring"],
-    buttonBg: ["--primary"],
-    buttonText: ["--primary-foreground"],
-    border: ["--border", "--input", "--product-line", "--footer-border"],
-    cardBg: ["--card", "--subtle", "--surface-strong"],
-    surfaceAlt: ["--muted", "--accent", "--footer-hover"],
-  };
+  // Mesmo mapa que o editor usa (ver color-vars.ts) — só se emite o que difere do tema original.
+  const colorMap = LUME_COLOR_VARS;
   for (const [key, names] of Object.entries(colorMap)) {
     if (c[key] !== d[key]) setVars(names, hex(c[key]));
   }
