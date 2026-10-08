@@ -5,6 +5,8 @@
  * seguro importar no servidor.
  */
 
+import type { PageKind } from "@/theme-editor/editor/contracts/types";
+
 export type LumePageKey = "collection" | "wishlist" | "about" | "shipping" | "returns" | "terms" | "contact";
 
 export interface PageTextDefaults {
@@ -23,6 +25,33 @@ export const PAGE_TEXT: Record<LumePageKey, PageTextDefaults> = {
   terms: { eyebrow: "Transparência e segurança", title: "Termos e Privacidade", description: "Conheça as regras de utilização da loja e os compromissos que assumimos para proteger a sua informação." },
   contact: { eyebrow: "Fale connosco", title: "Contacto", description: "Envie uma mensagem ou escolha um dos canais diretos da loja." },
 };
+
+/**
+ * `PageKind` de cada página do Lume — o MESMO vocabulário que o manifesto
+ * do editor usa em `PageDef.kind` (ver manifest.ts / manifest-ext.ts).
+ * A loja pública usa este mapa para saber, a partir do pathname, em que
+ * "tipo" de página está — e passa esse tipo às funções partilhadas de
+ * `lib/store/shared/storefront-logic.ts` (cabeçalho, rodapé, etc.), em vez
+ * de cada ficheiro decidir sozinho com os seus próprios booleans.
+ */
+export const PAGE_KIND_BY_ROUTE: Record<string, PageKind> = {
+  "/": "home",
+  "/produtos": "collection",
+  "/favoritos": "wishlist",
+  "/sobre": "content",
+  "/contacto": "content",
+  "/envios-e-entregas": "content",
+  "/trocas-e-devolucoes": "content",
+  "/termos-e-privacidade": "content",
+  "/conta": "account",
+  "/checkout": "cart",
+};
+
+/** `PageKind` da página atual a partir do pathname da loja pública. */
+export function lumePageKindOf(pathname: string): PageKind {
+  if (pathname.startsWith("/produto/")) return "product";
+  return PAGE_KIND_BY_ROUTE[pathname] ?? "home";
+}
 
 /** Id da seção de título de cada página no manifesto. */
 export const HEADING_SECTION: Record<LumePageKey, string> = {

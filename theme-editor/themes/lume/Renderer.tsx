@@ -1,4 +1,4 @@
-import { Fragment, type CSSProperties, type ReactNode } from "react";
+import { createContext, Fragment, useContext, type CSSProperties, type ReactNode } from "react";
 import * as Icons from "lucide-react";
 import {
   Editable,
@@ -15,7 +15,8 @@ import {
 import { HEADING_SECTION, LUME_CATEGORIES, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, lumeCategoryOf, type LumePageKey } from "./page-text";
 import { resolveColor, sectionTypeOf, visibleSectionIds } from "@/theme-editor/editor/core/resolve";
 import { elementPath, sectionPath } from "@/theme-editor/editor/core/paths";
-import type { ProductLite } from "@/theme-editor/editor/contracts/types";
+import type { PageKind, ProductLite } from "@/theme-editor/editor/contracts/types";
+import { getVisiblePolicyLinks, headerActionsFor, resolveHeaderMode } from "@/lib/store/shared/storefront-logic";
 
 /**
  * Renderer do tema LUME para o editor e para o preview do "Personalizar loja".
@@ -27,6 +28,21 @@ import type { ProductLite } from "@/theme-editor/editor/contracts/types";
  * text-foreground…). Dentro de `.ed-root` essas variáveis têm os valores do
  * editor, não os do Lume — por isso as cores vêm sempre dos tokens resolvidos.
  */
+
+/* ------------------------------ page kind ------------------------------ */
+
+/**
+ * O `PageKind` da página que está a ser desenhada neste momento — o MESMO
+ * vocabulário que `PageDef.kind` já usa no manifesto. `LumeRenderer`
+ * define-o uma vez (a partir do `pageId`); qualquer secção (cabeçalho,
+ * rodapé, ...) que precise de saber "em que página estou" lê-o daqui em vez
+ * de inventar a sua própria deteção. É o que liga este Renderer às mesmas
+ * funções de `lib/store/shared/storefront-logic.ts` que a loja pública usa.
+ */
+const PageKindCtx = createContext<PageKind>("home");
+function usePageKind(): PageKind {
+  return useContext(PageKindCtx);
+}
 
 /* ------------------------------ helpers ------------------------------ */
 
@@ -210,6 +226,10 @@ function HeaderSection({ id }: { id: string }) {
   const logoUrl = useMediaUrl(logo.image);
   const fonts = Object.fromEntries(useTheme().manifest.fonts.map((f) => [f.id, f.family]));
   const sz = 18;
+  // Mesma regra que a loja pública usa (store-shell.tsx): o cabeçalho muda
+  // consoante a página. Sem isto, o editor mostrava sempre "Conta", mesmo a
+  // editar a página de Produto — onde a loja real mostra o Carrinho.
+  const actions = headerActionsFor(resolveHeaderMode(usePageKind()));
 
   return (
     <SectionShell
@@ -252,19 +272,29 @@ function HeaderSection({ id }: { id: string }) {
           ) : null}
         </div>
         <span style={{ display: "inline-flex", alignItems: "center" }}>
-          {!mobile ? (
-            <HeaderIcon sectionId={id} el="search" label="Pesquisa">
-              <Icons.Search size={sz} strokeWidth={2.25} />
+          {actions.cart ? (
+            <HeaderIcon sectionId={id} el="cart" label="Carrinho">
+              <Icons.ShoppingCart size={sz} strokeWidth={2.25} />
             </HeaderIcon>
-          ) : null}
-          {!mobile ? (
-            <HeaderIcon sectionId={id} el="wishlist" label="Favoritos">
-              <Icons.Heart size={sz} strokeWidth={2.25} />
-            </HeaderIcon>
-          ) : null}
-          <HeaderIcon sectionId={id} el="account" label="Conta">
-            <Icons.User size={sz} strokeWidth={2.25} />
-          </HeaderIcon>
+          ) : (
+            <>
+              {!mobile && actions.search ? (
+                <HeaderIcon sectionId={id} el="search" label="Pesquisa">
+                  <Icons.Search size={sz} strokeWidth={2.25} />
+                </HeaderIcon>
+              ) : null}
+              {!mobile && actions.wishlist ? (
+                <HeaderIcon sectionId={id} el="wishlist" label="Favoritos">
+                  <Icons.Heart size={sz} strokeWidth={2.25} />
+                </HeaderIcon>
+              ) : null}
+              {actions.account ? (
+                <HeaderIcon sectionId={id} el="account" label="Conta">
+                  <Icons.User size={sz} strokeWidth={2.25} />
+                </HeaderIcon>
+              ) : null}
+            </>
+          )}
         </span>
       </div>
     </SectionShell>
@@ -548,17 +578,20 @@ function TikTokIcon({ size }: { size: number }) {
 function FooterSection({ id }: { id: string }) {
   const { v, colors, layout } = useSectionFrame(id);
   const { store, device } = useTheme();
-  const policy = useNodeValues(elementPath(id, "policyLinks"));
   const social = useNodeValues(elementPath(id, "socialLinks"));
   const copyright = useNodeValues(elementPath(id, "copyright"));
   const credit = useNodeValues(elementPath(id, "credit"));
   const mobile = device === "mobile";
 
-  const links = [
-    policy.shipping ? "Envios e Entregas" : null,
-    policy.returns ? "Trocas e Devoluções" : null,
-    policy.terms ? "Termos e Privacidade" : null,
-  ].filter(Boolean) as string[];
+  // ANTES: `policy.shipping`/`policy.returns`/`policy.terms` eram 3 toggles
+  // só do editor, sem relação com as Definições reais da loja — por isso o
+  // editor podia mostrar "Envios e Entregas" com a loja a tê-lo desligado,
+  // e até deixava desligar "Trocas e Devoluções", que é sempre obrigatório.
+  // Agora lê-se `store.paginas` (vem das Definições reais) através da MESMA
+  // função que a loja pública usa — ver lib/store/shared/storefront-logic.ts.
+  const links = getVisiblePolicyLinks(store.paginas ?? { entrega: { mostrar: true }, termos: { mostrar: true } }).map(
+    (link) => link.label
+  );
 
   const nets: { key: "instagram" | "facebook" | "tiktok"; label: string; Icon: React.ComponentType<any> }[] = [
     { key: "instagram", label: "Instagram", Icon: Icons.Instagram },
@@ -1117,6 +1150,7 @@ const OVERLAY_COMPONENTS: Record<string, (p: { id: string }) => React.ReactEleme
 export function LumeRenderer({ pageId, only }: { pageId: string; only?: string[] }) {
   const { manifest, customization } = useTheme();
   const preview = useEditorPreview();
+  const pageKind: PageKind = manifest.pages.find((p) => p.id === pageId)?.kind ?? "home";
   const colors = useColors();
   const typo = useGlobalGroup("typography");
   const ids = visibleSectionIds(manifest, customization, pageId);
@@ -1147,17 +1181,19 @@ export function LumeRenderer({ pageId, only }: { pageId: string; only?: string[]
   };
 
   return (
-    <div className="sy-root" style={rootStyle}>
-      <style>{`.sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-family:var(--sy-font-heading);line-height:1.25;text-transform:${typo.headingTransform === "none" ? "none" : typo.headingTransform};margin:0}
-      .sy-root h1{letter-spacing:-0.025em}
-      .sy-root p,.sy-root ul{margin:0}`}</style>
-      {all.map(render)}
-      {only ? null : ids.fixed.map(render)}
-      {overlays.map((o) => {
-        const Cmp = OVERLAY_COMPONENTS[o.id];
-        return Cmp ? <Fragment key={o.id}><Cmp id={o.sectionIds[0]!} /></Fragment> : null;
-      })}
-    </div>
+    <PageKindCtx.Provider value={pageKind}>
+      <div className="sy-root" style={rootStyle}>
+        <style>{`.sy-root h1,.sy-root h2,.sy-root h3,.sy-root h4{font-family:var(--sy-font-heading);line-height:1.25;text-transform:${typo.headingTransform === "none" ? "none" : typo.headingTransform};margin:0}
+        .sy-root h1{letter-spacing:-0.025em}
+        .sy-root p,.sy-root ul{margin:0}`}</style>
+        {all.map(render)}
+        {only ? null : ids.fixed.map(render)}
+        {overlays.map((o) => {
+          const Cmp = OVERLAY_COMPONENTS[o.id];
+          return Cmp ? <Fragment key={o.id}><Cmp id={o.sectionIds[0]!} /></Fragment> : null;
+        })}
+      </div>
+    </PageKindCtx.Provider>
   );
 }
 

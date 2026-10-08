@@ -515,11 +515,15 @@ const baseManifest: ThemeManifest = {
           id: "policyLinks",
           kind: "policyLinks",
           label: "Links de informação",
+          // "Envios e Entregas" e "Termos e Privacidade" deixaram de ser
+          // toggles próprios do editor: eram uma segunda fonte de verdade,
+          // desligada da definição real da loja, o que fazia o editor
+          // mostrar/esconder links de forma diferente da loja real. Agora
+          // seguem sempre `store.paginas` (Páginas e políticas) — ver
+          // `getVisiblePolicyLinks` em lib/store/shared/storefront-logic.ts.
+          // "Trocas e Devoluções" nunca foi, nem é, opcional.
           settings: [
-            { key: "shipping", label: "Envios e Entregas", control: "toggle", tier: B, group: "content", default: true },
-            { key: "returns", label: "Trocas e Devoluções", control: "toggle", tier: B, group: "content", default: true },
-            { key: "terms", label: "Termos e Privacidade", control: "toggle", tier: B, group: "content", default: true },
-            { key: "policiesInfo", label: "Conteúdo", control: "readonlyInfo", tier: B, group: "content", externalTarget: "policies", default: "O conteúdo é gerido em Páginas e políticas." },
+            { key: "policiesInfo", label: "Visibilidade", control: "readonlyInfo", tier: B, group: "content", externalTarget: "policies", default: "\"Envios e Entregas\" e \"Termos e Privacidade\" só aparecem se estiverem ativos em Páginas e políticas. \"Trocas e Devoluções\" aparece sempre." },
           ],
         },
         {

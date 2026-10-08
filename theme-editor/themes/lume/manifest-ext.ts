@@ -74,6 +74,10 @@ export const headerIconElements: ElementDef[] = [
   // conta (auth-modal.tsx) — nunca navega para a página "/conta". Por isso
   // aqui abre o overlay "authOverlay" (espelho do modal), não a themePage.
   { ...headerIcon("account", "Conta"), openAction: { type: "overlay", id: "authOverlay" } },
+  // Só aparece na página de produto — ver `headerActionsFor` em
+  // lib/store/shared/storefront-logic.ts, que o Renderer usa para decidir
+  // isto, em vez do próprio Renderer decidir sozinho.
+  { ...headerIcon("cart", "Carrinho"), openAction: { type: "overlay", id: "cartDrawer" } },
 ];
 
 /** Segundo toque no cartão de produto: abre a página Produto com o produto tocado. */
