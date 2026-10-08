@@ -410,7 +410,7 @@
   place-items: center;
   border: 2px solid var(--nav);
   border-radius: 999px;
-  color: var(--nav-active);
+  color: var(--nav-badge-foreground, var(--nav-active));
   background: var(--nav-indicator);
   font-size: 0.55rem;
   font-weight: 800;
