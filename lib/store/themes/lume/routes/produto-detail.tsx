@@ -27,6 +27,7 @@ import {
 } from "../lib/store-data";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
+import { resolveBuyState } from "@/lib/store/shared/storefront-logic";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
@@ -98,7 +99,19 @@ function ProductPage() {
       return proxima;
     });
   };
-  const available = selecaoCompleta && (versaoAtual?.ativa !== false) && isInStock(product, 1, stock);
+  // Fonte única da regra "pode comprar?" — a mesma função que o editor usa
+  // para decidir o que mostrar no seletor de variantes e nos botões de
+  // compra (ver theme-editor/themes/lume/Renderer.tsx). Isto garante que o
+  // editor nunca mostra "Comprar Agora" ativo quando a loja real pediria
+  // primeiro a escolha de variante, e nunca omite o seletor quando o
+  // produto tem variantes.
+  const buyState = resolveBuyState({
+    hasVariants: temVariantes,
+    selectionComplete: selecaoCompleta,
+    versionActive: versaoAtual?.ativa,
+    stock,
+  });
+  const available = buyState.status === "available" && isInStock(product, 1, stock);
   const limit = maxQuantity(product, stock);
 
   // Ao trocar de produto, reinicia quantidade e escolhe a primeira versão
