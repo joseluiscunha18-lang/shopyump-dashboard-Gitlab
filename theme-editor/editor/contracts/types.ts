@@ -395,6 +395,19 @@ export interface Store {
   currency: string;
   social: Record<string, string>;
   menus: { id: string; label: string; items: { label: string; href: string }[] }[];
+  /**
+   * Páginas institucionais opcionais que a loja ligou/desligou nas suas
+   * Definições (ex.: Loja.mostrar_entrega / Loja.mostrar_termos). Opcional
+   * para não partir adaptadores antigos — quando ausente, os temas devem
+   * assumir tudo visível. Usado por `getVisiblePolicyLinks` em
+   * lib/store/shared/storefront-logic.ts: é a MESMA fonte de verdade que a
+   * loja pública usa, para o editor nunca mostrar um link que a loja real
+   * não mostraria (e vice-versa).
+   */
+  paginas?: {
+    entrega: { mostrar: boolean };
+    termos: { mostrar: boolean };
+  };
 }
 
 export interface EditorAdapter {
