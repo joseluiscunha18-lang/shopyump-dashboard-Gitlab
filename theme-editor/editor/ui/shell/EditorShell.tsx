@@ -438,9 +438,6 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
           Fechar {overlay.label.toLowerCase()} ✕
         </button>
       ) : null}
-      {isDesktop || boxH - sheetHeight - fixedHeight * scale > 100 ? <span className="pointer-events-none absolute right-2 z-10 rounded-full bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground shadow" style={{ bottom: `calc(${sheetPad} + ${isDesktop ? 0 : fixedHeight * scale}px + 8px)` }}>
-        Dados de demonstração
-      </span> : null}
       {!isDesktop ? <OpenHint /> : null}
       {!state.ui.hintSeen && (isDesktop || state.panel.snap === "closed") ? (
         <div className={cn("pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-xs text-background shadow-lg", isDesktop ? "top-4" : "top-12")}>
