@@ -8,6 +8,7 @@ import { sectionTypeOf } from "@/theme-editor/editor/core/resolve";
 import { BUCKETS } from "@/lib/storageBuckets";
 import { LUME_COLOR_VARS } from "./color-vars";
 import { bottomNavVars, isBottomNavTone } from "./bottom-nav-style";
+import { PHOTO_BORDER_PX, photoBorderColor, photoBorderPreset } from "./photo-border";
 import { resolveBottomNavItems, BOTTOM_NAV_DEFAULTS, type BottomNavItemConfig } from "@/lib/store/shared/storefront-logic";
 
 /**
@@ -340,6 +341,12 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   if (imgRadius !== null && cur.style.imageRadius !== def.style.imageRadius) rule(frame, [`border-radius:${imgRadius}px`]);
   const bw = num(cur.style.borderWidth, 0, 6);
   if (bw !== null && cur.style.borderWidth !== def.style.borderWidth) rule(frame, [`border-width:${bw}px`]);
+  // Borda da foto: espessura e cor próprias do cartão (só se o lojista as mudou).
+  // A regra "sem borda" vem DEPOIS, para ganhar sempre.
+  const photoPreset = photoBorderPreset(cur.products.card.d.imageBorderWidth);
+  if (photoPreset) rule(frame, [`border-width:${PHOTO_BORDER_PX[photoPreset]}px`]);
+  const photoColor = hex(photoBorderColor(resolveColor(cur.products.card.d.imageBorderColor, c)));
+  if (photoColor) rule(frame, [`border-color:${photoColor}`]);
   if (cur.products.card.d.imageBorder === false) rule(frame, ["border-width:0"]);
   const shadows: Record<string, string> = { sm: "0 1px 3px rgba(0,0,0,.08)", md: "0 6px 18px rgba(0,0,0,.10)", lg: "0 16px 40px rgba(0,0,0,.16)", none: "none" };
   if (cur.style.shadowStrength !== def.style.shadowStrength && shadows[cur.style.shadowStrength]) rule(frame, [`box-shadow:${shadows[cur.style.shadowStrength]}`]);
