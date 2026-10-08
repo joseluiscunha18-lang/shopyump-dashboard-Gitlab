@@ -123,7 +123,12 @@ export interface SettingDef {
   navList?: NavListSpec;
   note?: string;
   mobilePeek?: boolean;
-  assist?: { contrastWith?: string; recommended?: { width: number; height: number } };
+  assist?: {
+    contrastWith?: string;
+    recommended?: { width: number; height: number };
+    /** Só para controlos de imagem: onde a imagem vai ser usada (etiqueta na biblioteca). */
+    kind?: "logo" | "banner" | "image";
+  };
 }
 
 export interface SettingGroupDef {
@@ -401,7 +406,7 @@ export interface EditorAdapter {
   listCategories(): Promise<CategoryLite[]>;
   listPages(): Promise<StorePageLite[]>;
   saveCustomization(c: Customization): Promise<void>;
-  uploadMedia(file: File): Promise<MediaAsset>;
+  uploadMedia(file: File, kind?: "logo" | "banner" | "image"): Promise<MediaAsset>;
   navigate(to: "back" | "personalizar" | "editor"): void;
   openExternal(target: ExternalTarget, ctx?: { label?: string; id?: string }): void;
   getStoreUrl(): string;
