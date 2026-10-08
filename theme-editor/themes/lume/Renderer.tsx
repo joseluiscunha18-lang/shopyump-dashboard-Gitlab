@@ -21,6 +21,7 @@ import type { ProdutoComVariantes } from "@/lib/store/themes/lume/lib/store-data
 import { useProductGallery, useProductSelection, type ProductSelection } from "@/lib/store/themes/lume/lib/use-product-selection";
 import { lumeColorVars } from "@/lib/store/themes/lume/lib/color-vars";
 import { bottomNavVars, isBottomNavTone } from "@/lib/store/themes/lume/lib/bottom-nav-style";
+import { photoBorderColor, photoBorderPx } from "@/lib/store/themes/lume/lib/photo-border";
 import { BottomNavView, type BottomNavEntry } from "@/lib/store/themes/lume/components/store/bottom-nav-view";
 import { ProductPurchasePanel, type PurchaseButtonId } from "@/lib/store/themes/lume/components/store/product-purchase-panel";
 import { ProductCardView } from "@/lib/store/themes/lume/components/store/product-card-view";
@@ -435,7 +436,8 @@ function ProductCard({ product, cardPath, v, colors, imageRadius, borderWidth, s
             aspectRatio: v.aspectRatio && v.aspectRatio !== "auto" ? v.aspectRatio : "1/1",
             imageBg: resolveColor(v.imageBg, colors),
             imageRadius,
-            borderWidth: v.imageBorder ? borderWidth : 0,
+            borderWidth: photoBorderPx(v.imageBorderWidth, borderWidth, !!v.imageBorder),
+            borderColor: photoBorderColor(resolveColor(v.imageBorderColor, colors)),
             shadow: shadowOf(shadow),
             align,
             nameSize: typeof v.nameSize === "number" ? v.nameSize : undefined,
@@ -771,7 +773,8 @@ function ProductGallerySection({ id }: { id: string }) {
               buy={buy}
               slideStyle={{
                 borderRadius: styleG.imageRadius,
-                borderWidth: card.imageBorder === false ? 0 : styleG.borderWidth,
+                borderWidth: photoBorderPx(card.imageBorderWidth, styleG.borderWidth, card.imageBorder !== false),
+                borderColor: photoBorderColor(resolveColor(card.imageBorderColor, colors)),
                 boxShadow: shadowOf(styleG.shadowStrength),
                 background: resolveColor(card.imageBg, colors),
               }}

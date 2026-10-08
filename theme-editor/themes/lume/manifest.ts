@@ -1,6 +1,7 @@
 import type { SettingDef, ThemeManifest } from "@/theme-editor/editor/contracts/types";
 import * as P from "./presets";
 import { extCapabilities, extOverlays, extPages, extSectionTypes, headerIconElements, productCardOpen } from "./manifest-ext";
+import { PHOTO_BORDER_DEFAULT_COLOR } from "@/lib/store/themes/lume/lib/photo-border";
 import { LOOK, buttonSettings } from "./elements";
 import { addableSectionTypes } from "./manifest-sections";
 
@@ -403,6 +404,32 @@ const baseManifest: ThemeManifest = {
             { key: "priceSize", label: "Tamanho do preço", control: "slider", tier: A, group: "typography", default: 14, min: 12, max: 32, unit: "px" },
             { key: "imageBg", label: "Fundo da foto", control: "color", tier: A, group: "appearance", default: "token:gallery" },
             { key: "imageBorder", label: "Borda da foto", control: "toggle", tier: A, group: "appearance", default: true },
+            {
+              key: "imageBorderWidth",
+              label: "Espessura da borda",
+              help: "«Da loja» segue a Espessura das bordas do Estilo.",
+              control: "segmented",
+              tier: A,
+              group: "appearance",
+              default: "inherit",
+              options: [
+                { value: "inherit", label: "Da loja" },
+                { value: "thin", label: "Fina" },
+                { value: "medium", label: "Média" },
+                { value: "thick", label: "Grossa" },
+              ],
+              visibleWhen: { key: "imageBorder", truthy: true },
+            },
+            {
+              key: "imageBorderColor",
+              label: "Cor da borda",
+              help: "Só muda a borda das fotos dos produtos.",
+              control: "color",
+              tier: A,
+              group: "appearance",
+              default: PHOTO_BORDER_DEFAULT_COLOR,
+              visibleWhen: { key: "imageBorder", truthy: true },
+            },
             { key: "productsInfo", label: "Produtos", control: "readonlyInfo", tier: B, group: "content", externalTarget: "products", default: "Nome, preço e imagem são geridos em Produtos." },
           ],
         },
