@@ -36,6 +36,13 @@ export type Product = {
 /* Variantes — helpers para a loja pública                               */
 /* -------------------------------------------------------------------- */
 
+/**
+ * O mínimo que os helpers de variantes precisam de um produto. A loja pública
+ * passa um `Product` completo; o editor passa só estes campos (a partir de
+ * `ProductLite`) — por isso as funções abaixo aceitam esta forma estrutural.
+ */
+export type ProdutoComVariantes = Pick<Product, "price" | "stock" | "images" | "variantes">;
+
 /** Uma característica de variação do produto, na ordem raiz → filha → neta. */
 export interface CaracteristicaVariante {
   nome: string;
@@ -43,7 +50,7 @@ export interface CaracteristicaVariante {
 }
 
 /** Lista as características (Cor/Tamanho/...) que o produto realmente usa. */
-export function caracteristicasDoProduto(product: Product): CaracteristicaVariante[] {
+export function caracteristicasDoProduto(product: ProdutoComVariantes): CaracteristicaVariante[] {
   const v = product.variantes;
   if (!v) return [];
   const lista = [v.raiz, v.filha, v.neta].filter((c): c is NonNullable<typeof c> => Boolean(c?.nome));
@@ -65,7 +72,7 @@ export function caracteristicasDoProduto(product: Product): CaracteristicaVarian
  * dono da foto i (para atualizar a cor ao fazer swipe).
  */
 export function galeriaDoProduto(
-  product: Product,
+  product: ProdutoComVariantes,
   versao: ProdutoVersao | undefined
 ): { imagens: string[]; alvos: number[]; donos: (string | null)[]; caracteristica: string | null } {
   const gerais = product.images ?? [];
@@ -103,7 +110,7 @@ export function galeriaDoProduto(
  * aparecem nas versões vendáveis (que já segue raiz.valores/filha...).
  */
 export function valoresParaCaracteristica(
-  product: Product,
+  product: ProdutoComVariantes,
   nome: string,
   selecaoAtual: Record<string, string>
 ): string[] {
@@ -126,7 +133,7 @@ export function valoresParaCaracteristica(
 }
 
 /** Versão (combinação) vendável que corresponde à seleção completa, se existir. */
-export function encontrarVersao(product: Product, selecao: Record<string, string>): ProdutoVersao | undefined {
+export function encontrarVersao(product: ProdutoComVariantes, selecao: Record<string, string>): ProdutoVersao | undefined {
   const caracteristicas = caracteristicasDoProduto(product);
   if (!caracteristicas.length) return undefined;
   return (product.variantes?.versoes ?? []).find((versao) =>
@@ -135,7 +142,7 @@ export function encontrarVersao(product: Product, selecao: Record<string, string
 }
 
 /** Primeira versão ativa e em estoque — usada como seleção inicial da página do produto. */
-export function versaoInicial(product: Product): ProdutoVersao | undefined {
+export function versaoInicial(product: ProdutoComVariantes): ProdutoVersao | undefined {
   const versoes = product.variantes?.versoes ?? [];
   return (
     versoes.find((v) => v.ativa !== false && (v.estoque == null || v.estoque > 0)) ??
@@ -145,19 +152,19 @@ export function versaoInicial(product: Product): ProdutoVersao | undefined {
 }
 
 /** Preço a mostrar: o da versão selecionada (se definido), senão o preço base do produto. */
-export function precoDaVersao(product: Product, versao: ProdutoVersao | undefined): number {
+export function precoDaVersao(product: ProdutoComVariantes, versao: ProdutoVersao | undefined): number {
   return versao?.preco ?? product.price;
 }
 
 /** Estoque da versão selecionada; undefined = sem controlo de estoque (sempre disponível). */
-export function estoqueDaVersao(product: Product, versao: ProdutoVersao | undefined): number | undefined {
+export function estoqueDaVersao(product: ProdutoComVariantes, versao: ProdutoVersao | undefined): number | undefined {
   if (!product.variantes) return product.stock;
   if (!versao) return 0;
   return typeof versao.estoque === 'number' ? versao.estoque : undefined;
 }
 
 /** Imagens a mostrar para a versão selecionada — versão → característica → galeria geral. */
-export function imagensDaVersao(product: Product, versao: ProdutoVersao | undefined): string[] {
+export function imagensDaVersao(product: ProdutoComVariantes, versao: ProdutoVersao | undefined): string[] {
   if (!versao) return product.images ?? [];
   return imagensParaVersao(versao, product.variantes?.imagensPorCaracteristica, product.images ?? []).imagens;
 }
