@@ -16,7 +16,8 @@ import { AuthModal } from "./auth-modal";
 import { useLumeLoja } from "./lume-loja-context";
 import { LumePersonalizacaoStyle, useLumePersonalizacao } from "./lume-personalizacao-context";
 import { categorySlug } from "../../lib/store-data";
-import { THEME_PAGE_ROUTE } from "@/theme-editor/themes/lume/page-text";
+import { THEME_PAGE_ROUTE, lumePageKindOf } from "@/theme-editor/themes/lume/page-text";
+import { getVisiblePolicyLinks, headerActionsFor, resolveHeaderMode } from "@/lib/store/shared/storefront-logic";
 
 /** Marca da loja no cabeçalho: logótipo (se o lojista enviou um), nome, ou os dois. */
 function Brand({ nome, className }: { nome: string; className: string }) {
@@ -59,6 +60,11 @@ function ShellContent({ children }: { children: ReactNode }) {
   const minimal = pathname === "/conta";
   const catalog = pathname === "/produtos";
   const productPage = pathname.startsWith("/produto/");
+  // Fonte única do "que aparece no cabeçalho" — a mesma função que o editor
+  // usa no preview (ver theme-editor/themes/lume/Renderer.tsx). Mudar esta
+  // regra aqui muda-a automaticamente nos dois sítios.
+  const headerMode = resolveHeaderMode(lumePageKindOf(pathname));
+  const headerActions = headerActionsFor(headerMode);
   const institutionalTitles: Record<string, string> = {
     "/envios-e-entregas": "Envios e Entregas",
     "/trocas-e-devolucoes": "Trocas e Devoluções",
@@ -156,14 +162,14 @@ function ShellContent({ children }: { children: ReactNode }) {
           ) : (
             <Brand nome={nomeLoja} className="absolute left-1/2 -translate-x-1/2 text-lg font-extrabold tracking-normal" />
           )}
-          {productPage ? (
+          {headerActions.cart ? (
             <CartIconButton cartCount={cartCount} onClick={() => setCartOpen(true)} />
-          ) : institutionalTitle ? (
+          ) : !headerActions.search && !headerActions.wishlist ? (
             <span data-sy="header-account" className="contents"><AccountButton /></span>
           ) : <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" aria-label="Pesquisar" data-sy="header-search" onClick={() => setSearchOpen(true)} className="hidden sm:inline-flex"><Search size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Button>
-            <Button asChild variant="ghost" size="icon" aria-label="Favoritos" data-sy="header-wishlist" className="hidden sm:inline-flex"><Link to="/favoritos"><Heart size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Link></Button>
-            <span data-sy="header-account" className="contents"><AccountButton /></span>
+            {headerActions.search && <Button variant="ghost" size="icon" aria-label="Pesquisar" data-sy="header-search" onClick={() => setSearchOpen(true)} className="hidden sm:inline-flex"><Search size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Button>}
+            {headerActions.wishlist && <Button asChild variant="ghost" size="icon" aria-label="Favoritos" data-sy="header-wishlist" className="hidden sm:inline-flex"><Link to="/favoritos"><Heart size={18} strokeWidth={2.25} style={{ width: 18, height: 18 }} /></Link></Button>}
+            {headerActions.account && <span data-sy="header-account" className="contents"><AccountButton /></span>}
           </div>}
         </div>
       </header>
@@ -200,6 +206,9 @@ function StoreFooter({ productPage }: { productPage: boolean }) {
     : null;
 
   const hasSocial = instagramUrl || facebookUrl || tiktokUrl;
+  // "Trocas e Devoluções" é sempre incluído por esta função — nunca depende
+  // de uma definição da loja. Ver lib/store/shared/storefront-logic.ts.
+  const visiblePolicyIds = new Set(getVisiblePolicyLinks(paginas).map((link) => link.id));
 
   return (
     <footer className={`bg-background px-5 pt-4 text-footer-foreground sm:px-8 sm:pb-8 sm:pt-6 ${productPage ? "pb-10" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"}`}>
@@ -208,9 +217,12 @@ function StoreFooter({ productPage }: { productPage: boolean }) {
           <div>
             <h2 className="text-xs font-bold uppercase text-foreground">{p?.text.footerHeading ?? "INFORMAÇÕES"}</h2>
             <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
-              {paginas.entrega.mostrar && <li data-sy="link-envios"><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>}
+              {/* `getVisiblePolicyLinks` decide o QUÊ e a ORDEM (ex: "Trocas e
+                  Devoluções" nunca falta); cada <Link> aqui só desenha — não
+                  volta a decidir visibilidade com um `&&` próprio. */}
+              {visiblePolicyIds.has("shipping") && <li data-sy="link-envios"><Link to="/envios-e-entregas" className="transition-colors hover:text-foreground">Envios e Entregas</Link></li>}
               <li data-sy="link-trocas"><Link to="/trocas-e-devolucoes" className="transition-colors hover:text-foreground">Trocas e Devoluções</Link></li>
-              {paginas.termos.mostrar && <li data-sy="link-termos"><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>}
+              {visiblePolicyIds.has("terms") && <li data-sy="link-termos"><Link to="/termos-e-privacidade" className="transition-colors hover:text-foreground">Termos e Privacidade</Link></li>}
             </ul>
           </div>
           {hasSocial && (
