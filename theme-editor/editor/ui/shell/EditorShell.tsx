@@ -390,6 +390,7 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
                 showOverlays: state.ui.showOverlays && !isReadOnlyPreview(state),
                 readOnly: isReadOnlyPreview(state),
                 onCloseOverlay: () => dispatch({ type: "closeOverlay" }),
+                onOpenOverlay: (id: string) => dispatch({ type: "openOverlay", id }),
                 selectedPath: state.selectedPath,
                 onSelect: state.ui.showOverlays ? (path, title, context) => dispatch({ type: "select", path, title, context }) : undefined,
                 onNavigateLink: (link: any) => dispatch({ type: "navigateLink", link }),
