@@ -656,7 +656,7 @@ function PanelContent({ mobileSheet = false, compact = false, previewClosed = fa
           </div>
         </div>
       ) : null}
-      <div className={cn("min-h-0 flex-1 overscroll-contain overflow-y-auto px-4 py-3", mobileSheet && compact && "hidden")}>
+      <div className={cn("min-h-0 flex-1 touch-pan-y overscroll-contain overflow-y-auto px-4 py-3", mobileSheet && "pb-[calc(2rem+env(safe-area-inset-bottom))]", mobileSheet && compact && "hidden")}>
         {frame.kind === "node" ? <NodePanel key={frame.path} path={frame.path} mobileSheet={mobileSheet} /> : null}
         {frame.kind === "sections" ? <SectionsPanel /> : null}
         {frame.kind === "settings" ? <SettingsMenu /> : null}
