@@ -1127,21 +1127,31 @@ function CartDrawerSection({ id }: { id: string }) {
         <Editable path={elementPath(id, "title")} label="Título" as="div"><h2 style={{ fontSize: 18, fontWeight: 600 }}>{title.text || UI_TEXT.cartTitle}</h2></Editable>
         <Editable path={elementPath(id, "description")} label="Descrição" as="div"><p style={{ marginTop: 4, fontSize: 14, color: colors.secondary }}>{description.text || UI_TEXT.cartDescription}</p></Editable>
       </div>
-      <div style={{ flex: 1, padding: 20, display: "grid", gap: 16, alignContent: "start" }}>
-        {lines.map((p) => (
-          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "76px 1fr", gap: 12, borderBottom: `1px solid ${colors.border}`, paddingBottom: 16 }}>
-            <span style={{ width: 76, height: 76, borderRadius: 8, overflow: "hidden", background: colors.gallery }}>{p.images[0] ? <img src={p.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}</span>
-            <span style={{ fontSize: 14 }}><strong style={{ display: "block", fontWeight: 600 }}>{p.name}</strong><span style={{ fontSize: 12, color: colors.secondary }}>{formatPrice(p.price, store.currency)}</span></span>
-          </div>
-        ))}
-      </div>
-      <div style={{ borderTop: `1px solid ${colors.border}`, padding: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, fontSize: 14 }}>
-          <span style={{ color: colors.secondary }}>Subtotal</span>
-          <strong style={{ fontSize: 18 }}>{formatPrice(subtotal, store.currency)}</strong>
+      {lines.length === 0 ? (
+        // Carrinho vazio: só a mensagem — sem Subtotal nem botão de finalizar.
+        <div style={{ flex: 1, padding: 20, display: "grid", placeContent: "center", textAlign: "center", gap: 6 }}>
+          <strong style={{ fontSize: 16, fontWeight: 600 }}>{UI_TEXT.cartEmptyTitle}</strong>
+          <span style={{ fontSize: 14, color: colors.secondary }}>{UI_TEXT.cartEmptyText}</span>
         </div>
-        <ButtonEl path={elementPath(id, "checkout")} label="Botão finalizar" />
-      </div>
+      ) : (
+        <>
+      <div style={{ flex: 1, padding: 20, display: "grid", gap: 16, alignContent: "start" }}>
+          {lines.map((p) => (
+            <div key={p.id} style={{ display: "grid", gridTemplateColumns: "76px 1fr", gap: 12, borderBottom: `1px solid ${colors.border}`, paddingBottom: 16 }}>
+              <span style={{ width: 76, height: 76, borderRadius: 8, overflow: "hidden", background: colors.gallery }}>{p.images[0] ? <img src={p.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}</span>
+              <span style={{ fontSize: 14 }}><strong style={{ display: "block", fontWeight: 600 }}>{p.name}</strong><span style={{ fontSize: 12, color: colors.secondary }}>{formatPrice(p.price, store.currency)}</span></span>
+            </div>
+          ))}
+        </div>
+        <div style={{ borderTop: `1px solid ${colors.border}`, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, fontSize: 14 }}>
+            <span style={{ color: colors.secondary }}>Subtotal</span>
+            <strong style={{ fontSize: 18 }}>{formatPrice(subtotal, store.currency)}</strong>
+          </div>
+          <ButtonEl path={elementPath(id, "checkout")} label="Botão finalizar" />
+        </div>
+        </>
+      )}
     </OverlayShell>
   );
 }
