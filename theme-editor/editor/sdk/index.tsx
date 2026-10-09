@@ -43,6 +43,8 @@ export interface ThemeContextValue {
   onFixedHeightChange?: (height: number) => void;
   /** Camada estável do editor para modais que não devem acompanhar a rolagem da loja. */
   overlayHost?: HTMLElement | null;
+  /** Camada do editor, FORA da área que rola, onde as seções fixas (barra inferior) são desenhadas no telemóvel. */
+  fixedHost?: HTMLElement | null;
 }
 
 /** Estado efémero do preview (nunca guardado). */
@@ -219,7 +221,7 @@ export function SectionShell({
 
 /** Seção fixa: colada ao fundo da área visível do preview (sticky no editor, fixed no live). */
 export function FixedShell({ path, label, children, style }: { path: NodePath; label: string; children: ReactNode; style?: React.CSSProperties }) {
-  const { mode, pinFixedSections, onFixedHeightChange, selectedPath } = useTheme();
+  const { mode, pinFixedSections, onFixedHeightChange, selectedPath, fixedHost } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
   // Só a seção fixa que está a ser editada sobe com o painel (ver `--ed-fixed-lift`).
   const lifted = !!selectedPath && (selectedPath === path || selectedPath.startsWith(`${path}.`));
@@ -231,15 +233,21 @@ export function FixedShell({ path, label, children, style }: { path: NodePath; l
     observer.observe(el);
     measure();
     return () => { observer.disconnect(); onFixedHeightChange(0); };
-  }, [pinFixedSections, onFixedHeightChange]);
+  }, [pinFixedSections, onFixedHeightChange, fixedHost]); // `fixedHost`: o elemento só existe depois da camada montar
   if (mode === "edit" && pinFixedSections) {
-    return (
-      // Colada ao fundo do preview. Com o painel desta seção aberto (telemóvel), sobe tanto
-      // quanto a sheet cresceu, para ficar visível ACIMA dela; ao fechar, volta ao fundo.
-      // A sheet anima a altura e o preview acompanha-a quadro a quadro: sem transição própria.
-      <div ref={ref} data-ed-fixed="" style={{ position: "absolute", left: 0, right: 0, top: "calc(var(--ed-scroll-top, 0px) + var(--ed-fixed-viewport-h, var(--ed-viewport-h, 100vh)))", transform: lifted ? "translateY(calc(-100% - var(--ed-fixed-lift, 0px)))" : "translateY(-100%)", zIndex: 20 }}>
+    // Desenhada numa camada do editor FORA da área que rola (portal em `fixedHost`): fica
+    // parada de verdade enquanto o preview rola. Antes vivia dentro do conteúdo e era
+    // reposicionada por JS a cada evento de scroll — o browser rolava primeiro e o JS
+    // corrigia depois, daí o tremor e o atraso.
+    // Com o painel desta seção aberto sobe tanto quanto a sheet cresceu, para ficar acima
+    // dela; ao fechar, volta ao fundo. A sheet anima a altura e a barra acompanha-a quadro
+    // a quadro: sem transição própria.
+    if (!fixedHost) return null;
+    return createPortal(
+      <div ref={ref} data-ed-fixed="" style={{ position: "absolute", left: 0, right: 0, bottom: 0, pointerEvents: "auto", transform: lifted ? "translateY(calc(-1 * var(--ed-fixed-lift, 0px)))" : undefined, zIndex: 20 }}>
         <SectionShell path={path} label={label} style={style}>{children}</SectionShell>
-      </div>
+      </div>,
+      fixedHost,
     );
   }
   const pos: React.CSSProperties =
