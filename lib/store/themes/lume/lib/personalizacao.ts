@@ -8,7 +8,7 @@ import { sectionTypeOf } from "@/theme-editor/editor/core/resolve";
 import { BUCKETS } from "@/lib/storageBuckets";
 import { LUME_COLOR_VARS } from "./color-vars";
 import { bottomNavVars, isBottomNavTone } from "./bottom-nav-style";
-import { PHOTO_BORDER_PX, photoBorderColor, photoBorderPreset } from "./photo-border";
+import { PHOTO_RADIUS_MAX, photoBorderColor } from "./photo-border";
 import { resolveBottomNavItems, BOTTOM_NAV_DEFAULTS, type BottomNavItemConfig } from "@/lib/store/shared/storefront-logic";
 
 /**
@@ -341,10 +341,10 @@ export function buildLumePersonalizacao(raw: unknown): LumePersonalizacao | null
   if (imgRadius !== null && cur.style.imageRadius !== def.style.imageRadius) rule(frame, [`border-radius:${imgRadius}px`]);
   const bw = num(cur.style.borderWidth, 0, 6);
   if (bw !== null && cur.style.borderWidth !== def.style.borderWidth) rule(frame, [`border-width:${bw}px`]);
-  // Borda da foto: espessura e cor próprias do cartão (só se o lojista as mudou).
-  // A regra "sem borda" vem DEPOIS, para ganhar sempre.
-  const photoPreset = photoBorderPreset(cur.products.card.d.imageBorderWidth);
-  if (photoPreset) rule(frame, [`border-width:${PHOTO_BORDER_PX[photoPreset]}px`]);
+  // Foto do produto: arredondamento e cor da borda próprios do cartão (só se o lojista
+  // os mudou). A regra "sem borda" vem DEPOIS, para ganhar sempre.
+  const photoRadiusPx = typeof cur.products.card.d.imageRadius === "number" ? num(cur.products.card.d.imageRadius, 0, PHOTO_RADIUS_MAX) : null;
+  if (photoRadiusPx !== null) rule(frame, [`border-radius:${photoRadiusPx}px`]);
   const photoColor = hex(photoBorderColor(resolveColor(cur.products.card.d.imageBorderColor, c)));
   if (photoColor) rule(frame, [`border-color:${photoColor}`]);
   if (cur.products.card.d.imageBorder === false) rule(frame, ["border-width:0"]);
