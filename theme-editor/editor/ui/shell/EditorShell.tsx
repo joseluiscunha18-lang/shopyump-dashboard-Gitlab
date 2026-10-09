@@ -341,12 +341,20 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
   }, [state.previewOverlay, dispatch]);
   useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }); }, [state.page]);
   const sheetPad = isDesktop ? "0px" : `${sheetHeight}px`;
+  // Seção fixa em edição (barra inferior): sobe tanto quanto a sheet cresceu acima do tamanho
+  // recolhido (72 px), para ficar acima dela. Só com o painel DESSE nó aberto — com Seções,
+  // Definições ou outro nó, o preview fica como sempre.
+  const topFrame = state.panel.stack[state.panel.stack.length - 1];
+  const fixedLiftPx = isDesktop || topFrame?.kind !== "node" || state.panel.snap === "closed" ? 0 : Math.max(0, sheetHeight - 72) / scale;
 
   // auto-scroll até à seleção
   useEffect(() => {
     if (!state.selectedPath || !scrollRef.current) return;
     const el = scrollRef.current.querySelector(`[data-sy-path="${CSS.escape(state.selectedPath)}"]`) as HTMLElement | null;
     if (!el) return;
+    // Seção fixa fixada ao fundo (telemóvel) nunca rola com a página: não há nada para
+    // levar à vista — quem a mostra é a subida junto da sheet (FixedShell).
+    if (!isDesktop && el.closest("[data-ed-fixed]")) return;
     const container = scrollRef.current;
     const visibleH = isDesktop ? container.clientHeight : Math.max(0, container.clientHeight - sheetHeight - fixedHeight * scale);
     const r = el.getBoundingClientRect();
@@ -370,7 +378,7 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
         style={{ paddingBottom: sheetPad }}
       >
         <div className={cn("mx-auto", isDesktop ? "py-6" : "")} style={{ width: logical * scale }}>
-          <div ref={frameRef} className="relative origin-top-left bg-background shadow-ed-frame" style={{ width: logical, transform: `scale(${scale})`, transformOrigin: "top left", ["--ed-viewport-h" as string]: `${viewportH}px`, ["--ed-fixed-viewport-h" as string]: `${fixedViewportH}px`, ["--ed-sheet-inset" as string]: `${sheetInsetPx}px`, ["--ed-scroll-top" as string]: "0px" } as React.CSSProperties}>
+          <div ref={frameRef} className="relative origin-top-left bg-background shadow-ed-frame" style={{ width: logical, transform: `scale(${scale})`, transformOrigin: "top left", ["--ed-viewport-h" as string]: `${viewportH}px`, ["--ed-fixed-lift" as string]: `${fixedLiftPx}px`, ["--ed-fixed-viewport-h" as string]: `${fixedViewportH}px`, ["--ed-sheet-inset" as string]: `${sheetInsetPx}px`, ["--ed-scroll-top" as string]: "0px" } as React.CSSProperties}>
             <ThemeProvider
               value={{
                 manifest: state.manifest,
