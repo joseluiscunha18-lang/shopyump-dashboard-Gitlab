@@ -730,6 +730,10 @@ function LumeScope({ children, transparent = false }: { children: ReactNode; tra
     ...lumeColorVars(colors),
     "--radius": typeof styleG.radius === "number" ? `${styleG.radius}px` : undefined,
     "--font-sans": bodyFont?.family,
+    // `.theme-lume` pinta sozinho o fundo da loja (theme-lume.css): para peças que flutuam
+    // sobre o preview (barra inferior) tem de ser forçado a transparente, senão aparece um
+    // retângulo do fundo atrás delas.
+    ...(transparent ? { backgroundColor: "transparent" } : {}),
   } as CSSProperties;
   return (
     <div className={transparent ? "theme-lume text-foreground" : "theme-lume bg-background text-foreground"} style={vars}>
