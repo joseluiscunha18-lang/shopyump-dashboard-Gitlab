@@ -18,7 +18,7 @@ import { cn } from "@/theme-editor/lib/utils";
 import type { Device, SettingDef } from "@/theme-editor/editor/contracts/types";
 import { useEditor, useEditorDispatch } from "@/theme-editor/editor/core/store";
 import { isResponsiveValue, pickResponsive, type NodePath } from "@/theme-editor/editor/core/paths";
-import { contrastRatio, hasOverride, rawValue, resolveColor } from "@/theme-editor/editor/core/resolve";
+import { contrastRatio, hasOverride, rawValue, resolveColor, resolveValue, settingsForPath } from "@/theme-editor/editor/core/resolve";
 import { mockAdapter, externalTargetLabel } from "@/theme-editor/mocks/adapter";
 import { NavListControl } from "./NavListControl";
 
@@ -318,21 +318,7 @@ function ControlBody({
         </div>
       );
     case "radius":
-      return (
-        <div className="space-y-2">
-          <Segmented
-            options={[
-              { value: 0, label: "Reto" },
-              { value: 8, label: "Suave" },
-              { value: 20, label: "Redondo" },
-              { value: 999, label: "Pílula" },
-            ]}
-            value={value}
-            onChange={onChange}
-          />
-          <NumberSlider def={{ ...def, min: def.min ?? 0, max: def.max ?? 48 }} value={value} onChange={onChange} path={path} />
-        </div>
-      );
+      return <RadiusField def={def} value={value} onChange={onChange} path={path} />;
     case "shadow":
       return (
         <Segmented
@@ -410,6 +396,37 @@ function Segmented({
           {iconsOnly && o.icon ? null : o.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Arredondamento: Reto · Suave · Redondo · Pílula + slider em px. Com `inheritLabel`
+ * ganha o botão "Da loja" (valor por omissão): enquanto está escolhido, o slider
+ * mostra o valor global da loja, e mexer nele cria um valor próprio.
+ */
+function RadiusField({ def, value, onChange, path }: { def: SettingDef; value: any; onChange: (v: unknown, gestureId?: string) => void; path: NodePath }) {
+  const state = useEditor();
+  const inheriting = !!def.inheritLabel && typeof value !== "number";
+  let shown = value;
+  if (inheriting) {
+    const globalDef = settingsForPath(state.manifest, state.draft, "global.style").find((d) => d.key === def.key);
+    shown = globalDef ? resolveValue(state.manifest, state.draft, "global.style", globalDef, state.device) : 0;
+  }
+  return (
+    <div className="space-y-2">
+      <Segmented
+        options={[
+          ...(def.inheritLabel ? [{ value: "inherit", label: def.inheritLabel }] : []),
+          { value: 0, label: "Reto" },
+          { value: 8, label: "Suave" },
+          { value: 20, label: "Redondo" },
+          { value: 999, label: "Pílula" },
+        ]}
+        value={inheriting ? "inherit" : value}
+        onChange={onChange}
+      />
+      <NumberSlider def={{ ...def, min: def.min ?? 0, max: def.max ?? 48 }} value={shown} onChange={onChange} path={path} />
     </div>
   );
 }
