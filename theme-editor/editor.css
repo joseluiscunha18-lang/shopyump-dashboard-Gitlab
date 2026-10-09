@@ -130,3 +130,9 @@ html:has(.ed-root-page) {
 .ed-panel-actions { display: flex; align-items: center; justify-content: flex-end; }
 .ed-sheet-top-close { position: absolute; right: 6px; top: 0; }
 .ed-store-drawer-close { position: absolute; top: 8px; right: 8px; z-index: 2; color: var(--foreground); background: var(--background); }
+
+/* Gavetas do preview: deslizam ao abrir (menu lateral à esquerda, carrinho à direita) */
+@keyframes ed-overlay-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ed-drawer-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes ed-drawer-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { [data-overlay-scrim], .ed-store-drawer { animation: none !important; } }
