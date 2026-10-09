@@ -31,6 +31,8 @@ export interface ThemeContextValue {
   /** Navegação do preview a partir de um link (menu lateral, barra inferior). */
   onNavigateLink?: (link: any) => void;
   onCloseOverlay?: () => void;
+  /** Abre um painel lateral (carrinho, pesquisa…) no preview — usado pela barra inferior. */
+  onOpenOverlay?: (id: string) => void;
   readOnly?: boolean;
   previewState?: string;
   previewOverlay?: string;
@@ -276,13 +278,19 @@ export function OverlayShell({
       style={{ position: mode === "edit" ? "absolute" : "fixed", inset: 0, height: mode === "edit" ? "100%" : "100vh", zIndex: 40, pointerEvents: "auto" }}
     >
       <div
-        onClick={(e) => { e.stopPropagation(); onCloseOverlay?.(); }}
+        role="button"
+        tabIndex={-1}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCloseOverlay?.(); }}
         aria-label={`Fechar ${label} clicando fora`}
         data-overlay-scrim={id}
-        style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${scrim / 100})` }}
+        style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${scrim / 100})`, pointerEvents: "auto", cursor: "pointer", touchAction: "manipulation" }}
       />
-      <div className="ed-store-drawer" style={{ position: "absolute", overflowY: "auto", maxWidth: "100%", ...panelPos }}>
-        <Button variant="ghost" size="icon" className="ed-store-drawer-close" aria-label={`Fechar ${label}`} onClick={(event) => { event.stopPropagation(); onCloseOverlay?.(); }}><X className="size-5" /></Button>
+      {/* Gavetas laterais (menu, carrinho) encostam ao topo e fecham ao tocar fora.
+          Só os painéis de ecrã inteiro (pesquisa, conta) mantêm o X, pois não têm "fora". */}
+      <div className="ed-store-drawer" style={{ position: "absolute", overflowY: "auto", maxWidth: "100%", paddingTop: side === "full" ? 44 : 0, ...panelPos }}>
+        {side === "full" ? (
+          <Button variant="ghost" size="icon" className="ed-store-drawer-close" aria-label={`Fechar ${label}`} onClick={(event) => { event.stopPropagation(); onCloseOverlay?.(); }}><X className="size-5" /></Button>
+        ) : null}
         <SectionShell path={path} label={label} style={{ minHeight: "100%", ...style }}>
           {children}
         </SectionShell>
