@@ -130,4 +130,3 @@ html:has(.ed-root-page) {
 .ed-panel-actions { display: flex; align-items: center; justify-content: flex-end; }
 .ed-sheet-top-close { position: absolute; right: 6px; top: 0; }
 .ed-store-drawer-close { position: absolute; top: 8px; right: 8px; z-index: 2; color: var(--foreground); background: var(--background); }
-.ed-store-drawer { padding-top: 44px; }
