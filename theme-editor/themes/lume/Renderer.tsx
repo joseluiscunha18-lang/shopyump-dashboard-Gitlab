@@ -1,4 +1,4 @@
-import { createContext, Fragment, useContext, type CSSProperties, type ReactNode } from "react";
+import { createContext, Fragment, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import * as Icons from "lucide-react";
 import {
   Editable,
@@ -1010,9 +1010,47 @@ function BottomNavSection({ id }: { id: string }) {
   return (
     <FixedShell path={sectionPath(id)} label="Barra inferior" style={{ display: "flex", justifyContent: "center", padding: "0 0 16px", pointerEvents: "none" }}>
       <LumeScope transparent>
-        <BottomNavView items={items} style={{ pointerEvents: "auto", ...(bottomNavVars(tone) as CSSProperties) }} />
+        {/* O BottomNavView (da loja) desenha os itens "botão" sozinho, por isso o toque é apanhado aqui,
+            no contentor (fase de captura), e abre o painel certo no preview. `display: contents`: não afeta o layout. */}
+        <div
+          style={{ display: "contents" }}
+          onClickCapture={(e) => {
+            if (!onOpenOverlay) return;
+            const target = e.target as HTMLElement;
+            const byAttr = target.closest?.('[data-sy^="bottom-"]')?.getAttribute("data-sy")?.replace("bottom-", "");
+            let key = byAttr && overlayOf[byAttr] ? byAttr : undefined;
+            if (!key && !byAttr) {
+              // Sem o atributo no DOM: identifica o item pelo texto.
+              const text = (target.closest?.("button, a, [role=button], li") as HTMLElement | null)?.textContent?.trim().toLowerCase();
+              key = text ? items.find((i) => overlayOf[i.key] && typeof i.label === "string" && i.label.trim().toLowerCase() === text)?.key : undefined;
+            }
+            if (!key) return;
+            e.preventDefault();
+            e.stopPropagation();
+            onOpenOverlay(overlayOf[key]!);
+          }}
+        >
+          <BottomNavView items={items} style={{ pointerEvents: "auto", ...(bottomNavVars(tone) as CSSProperties) }} />
+        </div>
       </LumeScope>
     </FixedShell>
+  );
+}
+
+/** Hambúrguer que se transforma em X ao abrir o menu (a animação do menu lateral da loja). */
+function HamburgerToX() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => { const t = requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true))); return () => cancelAnimationFrame(t); }, []);
+  const bar = (transform: string, opacity = 1): CSSProperties => ({
+    position: "absolute", left: 0, top: 9, width: 20, height: 2, borderRadius: 2, background: "currentColor",
+    transform, opacity, transition: "transform 280ms cubic-bezier(.4,0,.2,1), opacity 200ms ease",
+  });
+  return (
+    <span aria-hidden style={{ position: "relative", display: "block", width: 20, height: 20 }}>
+      <span style={bar(open ? "rotate(45deg)" : "translateY(-6px)")} />
+      <span style={bar("none", open ? 0 : 1)} />
+      <span style={bar(open ? "rotate(-45deg)" : "translateY(6px)")} />
+    </span>
   );
 }
 
@@ -1030,7 +1068,7 @@ function SideMenuSection({ id }: { id: string }) {
       {/* Igual à loja: o X fica por cima do hambúrguer (esquerda) e o nome da loja vem logo à direita. */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, height: 40, margin: "-8px 0 36px" }}>
         <button type="button" aria-label="Fechar menu" onClick={(e) => { e.stopPropagation(); onCloseOverlay?.(); }} style={{ display: "grid", placeItems: "center", width: 40, height: 40, marginLeft: -4, opacity: 0.75, background: "none", border: 0, padding: 0, color: "inherit", cursor: "pointer" }}>
-          <Icons.X size={20} strokeWidth={2.25} />
+          <HamburgerToX />
         </button>
         <p style={{ fontSize: 20, fontWeight: 800 }}>{store.name}</p>
       </div>
