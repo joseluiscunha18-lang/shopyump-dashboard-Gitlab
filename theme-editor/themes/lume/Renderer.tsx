@@ -963,7 +963,7 @@ function ReadOnlyPageSection({ id, kind }: { id: string; kind: "checkout" | "acc
  */
 function BottomNavSection({ id }: { id: string }) {
   const v = useNodeValues(sectionPath(id));
-  const { device, manifest, customization, onNavigateLink } = useTheme();
+  const { device, manifest, customization, onNavigateLink, onOpenOverlay } = useTheme();
   const pageKind = usePageKind();
   if (device !== "mobile") return null;
   const cap = manifest.capabilities;
@@ -977,6 +977,8 @@ function BottomNavSection({ id }: { id: string }) {
     cart: <Icons.ShoppingCart className="optical-lg" />,
   };
   const links: Record<string, unknown> = { home: { type: "home" }, wishlist: { type: "themePage", value: "wishlist" } };
+  // Itens da barra inferior que abrem um painel lateral no preview.
+  const overlayOf: Record<string, string> = { cart: "cartDrawer", search: "searchOverlay" };
   const activeKey = pageKind === "home" ? "home" : pageKind === "wishlist" ? "wishlist" : null;
   const items: BottomNavEntry[] = resolveBottomNavItems(stored.items, stored)
     .filter((i) => allowed[i.key])
@@ -988,7 +990,22 @@ function BottomNavSection({ id }: { id: string }) {
       semantics: i.key === "home" || i.key === "wishlist" ? "link" : "button",
       "data-sy": `bottom-${i.key}`,
       // No editor tocar navega (início/favoritos) ou não faz nada: sem router nem carrinho.
-      renderItem: (props) => <span {...props} onClickCapture={() => links[i.key] && onNavigateLink?.(links[i.key])} />,
+      renderItem: (props) => (
+        <span
+          {...props}
+          onClickCapture={(e) => {
+            const ov = overlayOf[i.key];
+            if (ov && onOpenOverlay) {
+              // Não deixa o clique chegar à seção (que selecionaria a barra e fecharia o painel).
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenOverlay(ov);
+              return;
+            }
+            if (links[i.key]) onNavigateLink?.(links[i.key]);
+          }}
+        />
+      ),
     }));
   return (
     <FixedShell path={sectionPath(id)} label="Barra inferior" style={{ display: "flex", justifyContent: "center", padding: "0 0 16px", pointerEvents: "none" }}>
@@ -1002,7 +1019,7 @@ function BottomNavSection({ id }: { id: string }) {
 function SideMenuSection({ id }: { id: string }) {
   const v = useNodeValues(sectionPath(id));
   const colors = useColors();
-  const { store, categories, onNavigateLink } = useTheme();
+  const { store, categories, onNavigateLink, onCloseOverlay } = useTheme();
   const items = ((v.items ?? []) as any[]).filter((i) => !i.hidden);
   const go = (link: unknown) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1012,9 +1029,9 @@ function SideMenuSection({ id }: { id: string }) {
     <OverlayShell id="sideMenu" path={sectionPath(id)} label="Menu lateral" side="left" width={300} scrim={35} style={{ background: colors.background, color: colors.text, padding: 20 }}>
       {/* Igual à loja: o X fica por cima do hambúrguer (esquerda) e o nome da loja vem logo à direita. */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, height: 40, margin: "-8px 0 36px" }}>
-        <span aria-hidden style={{ display: "grid", placeItems: "center", width: 40, height: 40, marginLeft: -4, opacity: 0.75 }}>
+        <button type="button" aria-label="Fechar menu" onClick={(e) => { e.stopPropagation(); onCloseOverlay?.(); }} style={{ display: "grid", placeItems: "center", width: 40, height: 40, marginLeft: -4, opacity: 0.75, background: "none", border: 0, padding: 0, color: "inherit", cursor: "pointer" }}>
           <Icons.X size={20} strokeWidth={2.25} />
-        </span>
+        </button>
         <p style={{ fontSize: 20, fontWeight: 800 }}>{store.name}</p>
       </div>
       <nav style={{ display: "grid", gap: 2 }}>
