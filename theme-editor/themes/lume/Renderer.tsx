@@ -1010,7 +1010,13 @@ function SideMenuSection({ id }: { id: string }) {
   };
   return (
     <OverlayShell id="sideMenu" path={sectionPath(id)} label="Menu lateral" side="left" width={300} scrim={35} style={{ background: colors.background, color: colors.text, padding: 20 }}>
-      <p style={{ fontSize: 20, fontWeight: 800, marginBottom: 32 }}>{store.name}</p>
+      {/* Igual à loja: o X fica por cima do hambúrguer (esquerda) e o nome da loja vem logo à direita. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, height: 40, margin: "-8px 0 36px" }}>
+        <span aria-hidden style={{ display: "grid", placeItems: "center", width: 40, height: 40, marginLeft: -4, opacity: 0.75 }}>
+          <Icons.X size={20} strokeWidth={2.25} />
+        </span>
+        <p style={{ fontSize: 20, fontWeight: 800 }}>{store.name}</p>
+      </div>
       <nav style={{ display: "grid", gap: 2 }}>
         {items.map((it) => (
           <span key={it.id} onClick={go(it.link)} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 6, fontSize: 18, color: colors.secondary, fontWeight: it.link?.value === "home" ? 700 : 500 }}>
