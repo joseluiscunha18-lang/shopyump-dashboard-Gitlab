@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Eye, EyeOff, Copy, Trash2, Plus, MoreHorizontal, GripVertical, Image as ImageIcon, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/theme-editor/ui/button";
 import { Switch } from "@/theme-editor/ui/switch";
@@ -32,10 +32,38 @@ const GROUP_LABELS: Record<string, string> = {
 };
 const GROUP_ORDER = ["layout", "spacing", "typography", "appearance", "responsive", "behavior", "advanced", "content"];
 
+/**
+ * Rola o painel para mostrar o que acabou de abrir. Sem isto, abrir "Mais opções" ou
+ * um grupo numa sheet de telemóvel já no limite não mostrava nada: o conteúdo nascia
+ * fora do ecrã e a pessoa tinha de rolar à mão para perceber que tinha aberto.
+ * Espera `delay` (a sheet anima a altura) e respeita "reduzir movimento".
+ */
+function useRevealOnOpen<T extends HTMLElement>(open: boolean, delay = 0) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    if (!open) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const t = window.setTimeout(() => {
+      // Rola só o painel (não o ecrã inteiro): leva o topo do bloco aberto ao topo da área visível.
+      const el = ref.current;
+      const box = el?.closest<HTMLElement>(".overflow-y-auto");
+      if (!el || !box) return;
+      const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+      box.scrollTo({ top: Math.max(0, top), behavior: reduce ? "auto" : "smooth" });
+    }, delay);
+    return () => window.clearTimeout(t);
+  }, [open, delay]);
+  return ref;
+}
+
 export function SettingsList({ path, mobilePeek = false }: { path: NodePath; mobilePeek?: boolean }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const [moreOpen, setMoreOpen] = useState(false);
+  // Acordeão: só um grupo (Layout, Tipografia…) aberto de cada vez.
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [moreDelay, setMoreDelay] = useState(0);
+  const moreRef = useRevealOnOpen<HTMLDivElement>(moreOpen, moreDelay);
   const defs = settingsForPath(state.manifest, state.draft, path);
   const p = parsePath(path);
   const blockCount = p?.sectionId ? blockIdsOf(state.manifest, state.draft, p.sectionId).length : 0;
@@ -58,20 +86,23 @@ export function SettingsList({ path, mobilePeek = false }: { path: NodePath; mob
         <ControlRow key={d.key} def={d} path={path} />
       ))}
       {groups.length ? (
-        <div className="mt-3 border-t border-border pt-2">
+        <div ref={moreRef} className="mt-3 scroll-mt-2 border-t border-border pt-2">
           <button
             className="flex w-full items-center gap-2 py-2 text-sm font-semibold"
             onClick={() => {
               const opening = !moreOpen;
+              const growing = opening && state.panel.snap === "peek";
+              setMoreDelay(growing ? 280 : 0);
               setMoreOpen(opening);
-              if (opening && state.panel.snap === "peek") dispatch({ type: "setSnap", snap: "medium" });
+              if (!opening) setOpenGroup(null);
+              if (growing) dispatch({ type: "setSnap", snap: "medium" });
             }}
           >
             {moreOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />} Mais opções
           </button>
           {moreOpen
             ? groups.map(({ g, items }) => (
-                <Group key={g} label={GROUP_LABELS[g]} items={items} path={path} onReset={() => {
+                <Group key={g} label={GROUP_LABELS[g]} items={items} path={path} open={openGroup === g} onToggle={() => setOpenGroup(openGroup === g ? null : g)} onReset={() => {
                   for (const d of items) dispatch({ type: "resetKey", path, key: d.key });
                 }} />
               ))
@@ -82,14 +113,14 @@ export function SettingsList({ path, mobilePeek = false }: { path: NodePath; mob
   );
 }
 
-function Group({ label, items, path, onReset }: { label: string; items: SettingDef[]; path: NodePath; onReset: () => void }) {
+function Group({ label, items, path, open, onToggle, onReset }: { label: string; items: SettingDef[]; path: NodePath; open: boolean; onToggle: () => void; onReset: () => void }) {
   const { manifest, draft } = useEditor();
-  const [open, setOpen] = useState(false);
+  const ref = useRevealOnOpen<HTMLDivElement>(open);
   const changed = items.some((d) => hasOverride(manifest, draft, path, d));
   return (
-    <div className="border-b border-border/60">
+    <div ref={ref} className="scroll-mt-2 border-b border-border/60">
       <div className="flex items-center justify-between">
-        <button className="flex flex-1 items-center gap-2 py-2.5 text-sm" onClick={() => setOpen(!open)}>
+        <button className="flex flex-1 items-center gap-2 py-2.5 text-sm" aria-expanded={open} onClick={onToggle}>
           {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
           {label}
           {changed ? <span className="size-1.5 rounded-full bg-primary" /> : null}
