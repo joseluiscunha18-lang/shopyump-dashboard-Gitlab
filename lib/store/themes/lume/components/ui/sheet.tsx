@@ -54,21 +54,30 @@ interface SheetContentProps
     React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
   overlayClassName?: string;
+  /**
+   * Lado do botão de fechar. "right" (por omissão) é o de sempre. "left" põe o X
+   * exatamente por cima do botão do menu hambúrguer do cabeçalho (40 px, a 16 px da
+   * esquerda, 24 px a partir de `sm`): abre-se e fecha-se tocando no mesmo sítio.
+   */
+  closeSide?: "left" | "right";
 }
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, overlayClassName, children, ...props }, ref) => (
+>(({ side = "right", className, overlayClassName, closeSide = "right", children, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay className={overlayClassName} />
     <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
       <SheetPrimitive.Close
         type="button"
         aria-label="Fechar menu"
-        className="absolute right-2 top-2 z-10 grid size-12 cursor-pointer place-items-center rounded-md opacity-75 transition-opacity hover:opacity-100 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none disabled:pointer-events-none"
+        className={cn(
+          "absolute z-10 grid cursor-pointer place-items-center opacity-75 transition-opacity hover:opacity-100 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none disabled:pointer-events-none",
+          closeSide === "left" ? "left-4 top-3 size-10 rounded-full sm:left-6" : "right-2 top-2 size-12 rounded-md",
+        )}
       >
-        <X className="size-[22px]" strokeWidth={2.25} />
+        <X className={closeSide === "left" ? "size-5" : "size-[22px]"} strokeWidth={2.25} />
         <span className="sr-only">Fechar</span>
       </SheetPrimitive.Close>
       {children}
