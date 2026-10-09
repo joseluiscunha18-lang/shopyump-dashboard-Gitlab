@@ -1116,35 +1116,21 @@ function SearchOverlaySection({ id }: { id: string }) {
 
 function CartDrawerSection({ id }: { id: string }) {
   const colors = useColors();
-  const { products, store } = useTheme();
   const title = useNodeValues(elementPath(id, "title"));
   const description = useNodeValues(elementPath(id, "description"));
-  const lines = products.slice(0, 2);
-  const subtotal = lines.reduce((n, p) => n + p.price, 0);
+  // O carrinho do editor é sempre o estado vazio (como na loja sem itens):
+  // sem produtos de exemplo, sem Subtotal e sem botão de finalizar.
   return (
     <OverlayShell id="cartDrawer" path={sectionPath(id)} label="Carrinho lateral" side="right" width={340} scrim={35} style={{ background: colors.background, color: colors.text, display: "flex", flexDirection: "column" }}>
       <div style={{ borderBottom: `1px solid ${colors.border}`, padding: "20px" }}>
         <Editable path={elementPath(id, "title")} label="Título" as="div"><h2 style={{ fontSize: 18, fontWeight: 600 }}>{title.text || UI_TEXT.cartTitle}</h2></Editable>
         <Editable path={elementPath(id, "description")} label="Descrição" as="div"><p style={{ marginTop: 4, fontSize: 14, color: colors.secondary }}>{description.text || UI_TEXT.cartDescription}</p></Editable>
       </div>
-      <div style={{ flex: 1, padding: 20, display: "grid", gap: 16, alignContent: "start" }}>
-        {lines.map((p) => (
-          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "76px 1fr", gap: 12, borderBottom: `1px solid ${colors.border}`, paddingBottom: 16 }}>
-            <span style={{ width: 76, height: 76, borderRadius: 8, overflow: "hidden", background: colors.gallery }}>{p.images[0] ? <img src={p.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}</span>
-            <span style={{ fontSize: 14 }}><strong style={{ display: "block", fontWeight: 600 }}>{p.name}</strong><span style={{ fontSize: 12, color: colors.secondary }}>{formatPrice(p.price, store.currency)}</span></span>
-          </div>
-        ))}
+      <div style={{ flex: 1, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 288 }}>
+        <span style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: 999, background: colors.gallery }}><Icons.ShoppingBag size={24} /></span>
+        <h3 style={{ marginTop: 16, fontSize: 16, fontWeight: 600 }}>{UI_TEXT.cartEmptyTitle}</h3>
+        <p style={{ marginTop: 4, maxWidth: 224, fontSize: 14, color: colors.secondary }}>{UI_TEXT.cartEmptyText}</p>
       </div>
-      {/* Sem itens no carrinho: sem Subtotal nem botão de finalizar (igual à loja). */}
-      {lines.length > 0 ? (
-        <div style={{ borderTop: `1px solid ${colors.border}`, padding: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, fontSize: 14 }}>
-            <span style={{ color: colors.secondary }}>Subtotal</span>
-            <strong style={{ fontSize: 18 }}>{formatPrice(subtotal, store.currency)}</strong>
-          </div>
-          <ButtonEl path={elementPath(id, "checkout")} label="Botão finalizar" />
-        </div>
-      ) : null}
     </OverlayShell>
   );
 }
