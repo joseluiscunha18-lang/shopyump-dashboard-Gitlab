@@ -311,6 +311,7 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
   const scrollRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
+  const [fixedHost, setFixedHost] = useState<HTMLDivElement | null>(null);
   const [avail, setAvail] = useState(390);
   const [boxH, setBoxH] = useState(800);
   const [fixedHeight, setFixedHeight] = useState(0);
@@ -329,7 +330,6 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
   const sheetRatio = isDesktop ? 0 : Math.min(1, sheetHeight / boxH);
   const sheetInsetPx = (boxH * sheetRatio) / scale;
   const viewportH = (boxH * (1 - sheetRatio)) / scale;
-  const fixedViewportH = (boxH - (isDesktop ? 0 : 72)) / scale;
   useEffect(() => { onFixedReserve(isDesktop ? 0 : fixedHeight * scale); }, [fixedHeight, scale, isDesktop, onFixedReserve]);
   const page = state.manifest.pages.find((p) => p.id === state.page);
   const overlay = state.manifest.overlays?.find((o) => o.id === state.previewOverlay);
@@ -369,16 +369,14 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
       <div
         ref={scrollRef}
         className="absolute inset-0 overflow-y-auto"
-        onScroll={(e) => {
-          const offset = Math.max(0, e.currentTarget.scrollTop / scale - (isDesktop ? 24 / scale : 0));
-          frameRef.current?.style.setProperty("--ed-scroll-top", `${offset}px`);
+        onScroll={() => {
           if (!state.ui.hintSeen) dispatch({ type: "markHintSeen" });
         }}
         onClick={() => dispatch({ type: "closePanel" })}
         style={{ paddingBottom: sheetPad }}
       >
         <div className={cn("mx-auto", isDesktop ? "py-6" : "")} style={{ width: logical * scale }}>
-          <div ref={frameRef} className="relative origin-top-left bg-background shadow-ed-frame" style={{ width: logical, transform: `scale(${scale})`, transformOrigin: "top left", ["--ed-viewport-h" as string]: `${viewportH}px`, ["--ed-fixed-lift" as string]: `${fixedLiftPx}px`, ["--ed-fixed-viewport-h" as string]: `${fixedViewportH}px`, ["--ed-sheet-inset" as string]: `${sheetInsetPx}px`, ["--ed-scroll-top" as string]: "0px" } as React.CSSProperties}>
+          <div ref={frameRef} className="relative origin-top-left bg-background shadow-ed-frame" style={{ width: logical, transform: `scale(${scale})`, transformOrigin: "top left", ["--ed-viewport-h" as string]: `${viewportH}px`, ["--ed-sheet-inset" as string]: `${sheetInsetPx}px`, ["--ed-scroll-top" as string]: "0px" } as React.CSSProperties}>
             <ThemeProvider
               value={{
                 manifest: state.manifest,
@@ -406,6 +404,7 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
                 fixedHeight,
                 onFixedHeightChange: setFixedHeight,
                 overlayHost,
+                fixedHost,
               }}
             >
               <ThemeRenderer themeId={state.manifest.id} pageId={state.page} />
@@ -422,6 +421,16 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
           style={{ position: "relative", width: logical, height: viewportH + (isDesktop ? 0 : 24 / scale), transform: `scale(${scale})`, transformOrigin: "top left" }}
         />
       </div>
+      {/* Camada das seções fixas (barra inferior) no telemóvel: fora da área que rola, por isso não treme.
+          Assenta 72 px acima do fundo (sheet recolhida); a subida com o painel vai em --ed-fixed-lift. */}
+      {!isDesktop ? (
+        <div className="pointer-events-none absolute z-30" style={{ left: "50%", width: logical * scale, bottom: 72, height: 0, transform: "translateX(-50%)" }}>
+          <div
+            ref={setFixedHost}
+            style={{ position: "absolute", left: 0, bottom: 0, width: logical, height: 0, transform: `scale(${scale})`, transformOrigin: "bottom left", ["--ed-fixed-lift" as string]: `${fixedLiftPx}px` }}
+          />
+        </div>
+      ) : null}
       {page?.previewStates?.length || page?.previewNeeds === "search" ? (
         <div className={cn("absolute left-2 z-10 flex flex-col items-start gap-1.5", isDesktop ? "top-2" : "top-12")} onClick={(e) => e.stopPropagation()}>
           {page.previewStates?.length ? (
