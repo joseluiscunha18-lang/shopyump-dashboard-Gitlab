@@ -146,9 +146,10 @@ function ShellContent({ children }: { children: ReactNode }) {
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Abrir menu"><MenuTwoLines size={20} strokeWidth={2.25} /></Button>
               </SheetTrigger>
-              <SheetContent side="left" overlayClassName="menu-backdrop" className="menu-panel w-[min(84vw,340px)] border-r border-border p-5">
-                <SheetTitle className="menu-stagger-title text-xl font-extrabold">{nomeLoja}</SheetTitle>
-                <nav className="menu-stagger-list mt-10 grid gap-0.5">
+              <SheetContent side="left" closeSide="left" overlayClassName="menu-backdrop" className="menu-panel w-[min(84vw,340px)] border-r border-border p-5">
+                {/* O X fica por cima do hambúrguer (esquerda); o nome da loja vem logo à direita dele, na mesma linha. */}
+                <SheetTitle className="menu-stagger-title -mt-2 ml-12 flex h-10 items-center text-xl font-extrabold sm:ml-14">{nomeLoja}</SheetTitle>
+                <nav className="menu-stagger-list mt-9 grid gap-0.5">
                   {p?.menuItems ? p.menuItems.map((item, index) => <MenuEntry key={`${item.label}-${index}`} item={item} pathname={pathname} onNavigate={() => setMenuOpen(false)} />) : <>
                   {navItems.map((item) => {
                     const active = pathname === item.to;
