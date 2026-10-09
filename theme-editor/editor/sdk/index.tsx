@@ -219,8 +219,10 @@ export function SectionShell({
 
 /** Seção fixa: colada ao fundo da área visível do preview (sticky no editor, fixed no live). */
 export function FixedShell({ path, label, children, style }: { path: NodePath; label: string; children: ReactNode; style?: React.CSSProperties }) {
-  const { mode, pinFixedSections, onFixedHeightChange } = useTheme();
+  const { mode, pinFixedSections, onFixedHeightChange, selectedPath } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
+  // Só a seção fixa que está a ser editada sobe com o painel (ver `--ed-fixed-lift`).
+  const lifted = !!selectedPath && (selectedPath === path || selectedPath.startsWith(`${path}.`));
   useEffect(() => {
     const el = ref.current;
     if (!pinFixedSections || !el || !onFixedHeightChange) return;
@@ -232,7 +234,10 @@ export function FixedShell({ path, label, children, style }: { path: NodePath; l
   }, [pinFixedSections, onFixedHeightChange]);
   if (mode === "edit" && pinFixedSections) {
     return (
-      <div ref={ref} style={{ position: "absolute", left: 0, right: 0, top: "calc(var(--ed-scroll-top, 0px) + var(--ed-fixed-viewport-h, var(--ed-viewport-h, 100vh)))", transform: "translateY(-100%)", zIndex: 20 }}>
+      // Colada ao fundo do preview. Com o painel desta seção aberto (telemóvel), sobe tanto
+      // quanto a sheet cresceu, para ficar visível ACIMA dela; ao fechar, volta ao fundo.
+      // A sheet anima a altura e o preview acompanha-a quadro a quadro: sem transição própria.
+      <div ref={ref} data-ed-fixed="" style={{ position: "absolute", left: 0, right: 0, top: "calc(var(--ed-scroll-top, 0px) + var(--ed-fixed-viewport-h, var(--ed-viewport-h, 100vh)))", transform: lifted ? "translateY(calc(-100% - var(--ed-fixed-lift, 0px)))" : "translateY(-100%)", zIndex: 20 }}>
         <SectionShell path={path} label={label} style={style}>{children}</SectionShell>
       </div>
     );
