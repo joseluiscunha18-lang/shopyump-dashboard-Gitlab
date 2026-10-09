@@ -403,12 +403,11 @@ const baseManifest: ThemeManifest = {
             { key: "nameSize", label: "Tamanho do nome", control: "slider", tier: A, group: "typography", default: 14, min: 11, max: 24, unit: "px" },
             { key: "priceSize", label: "Tamanho do preço", control: "slider", tier: A, group: "typography", default: 14, min: 12, max: 32, unit: "px" },
             { key: "imageBg", label: "Fundo da foto", control: "color", tier: A, group: "appearance", default: "token:gallery" },
-            { key: "imageRadius", label: "Arredondamento", help: "«Da loja» segue o Arredondamento das imagens do Estilo.", control: "radius", tier: A, group: "appearance", default: "inherit", inheritLabel: "Da loja", min: 0, max: 32, unit: "px" },
+            { key: "imageRadius", label: "Arredondamento", control: "radius", tier: A, group: "appearance", default: "inherit", inheritLabel: "Padrão", min: 0, max: 32, unit: "px" },
             { key: "imageBorder", label: "Borda da foto", control: "toggle", tier: A, group: "appearance", default: true },
             {
               key: "imageBorderColor",
               label: "Cor da borda",
-              help: "Só muda a borda das fotos dos produtos.",
               control: "color",
               tier: A,
               group: "appearance",
