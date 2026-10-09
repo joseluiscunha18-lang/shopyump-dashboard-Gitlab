@@ -128,6 +128,8 @@ export interface SettingDef {
   externalTarget?: ExternalTarget;
   linkTypes?: LinkType[];
   navList?: NavListSpec;
+  /** Só `radius`: acrescenta um primeiro botão (ex.: "Da loja") que guarda "inherit" = seguir o valor global. */
+  inheritLabel?: string;
   note?: string;
   mobilePeek?: boolean;
   assist?: {
