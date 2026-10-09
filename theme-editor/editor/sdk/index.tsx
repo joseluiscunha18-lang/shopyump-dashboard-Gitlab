@@ -283,11 +283,11 @@ export function OverlayShell({
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCloseOverlay?.(); }}
         aria-label={`Fechar ${label} clicando fora`}
         data-overlay-scrim={id}
-        style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${scrim / 100})`, pointerEvents: "auto", cursor: "pointer", touchAction: "manipulation" }}
+        style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${scrim / 100})`, pointerEvents: "auto", cursor: "pointer", touchAction: "manipulation", animation: "ed-overlay-fade 240ms ease-out" }}
       />
       {/* Gavetas laterais (menu, carrinho) encostam ao topo e fecham ao tocar fora.
           Só os painéis de ecrã inteiro (pesquisa, conta) mantêm o X, pois não têm "fora". */}
-      <div className="ed-store-drawer" style={{ position: "absolute", overflowY: "auto", maxWidth: "100%", paddingTop: side === "full" ? 44 : 0, ...panelPos }}>
+      <div className="ed-store-drawer" style={{ position: "absolute", overflowY: "auto", maxWidth: "100%", paddingTop: side === "full" ? 44 : 0, animation: side === "left" ? "ed-drawer-in-left 280ms cubic-bezier(.4,0,.2,1)" : side === "right" ? "ed-drawer-in-right 280ms cubic-bezier(.4,0,.2,1)" : undefined, ...panelPos }}>
         {side === "full" ? (
           <Button variant="ghost" size="icon" className="ed-store-drawer-close" aria-label={`Fechar ${label}`} onClick={(event) => { event.stopPropagation(); onCloseOverlay?.(); }}><X className="size-5" /></Button>
         ) : null}
