@@ -18,17 +18,22 @@ export type EstadoPedido = PedidoStatus;
 const POR_PAGINA = 50;
 
 /** Código curto e legível do pedido (o id real é um UUID). */
-const numero = (p: Pedido) => `#${p.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+const numero = (p: Pedido) => `#${String(p.id ?? "").replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 const itensDe = (p: Pedido) => (Array.isArray(p.itens) ? p.itens : []);
-const subtotal = (p: Pedido) => itensDe(p).reduce((s, i) => s + (i.preco ?? 0) * (i.quantidade ?? 0), 0);
+const subtotal = (p: Pedido) => itensDe(p).reduce((s, i) => s + (Number(i.preco) || 0) * (Number(i.quantidade) || 0), 0);
 /** Entrega = o que o total tem a mais do que os produtos (o pedido não guarda a entrega à parte). */
 const entregaDe = (p: Pedido) => Math.max(0, (p.total ?? 0) - subtotal(p));
 const varianteDe = (i: Pedido["itens"][number]) => [i.corSelecionada, i.tamanhoSelecionado].filter(Boolean).join(" / ");
 
-const mzn = (v: number) => `${v.toLocaleString("pt-MZ")} MZN`;
-const dataCurta = (iso: string) => new Date(iso).toLocaleDateString("pt-MZ", { day: "numeric", month: "short" });
-const dataLonga = (iso: string) =>
-  new Date(iso).toLocaleString("pt-MZ", { dateStyle: "long", timeStyle: "short" });
+const mzn = (v: number | string | null | undefined) => `${(Number(v) || 0).toLocaleString("pt-MZ")} MZN`;
+const dataCurta = (iso: string | null | undefined) => {
+  const d = iso ? new Date(iso) : null;
+  return d && !isNaN(d.getTime()) ? d.toLocaleDateString("pt-MZ", { day: "numeric", month: "short" }) : "—";
+};
+const dataLonga = (iso: string | null | undefined) => {
+  const d = iso ? new Date(iso) : null;
+  return d && !isNaN(d.getTime()) ? d.toLocaleString("pt-MZ", { dateStyle: "long", timeStyle: "short" }) : "—";
+};
 
 const ESTADO: Record<EstadoPedido, { label: string; cls: string }> = {
   pendente: { label: "Novo", cls: "text-brand font-bold" },
@@ -116,7 +121,7 @@ export function PedidosPage() {
 
   useEffect(() => setMostrar(POR_PAGINA), [q, filtro]);
 
-  const ordenados = useMemo(() => [...pedidos].sort((a, b) => b.created_at.localeCompare(a.created_at)), [pedidos]);
+  const ordenados = useMemo(() => [...pedidos].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")), [pedidos]);
   const visiveis = useMemo(() => {
     const t = q.trim().toLowerCase().replace(/^#/, "");
     return ordenados.filter(
@@ -278,9 +283,9 @@ export function PedidosPage() {
                   <li key={`${i.id}-${idx}`} className="flex justify-between gap-3 py-2.5">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">{i.nome}</p>
-                      <p className="text-xs text-muted-foreground">{varianteDe(i) ? `${varianteDe(i)} · ` : ""}{i.quantidade} × {mzn(i.preco)}</p>
+                      <p className="text-xs text-muted-foreground">{varianteDe(i) ? `${varianteDe(i)} · ` : ""}{i.quantidade ?? 0} × {mzn(i.preco)}</p>
                     </div>
-                    <p className="shrink-0 text-sm font-semibold text-foreground">{mzn(i.preco * i.quantidade)}</p>
+                    <p className="shrink-0 text-sm font-semibold text-foreground">{mzn((Number(i.preco) || 0) * (Number(i.quantidade) || 0))}</p>
                   </li>
                 ))}
               </ul>
