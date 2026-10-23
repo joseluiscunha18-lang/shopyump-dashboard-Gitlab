@@ -2,7 +2,7 @@ import { createFileRoute } from '@/lib/route-compat';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { ForgotForm } from '@/components/auth/ForgotForm';
 
-export const Route = createFileRoute('/recuperar')({
+export const Route = createFileRoute('/forgot-password')({
   ssr: false,
   head: () => ({ meta: [
     { title: 'Recuperar senha | Shopyump' },

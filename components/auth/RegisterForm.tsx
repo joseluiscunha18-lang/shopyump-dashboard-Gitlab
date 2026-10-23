@@ -36,7 +36,7 @@ export function RegisterForm() {
       setLoading(false);
       return;
     }
-    window.location.assign('/verificar'); // URL limpo (sem /dashboard)
+    window.location.assign('/verify'); // URL limpo (sem /dashboard)
   }
 
   return (

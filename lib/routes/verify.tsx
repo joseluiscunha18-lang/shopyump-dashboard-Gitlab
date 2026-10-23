@@ -2,7 +2,7 @@ import { createFileRoute } from '@/lib/route-compat';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { VerifyNotice } from '@/components/auth/VerifyNotice';
 
-export const Route = createFileRoute('/verificar')({
+export const Route = createFileRoute('/verify')({
   ssr: false,
   head: () => ({ meta: [
     { title: 'Confirmar e-mail | Shopyump' },

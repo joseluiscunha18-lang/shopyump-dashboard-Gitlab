@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-const AUTH_PATHS = ['/login', '/registar', '/verificar', '/recuperar', '/nova-senha'];
+const AUTH_PATHS = ['/login', '/register', '/verify', '/forgot-password', '/reset-password'];
 const ONBOARDING_PATH = '/onboarding';
 
 /**
@@ -70,7 +70,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Signed in — figure out onboarding state once, reused by every branch.
-  // Rotas fora do painel (login/registar/onboarding) sempre confirmam na
+  // Rotas fora do painel (login/register/onboarding) sempre confirmam na
   // base de dados, porque é exatamente aí que `hasLoja` pode ter acabado
   // de mudar. Dentro do painel, um cookie válido poupa as duas queries.
   // O cookie guarda `<id do utilizador>:1`. Só se confia num "sim" que pertence a ESTE
@@ -94,8 +94,8 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // /nova-senha: quem abre o link do e-mail já tem sessão (de recuperação) e tem de ficar aqui.
-  if (pathname.startsWith('/nova-senha')) return supabaseResponse;
+  // /reset-password: quem abre o link do e-mail já tem sessão (de recuperação) e tem de ficar aqui.
+  if (pathname.startsWith('/reset-password')) return supabaseResponse;
 
   if (isAuthPath) return go('/dashboard');
 

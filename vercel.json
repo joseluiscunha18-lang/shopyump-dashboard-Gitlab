@@ -1,4 +1,46 @@
 {
+  "redirects": [
+    {
+      "source": "/registar",
+      "destination": "/register",
+      "permanent": false
+    },
+    {
+      "source": "/dashboard/registar",
+      "destination": "/register",
+      "permanent": false
+    },
+    {
+      "source": "/verificar",
+      "destination": "/verify",
+      "permanent": false
+    },
+    {
+      "source": "/dashboard/verificar",
+      "destination": "/verify",
+      "permanent": false
+    },
+    {
+      "source": "/recuperar",
+      "destination": "/forgot-password",
+      "permanent": false
+    },
+    {
+      "source": "/dashboard/recuperar",
+      "destination": "/forgot-password",
+      "permanent": false
+    },
+    {
+      "source": "/nova-senha",
+      "destination": "/reset-password",
+      "permanent": false
+    },
+    {
+      "source": "/dashboard/nova-senha",
+      "destination": "/reset-password",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/:path((?!dashboard|_next|favicon\\.ico).*)",
@@ -6,7 +48,7 @@
         {
           "type": "header",
           "key": "x-shop-host",
-          "value": "(?!(?:www|app|api|admin|dashboard|painel|mail|email|cdn|static|assets|status|help|ajuda|support|suporte|blog|loja|lojas|temas|login|registar|onboarding)\\.)(?<tenant>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.shopyump\\.com"
+          "value": "(?!(?:www|app|api|admin|dashboard|painel|mail|email|cdn|static|assets|status|help|ajuda|support|suporte|blog|loja|lojas|temas|login|registar|register|verify|onboarding)\\.)(?<tenant>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.shopyump\\.com"
         }
       ],
       "destination": "/dashboard/loja/:tenant/:path*"
@@ -16,13 +58,13 @@
       "has": [
         {
           "type": "host",
-          "value": "(?!(?:www|app|api|admin|dashboard|painel|mail|email|cdn|static|assets|status|help|ajuda|support|suporte|blog|loja|lojas|temas|login|registar|onboarding)\\.)(?<tenant>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.shopyump\\.com"
+          "value": "(?!(?:www|app|api|admin|dashboard|painel|mail|email|cdn|static|assets|status|help|ajuda|support|suporte|blog|loja|lojas|temas|login|registar|register|verify|onboarding)\\.)(?<tenant>[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.shopyump\\.com"
         }
       ],
       "destination": "/dashboard/loja/:tenant/:path*"
     },
     {
-      "source": "/:page(login|registar|verificar|recuperar|nova-senha|onboarding)",
+      "source": "/:page(login|register|verify|forgot-password|reset-password|onboarding)",
       "destination": "/dashboard/:page"
     }
   ]

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { confirmarCodigo, criarConta, entrarComSenha, metodoDaConta, reenviarCodigo } from '@/lib/auth/client';
 import { AuthButton, AuthField, AuthHeading, BackButton, Divider } from './AuthUI';
@@ -10,7 +9,7 @@ import { GoogleAuthButton } from './GoogleAuthButton';
 type Step = 'email' | 'google' | 'password' | 'create' | 'code';
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
-/** Entrar (/login) ou Criar conta (/registar): e-mail primeiro; contas Gmail continuam com Google. */
+/** Entrar (/login) ou Criar conta (/register): e-mail primeiro; contas Gmail continuam com Google. */
 export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('email');
@@ -69,8 +68,8 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
 
   const title = mode === 'login' ? 'Entrar' : 'Crie sua conta';
   const footer = mode === 'login'
-    ? <>Não tem uma conta? <Link href="/registar" className="text-foreground underline underline-offset-4">Crie sua conta</Link></>
-    : <>Já tem uma conta? <Link href="/login" className="text-foreground underline underline-offset-4">Entrar</Link></>;
+    ? <>Não tem uma conta? <a href="/register" className="text-foreground underline underline-offset-4">Crie sua conta</a></>
+    : <>Já tem uma conta? <a href="/login" className="text-foreground underline underline-offset-4">Entrar</a></>;
   const bottom = (
     <>
       <p className="mt-6 text-center text-[17px] text-muted-foreground">{footer}</p>
@@ -141,7 +140,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
         <div className="mt-5 space-y-5">
           <AuthField label="Senha" type="password" placeholder="Senha" autoComplete="current-password" autoFocus value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
           <AuthButton type="submit" loading={loading} disabled={!password} className="rounded-full">Entrar</AuthButton>
-          <Link href="/recuperar" className="block text-center text-[14px] font-semibold text-foreground underline underline-offset-4 py-1">Esqueceu a senha?</Link>
+          <a href="/forgot-password" className="block text-center text-[14px] font-semibold text-foreground underline underline-offset-4 py-1">Esqueceu a senha?</a>
         </div>
         {bottom}
       </form>
@@ -183,7 +182,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     );
   }
 
-  return <CodeStep email={email} notice={notice} onBack={() => go('email')} onDone={() => { router.push('/onboarding'); router.refresh(); }} />;
+  return <CodeStep email={email} notice={notice} onBack={() => go('email')} onDone={() => { window.location.assign('/onboarding'); }} />;
 }
 
 export function CodeStep({ email, notice, onBack, onDone }: { email: string; notice?: string; onBack: () => void; onDone: () => void }) {

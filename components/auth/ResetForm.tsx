@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { definirNovaSenha, terminarSessao } from '@/lib/auth/client';
 import { AuthButton, AuthField, AuthHeading } from './AuthUI';
 
@@ -10,7 +9,6 @@ export function ResetForm() {
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
   const missing = [password.length < 8 && 'pelo menos 8 caracteres', !/\d/.test(password) && 'um número (0-9)'].filter(Boolean) as string[];
   const mismatch = confirm.length > 0 && confirm !== password;
   const valid = missing.length === 0 && confirm === password;
@@ -23,7 +21,7 @@ export function ResetForm() {
     if (!r.ok) { setLoading(false); return setError(r.error); }
     // Pede que entre de novo com a senha nova.
     await terminarSessao();
-    router.push('/login');
+    window.location.assign('/login');
   }
 
   return (

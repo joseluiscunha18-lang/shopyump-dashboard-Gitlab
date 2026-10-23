@@ -27,7 +27,13 @@ export const DASHBOARD_BASE_PATH = '/dashboard';
  * (O ecrã continua a viver dentro do painel; o next.config.ts e o
  * middleware.ts fazem o URL limpo.)
  */
-export const CLEAN_ROOT_PATHS = ['login', 'registar', 'verificar', 'recuperar', 'nova-senha', 'onboarding'] as const;
+export const CLEAN_ROOT_PATHS = ['login', 'register', 'verify', 'forgot-password', 'reset-password', 'onboarding'] as const;
+
+/** O caminho (com ou sem query) é uma página "antes de entrar" com URL limpo? */
+export function isCleanPath(path: string): boolean {
+  const p = path.split(/[?#]/)[0]!.replace(/^\/+|\/+$/g, '');
+  return (CLEAN_ROOT_PATHS as readonly string[]).includes(p);
+}
 
 /**
  * Subdomínios que nunca podem ser lojas: ou já servem outra coisa, ou
@@ -36,7 +42,7 @@ export const CLEAN_ROOT_PATHS = ['login', 'registar', 'verificar', 'recuperar', 
 export const RESERVED_SUBDOMAINS = [
   'www', 'app', 'api', 'admin', 'dashboard', 'painel', 'mail', 'email',
   'cdn', 'static', 'assets', 'status', 'help', 'ajuda', 'support', 'suporte',
-  'blog', 'loja', 'lojas', 'temas', 'login', 'registar', 'onboarding',
+  'blog', 'loja', 'lojas', 'temas', 'login', 'registar', 'register', 'verify', 'onboarding',
 ] as const;
 
 export function isReservedSubdomain(slug: string): boolean {

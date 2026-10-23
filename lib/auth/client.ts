@@ -102,10 +102,10 @@ export async function entrarComGoogle(): Promise<AuthResult> {
   return error ? fail(error) : { ok: true };
 }
 
-/** Envia o link de redefinição; o link abre /nova-senha já com sessão de recuperação. */
+/** Envia o link de redefinição; o link abre /reset-password já com sessão de recuperação. */
 export async function enviarLinkRecuperacao(email: string): Promise<AuthResult> {
   const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: callbackUrl('/nova-senha'),
+    redirectTo: callbackUrl('/reset-password'),
   });
   return error ? fail(error) : { ok: true };
 }

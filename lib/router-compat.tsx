@@ -10,6 +10,7 @@
 import NextLink from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { isCleanPath } from './domains';
 
 type SearchObj = Record<string, unknown>;
 
@@ -69,6 +70,10 @@ type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
 export function Link({ to, params, search, replace, children, className, ...rest }: LinkProps) {
   const href = buildHref({ to, params, search }, typeof search === 'function' ? readSearch() : {});
   const pathname = usePathname() ?? '/';
+  // Páginas de autenticação vivem fora do /dashboard: <a> normal, para o URL ficar limpo (/register).
+  if (isCleanPath(href)) {
+    return <a href={href} className={className} {...rest}>{children}</a>;
+  }
   // O <Link> do TanStack Router marca sozinho a ligação ativa (classe "active" + aria-current),
   // incluindo rotas filhas (/produtos fica ativo em /produtos/novo). O design do menu depende disso.
   const target = normalizeHome(fillParams(to, params));
@@ -93,6 +98,7 @@ export function useNavigate() {
     (opts: (To & { replace?: boolean }) | string) => {
       const target = typeof opts === 'string' ? { to: opts } : opts;
       const href = buildHref(target, readSearch());
+      if (isCleanPath(href)) { window.location.assign(href); return; }
       if (typeof opts !== 'string' && opts.replace) router.replace(href);
       else router.push(href);
     },

@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   // Compatibilidade + sem landing page. Só para hosts que NÃO são lojas:
   //   /            → /dashboard          (ainda não há landing page)
   //   /outra-coisa → /dashboard/outra-coisa (links antigos)
-  //   /login, /registar, /verificar, /recuperar, /nova-senha, /onboarding ficam FORA
+  //   /login, /register, /verify, /forgot-password, /reset-password, /onboarding ficam FORA
   //   desta regra: o vercel.json mostra o ecrã de /dashboard/... com o URL limpo.
   // As lojas (nome.shopyump.com) ficam de fora e são tratadas no vercel.json.
   async redirects() {

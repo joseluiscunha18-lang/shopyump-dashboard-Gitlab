@@ -21,6 +21,7 @@ import {
 } from 'react';
 import { useParams as useNextParams, useRouter, useSearchParams } from 'next/navigation';
 import { buildHref, useNavigate, useSearch } from './router-compat';
+import { isCleanPath } from './domains';
 
 export { Link, useNavigate, useRouterState, useSearch } from './router-compat';
 
@@ -147,6 +148,7 @@ export function RoutePage({ route, children }: { route: CompatRoute<any>; childr
         if (cancelled) return;
         if (error instanceof RedirectError) {
           const href = buildHref(error.opts);
+          if (isCleanPath(href)) { window.location.assign(href); return; }
           if (error.opts.replace === false) router.push(href);
           else router.replace(href);
         } else if (error instanceof NotFoundError) {

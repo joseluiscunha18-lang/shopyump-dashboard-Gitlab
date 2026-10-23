@@ -2,7 +2,7 @@ import { createFileRoute } from '@/lib/route-compat';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { ResetForm } from '@/components/auth/ResetForm';
 
-export const Route = createFileRoute('/nova-senha')({
+export const Route = createFileRoute('/reset-password')({
   ssr: false,
   head: () => ({ meta: [
     { title: 'Nova senha | Shopyump' },

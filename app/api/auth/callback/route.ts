@@ -12,11 +12,12 @@ import { DASHBOARD_BASE_PATH } from '@/lib/domains';
  * URL a registar no Supabase (Redirect URLs):
  *   https://shopyump.com/dashboard/api/auth/callback
  */
-const DESTINOS_LIMPOS = ['/nova-senha', '/onboarding', '/login'];
+const DESTINOS_LIMPOS = ['/reset-password', '/onboarding', '/login'];
 
 function destinoSeguro(next: string | null): string {
   if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) return '/';
-  const caminho = next.split('?')[0]!;
+  let caminho = next.split('?')[0]!;
+  if (caminho === '/nova-senha') caminho = '/reset-password'; // e-mails antigos
   return DESTINOS_LIMPOS.includes(caminho) || caminho === '/' ? caminho : '/';
 }
 

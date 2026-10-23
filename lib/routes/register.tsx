@@ -2,7 +2,7 @@ import { createFileRoute } from '@/lib/route-compat';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { AuthFlow } from '@/components/auth/AuthFlow';
 
-export const Route = createFileRoute('/registar')({
+export const Route = createFileRoute('/register')({
   ssr: false,
   head: () => ({ meta: [
     { title: 'Criar conta | Shopyump' },

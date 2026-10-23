@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { MailCheck } from 'lucide-react';
 import { enviarLinkRecuperacao } from '@/lib/auth/client';
 import { AuthButton, AuthField, AuthHeading, BackButton } from './AuthUI';
@@ -11,7 +9,6 @@ const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 /** Recuperar senha: envia um LINK (o registo usa código de 6 dígitos). */
 export function ForgotForm() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [editing, setEditing] = useState(true);
   const [error, setError] = useState('');
@@ -51,14 +48,14 @@ export function ForgotForm() {
           Não recebeu?{' '}
           <button type="button" onClick={async () => { const r = await enviarLinkRecuperacao(email); if (r.ok) setResent(true); else setError(r.error); }} className="font-semibold text-foreground underline underline-offset-4">{resent ? 'Link reenviado' : 'Reenviar link'}</button>
         </p>
-        <Link href="/login" className="mt-4 block text-center text-[14px] font-semibold text-foreground underline underline-offset-4">Voltar a entrar</Link>
+        <a href="/login" className="mt-4 block text-center text-[14px] font-semibold text-foreground underline underline-offset-4">Voltar a entrar</a>
       </div>
     );
   }
 
   return (
     <form onSubmit={send} noValidate className="flex-1 flex flex-col">
-      <BackButton onClick={() => router.push('/login')} />
+      <BackButton onClick={() => window.location.assign('/login')} />
       <AuthHeading title="Redefina a sua senha" subtitle="Vamos enviar-lhe um link por e-mail para criar uma nova senha." />
       {editing ? (
         <AuthField label="E-mail" type="email" inputMode="email" autoComplete="email" autoFocus value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
@@ -76,7 +73,7 @@ export function ForgotForm() {
       )}
       <AuthButton type="submit" loading={loading} disabled={!email} className="mt-5 rounded-full">Enviar link de redefinição</AuthButton>
       <p className="mt-6 text-center text-[17px] text-muted-foreground">
-        Lembrou-se da senha? <Link href="/login" className="text-foreground underline underline-offset-4">Entrar</Link>
+        Lembrou-se da senha? <a href="/login" className="text-foreground underline underline-offset-4">Entrar</a>
       </p>
     </form>
   );
