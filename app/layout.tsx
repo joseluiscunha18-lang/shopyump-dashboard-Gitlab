@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Space_Grotesk, Inter } from 'next/font/google';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -15,8 +16,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt">
-      <body className={`${spaceGrotesk.variable} ${inter.variable} min-h-screen bg-[#F9F7F5] text-ink selection:bg-brand selection:text-white`}>
-        <ToastProvider>{children}</ToastProvider>
+      <body className={`${spaceGrotesk.variable} ${inter.variable}`}>
+        <ToastProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </ToastProvider>
       </body>
     </html>
   );
