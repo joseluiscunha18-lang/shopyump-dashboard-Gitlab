@@ -39,11 +39,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     if (metodo === 'pendente') {
       return go('code', 'Este e-mail ainda não foi confirmado. Introduza o código que enviámos, ou peça um novo.');
     }
-    if (metodo === 'google') {
-      return go('google', mode === 'login'
-        ? 'Esta conta foi criada com o Google. Continue com o Google para entrar.'
-        : 'Já existe uma conta com este e-mail, criada com o Google. Continue com o Google para entrar.');
-    }
+    if (metodo === 'google') return go('google');
     if (mode === 'register' && (metodo === 'senha' || metodo === 'ambos')) {
       return setError('Já existe uma conta com este e-mail. Entre com a sua senha.');
     }
@@ -128,9 +124,8 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   if (step === 'google') {
     return (
       <div className="flex-1 flex flex-col">
-        {mode === 'login' ? loginHeading : heading}
+        {loginHeading}
         {emailBox}
-        {notice && <p className="mt-4 text-[15px] leading-snug text-muted-foreground" role="status">{notice}</p>}
         <div className="mt-4">
           <GoogleAuthButton email={email} variant="primary" />
         </div>
