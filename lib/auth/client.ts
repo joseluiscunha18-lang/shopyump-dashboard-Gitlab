@@ -8,7 +8,7 @@ import { invalidarUserContext } from '@/lib/auth/getUserContext';
  * Ações de autenticação (corre no navegador). Todas devolvem { ok, error? } com
  * mensagens em português — a interface nunca mostra o texto cru do Supabase.
  */
-export type AuthResult = { ok: true } | { ok: false; error: string };
+export type AuthResult = { ok: true } | { ok: false; error: string; /** Limite de envio de e-mails/pedidos do Supabase atingido. */ limite?: boolean };
 
 function traduzir(message: string | undefined, code?: string): string {
   const m = (message ?? '').toLowerCase();
@@ -25,12 +25,35 @@ function traduzir(message: string | undefined, code?: string): string {
   return 'Não foi possível concluir. Tente novamente.';
 }
 
-const fail = (e: { message?: string; code?: string } | null | undefined): AuthResult => ({ ok: false, error: traduzir(e?.message, e?.code) });
+function ehLimite(e: { message?: string; code?: string } | null | undefined): boolean {
+  const m = (e?.message ?? '').toLowerCase();
+  return e?.code === 'over_email_send_rate_limit' || e?.code === 'over_request_rate_limit' || m.includes('rate limit') || m.includes('security purposes');
+}
+
+const fail = (e: { message?: string; code?: string } | null | undefined): AuthResult => ({ ok: false, error: traduzir(e?.message, e?.code), limite: ehLimite(e) });
 
 /** URL (absoluto) do callback que troca o código por sessão: …/dashboard/api/auth/callback */
 function callbackUrl(next?: string) {
   const q = next ? `?next=${encodeURIComponent(next)}` : '';
   return `${window.location.origin}${DASHBOARD_BASE_PATH}/api/auth/callback${q}`;
+}
+
+/**
+ * Como esta conta entra: 'senha' (e-mail+senha), 'google', 'ambos', 'pendente'
+ * (e-mail por confirmar), 'nenhum' (não existe) ou 'desconhecido' (função SQL
+ * ainda não instalada / sem ligação — a interface cai no comportamento antigo).
+ * Ver supabase/auth_metodo_por_email.sql.
+ */
+export type MetodoConta = 'senha' | 'google' | 'ambos' | 'pendente' | 'nenhum' | 'desconhecido';
+
+export async function metodoDaConta(email: string): Promise<MetodoConta> {
+  try {
+    const { data, error } = await createClient().rpc('auth_metodo_por_email', { p_email: email.trim() });
+    if (error || typeof data !== 'string') return 'desconhecido';
+    return (['senha', 'google', 'ambos', 'pendente', 'nenhum'] as const).includes(data as never) ? (data as MetodoConta) : 'desconhecido';
+  } catch {
+    return 'desconhecido';
+  }
 }
 
 export async function entrarComSenha(email: string, password: string): Promise<AuthResult> {

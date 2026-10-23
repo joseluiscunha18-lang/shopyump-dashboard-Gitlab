@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { confirmarCodigo, criarConta, entrarComSenha, reenviarCodigo } from '@/lib/auth/client';
+import { confirmarCodigo, criarConta, entrarComSenha, metodoDaConta, reenviarCodigo } from '@/lib/auth/client';
 import { AuthButton, AuthField, AuthHeading, BackButton, Divider } from './AuthUI';
 import { GoogleAuthButton } from './GoogleAuthButton';
 
@@ -19,7 +19,9 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const go = (s: Step) => { setError(''); setStep(s); };
+  const [notice, setNotice] = useState('');
+
+  const go = (s: Step, aviso = '') => { setError(''); setNotice(aviso); setStep(s); };
   const [touched, setTouched] = useState(false);
 
 
@@ -28,6 +30,23 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     if (!emailOk(email)) return setError('Introduz um e-mail válido.');
     setPassword(''); setTouched(false);
     sessionStorage.setItem('shopyump-auth-email', email.trim());
+
+    // Descobre como esta conta entra, para mostrar só o caminho que funciona.
+    setLoading(true);
+    const metodo = await metodoDaConta(email);
+    setLoading(false);
+
+    if (metodo === 'pendente') {
+      return go('code', 'Este e-mail ainda não foi confirmado. Introduza o código que enviámos, ou peça um novo.');
+    }
+    if (metodo === 'google') {
+      return go('google', mode === 'login'
+        ? 'Esta conta foi criada com o Google. Continue com o Google para entrar.'
+        : 'Já existe uma conta com este e-mail, criada com o Google. Continue com o Google para entrar.');
+    }
+    if (mode === 'register' && (metodo === 'senha' || metodo === 'ambos')) {
+      return setError('Já existe uma conta com este e-mail. Entre com a sua senha.');
+    }
     go(mode === 'login' ? 'password' : 'create');
   }
 
@@ -45,6 +64,10 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     setLoading(true);
     const r = await criarConta(email, password);
     setLoading(false);
+    if (!r.ok && r.limite) {
+      // Limite de e-mails do Supabase: pode já existir um código recente — deixa tentar.
+      return go('code', 'Já enviámos um código há pouco. Introduza-o abaixo. Se não o tiver, aguarde alguns minutos e peça um novo.');
+    }
     if (!r.ok) return setError(r.error);
     go('code');
   }
@@ -105,8 +128,9 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   if (step === 'google') {
     return (
       <div className="flex-1 flex flex-col">
-        {loginHeading}
+        {mode === 'login' ? loginHeading : heading}
         {emailBox}
+        {notice && <p className="mt-4 text-[15px] leading-snug text-muted-foreground" role="status">{notice}</p>}
         <div className="mt-4">
           <GoogleAuthButton email={email} variant="primary" />
         </div>
@@ -165,10 +189,10 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     );
   }
 
-  return <CodeStep email={email} onBack={() => go('email')} onDone={() => { router.push('/onboarding'); router.refresh(); }} />;
+  return <CodeStep email={email} notice={notice} onBack={() => go('email')} onDone={() => { router.push('/onboarding'); router.refresh(); }} />;
 }
 
-export function CodeStep({ email, onBack, onDone }: { email: string; onBack: () => void; onDone: () => void }) {
+export function CodeStep({ email, notice, onBack, onDone }: { email: string; notice?: string; onBack: () => void; onDone: () => void }) {
   const [digits, setDigits] = useState<string[]>(Array(6).fill(''));
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -212,6 +236,7 @@ export function CodeStep({ email, onBack, onDone }: { email: string; onBack: () 
     <div>
       <BackButton onClick={onBack} />
       <AuthHeading title="Confirme o seu e-mail" subtitle={<>Enviámos um código de 6 dígitos para <span className="font-semibold text-foreground">{email}</span>. Introduza-o abaixo para ativar a sua conta.</>} />
+      {notice && <p className="mb-4 -mt-2 text-[14px] leading-snug text-muted-foreground" role="status">{notice}</p>}
       <div className="flex justify-between gap-2">
         {digits.map((d, i) => (
           <input

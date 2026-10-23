@@ -72,9 +72,14 @@ function asParams(p: ReturnType<typeof useNextParams>): Record<string, string> {
   );
 }
 
-export function createFileRoute(_path: string) {
+/** Contextos de dados (loader) por caminho de rota, para getRouteApi() os encontrar. */
+const routeContexts = new Map<string, React.Context<unknown>>();
+const EmptyContext = createContext<unknown>(undefined);
+
+export function createFileRoute(path: string) {
   return function configure<TLoader = undefined>(config: RouteConfig<TLoader>): CompatRoute<TLoader> {
     const Context = createContext<unknown>(undefined);
+    routeContexts.set(path, Context);
     return {
       options: config,
       Context,
@@ -91,12 +96,13 @@ export function createFileRoute(_path: string) {
 }
 
 /** getRouteApi('/x') — dá acesso a useParams/useSearch/useLoaderData sem importar a Route. */
-export function getRouteApi(_path: string) {
+export function getRouteApi(path: string) {
   return {
     useParams: () => asParams(useNextParams()),
     useSearch: () => useSearch(),
     useNavigate,
-    useLoaderData: () => undefined as any,
+    // Procura o contexto no momento do uso (a rota pode ser registada depois deste módulo carregar).
+    useLoaderData: () => useContext(routeContexts.get(path) ?? EmptyContext) as any,
   };
 }
 
