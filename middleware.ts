@@ -73,17 +73,19 @@ export async function middleware(request: NextRequest) {
   // Rotas fora do painel (login/registar/onboarding) sempre confirmam na
   // base de dados, porque é exatamente aí que `hasLoja` pode ter acabado
   // de mudar. Dentro do painel, um cookie válido poupa as duas queries.
+  // O cookie guarda `<id do utilizador>:1`. Só se confia num "sim" que pertence a ESTE
+  // utilizador; um "não" (ou o cookie de outra conta) volta sempre a confirmar na base de dados.
   const cachedHasLoja = request.cookies.get(HAS_LOJA_COOKIE)?.value;
   let hasLoja: boolean;
-  if (cachedHasLoja !== undefined && !isOnboardingPath && !isAuthPath) {
-    hasLoja = cachedHasLoja === '1';
+  if (cachedHasLoja === `${user.id}:1` && !isOnboardingPath && !isAuthPath) {
+    hasLoja = true;
   } else {
     const [{ data: adminRow }, { data: loja }] = await Promise.all([
       supabase.from('admins').select('email').eq('email', user.email ?? '').maybeSingle(),
       supabase.from('lojas').select('id').eq('perfil_id', user.id).maybeSingle(),
     ]);
     hasLoja = Boolean(loja) || Boolean(adminRow);
-    supabaseResponse.cookies.set(HAS_LOJA_COOKIE, hasLoja ? '1' : '0', {
+    if (hasLoja) supabaseResponse.cookies.set(HAS_LOJA_COOKIE, `${user.id}:1`, {
       httpOnly: true,
       sameSite: 'lax',
       secure: true,
@@ -91,6 +93,9 @@ export async function middleware(request: NextRequest) {
       path: '/',
     });
   }
+
+  // /nova-senha: quem abre o link do e-mail já tem sessão (de recuperação) e tem de ficar aqui.
+  if (pathname.startsWith('/nova-senha')) return supabaseResponse;
 
   if (isAuthPath) return go('/dashboard');
 
