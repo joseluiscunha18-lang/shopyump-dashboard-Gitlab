@@ -40,9 +40,8 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
       return go('code', 'Este e-mail ainda não foi confirmado. Introduza o código que enviámos, ou peça um novo.');
     }
     if (metodo === 'google') return go('google');
-    if (mode === 'register' && (metodo === 'senha' || metodo === 'ambos')) {
-      return setError('Já existe uma conta com este e-mail. Entre com a sua senha.');
-    }
+    // Conta com senha (mesmo no ecrã de criar conta): segue para entrar com a senha.
+    if (metodo === 'senha' || metodo === 'ambos') return go('password');
     go(mode === 'login' ? 'password' : 'create');
   }
 

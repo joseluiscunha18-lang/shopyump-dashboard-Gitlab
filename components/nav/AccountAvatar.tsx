@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { UserRound } from 'lucide-react';
 import { useDashboardState } from '@/components/dashboard/DashboardState';
 import { useToast } from '@/components/ui/Toast';
@@ -10,10 +10,35 @@ export function accountInitials(nome: string) {
   return nome.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase();
 }
 
+/** Fotografia com esqueleto: o gradiente nunca aparece enquanto a imagem ainda está a carregar. */
+function AvatarFoto({ src }: { src: string }) {
+  const [pronta, setPronta] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    setPronta(false);
+    // Imagem já em cache: o evento load pode ter disparado antes de o React ligar o handler.
+    if (ref.current?.complete && ref.current.naturalWidth > 0) setPronta(true);
+  }, [src]);
+  return (
+    <>
+      {!pronta && <span className="avatar-skeleton" aria-hidden="true" />}
+      <img
+        ref={ref}
+        src={src}
+        alt=""
+        className="account-avatar-img"
+        style={{ opacity: pronta ? 1 : 0 }}
+        onLoad={() => setPronta(true)}
+        onError={() => setPronta(true)}
+      />
+    </>
+  );
+}
+
 /** Avatar pessoal: fotografia se existir, senão iniciais sobre o gradiente da marca. */
 export function AccountAvatar() {
   const { account } = useDashboardState();
-  if (account.foto) return <img src={account.foto} alt="" className="account-avatar-img" />;
+  if (account.foto) return <AvatarFoto src={account.foto} />;
   return <span aria-hidden="true">{accountInitials(account.nome) || <UserRound size={22} />}</span>;
 }
 
