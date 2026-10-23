@@ -9,7 +9,7 @@ import { PendingProductRow } from '@/components/produtos/PendingProductRow';
 import { usePublishing } from '@/components/produtos/PublishingContext';
 import { ProductSearchBar } from '@/components/produtos/ProductSearchBar';
 import { ProductFilterBar, type StatusFilter, type SortOption } from '@/components/produtos/ProductFilterBar';
-import { Checkbox } from '@/components/ui/Checkbox';
+import { Checkbox } from '@/components/ui/ShopyumpCheckbox';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
@@ -233,32 +233,35 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
       ultrapassar os limites do card sem serem cortados. Cartão sólido (sem
       blur/translucidez) com sombra mais forte, para se destacar claramente
       do fundo cinza da página em vez de se misturar com ele. */}
-      <div className="rounded-md border border-[#1A1210]/8 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_28px_-10px_rgba(15,23,42,0.14)]">
-        <div className="px-4 pb-3 pt-4">
-          <ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />
-
-          <div className="mt-3">
-            <ProductFilterBar
-              status={status}
-              onStatusChange={setStatus}
-              categoria={categoria}
-              onCategoriaChange={setCategoria}
-              categorias={categorias}
-              sort={sort}
-              onSortChange={setSort}
-            />
-          </div>
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs">
+        <div className="flex flex-col gap-3 border-b border-border/70 px-4 py-4 sm:px-5">
+          <ProductFilterBar
+            search={<ProductSearchBar value={query} onChange={setQuery} produtos={produtos} />}
+            status={status}
+            onStatusChange={setStatus}
+            categoria={categoria}
+            onCategoriaChange={setCategoria}
+            categorias={categorias}
+            sort={sort}
+            onSortChange={setSort}
+            counts={{
+              todos: produtosVisiveis.length,
+              ativos: produtosVisiveis.filter((p) => p.ativo).length,
+              inativos: produtosVisiveis.filter((p) => !p.ativo && !p.rascunho).length,
+              rascunhos: produtosVisiveis.filter((p) => p.rascunho).length,
+            }}
+          />
         </div>
 
         {filtered.length === 0 && pendingVisivel.length === 0 ? (
           <>
-            <div className="flex flex-col items-center gap-3 rounded-b-[28px] py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[#1A1210]/55">
+            <div className="flex flex-col items-center gap-3 rounded-b-2xl py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <SearchX size={20} strokeWidth={2.3} />
               </div>
               <div>
-                <p className="text-[13px] font-bold text-ink">Nenhum produto encontrado</p>
-                <p className="mt-1 max-w-[240px] text-[12px] font-medium text-slate-400">
+                <p className="text-[13px] font-semibold text-foreground">Nenhum produto encontrado</p>
+                <p className="mt-1 max-w-[240px] text-[12px] font-medium text-muted-foreground">
                   Tenta ajustar a pesquisa ou os filtros.
                 </p>
               </div>
@@ -270,7 +273,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
             usada no resto do card (agora um pouco mais suave), para que a
             divisão entre pesquisa/filtros → seleção → lista fique visível
             sem se confundir com o fundo nem ficar pesada. */}
-            <div className="flex h-11 items-center gap-3 border-b border-[#1A1210]/8 bg-[#F6F7F9] px-4">
+            <div className="flex h-11 items-center gap-3 border-y border-border/70 bg-muted/40 px-4">
               <Checkbox
                 checked={allVisibleSelected}
                 indeterminate={someVisibleSelected && !allVisibleSelected}
@@ -279,17 +282,17 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               />
 
               {selectedIds.size > 0 ? (
-                <span className="text-[12.5px] font-bold text-ink">
+                <span className="text-[12.5px] font-semibold text-foreground">
                   {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
                 </span>
               ) : (
-                <span className="text-[12px] font-bold text-[#1A1210]/75">
+                <span className="text-[12px] font-bold text-muted-foreground">
                   {filtered.length + pendingVisivel.length} {filtered.length + pendingVisivel.length === 1 ? 'produto' : 'produtos'}
                 </span>
               )}
             </div>
 
-            <div className="divide-y divide-[#1A1210]/8">
+            <div className="divide-y divide-border/60">
               {pendingVisivel.map((p) => (
                 <PendingProductRow
                   key={p.tempId}
@@ -305,9 +308,9 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
             </div>
 
             {hasMore && (
-              <div ref={sentinelRef} className="flex items-center justify-center rounded-b-[28px] border-t border-[#1A1210]/8 py-4">
+              <div ref={sentinelRef} className="flex items-center justify-center rounded-b-2xl border-t border-border/70 py-4">
                 {loadingMore && (
-                  <span className="flex items-center gap-2 text-[12.5px] font-semibold text-slate-400">
+                  <span className="flex items-center gap-2 text-[12.5px] font-semibold text-muted-foreground">
                     <Loader2 size={14} className="animate-spin" />
                     A carregar...
                   </span>
@@ -328,7 +331,7 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               {selectedIds.size} {selectedIds.size === 1 ? 'selecionado' : 'selecionados'}
             </span>
 
-            <div className="mx-1 h-5 w-px flex-shrink-0 bg-white/15" />
+            <div className="mx-1 h-5 w-px flex-shrink-0 bg-card/15" />
 
             <div className="flex items-center gap-0.5">
               <FloatingActionButton
@@ -358,13 +361,13 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
               />
             </div>
 
-            <div className="mx-1 h-5 w-px flex-shrink-0 bg-white/15" />
+            <div className="mx-1 h-5 w-px flex-shrink-0 bg-card/15" />
 
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
               aria-label="Cancelar seleção"
-              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-card/10 hover:text-white"
             >
               <X size={16} strokeWidth={2.4} />
             </button>
@@ -407,7 +410,7 @@ function FloatingActionButton({
       title={label}
       className={cn(
         'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40',
-        tone === 'danger' ? 'text-red-400 hover:bg-red-500/15 hover:text-red-300' : 'text-white/80 hover:bg-white/10 hover:text-white',
+        tone === 'danger' ? 'text-red-400 hover:bg-red-500/15 hover:text-red-300' : 'text-white/80 hover:bg-card/10 hover:text-white',
       )}
     >
       {icon}

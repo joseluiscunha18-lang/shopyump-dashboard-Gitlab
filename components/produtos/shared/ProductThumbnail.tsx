@@ -21,7 +21,7 @@ export function ProductThumbnail({
   const isBlob = src?.startsWith('blob:');
 
   return (
-    <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-50">
+    <div className="relative -ml-1 h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-muted">
       {state === 'skeleton' && <Skeleton className="h-full w-full rounded-md" />}
 
       {state === 'error' && (

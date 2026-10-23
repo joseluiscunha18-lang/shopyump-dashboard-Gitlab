@@ -1,38 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
-
-interface MobileNavContextValue {
-  menuOpen: boolean;
-  openMenu: () => void;
-  closeMenu: () => void;
-}
-
-const MobileNavContext = createContext<MobileNavContextValue | null>(null);
-
-/**
- * Shares the sidebar's open/closed state between TopBar (which owns the
- * hamburger trigger) and BottomNav (which needs to slide out of the way
- * while the sidebar is open, so the two surfaces never visually clash).
- */
-export function MobileNavProvider({ children }: { children: ReactNode }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  return (
-    <MobileNavContext.Provider
-      value={{
-        menuOpen,
-        openMenu: () => setMenuOpen(true),
-        closeMenu: () => setMenuOpen(false),
-      }}
-    >
-      {children}
-    </MobileNavContext.Provider>
-  );
-}
-
-export function useMobileNav() {
-  const ctx = useContext(MobileNavContext);
-  if (!ctx) throw new Error('useMobileNav must be used within a MobileNavProvider');
-  return ctx;
-}
+import { createContext,useContext,useState,type ReactNode } from 'react';
+const Context=createContext<{menuOpen:boolean;openMenu:()=>void;closeMenu:()=>void;desktopCollapsed:boolean;toggleDesktop:()=>void}|null>(null);
+export function MobileNavProvider({children}:{children:ReactNode}){const [menuOpen,set]=useState(false);const [desktopCollapsed,collapse]=useState(false);return <Context.Provider value={{menuOpen,openMenu:()=>set(true),closeMenu:()=>set(false),desktopCollapsed,toggleDesktop:()=>collapse(v=>!v)}}>{children}</Context.Provider>}
+export function useMobileNav(){const c=useContext(Context);if(!c)throw new Error('Navigation unavailable');return c}

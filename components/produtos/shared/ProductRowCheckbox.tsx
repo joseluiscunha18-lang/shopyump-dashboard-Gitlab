@@ -1,4 +1,4 @@
-import { Checkbox } from '@/components/ui/Checkbox';
+import { Checkbox } from '@/components/ui/ShopyumpCheckbox';
 import { Skeleton } from '@/components/ui/Surfaces';
 
 /**

@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
-import { VerifyNotice } from '@/components/auth/VerifyNotice';
+'use client';
 
-export const metadata: Metadata = { title: 'Confirma o teu e-mail | Shopyump' };
+import { Route } from '@/lib/routes/verificar';
+import { RoutePage } from '@/lib/route-compat';
 
-export default function VerifyPage() {
-  return <VerifyNotice />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

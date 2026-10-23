@@ -1,8 +1,10 @@
+'use client';
+
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft, Undo2, Redo2, Monitor, Tablet, Smartphone, Layers, Settings2, ChevronLeft, X,
   Eye, EyeOff, Lock, ArrowUp, ArrowDown, Copy, Trash2, Plus, MoreHorizontal, RotateCcw,
-  Palette, Type, Sparkles, LayoutTemplate, Zap, Wrench, Check, Loader2, AlertCircle, Bug,
+  Palette, Type, Sparkles, LayoutTemplate, Zap, Wrench, Check, Loader2, AlertCircle, Bug, ExternalLink, PlayCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/theme-editor/ui/button";
@@ -64,12 +66,20 @@ export function EditorShell() {
     if (sel && parsePath(sel)) dispatch({ type: "select", path: sel.includes(".settings") || sel.split(".").length > 2 ? sel : sectionPath(sel.split(".")[1]), title: "Selecionado" });
   }, [dispatch]);
 
+  const [previewing, setPreviewing] = useState(false);
+  useEffect(() => {
+    if (!previewing) return;
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") setPreviewing(false); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [previewing]);
+
   return (
     <div className="ed-root flex h-dvh flex-col bg-ed-canvas text-foreground">
-      <TopBar isDesktop={isDesktop} debug={debug} />
+      <TopBar isDesktop={isDesktop} debug={debug} previewing={previewing} onPreview={setPreviewing} />
       <div className="relative flex min-h-0 flex-1">
-        <Preview isDesktop={isDesktop} sheetHeight={sheetHeight} onFixedReserve={setFixedReserve} />
-        {isDesktop ? (
+        <Preview isDesktop={isDesktop} sheetHeight={previewing ? 0 : sheetHeight} onFixedReserve={setFixedReserve} previewing={previewing} />
+        {previewing ? null : isDesktop ? (
           <aside className="w-[380px] shrink-0 border-l border-border bg-background">
             {state.panel.stack.length ? <PanelContent /> : <EmptySidebar />}
           </aside>
@@ -77,7 +87,7 @@ export function EditorShell() {
           <BottomSheet onHeightChange={setSheetHeight} fixedReserve={fixedReserve} />
         )}
       </div>
-      {isDesktop ? <BottomBar isDesktop={isDesktop} hidden={false} /> : null}
+      {isDesktop && !previewing ? <BottomBar isDesktop={isDesktop} hidden={false} /> : null}
       {debug && state.ui.inspectorOpen ? <Inspector /> : null}
     </div>
   );
@@ -85,7 +95,7 @@ export function EditorShell() {
 
 /* ------------------------------ TopBar ------------------------------ */
 
-function SaveButton() {
+function SaveButton({ compact }: { compact?: boolean }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const s = state.save.status;
@@ -101,18 +111,31 @@ function SaveButton() {
     }
   };
   return (
-    <Button size="sm" variant={s === "dirty" || s === "error" ? "default" : "secondary"} disabled={s === "saved" || s === "saving"} onClick={save}>
+    <Button size="sm" className={cn("shrink-0", compact && "px-2.5")} title="Guardar e publicar na loja" variant={s === "dirty" || s === "error" ? "default" : "secondary"} disabled={s === "saved" || s === "saving"} onClick={save}>
       {s === "saving" ? <Loader2 className="size-4 animate-spin" /> : s === "savedNow" ? <Check className="size-4" /> : s === "error" ? <AlertCircle className="size-4" /> : s === "dirty" ? <span className="size-2 rounded-full bg-primary-foreground" /> : null}
-      {s === "saving" ? "A salvar" : s === "savedNow" ? "Salvo" : s === "error" ? "Tentar de novo" : s === "dirty" ? "Salvar" : "Salvo"}
+      {s === "saving" ? (compact ? "" : "A publicar") : s === "savedNow" ? "Publicado" : s === "error" ? (compact ? "Repetir" : "Tentar de novo") : s === "dirty" ? "Publicar" : "Publicado"}
     </Button>
   );
 }
 
-function TopBar({ isDesktop, debug }: { isDesktop: boolean; debug: boolean }) {
+function TopBar({ isDesktop, debug, previewing, onPreview }: { isDesktop: boolean; debug: boolean; previewing: boolean; onPreview: (v: boolean) => void }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const [confirmExit, setConfirmExit] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const openStore = () => window.open(mockAdapter.getStoreUrl(), "_blank", "noopener,noreferrer");
+
+  if (previewing)
+    return (
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-2">
+        <Button size="sm" variant="ghost" onClick={() => onPreview(false)}>
+          <X className="size-4" /> Sair
+        </Button>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">Pré-visualização do rascunho</span>
+        {isDesktop ? <DeviceSwitch /> : null}
+        <SaveButton compact={!isDesktop} />
+      </header>
+    );
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-2">
@@ -123,8 +146,8 @@ function TopBar({ isDesktop, debug }: { isDesktop: boolean; debug: boolean }) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="font-medium">
-            {state.manifest.pages.find((p) => p.id === state.page)?.label} ▾
+          <Button variant="ghost" size="sm" className="min-w-0 max-w-[40vw] font-medium lg:max-w-none"><span className="truncate">
+            {state.manifest.pages.find((p) => p.id === state.page)?.label}</span> ▾
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -147,18 +170,36 @@ function TopBar({ isDesktop, debug }: { isDesktop: boolean; debug: boolean }) {
 
       {isDesktop ? <div className="mx-auto"><DeviceSwitch /></div> : <div className="flex-1" />}
 
-      <Button size="icon" variant="ghost" aria-label="Desfazer" disabled={!state.history.past.length} onClick={() => dispatch({ type: "undo" })}>
+      <Button size="icon" variant="ghost" className="shrink-0" aria-label="Desfazer" disabled={!state.history.past.length} onClick={() => dispatch({ type: "undo" })}>
         <Undo2 className="size-4" />
       </Button>
-      <Button size="icon" variant="ghost" aria-label="Refazer" disabled={!state.history.future.length} onClick={() => dispatch({ type: "redo" })}>
-        <Redo2 className="size-4" />
-      </Button>
+      {isDesktop ? (
+        <>
+          <Button size="icon" variant="ghost" aria-label="Refazer" disabled={!state.history.future.length} onClick={() => dispatch({ type: "redo" })}>
+            <Redo2 className="size-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => onPreview(true)} title="Ver o rascunho como o cliente o verá">
+            <PlayCircle className="size-4" /> Pré-visualizar
+          </Button>
+          <Button size="sm" variant="ghost" onClick={openStore} title="Abrir a loja publicada numa nova aba">
+            <ExternalLink className="size-4" /> Ver loja
+          </Button>
+        </>
+      ) : null}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="icon" variant="ghost" aria-label="Mais"><MoreHorizontal className="size-4" /></Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {!isDesktop ? (
+            <>
+              <DropdownMenuItem disabled={!state.history.future.length} onClick={() => dispatch({ type: "redo" })}><Redo2 className="size-4" /> Refazer</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onPreview(true)}><PlayCircle className="size-4" /> Pré-visualizar rascunho</DropdownMenuItem>
+              <DropdownMenuItem onClick={openStore}><ExternalLink className="size-4" /> Ver loja publicada</DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          ) : null}
           <DropdownMenuItem onClick={() => dispatch({ type: "toggleOverlays" })}>
             {state.ui.showOverlays ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             {state.ui.showOverlays ? "Ver sem editar" : "Voltar a editar"}
@@ -186,7 +227,7 @@ function TopBar({ isDesktop, debug }: { isDesktop: boolean; debug: boolean }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SaveButton />
+      <SaveButton compact={!isDesktop} />
 
       <AlertDialog open={confirmExit} onOpenChange={setConfirmExit}>
         <AlertDialogContent>
@@ -304,7 +345,7 @@ function MobileDeviceChip() {
   );
 }
 
-function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolean; sheetHeight: number; onFixedReserve: (height: number) => void }) {
+function Preview({ isDesktop, sheetHeight, onFixedReserve, previewing = false }: { isDesktop: boolean; sheetHeight: number; onFixedReserve: (height: number) => void; previewing?: boolean }) {
   const state = useEditor();
   const dispatch = useEditorDispatch();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -386,15 +427,15 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
                 products: state.products,
                 categories: state.categories,
                 device: state.device,
-                mode: "edit",
-                showOverlays: state.ui.showOverlays && !isReadOnlyPreview(state),
+                mode: previewing ? "live" : "edit",
+                showOverlays: !previewing && state.ui.showOverlays && !isReadOnlyPreview(state),
                 readOnly: isReadOnlyPreview(state),
                 onCloseOverlay: () => dispatch({ type: "closeOverlay" }),
                 onOpenOverlay: (id: string) => dispatch({ type: "openOverlay", id }),
                 selectedPath: state.selectedPath,
-                onSelect: state.ui.showOverlays ? (path, title, context) => dispatch({ type: "select", path, title, context }) : undefined,
+                onSelect: !previewing && state.ui.showOverlays ? (path, title, context) => dispatch({ type: "select", path, title, context }) : undefined,
                 onNavigateLink: (link: any) => dispatch({ type: "navigateLink", link }),
-                onOpen: state.ui.showOverlays && !isDesktop ? (path, context) => dispatch({ type: "runOpen", path, context }) : undefined,
+                onOpen: !previewing && state.ui.showOverlays && !isDesktop ? (path, context) => dispatch({ type: "runOpen", path, context }) : undefined,
                 previewState: state.previewState,
                 previewOverlay: state.previewOverlay,
                 previewQuery: state.previewQuery,
@@ -425,7 +466,7 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
       {/* Camada das seções fixas (barra inferior) no telemóvel: fora da área que rola, por isso não treme.
           Assenta 72 px acima do fundo (sheet recolhida); a subida com o painel vai em --ed-fixed-lift. */}
       {!isDesktop ? (
-        <div className="pointer-events-none absolute z-30" style={{ left: "50%", width: logical * scale, bottom: 72, height: 0, transform: "translateX(-50%)" }}>
+        <div className="pointer-events-none absolute z-30" style={{ left: "50%", width: logical * scale, bottom: previewing ? 0 : 72, height: 0, transform: "translateX(-50%)" }}>
           <div
             ref={setFixedHost}
             style={{ position: "absolute", left: 0, bottom: 0, width: logical, height: 0, transform: `scale(${scale})`, transformOrigin: "bottom left", ["--ed-fixed-lift" as string]: `${fixedLiftPx}px` }}
@@ -456,8 +497,8 @@ function Preview({ isDesktop, sheetHeight, onFixedReserve }: { isDesktop: boolea
           Fechar {overlay.label.toLowerCase()} ✕
         </button>
       ) : null}
-      {!isDesktop ? <OpenHint /> : null}
-      {!state.ui.hintSeen && (isDesktop || state.panel.snap === "closed") ? (
+      {!isDesktop && !previewing ? <OpenHint /> : null}
+      {!previewing && !state.ui.hintSeen && (isDesktop || state.panel.snap === "closed") ? (
         <div className={cn("pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-xs text-background shadow-lg", isDesktop ? "top-4" : "top-12")}>
           Toque numa parte da loja para editar
         </div>

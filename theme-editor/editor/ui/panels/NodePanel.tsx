@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Eye, EyeOff, Copy, Trash2, Plus, MoreHorizontal, GripVertical, Image as ImageIcon, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/theme-editor/ui/button";

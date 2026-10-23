@@ -1,231 +1,39 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Bell, ChevronLeft, MoreVertical, FileText, Trash2, HelpCircle } from 'lucide-react';
-import { cn } from '@/lib/cn';
-import { MobileSidebarDrawer, type Plano } from './MobileSidebarDrawer';
-import { useMobileNav } from './MobileNavContext';
+import { CenterMenu } from '@/components/ui/CenterMenu';
+import { useEffect,useRef,useState } from 'react';
+import { Link,useNavigate,useRouterState } from '@/lib/router-compat';
+import { ChevronLeft,MoreVertical,FileText,Trash2,Copy,ExternalLink } from 'lucide-react';
+import { duplicateProduto,deleteProduto } from '@/lib/mutations/produtos';
+import { NotificationsQuickPanel } from '@/components/dashboard/Notifications';
+import { MenuIcon as Menu,BellIcon as Bell,UserIcon as User,ShieldIcon as ShieldCheck,SlidersIcon as SlidersHorizontal,LogOutIcon as LogOut } from './NavigationIcons';
+import { Button } from '@/components/ui/ShopyumpButton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
+import { useDashboardState } from '@/components/dashboard/DashboardState';
 import { useProductFormGuard } from '@/components/produtos/ProductFormGuardContext';
-import { isProductFormFlowPath, productFormFlowTitle } from '@/lib/nav/productFormFlow';
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return 'S';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-export function TopBar({
-  storeName,
-  storeUrl,
-  logoUrl,
-  plano,
-  hasUnreadNotifications = true,
-}: {
-  storeName: string;
-  storeUrl: string | null;
-  logoUrl?: string | null;
-  plano?: Plano;
-  /** Controls the small dot on the bell — only shown while there's something unread. */
-  hasUnreadNotifications?: boolean;
-}) {
-  const { menuOpen, openMenu, closeMenu } = useMobileNav();
-  const pathname = usePathname();
-  const router = useRouter();
-  const { requestExit, mode, triggerSaveAsDraft, triggerDiscard } = useProductFormGuard();
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const actionsRef = useRef<HTMLDivElement>(null);
-
-  // Rotas de criar/editar produto: a TopBar deixa de ser a barra padrão e
-  // vira o cabeçalho do fluxo (seta + título + ⋮). `inFlow` vem do pathname,
-  // já disponível na primeira renderização — nunca aparece a barra padrão
-  // antes de trocar, evitando qualquer flash.
-  const inFlow = isProductFormFlowPath(pathname);
-
-  // Merges with the page at rest; picks up a soft blurred surface once the
-  // user actually scrolls, so the header never competes with page content.
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (!actionsOpen) return;
-    function onClickOutside(e: MouseEvent) {
-      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setActionsOpen(false);
-    }
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [actionsOpen]);
-
-  // Fecha o menu de ações se a rota mudar (ex.: seta/voltar navegou).
-  useEffect(() => {
-    setActionsOpen(false);
-  }, [pathname]);
-
-  if (inFlow) {
-    return (
-      <header
-        className={cn(
-          'sticky top-0 z-30 flex h-16 items-center px-3 sm:px-8',
-          'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] backdrop-blur-md',
-        )}
-      >
-        {/* Zona esquerda — mesma largura que a direita, para o título ficar
-            realmente centrado entre as duas (3 zonas simétricas). */}
-        <div className="flex flex-1 items-center justify-start">
-          <button
-            type="button"
-            onClick={() => requestExit(() => router.back())}
-            aria-label="Voltar"
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
-          >
-            <ChevronLeft size={22} strokeWidth={2.2} />
-          </button>
-        </div>
-
-        <h1 className="flex-shrink-0 truncate px-2 text-center text-[16px] font-extrabold tracking-tight text-ink sm:text-[17px]">
-          {productFormFlowTitle(pathname)}
-        </h1>
-
-        <div className="flex flex-1 items-center justify-end">
-          <div className="relative flex-shrink-0" ref={actionsRef}>
-            <button
-              type="button"
-              onClick={() => setActionsOpen((v) => !v)}
-              aria-label="Mais ações"
-              aria-expanded={actionsOpen}
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
-            >
-              <MoreVertical size={19} strokeWidth={2.2} />
-            </button>
-
-            {actionsOpen && (
-              <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-[16px] border border-[#E5E3E0] bg-white py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.18)]">
-                {mode === 'criar' ? (
-                  <>
-                    {/* Criar produto: guardar como rascunho + descartar produto */}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setActionsOpen(false);
-                        await triggerSaveAsDraft();
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
-                    >
-                      <FileText size={16} strokeWidth={2} />
-                      Guardar como rascunho
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActionsOpen(false);
-                        triggerDiscard();
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
-                    >
-                      <Trash2 size={16} strokeWidth={2} />
-                      Descartar produto
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {/* Editar produto: só descartar alterações (guardar é o botão principal) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActionsOpen(false);
-                        requestExit(() => router.push('/produtos'));
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#B91C1C] hover:bg-[#FEF2F2]"
-                    >
-                      <Trash2 size={16} strokeWidth={2} />
-                      Descartar alterações
-                    </button>
-                  </>
-                )}
-                <div className="my-1 h-px bg-[#E5E3E0]" />
-                <button
-                  type="button"
-                  onClick={() => setActionsOpen(false)}
-                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#3F3F46] hover:bg-[#F4F4F3]"
-                >
-                  <HelpCircle size={16} strokeWidth={2} />
-                  Ajuda
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  return (
-    <>
-      <header
-        className={cn(
-          'sticky top-0 z-30 flex h-16 items-center gap-3 px-3 sm:px-8',
-          'transition-[background-color,backdrop-filter,box-shadow,border-color] duration-200 ease-out',
-          scrolled
-            ? 'border-b border-[rgba(28,25,23,0.08)] bg-[rgba(250,250,249,0.88)] shadow-[0_1px_0_rgba(28,25,23,0.04),0_8px_20px_-16px_rgba(28,25,23,0.12)] backdrop-blur-md'
-            : 'border-b border-transparent bg-transparent shadow-none backdrop-blur-none',
-        )}
-      >
-        {/* Hamburger — mobile only, opens the sliding sidebar */}
-        <button
-          onClick={openMenu}
-          aria-label="Abrir menu"
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04] sm:hidden"
-        >
-          <Menu size={19} strokeWidth={2.2} />
-        </button>
-
-        {/* Wordmark */}
-        <span className="font-display text-[17px] font-black tracking-tighter text-ink sm:text-lg">
-          Shopyump
-        </span>
-
-        <div className="ml-auto flex flex-shrink-0 items-center gap-2.5 sm:gap-3">
-          {/* Notifications */}
-          <button
-            aria-label="Notificações"
-            className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl text-ink transition-colors active:scale-95 hover:bg-black/[0.04]"
-          >
-            <Bell size={18} strokeWidth={2.2} />
-            {hasUnreadNotifications && (
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand ring-2 ring-white" />
-            )}
-          </button>
-
-          {/* Profile */}
-          <button
-            aria-label="Perfil"
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand to-orange-700 text-[12px] font-black text-white shadow-sm shadow-brand/20 transition-transform active:scale-95"
-          >
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={storeName} className="h-full w-full object-cover" />
-            ) : (
-              <span>{initials(storeName)}</span>
-            )}
-          </button>
-        </div>
-      </header>
-
-      <MobileSidebarDrawer
-        open={menuOpen}
-        onClose={closeMenu}
-        storeName={storeName}
-        storeUrl={storeUrl}
-        logoUrl={logoUrl}
-        plano={plano}
-      />
-    </>
-  );
+import { isProductFormFlowPath,productFormFlowTitle,isSettingsDetailPath } from '@/lib/nav/productFormFlow';
+import { useMobileNav } from './MobileNavContext';
+import { MobileSidebarDrawer } from './MobileSidebarDrawer';
+import { AccountAvatar, useAvatarPicker } from './AccountAvatar';
+import { useAccountT } from '@/lib/i18n/account';
+import { BrandMark } from './BrandMark';
+import { terminarSessao } from '@/lib/auth/client';
+export function TopBar({storeName,storeUrl}:{storeName:string;storeUrl:string|null;hasUnreadNotifications?:boolean}){
+ const path=useRouterState({select:s=>s.location.pathname});const navigate=useNavigate();const {menuOpen,openMenu,closeMenu,toggleDesktop}=useMobileNav();
+ const {account,notifications}=useDashboardState();const {requestExit,mode,triggerSaveAsDraft,triggerDiscard}=useProductFormGuard();
+ const [panel,setPanel]=useState<'account'|'notifications'|'product'|null>(null);const [logout,setLogout]=useState(false);const [confirmDelete,setConfirmDelete]=useState(false);const produtoMatch=path.match(/^\/produtos\/([^/]+)$/);const produtoId=produtoMatch&&produtoMatch[1]!=='novo'?produtoMatch[1]:null;const [scrolled,setScrolled]=useState(false);const ref=useRef<HTMLDivElement>(null);const {show}=useToast();const t=useAccountT();const picker=useAvatarPicker();
+ useEffect(()=>{const update=()=>setScrolled(window.scrollY>8);update();window.addEventListener('scroll',update,{passive:true});return()=>window.removeEventListener('scroll',update)},[]);
+ useEffect(()=>setPanel(null),[path]);useEffect(()=>{if(!panel)return;const close=(e:MouseEvent)=>{if(!ref.current?.contains(e.target as Node))setPanel(null)};const key=(e:KeyboardEvent)=>{if(e.key==='Escape')setPanel(null)};document.addEventListener('mousedown',close);document.addEventListener('keydown',key);return()=>{document.removeEventListener('mousedown',close);document.removeEventListener('keydown',key)}},[panel]);
+ const inFlow=isProductFormFlowPath(path);const unread=notifications.some(n=>!n.lida);
+ if(isSettingsDetailPath(path))return <MobileSidebarDrawer open={menuOpen} onClose={closeMenu} storeUrl={storeUrl}/>;
+ return <><header className={'global-header '+(inFlow?'product-flow-header ':'')+(scrolled?'is-scrolled':'')}><Button variant="ghost" className="w-11 px-0" aria-label={inFlow?'Voltar':'Abrir menu'} onClick={()=>{if(inFlow)requestExit(()=>navigate({to:'/produtos'}));else if(window.matchMedia('(min-width:768px)').matches)toggleDesktop();else openMenu()}}>{inFlow?<ChevronLeft size={22} strokeWidth={2.2}/>:<Menu width={21} height={21}/>}</Button>{inFlow?<h1 className="text-sm font-bold">{productFormFlowTitle(path)}</h1>:<><Link to="/dashboard" className="brand-lockup font-display text-lg font-extrabold"><span className="brand-mark"><BrandMark/></span>Shopyump</Link>{storeUrl&&<a href={storeUrl} target="_blank" rel="noopener noreferrer" className="store-chip" title="Abrir a loja pública"><span className="store-chip-dot" aria-hidden="true"/><span>{storeName}</span></a>}</>}
+ <div className="relative ml-auto flex items-center gap-2" ref={ref}>
+ {inFlow?<><Button variant="ghost" className="product-more-button px-0" aria-label="Mais ações" title="Mais ações" aria-expanded={panel==='product'} onClick={()=>setPanel(panel==='product'?null:'product')}><MoreVertical size={22} strokeWidth={2.2}/></Button>{panel==='product'&&<div className="menu-panel">{mode==='criar'?<><Button variant="ghost" className="menu-action" onClick={()=>{setPanel(null);triggerSaveAsDraft()}}><FileText size={16} strokeWidth={1.8}/>Guardar como rascunho</Button><Button variant="danger" className="menu-action" onClick={()=>{setPanel(null);triggerDiscard()}}><Trash2 size={16} strokeWidth={1.8}/>Descartar rascunho</Button></>:<>{storeUrl&&produtoId&&<a href={`${storeUrl}/p/${produtoId}`} target="_blank" rel="noopener noreferrer" className="nav-line" onClick={()=>setPanel(null)}><ExternalLink size={16} strokeWidth={1.8}/>Ver na loja pública</a>}<Button variant="ghost" className="menu-action" onClick={async()=>{setPanel(null);if(!produtoId)return;const r=await duplicateProduto(produtoId);if(!r.ok)show(r.error??'Não foi possível duplicar o produto.','error');else{show('Produto duplicado.');requestExit(()=>navigate({to:'/produtos'}))}}}><Copy size={16} strokeWidth={1.8}/>Duplicar produto</Button><Button variant="danger" className="menu-action" onClick={()=>{setPanel(null);setConfirmDelete(true)}}><Trash2 size={16} strokeWidth={1.8}/>Eliminar produto</Button></>}</div>}</>:<>
+  <Button variant="ghost" className="relative w-11 px-0" aria-label={unread?'Notificações, há não lidas':'Notificações'} aria-expanded={panel==='notifications'} onClick={()=>{if(path==='/notificacoes'){setPanel(null);navigate({to:'/dashboard'});return}setPanel(panel==='notifications'?null:'notifications')}}><Bell width={21} height={21}/>{unread&&<span className="unread-dot absolute right-2 top-2"/>}</Button>
+  <Button variant="ghost" className="account-avatar" aria-label={t.menuLabel} aria-expanded={panel==='account'} onClick={()=>setPanel(panel==='account'?null:'account')}><AccountAvatar/></Button>{picker.input}
+  {panel==='account'&&<div className="menu-panel" role="menu" aria-label={t.menuAria}><div className="account-menu-heading"><button type="button" className="account-avatar-preview account-avatar-button" aria-label={t.changePhoto} title={t.changePhoto} onClick={picker.open}><AccountAvatar/></button><Link to="/perfil" className="min-w-0" aria-label={t.openProfile}><p className="text-sm font-semibold">{account.nome}</p><p className="text-xs text-muted-foreground break-all">{account.email}</p></Link></div><Link to="/perfil" role="menuitem" className="nav-line"><User width={18} height={18}/>{t.profile}</Link><Link to="/seguranca" role="menuitem" className="nav-line"><ShieldCheck width={18} height={18}/>{t.security}</Link><Link to="/preferencias" role="menuitem" className="nav-line"><SlidersHorizontal width={18} height={18}/>{t.preferences}</Link><div className="mt-2 border-t border-border pt-2"><Button variant="ghost" className="menu-action text-destructive" onClick={()=>{setPanel(null);setLogout(true)}}><LogOut width={18} height={18}/>{t.logout}</Button></div></div>}
+  {panel==='notifications'&&<NotificationsQuickPanel onClose={()=>setPanel(null)}/>}
+ </>}
+ </div></header><ConfirmDialog open={confirmDelete} onClose={()=>setConfirmDelete(false)} title="Eliminar este produto?" description="Esta ação não pode ser desfeita." confirmLabel="Eliminar" danger onConfirm={async()=>{if(!produtoId)return;const r=await deleteProduto(produtoId);if(!r.ok)show(r.error??'Não foi possível eliminar o produto.','error');else{show('Produto eliminado.');navigate({to:'/produtos'})}}}/><MobileSidebarDrawer open={menuOpen} onClose={closeMenu} storeUrl={storeUrl}/><CenterMenu open={logout} onClose={()=>setLogout(false)} title={t.logoutTitle} description={t.logoutText} items={[{key:'logout',label:t.logout,danger:true,onClick:async()=>{await terminarSessao();show('Sessão terminada.');navigate({to:'/login',replace:true})}},{key:'cancel',label:t.cancel,onClick:()=>{}}]}/></>
 }

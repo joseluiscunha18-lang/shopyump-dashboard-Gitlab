@@ -1,0 +1,2 @@
+import {createFileRoute,redirect} from '@/lib/route-compat';
+export const Route=createFileRoute('/_dashboard/aparencia')({head: () => ({meta: [{"title": "Aparência — Shopyump"}, {"name": "description", "content": "Aparência no Shopyump."}, {"property": "og:title", "content": "Aparência — Shopyump"}, {"property": "og:description", "content": "Aparência no Shopyump."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary_large_image"}]}), beforeLoad:()=>{throw redirect({to:'/preferencias'})}});

@@ -1,12 +1,8 @@
-import type { Metadata } from 'next';
-import EditorPageClient from '@/theme-editor/pages/EditorPageClient';
-import { getUserContext } from '@/lib/auth/getUserContext';
-import { getEditorInit } from '@/lib/queries/personalizacaoEditor';
+'use client';
 
-export const metadata: Metadata = { title: 'Editor da loja | Shopyump' };
+import { Route } from '@/lib/routes/personalizar.editor';
+import { RoutePage } from '@/lib/route-compat';
 
-export default async function EditorPage() {
-  const ctx = await getUserContext();
-  const initial = ctx.loja ? await getEditorInit(ctx.loja) : undefined;
-  return <EditorPageClient initial={initial} />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

@@ -28,3 +28,9 @@ export function isFocusModePath(pathname: string | null): boolean {
 export function productFormFlowTitle(pathname: string | null): string {
   return pathname === '/produtos/novo' ? 'Adicionar produto' : 'Editar produto';
 }
+
+/** Páginas individuais de Configurações da loja: usam o cabeçalho contextual em vez do global. */
+export function isSettingsDetailPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return /^\/configuracoes\/.+/.test(pathname.replace(/\/$/, ''));
+}

@@ -1,3 +1,5 @@
+'use client';
+
 import { X } from "lucide-react";
 import { Button } from "@/theme-editor/ui/button";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";

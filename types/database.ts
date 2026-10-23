@@ -222,6 +222,10 @@ export interface ProdutoMaisOpcoes {
   /** kg. Peso padrão do produto; cada variante pode sobrescrever em `combinacao.peso`. */
   peso?: number | null;
   infoEntrega?: string | null;
+  /** Produto digital: link entregue ao cliente após a compra. */
+  linkDownload?: string | null;
+  /** Moeda do produto — guardada aqui porque `produtos` não tem coluna `moeda` (ver lib/db/produtoMapper.ts). */
+  moeda?: 'MZN' | 'ZAR' | 'USD' | 'EUR';
   /**
    * SEO é gerado automaticamente (ver lib/seo.ts) a partir do nome do
    * produto + nome da loja. Estes campos ficam reservados para uma futura
@@ -239,6 +243,7 @@ export interface Produto {
   nome: string;
   preco: number;
   preco_promo: number | null;
+  moeda?: 'MZN' | 'ZAR' | 'USD' | 'EUR';
   categoria: string;
   descricao: string | null;
   /**

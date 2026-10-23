@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Component, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Copy, Pencil, Palette, Store as StoreIcon } from "lucide-react";
+import { CopyIcon as Copy, PencilIcon as Pencil, PaletteIcon as Palette, StoreIcon } from "@/components/nav/NavigationIcons";
 import { toast } from "sonner";
 import { EditorRoot } from "@/theme-editor/ui/editor-root";
 import { Toaster } from "@/theme-editor/ui/sonner";
@@ -145,14 +145,14 @@ function MiniPreview({
     <div className="overflow-hidden rounded-2xl border bg-card shadow-pill">
       {/* Barra contextual: delimita a miniatura (sem o cabeçalho da loja) */}
       <div className="flex h-14 items-center justify-between gap-3 border-b bg-card px-4">
-        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold leading-none tracking-tight text-foreground">
-          <StoreIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="flex min-w-0 items-center gap-2 text-[15px] font-medium leading-none text-foreground">
+          <StoreIcon className="h-4 w-4 shrink-0 text-foreground" aria-hidden />
           <span className="truncate">Minha loja</span>
         </span>
         <button
           type="button"
           onClick={onView}
-          className="inline-flex h-8 shrink-0 items-center justify-center rounded-full bg-secondary px-3.5 text-xs font-semibold leading-none text-secondary-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-8 shrink-0 items-center justify-center rounded-full bg-secondary px-3.5 text-[13px] font-medium leading-none text-secondary-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Ver loja online
         </button>
@@ -168,8 +168,7 @@ function MiniPreview({
                 {/* Camada de fundo: a mesma seção, ampliada e desfocada, que continua por baixo da faixa de vidro */}
                 <div
                   aria-hidden
-                  // @ts-expect-error inert é atributo HTML válido
-                  inert=""
+                  inert={true}
                   className="pointer-events-none absolute inset-0 select-none overflow-hidden"
                 >
                   <div style={{ transform: `scale(${blurScale})`, transformOrigin: "50% 0%", filter: "blur(22px) saturate(1.15)", width: "100%", height: "100%" }}>
@@ -180,8 +179,7 @@ function MiniPreview({
                 <div
                   ref={innerRef}
                   aria-hidden
-                  // @ts-expect-error inert é atributo HTML válido
-                  inert=""
+                  inert={true}
                   className="pointer-events-none absolute left-0 top-0 select-none"
                   style={{ width: PREVIEW_W, transform: `scale(${scale})`, transformOrigin: "top left" }}
                 >
@@ -224,7 +222,7 @@ function MiniPreview({
           {/* Transição suave entre a seção e a faixa */}
           <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-10 h-10 bg-gradient-to-b from-transparent to-glass-dark" />
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-lg font-semibold tracking-tight">{data.store.name}</h2>
+            <h2 className="truncate text-lg font-medium">{data.store.name}</h2>
             <div className="mt-0.5 flex items-center gap-1">
               <span className="truncate text-xs text-glass-dark-muted">{url.replace(/^https?:\/\//, "")}</span>
               <button
@@ -310,14 +308,14 @@ function PersonalizarPageInner({ initial }: { initial?: LojaEditorInit }) {
         <section className="flex min-w-0 flex-col md:justify-end">
           <div className="flex flex-col items-start gap-3 border-b py-4">
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tema atual</p>
+              <p className="text-[13px] text-muted-foreground">Tema atual</p>
               {data ? (
                 <p className="mt-1 truncate font-medium">{data.manifest?.name ?? "Tema indisponível"}</p>
               ) : (
                 <Skeleton className="mt-1 h-5 w-32" />
               )}
             </div>
-            <Button variant="secondary" className="h-11 w-full justify-center md:w-auto rounded-full border px-4 font-semibold shadow-pill hover:bg-accent" onClick={() => mockAdapter.openExternal("themes")}>
+            <Button variant="secondary" className="h-11 w-full justify-center md:w-auto rounded-full border px-4 font-medium shadow-pill hover:bg-accent" onClick={() => mockAdapter.openExternal("themes")}>
               <Palette className="h-4 w-4" /> Explorar temas
             </Button>
           </div>

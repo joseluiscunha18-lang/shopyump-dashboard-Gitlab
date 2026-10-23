@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
-import { RegisterForm } from '@/components/auth/RegisterForm';
+'use client';
 
-export const metadata: Metadata = { title: 'Criar conta | Shopyump' };
+import { Route } from '@/lib/routes/registar';
+import { RoutePage } from '@/lib/route-compat';
 
-export default function RegisterPage() {
-  return <RegisterForm />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

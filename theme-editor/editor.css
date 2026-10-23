@@ -136,3 +136,6 @@ html:has(.ed-root-page) {
 @keyframes ed-drawer-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes ed-drawer-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @media (prefers-reduced-motion: reduce) { [data-overlay-scrim], .ed-store-drawer { animation: none !important; } }
+
+/* Personalizar: mesma tipografia da navegação do painel */
+.dashboard-shell .ed-root { font-family: var(--navigation-font); }

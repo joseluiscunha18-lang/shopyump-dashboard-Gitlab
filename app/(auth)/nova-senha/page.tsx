@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
-import { ResetForm } from '@/components/auth/ResetForm';
+'use client';
 
-export const metadata: Metadata = { title: 'Nova senha | Shopyump' };
+import { Route } from '@/lib/routes/nova-senha';
+import { RoutePage } from '@/lib/route-compat';
 
-export default function ResetPage() {
-  return <ResetForm />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

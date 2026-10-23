@@ -26,24 +26,21 @@ interface DashboardGreetingProps {
   fase: 'inicio' | 'em_progresso' | 'completo';
 }
 
-const SUBTITULO: Record<DashboardGreetingProps['fase'], string> = {
-  inicio: 'Vamos começar a preparar sua loja.',
-  em_progresso: 'Sua loja está ganhando forma.',
-  completo: 'Sua loja está pronta para vender.',
+const TEXTO: Record<DashboardGreetingProps['fase'], { eyebrow: string; titulo: string; sub: string }> = {
+  inicio: { eyebrow: 'Início · Primeiro acesso', titulo: 'Vamos preparar a tua loja?', sub: 'Adiciona o teu primeiro produto e dá o primeiro passo para começares a vender.' },
+  em_progresso: { eyebrow: 'Início · Primeiro produto criado', titulo: 'A tua loja está a ganhar forma!', sub: 'O teu primeiro produto já está criado. Continua a preparar a tua loja para receber clientes.' },
+  completo: { eyebrow: 'Início', titulo: 'A tua loja está pronta para crescer.', sub: 'Aqui está o que está a acontecer na tua loja.' },
 };
 
-/**
- * Cabeçalho de saudação da Home — "Olá, {nome}" + subtítulo que muda
- * conforme a fase da jornada (ver `fase` acima). Fica sempre no topo da
- * página, acima de tudo (alerta de pedido, cards financeiros,
- * onboarding) — é o único elemento que não desaparece nem se reordena
- * conforme o estado da loja.
- */
+/** Saudação da Home — o "Olá" mantém-se; título e texto evoluem com a fase. */
 export function DashboardGreeting({ name, fase }: DashboardGreetingProps) {
+  const t = TEXTO[fase];
   return (
-    <div>
-      <h1 className="text-[22px] font-black leading-tight tracking-tight text-ink sm:text-[24px]">Olá, {name}</h1>
-      <p className="mt-1 text-[14px] font-medium text-slate-500">{SUBTITULO[fase]}</p>
+    <div className="dashboard-greeting px-1">
+      <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{t.eyebrow}</p>
+      <p className="mt-3 text-[17px] font-semibold text-foreground">Olá, {name}!</p>
+      <h1 className="mt-1 text-[28px] font-black leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[32px]">{t.titulo}</h1>
+      <p className="mt-2 text-[15px] font-medium text-muted-foreground">{t.sub}</p>
     </div>
   );
 }

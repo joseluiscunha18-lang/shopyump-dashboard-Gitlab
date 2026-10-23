@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
-import { LoginForm } from '@/components/auth/LoginForm';
+'use client';
 
-export const metadata: Metadata = { title: 'Iniciar sessão | Shopyump' };
+import { Route } from '@/lib/routes/login';
+import { RoutePage } from '@/lib/route-compat';
 
-export default function LoginPage() {
-  return <LoginForm />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

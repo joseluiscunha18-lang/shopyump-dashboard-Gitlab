@@ -1,7 +1,8 @@
 'use client';
 
+import {Link as RouterLink} from "@/lib/router-compat";
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/ShopyumpButton';
 import { ProductPreviewCard } from '@/components/produtos/ProductPreviewCard';
 import { ProductsExplorer } from '@/components/produtos/ProductsExplorer';
 import { ProductCelebrationBanner } from '@/components/produtos/ProductCelebrationBanner';
@@ -9,7 +10,7 @@ import { usePublishing } from '@/components/produtos/PublishingContext';
 import type { Produto, LojaMarco } from '@/types/database';
 
 /**
- * Decide entre o ecrã vazio ("Adicione seu primeiro produto") e a lista.
+ * Decide entre o ecrã vazio ("Adiciona o teu primeiro produto") e a lista.
  * Precisa de ser client porque, além dos `produtos` já guardados na base
  * (vindos do servidor), tem de olhar também para publicações otimistas
  * ainda em curso — o primeiro produto de uma loja pode estar "a publicar"
@@ -55,26 +56,26 @@ export function ProdutosPageBody({
     : null;
 
   return (
-    <div className="flex flex-col gap-6 pt-2">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pb-28 pt-2">
       <ProductCelebrationBanner lojaId={lojaId} lojaSlug={lojaSlug} persisted={persisted} />
 
-      <h2 className="text-lg font-black text-ink tracking-tight">Produtos</h2>
+      <header className="flex items-end justify-between gap-4"><div className="flex flex-col gap-1.5"><h1 className="text-[26px] font-bold tracking-tight text-foreground">Produtos</h1></div>{temAlgumaCoisa && <Link href="/produtos/novo" className="hidden shrink-0 lg:block"><Button variant="dark">Adicionar</Button></Link>}</header>
 
       {temAlgumaCoisa ? (
         <ProductsExplorer produtos={produtos} />
       ) : (
-        <div className="relative w-full overflow-hidden rounded-md bg-white shadow-[0_1px_0_rgba(15,23,42,0.04),0_4px_10px_-6px_rgba(15,23,42,0.08),0_12px_20px_-16px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03]">
+        <div className="relative w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs">
           <div className="flex flex-col items-center px-6 pt-6 pb-6 sm:pt-8 sm:pb-8">
             <ProductPreviewCard />
 
             <div className="mt-3 flex max-w-[280px] flex-col items-center gap-2 text-center sm:mt-4">
-              <h2 className="font-display text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-                Adicione seu primeiro produto
+              <h2 className="font-display text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
+                Adiciona o teu primeiro produto
               </h2>
-              <p className="text-[13px] font-medium leading-relaxed text-slate-400">
-                Comece a construir seu catálogo e
+              <p className="text-[13px] font-medium leading-relaxed text-muted-foreground">
+                Começa a construir o teu catálogo e
                 <br />
-                coloque seus produtos à venda.
+                coloca os teus produtos à venda.
               </p>
             </div>
 

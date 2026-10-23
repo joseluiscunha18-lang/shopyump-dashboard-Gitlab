@@ -16,6 +16,11 @@ export interface LojaPublica {
   descricao: string | null;
   banner_url: string | null;
   whatsapp: string | null;
+  /** Canais de contacto oficiais (opcionais até existirem colunas no backend). */
+  email?: string | null;
+  telefone?: string | null;
+  mensagem_whatsapp?: string | null;
+  horario_atendimento?: string | null;
   instagram: string | null;
   facebook: string | null;
   tiktok: string | null;

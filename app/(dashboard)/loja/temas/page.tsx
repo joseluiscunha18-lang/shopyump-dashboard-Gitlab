@@ -1,12 +1,8 @@
-import type { Metadata } from 'next';
-import { ThemeCatalog } from '@/components/loja/customize/ThemeCatalog';
+'use client';
 
-export const metadata: Metadata = { title: 'Temas | Shopyump' };
+import { Route } from '@/lib/routes/_dashboard.loja.temas';
+import { RoutePage } from '@/lib/route-compat';
 
-// As miniaturas do catálogo são composições abstratas feitas só dos
-// tokens do tema (cores, espaçamento) — não usam dados da loja nem dos
-// produtos, então esta página não precisa buscar nada no Supabase.
-// Os dados reais só entram na página de detalhe do tema.
-export default function TemasPage() {
-  return <ThemeCatalog />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

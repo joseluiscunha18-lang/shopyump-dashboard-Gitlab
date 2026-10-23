@@ -26,7 +26,7 @@ export function usePedidosRealtime(lojaId: string | null, onChange: ChangeHandle
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'pedidos', filter: `loja_id=eq.${lojaId}` },
-        (payload) => {
+        (payload: any) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             handlerRef.current(payload.eventType, payload.new as Pedido);
           }

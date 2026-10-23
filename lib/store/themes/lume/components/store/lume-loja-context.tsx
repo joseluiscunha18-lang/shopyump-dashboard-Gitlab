@@ -41,6 +41,9 @@ export interface LojaContactos {
   facebook: string | undefined;
   tiktok: string | undefined;
   email: string | undefined;
+  telefone?: string;
+  mensagemWhatsapp?: string;
+  horario?: string;
   /** Nome da loja para exibição no footer/header */
   nome: string;
   descricao: string | undefined;
@@ -142,8 +145,10 @@ export function LumeLojaProvider({
     instagram: loja.instagram?.trim() || undefined,
     facebook: loja.facebook?.trim() || undefined,
     tiktok: loja.tiktok?.trim() || undefined,
-    // email não existe em LojaPublica ainda — deixa undefined até ser adicionado
-    email: undefined,
+    email: loja.email?.trim() || undefined,
+    telefone: loja.telefone?.trim() || undefined,
+    mensagemWhatsapp: loja.mensagem_whatsapp?.trim() || undefined,
+    horario: loja.horario_atendimento?.trim() || undefined,
   };
 
   // Páginas institucionais — `mostrar_*` vem do toggle em "Definições da

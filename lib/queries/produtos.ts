@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import { linhaParaProduto } from '@/lib/db/produtoMapper';
 import type { Produto } from '@/types/database';
 
@@ -8,7 +8,7 @@ import type { Produto } from '@/types/database';
  * full row payload getProdutosByLoja() returns.
  */
 export async function getProdutosCount(lojaId: string): Promise<number> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { count, error } = await supabase
     .from('produtos')
     .select('id', { count: 'exact', head: true })
@@ -18,7 +18,7 @@ export async function getProdutosCount(lojaId: string): Promise<number> {
 }
 
 export async function getProdutosByLoja(lojaId: string): Promise<Produto[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('produtos')
     .select('*')
@@ -45,7 +45,7 @@ export interface ProdutoPreview {
  * página inteira espera pelo payload completo dos produtos.
  */
 export async function getProdutosParaPreview(lojaId: string, limite = 4): Promise<ProdutoPreview[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('produtos')
     .select('id, nome, preco, fotos')
@@ -64,7 +64,7 @@ export async function getProdutosParaPreview(lojaId: string, limite = 4): Promis
 }
 
 export async function getProdutoById(id: string): Promise<Produto | null> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase.from('produtos').select('*').eq('id', id).maybeSingle();
   if (error) throw error;
   return data ? linhaParaProduto(data) : null;

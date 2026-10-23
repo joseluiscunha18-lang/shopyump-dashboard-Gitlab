@@ -1,3 +1,5 @@
+'use client';
+
 import { linkToPage, pageAvailable, resolveOpenTarget } from "./openAction";
 import {
   createContext,

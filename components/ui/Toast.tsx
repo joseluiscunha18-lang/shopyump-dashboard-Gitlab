@@ -2,7 +2,6 @@
 
 import { createContext, useCallback, useContext, useState, ReactNode } from 'react';
 import { CheckCircle2, AlertTriangle, X } from 'lucide-react';
-import { cn } from '@/lib/cn';
 
 interface ToastMessage {
   id: number;
@@ -45,25 +44,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={cn(
-              'animate-toast-in pointer-events-auto max-h-[45vh] w-full max-w-[420px] overflow-y-auto bg-white/95 backdrop-blur-xl border shadow-2xl rounded-md p-3.5 flex items-start gap-3',
-              t.tone === 'success' ? 'border-emerald-100' : 'border-red-100'
-            )}
+            className="animate-toast-in pointer-events-auto flex max-h-[45vh] w-full max-w-[420px] items-start gap-2.5 overflow-y-auto rounded-xl border border-border/80 bg-card/95 p-3 shadow-lg backdrop-blur-md"
           >
-            <div
-              className={cn(
-                'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                t.tone === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
-              )}
-            >
-              {t.tone === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-            </div>
-            <p className="flex-1 whitespace-pre-line text-[12px] font-bold text-ink leading-tight">{t.title}</p>
+            {t.tone === 'success' ? (
+              <CheckCircle2 className="mt-px size-4 shrink-0 text-muted-foreground" strokeWidth={1.8} />
+            ) : (
+              <AlertTriangle className="mt-px size-4 shrink-0 text-destructive" strokeWidth={1.8} />
+            )}
+            <p className="flex-1 whitespace-pre-line text-[13px] font-medium leading-snug text-foreground">{t.title}</p>
             <button
+              type="button"
+              aria-label="Fechar aviso"
               onClick={() => setToasts((ts) => ts.filter((x) => x.id !== t.id))}
-              className="text-slate-300 hover:text-slate-500"
+              className="rounded-md text-muted-foreground/70 transition-colors hover:text-foreground"
             >
-              <X size={14} />
+              <X className="size-3.5" strokeWidth={1.8} />
             </button>
           </div>
         ))}

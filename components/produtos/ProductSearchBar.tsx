@@ -12,20 +12,16 @@ export function ProductSearchBar({
   produtos: Produto[];
 }) {
   return (
-    <div className="relative">
-      {/* Sem caixa própria (sem borda/cantos arredondados) — é só uma linha
-      dentro do card, com um traço fino por baixo a separar do resto, em vez
-      de um "cartão dentro do cartão". */}
-      <div className="flex h-10 items-center gap-2.5 border-b border-[#1A1210]/10 pb-3 transition-colors focus-within:border-ink">
-        <Search size={16} strokeWidth={2.3} className="flex-shrink-0 text-[#1A1210]/55" />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Procurar"
-          className="h-full w-full min-w-0 bg-transparent text-[13px] font-semibold text-ink placeholder:text-[#1A1210]/40 focus:outline-none"
-        />
-      </div>
+    <div className="flex h-11 items-center gap-2.5 overflow-hidden rounded-xl border border-transparent bg-muted px-3.5 transition-colors focus-within:border-border focus-within:bg-card [-webkit-tap-highlight-color:transparent]">
+      <Search size={17} strokeWidth={1.8} className="shrink-0 text-muted-foreground" />
+      <input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Procurar produtos"
+        aria-label="Procurar produtos"
+        className="h-full w-full min-w-0 appearance-none border-0 bg-transparent text-[14px] font-medium text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+      />
     </div>
   );
 }

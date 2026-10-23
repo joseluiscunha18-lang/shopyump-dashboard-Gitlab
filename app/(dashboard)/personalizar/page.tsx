@@ -1,13 +1,8 @@
-import type { Metadata } from 'next';
-import PersonalizarPageClient from '@/theme-editor/pages/PersonalizarPageClient';
-import { getUserContext } from '@/lib/auth/getUserContext';
-import { getEditorInit } from '@/lib/queries/personalizacaoEditor';
+'use client';
 
-export const metadata: Metadata = { title: 'Personalizar loja | Shopyump' };
+import { Route } from '@/lib/routes/_dashboard.personalizar';
+import { RoutePage } from '@/lib/route-compat';
 
-export default async function PersonalizarPage() {
-  const ctx = await getUserContext();
-  // Admin sem loja própria: o editor abre com os dados de demonstração.
-  const initial = ctx.loja ? await getEditorInit(ctx.loja) : undefined;
-  return <PersonalizarPageClient initial={initial} />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

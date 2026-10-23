@@ -166,25 +166,25 @@ export function PendingProductRow({
   const menuItems: ProductMenuItem[] = [
     {
       key: 'editar',
-      icon: <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />,
+      icon: <Pencil size={16} strokeWidth={1.8} className="text-muted-foreground" />,
       label: 'Editar',
       onClick: avisarAindaPublicando,
     },
     {
       key: 'duplicar',
-      icon: <Copy size={15} strokeWidth={2.3} className="text-slate-500" />,
+      icon: <Copy size={16} strokeWidth={1.8} className="text-muted-foreground" />,
       label: 'Duplicar',
       onClick: avisarAindaPublicando,
     },
     {
       key: 'inativar',
-      icon: <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />,
+      icon: <EyeOff size={16} strokeWidth={1.8} className="text-muted-foreground" />,
       label: 'Inativar',
       onClick: avisarAindaPublicando,
     },
     {
       key: 'excluir',
-      icon: <Trash2 size={15} strokeWidth={2.3} />,
+      icon: <Trash2 size={16} strokeWidth={1.8} />,
       label: 'Excluir',
       onClick: () => dismissPending(produto.tempId),
       danger: true,
@@ -222,17 +222,17 @@ export function PendingProductRow({
           </div>
         ) : (
           <>
-            <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
-            <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
-              {produto.precoLabel} MZN · {categoriaEspecifica}
+            <p className="truncate text-[13px] leading-[13px] font-semibold text-foreground">{produto.nome}</p>
+            <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-muted-foreground">
+              {produto.precoLabel} {produto.moeda ?? 'MZN'}
             </p>
             {comErro ? (
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-muted-foreground">
                 <AlertTriangle size={11} className="text-red-500" />
                 <span className="text-red-500">{produto.errorMessage ?? 'Não foi possível publicar.'}</span>
               </p>
             ) : (
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-muted-foreground">
                 <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
                 Ativo
               </p>
@@ -247,7 +247,7 @@ export function PendingProductRow({
             href="/produtos/novo"
             aria-label="Tentar novamente"
             title="Tentar novamente"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <RotateCcw size={16} strokeWidth={2.2} />
           </Link>
@@ -256,7 +256,7 @@ export function PendingProductRow({
             onClick={() => dismissPending(produto.tempId)}
             aria-label="Descartar"
             title="Descartar"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X size={16} strokeWidth={2.2} />
           </button>

@@ -1,4 +1,4 @@
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Theme, ThemeButtonRadius } from '@/types/theme';
 import type { PreviewProduct, PreviewStoreData } from '@/lib/mocks/storePreview';
@@ -168,7 +168,7 @@ export function StorePreview({ theme, store, products, settings, size = 'full', 
         >
           {store.nome}
         </span>
-        <ShoppingBag size={isThumb ? 10 : 16} style={{ color: theme.colors.muted }} />
+        <ShoppingCart size={isThumb ? 10 : 16} style={{ color: theme.colors.muted }} />
       </div>
 
       <div className={cn(flow ? '' : 'flex-1', frozen ? 'overflow-hidden' : flow ? '' : 'overflow-y-auto')}>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { MoreVertical } from 'lucide-react';
 import { useClickOutside } from './useClickOutside';
 import { Skeleton } from '@/components/ui/Surfaces';
+import { Button } from '@/components/ui/ShopyumpButton';
 
 export type ProductMenuItem = {
   key: string;
@@ -96,21 +97,24 @@ export function ProductActionsMenu({ items, loading }: { items: ProductMenuItem[
   }
 
   return (
-    <div ref={ref} className="relative h-8 w-8 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+    <div ref={ref} className="product-actions-trigger relative h-8 w-8 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {/* Botão sempre no DOM para o wrapper nunca mudar de tamanho */}
-      <button
+       <Button
+         variant="ghost"
         type="button"
         disabled={loading}
         onClick={handleToggle}
         aria-label="Ações do produto"
-        className="absolute inset-0 rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink disabled:pointer-events-none"
+         title="Ações do produto"
+         aria-expanded={open}
+         className="absolute inset-0 h-8 min-h-8 w-8 rounded-full bg-transparent p-0 text-muted-foreground transition-colors hover:bg-muted active:bg-muted aria-expanded:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 [-webkit-tap-highlight-color:transparent] disabled:pointer-events-none"
       />
 
       {/* Ícone sempre no DOM: opacity-0 durante o skeleton, opacity-100 depois */}
       <MoreVertical
-        size={17}
-        strokeWidth={2.3}
-        className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-150 ${
+         size={18}
+        strokeWidth={2.2}
+        className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground transition-opacity duration-150 ${
           loading ? 'opacity-0' : 'opacity-100'
         }`}
       />
@@ -129,11 +133,11 @@ export function ProductActionsMenu({ items, loading }: { items: ProductMenuItem[
             ref={menuRef}
             onClick={(e) => e.stopPropagation()}
             style={{ position: 'fixed', left: pos.left, top: pos.top, bottom: pos.bottom, width: MENU_WIDTH }}
-            className="z-[200] overflow-hidden rounded-md border border-[#1A1210]/12 bg-white p-1.5 shadow-[0_16px_40px_-14px_rgba(15,23,42,0.22)]"
+             className="product-actions-panel z-[200] overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-lg"
           >
             {items.map((item) => {
-              const className = `flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
-                item.danger ? 'text-red-500 hover:bg-red-50' : 'text-ink hover:bg-slate-50'
+              const className = `flex h-auto min-h-0 w-full items-center gap-2.5 rounded-xl bg-transparent px-3 py-2.5 text-left text-[14px] font-medium shadow-none transition-colors ${
+                 item.danger ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-muted active:bg-muted'
               }`;
               const content = (
                 <>
@@ -143,23 +147,24 @@ export function ProductActionsMenu({ items, loading }: { items: ProductMenuItem[
               );
               return (
                 <div key={item.key}>
-                  {item.separatorBefore && <div className="my-1 h-px bg-[#1A1210]/8" />}
+                   {item.separatorBefore && <div className="my-1 h-px bg-border" />}
                   {item.href ? (
                     <Link href={item.href} onClick={() => setOpen(false)} className={className}>
                       {content}
                     </Link>
                   ) : (
-                    <button
+                     <Button
+                       variant="ghost"
                       type="button"
                       disabled={item.disabled}
                       onClick={() => {
                         setOpen(false);
                         item.onClick?.();
                       }}
-                      className={className}
+                       className={className+' justify-start'}
                     >
                       {content}
-                    </button>
+                     </Button>
                   )}
                 </div>
               );

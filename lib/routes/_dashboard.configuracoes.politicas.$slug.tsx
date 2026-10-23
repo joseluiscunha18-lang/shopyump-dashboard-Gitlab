@@ -1,0 +1,4 @@
+import {createFileRoute} from '@/lib/route-compat';
+import {ContentPageEditor} from '@/components/loja/ContentPages';
+export const Route=createFileRoute('/_dashboard/configuracoes/politicas/$slug')({head:({params})=>({meta:[{title:'Editar '+params.slug+' | Shopyump'},{name:'description',content:'Editar conteúdo da loja na demonstração Shopyump.'},{property:'og:title',content:'Editar '+params.slug+' | Shopyump'},{property:'og:description',content:'Conteúdo público da loja Shopyump.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Page});
+function Page(){const {slug}=Route.useParams();return <ContentPageEditor key={slug} slug={slug}/>}

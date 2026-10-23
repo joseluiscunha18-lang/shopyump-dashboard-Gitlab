@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
-import { Input, Textarea } from '@/components/ui/Input';
+import { Input, Textarea } from '@/components/ui/ShopyumpInput';
 import type { ProdutoMaisOpcoes } from '@/types/database';
 import { cn } from '@/lib/cn';
 

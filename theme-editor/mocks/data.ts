@@ -9,7 +9,8 @@ import type {
 
 const img = (seed: string, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 /** Imagens de demonstração do tema Lume (public/tema-lume/products). */
-const lumeImg = (name: string) => `/tema-lume/products/${name}.png`;
+const lumeAssets: Record<string,string> = {"bag": "/tema-lume/products/bag.png", "cap": "/tema-lume/products/cap.png", "coat": "/tema-lume/products/coat.png", "dress": "/tema-lume/products/dress.png", "hoodie": "/tema-lume/products/hoodie.png", "shirt": "/tema-lume/products/shirt.png", "tee": "/tema-lume/products/tee.png", "wallet": "/tema-lume/products/wallet.png"};
+const lumeImg = (name: string) => lumeAssets[name];
 
 export const mockStore: Store = {
   name: "Casa Aurora",

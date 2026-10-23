@@ -56,7 +56,8 @@ export function ProductRow({
     });
   }
 
-  const preco = produto.preco_promo && produto.preco_promo > 0 ? produto.preco_promo : produto.preco;
+  const emPromo = !!produto.preco_promo && produto.preco_promo > 0 && produto.preco_promo < produto.preco;
+  const preco = emPromo ? (produto.preco_promo as number) : produto.preco;
   // `produto.categoria` guarda o caminho completo ("Moda › Calçados ›
   // Ténis"), mas mostrar a cadeia inteira nesta linha estreita é o que
   // fazia o texto cortar. A última parte já é a mais específica da
@@ -69,13 +70,13 @@ export function ProductRow({
   const menuItems: ProductMenuItem[] = [
     {
       key: 'editar',
-      icon: <Pencil size={15} strokeWidth={2.3} className="text-slate-500" />,
+      icon: <Pencil size={16} strokeWidth={1.8} className="text-muted-foreground" />,
       label: 'Editar',
       href: `/produtos/${produto.id}`,
     },
     {
       key: 'duplicar',
-      icon: <Copy size={15} strokeWidth={2.3} className="text-slate-500" />,
+      icon: <Copy size={16} strokeWidth={1.8} className="text-muted-foreground" />,
       label: 'Duplicar',
       onClick: handleDuplicate,
       disabled: pending,
@@ -83,9 +84,9 @@ export function ProductRow({
     {
       key: 'ativo',
       icon: ativo ? (
-        <EyeOff size={15} strokeWidth={2.3} className="text-slate-500" />
+        <EyeOff size={16} strokeWidth={1.8} className="text-muted-foreground" />
       ) : (
-        <Eye size={15} strokeWidth={2.3} className="text-slate-500" />
+        <Eye size={16} strokeWidth={1.8} className="text-muted-foreground" />
       ),
       label: ativo ? 'Inativar' : 'Ativar',
       onClick: handleToggleAtivo,
@@ -93,7 +94,7 @@ export function ProductRow({
     },
     {
       key: 'excluir',
-      icon: <Trash2 size={15} strokeWidth={2.3} />,
+      icon: <Trash2 size={16} strokeWidth={1.8} />,
       label: 'Excluir',
       onClick: () => setConfirmDeleteOpen(true),
       disabled: pending,
@@ -111,7 +112,7 @@ export function ProductRow({
         if (e.key === 'Enter') router.push(`/produtos/${produto.id}`);
       }}
       className={cn(
-        'group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50/60 cursor-pointer',
+        'group flex items-center gap-3 p-4 transition-colors duration-150 hover:bg-muted/40 active:bg-muted/70 cursor-pointer [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:bg-muted/50',
         selected && 'bg-[#1A1210]/[0.04] hover:bg-[#1A1210]/[0.06]',
       )}
       style={{ contain: 'layout' }}
@@ -131,11 +132,16 @@ export function ProductRow({
       />
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] leading-[13px] font-bold text-ink">{produto.nome}</p>
-        <p className="mt-0.5 truncate text-[12px] leading-[12px] font-semibold text-slate-600">
-          {preco.toLocaleString('pt-MZ')} MZN · {categoriaEspecifica}
+        <p className="truncate text-[13px] leading-[13px] font-semibold text-foreground">{produto.nome}</p>
+        <p className="mt-1 flex min-w-0 items-baseline gap-1 text-[12px] leading-[14px] font-medium text-muted-foreground">
+          {emPromo && (
+            <span className="shrink-0 line-through">
+              {produto.preco.toLocaleString('pt-MZ')}
+            </span>
+          )}
+          <span className={cn('shrink-0 font-semibold', emPromo ? 'text-destructive' : 'text-foreground')}>{preco.toLocaleString('pt-MZ')} {produto.moeda ?? 'MZN'}</span>
         </p>
-        <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[11px] font-semibold text-slate-600">
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-[13px] font-medium text-muted-foreground">
           {ativo ? (
             <span className="h-[6px] w-[6px] rounded-full bg-emerald-500" />
           ) : produto.rascunho ? (
@@ -144,7 +150,13 @@ export function ProductRow({
             <span className="h-[6px] w-[6px] rounded-full bg-slate-300" />
           )}
           {ativo ? 'Ativo' : produto.rascunho ? 'Rascunho' : 'Inativo'}
-          {temEstoque && <span className="text-slate-400">· Estoque: {produto.estoque}</span>}
+          {temEstoque && produto.estoque === 0 ? (
+            <span className="rounded-full bg-destructive/10 px-1.5 py-[3px] text-[10px] font-bold text-destructive">
+              Sem stock
+            </span>
+          ) : (
+            temEstoque && <span>· Estoque: {produto.estoque}</span>
+          )}
         </p>
       </div>
 

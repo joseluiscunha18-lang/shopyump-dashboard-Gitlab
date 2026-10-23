@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft, Check, Search } from 'lucide-react';
-import { Sheet } from '@/components/ui/Sheet';
+import { Sheet } from '@/components/ui/ShopyumpSheet';
 import { cn } from '@/lib/cn';
 import {
   CATEGORIAS_TOPO,
@@ -111,7 +111,7 @@ export function CategoryPicker({
           <div className="relative">
             <Search
               size={15}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <input
               ref={inputRef}
@@ -119,7 +119,7 @@ export function CategoryPicker({
               onChange={(e) => setTermo(e.target.value)}
               onPointerDown={(e) => e.stopPropagation()}
               placeholder="Pesquisar categoria…"
-              className="w-full touch-auto rounded-md border border-[#D4D2CF] bg-white py-3 pl-10 pr-4 font-[Manrope,sans-serif] text-[13px] font-semibold text-[#111110] outline-none placeholder:font-medium placeholder:text-[#71717A] focus:border-[#1C1917]"
+              className="h-11 w-full touch-auto appearance-none rounded-xl border border-border/70 bg-muted/50 pl-10 pr-4 text-[14px] font-medium text-foreground shadow-none outline-none ring-0 transition-colors placeholder:text-muted-foreground focus:border-foreground/40 focus:bg-card focus:ring-0 [-webkit-tap-highlight-color:transparent]"
             />
           </div>
         }

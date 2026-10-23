@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, Fragment, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import * as Icons from "lucide-react";
 import {
@@ -1127,7 +1129,7 @@ function CartDrawerSection({ id }: { id: string }) {
         <Editable path={elementPath(id, "description")} label="Descrição" as="div"><p style={{ marginTop: 4, fontSize: 14, color: colors.secondary }}>{description.text || UI_TEXT.cartDescription}</p></Editable>
       </div>
       <div style={{ flex: 1, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 288 }}>
-        <span style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: 999, background: colors.gallery }}><Icons.ShoppingBag size={24} /></span>
+        <span style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: 999, background: colors.gallery }}><Icons.ShoppingCart size={24} /></span>
         <h3 style={{ marginTop: 16, fontSize: 16, fontWeight: 600 }}>{UI_TEXT.cartEmptyTitle}</h3>
         <p style={{ marginTop: 4, maxWidth: 224, fontSize: 14, color: colors.secondary }}>{UI_TEXT.cartEmptyText}</p>
       </div>

@@ -28,6 +28,7 @@ export interface PendingProduto {
   tempId: string;
   nome: string;
   precoLabel: string;
+  moeda?: string;
   categoria: string;
   /** blob: URL local — só válido enquanto o documento não recarrega. */
   fotoPreview: string | null;
@@ -65,6 +66,7 @@ export interface Celebration {
   /** Dados optimistas disponíveis desde startPublish — sem esperar rede. */
   nome: string;
   precoLabel: string;
+  moeda?: string;
   fotoPreview: string | null;
   /** Preenchido quando resolvePublish termina. Pode ser null enquanto upload/insert decorrem. */
   produtoId: string | null;
@@ -121,6 +123,7 @@ export function PublishingProvider({ children }: { children: ReactNode }) {
       tempId: p.tempId,
       nome: p.nome,
       precoLabel: p.precoLabel,
+      moeda: p.moeda,
       fotoPreview: p.fotoPreview,
       produtoId: null,
       foto: undefined,

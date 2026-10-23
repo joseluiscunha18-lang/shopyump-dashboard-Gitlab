@@ -13,11 +13,20 @@ import type { Produto } from '@/types/database';
  * existiu com esse nome.
  */
 
-/** DB → app: junta as duas colunas no campo único `estoque`. */
+/**
+ * A moeda do produto (MZN/ZAR/USD/EUR) NÃO tem coluna própria em `produtos`:
+ * é guardada dentro de `mais_opcoes.moeda` (JSON), sem alterar o esquema da base.
+ */
+const MOEDAS = ['MZN', 'ZAR', 'USD', 'EUR'] as const;
+
+/** DB → app: junta as duas colunas no campo único `estoque` e repõe a `moeda`. */
 export function linhaParaProduto(row: Record<string, unknown>): Produto {
   const { controlar_estoque, estoque_qtd, ...resto } = row;
+  const mo = (row.mais_opcoes ?? null) as { moeda?: string } | null;
+  const moeda = (MOEDAS as readonly string[]).includes(mo?.moeda ?? '') ? (mo!.moeda as Produto['moeda']) : 'MZN';
   return {
     ...resto,
+    moeda,
     estoque: controlar_estoque ? ((estoque_qtd as number | null) ?? 0) : null,
   } as Produto;
 }
@@ -29,8 +38,19 @@ export function linhaParaProduto(row: Record<string, unknown>): Produto {
  * zerar o estoque só por não ter mencionado o campo.
  */
 export function produtoParaLinha<T extends Record<string, unknown>>(payload: T): Record<string, unknown> {
-  if (!('estoque' in payload)) return payload;
-  const { estoque, ...resto } = payload;
+  let linha: Record<string, unknown> = { ...payload };
+
+  // `moeda` → dentro de mais_opcoes (a coluna não existe). Só mexe quando a chave vem no payload.
+  if ('moeda' in linha) {
+    const { moeda, ...semMoeda } = linha;
+    linha = semMoeda;
+    if (moeda) {
+      linha.mais_opcoes = { ...((linha.mais_opcoes as Record<string, unknown> | null | undefined) ?? {}), moeda };
+    }
+  }
+
+  if (!('estoque' in linha)) return linha;
+  const { estoque, ...resto } = linha;
   return {
     ...resto,
     controlar_estoque: typeof estoque === 'number',

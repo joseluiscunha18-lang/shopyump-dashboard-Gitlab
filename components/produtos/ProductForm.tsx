@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileEdit } from 'lucide-react';
-import { Input, Textarea } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Input, Textarea } from '@/components/ui/ShopyumpInput';
+import { Button } from '@/components/ui/ShopyumpButton';
 import { cn } from '@/lib/cn';
-import { Switch } from '@/components/ui/Switch';
+import { Switch } from '@/components/ui/ShopyumpSwitch';
 import { PhotoUploader } from '@/components/produtos/PhotoUploader';
 import { CategoryPicker } from '@/components/produtos/CategoryPicker';
 import { VariantEditor, type VariantesState } from '@/components/produtos/VariantEditor';
@@ -29,6 +29,61 @@ import {
 } from '@/lib/produtos/draft';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
+/* ── Seletor de moeda (só para este produto) ──────────────────────────────── */
+
+const MOEDAS = [
+  { code: 'MZN', label: 'Metical moçambicano' },
+  { code: 'ZAR', label: 'Rand sul-africano' },
+  { code: 'USD', label: 'Dólar norte-americano' },
+  { code: 'EUR', label: 'Euro' },
+] as const;
+type Moeda = (typeof MOEDAS)[number]['code'];
+
+function MoedaPicker({ moeda, onChange }: { moeda: Moeda; onChange: (m: Moeda) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="absolute right-2 top-1/2 -translate-y-1/2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label="Escolher moeda deste produto"
+        className="flex h-8 items-center rounded-full bg-muted px-3 text-[12px] font-bold text-foreground transition-colors hover:bg-accent [-webkit-tap-highlight-color:transparent]"
+      >
+        {moeda}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-[220px] rounded-2xl border border-border bg-card p-1.5 shadow-lg">
+          {MOEDAS.map((m) => (
+            <button
+              key={m.code}
+              type="button"
+              onClick={() => { onChange(m.code); setOpen(false); }}
+              className={cn(
+                'flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium text-foreground transition-colors hover:bg-muted',
+                m.code === moeda && 'bg-muted',
+              )}
+            >
+              <span className="w-9 font-bold">{m.code}</span>
+              <span className="truncate text-muted-foreground">{m.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Primitivos de layout ──────────────────────────────────────────────────── */
 
 /**
@@ -50,23 +105,19 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-[#EDEBE8] bg-white p-5 sm:p-6">
+    <section className="flex flex-col">
       {(title || right) && (
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            {title && (
-              <h2 className="text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="text-[13px] font-normal text-[#52525B]">{description}</p>
-            )}
+        <div className="flex items-end justify-between gap-4 px-1 pb-2.5">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            {title && <h2 className="text-[15px] font-semibold tracking-tight text-foreground">{title}</h2>}
+            {description && <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>}
           </div>
-          {right && <div className="shrink-0 text-[11.5px] font-semibold text-[#71717A]">{right}</div>}
+          {right && <div className="shrink-0 text-xs font-semibold text-muted-foreground">{right}</div>}
         </div>
       )}
-      <div className="flex flex-col gap-5">{children}</div>
+      <div className="overflow-visible rounded-2xl border border-border/70 bg-card shadow-xs">
+        <div className="flex flex-col gap-5 p-5 sm:p-6">{children}</div>
+      </div>
     </section>
   );
 }
@@ -95,9 +146,9 @@ function ConfigRow({
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[14px] font-bold text-[#111110]">{title}</span>
+          <span className="text-[15px] font-semibold text-foreground">{title}</span>
           {description && (
-            <span className="text-[13px] font-medium leading-snug text-[#71717A]">{description}</span>
+            <span className="text-sm leading-relaxed text-muted-foreground">{description}</span>
           )}
         </div>
         <Switch checked={checked} onChange={onToggle} ariaLabel={ariaLabel} size="sm" />
@@ -112,11 +163,11 @@ function ConfigRow({
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
     <div className="flex items-center gap-2 pl-0.5">
-      <span className="text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
+      <span className="text-[13px] font-semibold text-foreground">
         {label}
       </span>
       {optional && (
-        <span className="text-[11.5px] font-semibold normal-case tracking-normal text-[#71717A]">
+        <span className="text-[11.5px] font-medium text-muted-foreground">
           opcional
         </span>
       )}
@@ -147,6 +198,7 @@ export function ProductForm({
   const [categoria, setCategoria]     = useState(produto?.categoria ?? '');
   const [preco, setPreco]             = useState(produto ? String(produto.preco) : '');
   const [precoPromo, setPrecoPromo]   = useState(produto?.preco_promo ? String(produto.preco_promo) : '');
+  const [moeda, setMoeda] = useState<Moeda>(((produto as { moeda?: Moeda } | undefined)?.moeda) ?? 'MZN');
   const [fotos, setFotos]             = useState<string[]>(produto?.fotos ?? []);
 
   const [variantes, setVariantes] = useState<VariantesState>({
@@ -227,6 +279,7 @@ export function ProductForm({
         nome:        nome.trim() || 'Produto sem nome',
         preco:       Number(preco) || 0,
         preco_promo: precoPromo ? Number(precoPromo) : null,
+        moeda,
         categoria:   categoria.trim() || '',
         descricao:   descricao.trim() || null,
         genero,
@@ -441,6 +494,7 @@ export function ProductForm({
           nome:       nome.trim(),
           preco:      Number(preco),
           preco_promo: precoPromo ? Number(precoPromo) : null,
+          moeda,
           categoria,
           descricao:  descricao.trim() || null,
           genero,
@@ -499,6 +553,7 @@ export function ProductForm({
       tempId,
       nome: nome.trim(),
       precoLabel,
+      moeda,
       categoria,
       fotoPreview: fotos[0] ?? null,
       // Só acende o card "Seu primeiro produto está no ar" quando ESTE
@@ -556,6 +611,7 @@ export function ProductForm({
         nome:       nome.trim(),
         preco:      Number(preco),
         preco_promo: precoPromo ? Number(precoPromo) : null,
+        moeda,
         categoria,
         descricao:  descricao.trim() || null,
         genero,
@@ -588,23 +644,17 @@ export function ProductForm({
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6 pb-4">
+    <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-2xl flex-col gap-6 pb-16 pt-2">
 
-      {/* ── 1. Imagens — sem cartão externo, a imagem fica logo no topo,
-          é a primeira associação que o lojista faz com o produto. Só a
-          área de upload em si tem contorno tracejado; a secção não. ── */}
-      <div ref={fotosSectionRef} className="flex flex-col gap-3">
-        <h2 className="pl-0.5 text-[13.5px] font-semibold tracking-[0.01em] text-[#3F3F46]">
-          Imagens
-        </h2>
-        <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} error={showErrors && !fotosValidas} />
+      <div ref={fotosSectionRef}>
+        <FormSection title="Fotos do produto">
+          <PhotoUploader photos={fotos} onChange={setFotos} lojaId={lojaId} error={showErrors && !fotosValidas} />
+        </FormSection>
       </div>
 
-      {/* ── 2–4. Nome, Descrição, Categoria — sem título de cartão: os
-          campos já se autoexplicam, o título só ocupava espaço. ── */}
-      <FormSection>
+      <FormSection title="Informações básicas">
         <div className="flex flex-col gap-1.5">
-          <FieldLabel label="Nome" />
+          <FieldLabel label="Nome do produto" />
           <Input
             ref={nomeInputRef}
             value={nome}
@@ -613,19 +663,32 @@ export function ProductForm({
             error={showErrors && !nomeValido ? 'Campo obrigatório' : undefined}
           />
         </div>
+      </FormSection>
 
-        <div className="flex flex-col gap-1.5">
-          <FieldLabel label="Descrição" optional />
-          <Textarea
-            rows={4}
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Descreve o produto…"
-          />
-        </div>
+      <FormSection title="Descrição" description="Conta aos clientes o que torna este produto especial.">
+        <Textarea
+          rows={5}
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          placeholder="Descreve o produto…"
+        />
+      </FormSection>
 
+      <FormSection title="Organização">
         <div ref={categoriaRef}>
           <CategoryPicker value={categoria} onChange={setCategoria} error={showErrors && !categoriaValida} />
+        </div>
+      </FormSection>
+
+      <FormSection title="Produto digital" description="Opcional. O cliente recebe este link depois da compra.">
+        <div className="flex flex-col gap-1.5">
+          <FieldLabel label="Link de download" optional />
+          <Input
+            type="url"
+            value={maisOpcoes.linkDownload ?? ''}
+            onChange={(e) => setMaisOpcoes({ ...maisOpcoes, linkDownload: e.target.value || null })}
+            placeholder="https://drive.google.com/…"
+          />
         </div>
       </FormSection>
 
@@ -634,7 +697,7 @@ export function ProductForm({
         {/* Preço principal — destaque visual */}
         <div className="flex flex-col gap-1.5">
           <FieldLabel label="Preço regular" />
-          <div className="relative">
+          <div className="relative z-30">
             <Input
               ref={precoInputRef}
               type="number"
@@ -643,11 +706,9 @@ export function ProductForm({
               onChange={(e) => setPreco(e.target.value)}
               placeholder="0"
               error={showErrors && !precoValido ? 'Campo obrigatório' : undefined}
-              className="text-[17px] font-extrabold tracking-tight pr-14"
+              className="text-[17px] font-extrabold tracking-tight pr-20"
             />
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
-              MZN
-            </span>
+            <MoedaPicker moeda={moeda} onChange={setMoeda} />
           </div>
         </div>
 
@@ -663,8 +724,8 @@ export function ProductForm({
               placeholder="0"
               className="pr-14"
             />
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-[#52525B]">
-              MZN
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-bold text-muted-foreground">
+              {moeda}
             </span>
           </div>
         </div>
@@ -698,7 +759,7 @@ export function ProductForm({
           )}
         </ConfigRow>
 
-        <div className="h-px bg-[#F0EEEB]" />
+        <div className="h-px bg-border/70" />
 
         <ConfigRow
           title="Controlar peso"
@@ -727,7 +788,7 @@ export function ProductForm({
         caixa vazia sem préço/estoque para preencher. */}
         {variantes.versoes.length > 0 && (
           <>
-            <div className="h-px bg-[#F0EEEB]" />
+            <div className="h-px bg-border/70" />
             <StockSection
               raiz={variantes.raiz}
               filha={variantes.filha}

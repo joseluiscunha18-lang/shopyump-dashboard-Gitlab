@@ -1,81 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Package, ClipboardList, Store, User, ShieldCheck, ExternalLink } from 'lucide-react';
-import { cn } from '@/lib/cn';
-
-const items = [
-  { href: '/', label: 'Início', icon: Home },
-  { href: '/produtos', label: 'Produtos', icon: Package },
-  { href: '/pedidos', label: 'Pedidos', icon: ClipboardList },
-  { href: '/personalizar', label: 'Personalizar loja', icon: Store },
-];
-
-const secondaryItems = [
-  { href: '/perfil', label: 'Perfil', icon: User },
-  { href: '/seguranca', label: 'Segurança', icon: ShieldCheck },
-];
-
-export function Sidebar({ storeUrl }: { storeUrl: string | null }) {
-  const pathname = usePathname();
-
-  function isActive(href: string) {
-    return href === '/' ? pathname === '/' : pathname.startsWith(href);
-  }
-
-  return (
-    <aside className="hidden sm:flex w-64 flex-shrink-0 flex-col border-r border-slate-100 bg-white/60 backdrop-blur-xl h-screen sticky top-0 px-5 py-8">
-      <div className="px-2 mb-10">
-        <span className="font-display text-xl font-black text-ink tracking-tighter">Shopyump</span>
-      </div>
-
-      <nav className="flex flex-col gap-1">
-        {items.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-bold transition-colors',
-              isActive(href) ? 'bg-ink text-white shadow-lg shadow-ink/10' : 'text-slate-500 hover:bg-slate-100 hover:text-ink'
-            )}
-          >
-            <Icon size={17} />
-            {label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="h-px bg-slate-100 my-5" />
-
-      <nav className="flex flex-col gap-1">
-        {secondaryItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-bold transition-colors',
-              isActive(href) ? 'bg-ink text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-ink'
-            )}
-          >
-            <Icon size={17} />
-            {label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="mt-auto pt-6">
-        {storeUrl && (
-          <a
-            href={storeUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-slate-200 text-[12px] font-bold text-ink hover:bg-slate-50 transition-colors"
-          >
-            Ver a minha loja <ExternalLink size={13} />
-          </a>
-        )}
-      </div>
-    </aside>
-  );
-}
+import { Link, useRouterState } from '@/lib/router-compat';
+import { HomeIcon, ProductsIcon, OrdersIcon, CustomersIcon, AnalyticsIcon, ViewStoreIcon, CustomizeIcon, MarketingIcon, SettingsIcon, BillingIcon, SupportIcon } from './NavigationIcons';
+import { useMobileNav } from './MobileNavContext';
+const groups=[{title:'PRINCIPAL',items:[{to:'/dashboard',label:'Início',icon:HomeIcon},{to:'/pedidos',label:'Pedidos',icon:OrdersIcon},{to:'/produtos',label:'Produtos',icon:ProductsIcon},{to:'/clientes',label:'Clientes',icon:CustomersIcon},{to:'/analises',label:'Análises',icon:AnalyticsIcon}]},{title:'MINHA LOJA',items:[{to:'/personalizar',label:'Personalizar loja',icon:CustomizeIcon},{to:'/divulgar',label:'Marketing',icon:MarketingIcon},{to:'/configuracoes',label:'Configurações da loja',icon:SettingsIcon}]},{title:'SHOPYUMP',items:[{to:'/plano',label:'Plano e faturação',icon:BillingIcon}]}] as const;
+export function NavigationLinks({storeUrl,onNavigate}:{storeUrl:string|null;onNavigate?:()=>void}){const path=useRouterState({select:s=>s.location.pathname});return <><nav aria-label="Menu principal">{groups.map(g=><div key={g.title}>{g.title==='MINHA LOJA'&&<a className="nav-line" href={storeUrl??undefined} target="_blank" rel="noreferrer" onClick={onNavigate}><ViewStoreIcon size={22}/>Ver loja</a>}{g.items.map(i=><Link key={i.to} to={i.to} onClick={onNavigate} className={'nav-line '+(path===i.to||i.to==='/configuracoes'&&path.startsWith(i.to+'/')?'active':'')}><i.icon size={22}/>{i.label}</Link>)}</div>)}</nav><div className="mt-auto pt-8"><Link to="/ajuda" className="nav-line" onClick={onNavigate}><SupportIcon size={22}/>Ajuda e suporte</Link></div></>}
+export function Sidebar({storeUrl}:{storeUrl:string|null}){const {desktopCollapsed}=useMobileNav();return <aside className={'dashboard-sidebar '+(desktopCollapsed?'collapsed':'')}><NavigationLinks storeUrl={storeUrl}/></aside>}

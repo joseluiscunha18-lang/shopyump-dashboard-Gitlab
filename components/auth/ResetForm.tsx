@@ -1,52 +1,50 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { PasswordInput } from '@/components/auth/PasswordInput';
-import { Button } from '@/components/ui/Button';
-import { useToast } from '@/components/ui/Toast';
+import { definirNovaSenha, terminarSessao } from '@/lib/auth/client';
+import { AuthButton, AuthField, AuthHeading } from './AuthUI';
 
 export function ResetForm() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
-  const { show } = useToast();
-
-  const valid = useMemo(() => password.length >= 6 && password === confirm, [password, confirm]);
+  const missing = [password.length < 8 && 'pelo menos 8 caracteres', !/\d/.test(password) && 'um número (0-9)'].filter(Boolean) as string[];
+  const mismatch = confirm.length > 0 && confirm !== password;
+  const valid = missing.length === 0 && confirm === password;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-    setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) return show(error.message, 'error');
-    show('Senha atualizada com sucesso.');
-    router.push('/');
+    setError(''); setLoading(true);
+    const r = await definirNovaSenha(password);
+    if (!r.ok) { setLoading(false); return setError(r.error); }
+    // Pede que entre de novo com a senha nova.
+    await terminarSessao();
+    router.push('/login');
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-extrabold text-ink tracking-tight mb-2">Definir nova senha</h2>
-        <p className="text-sm text-slate-500 font-medium">Escolhe uma nova senha para a tua conta.</p>
+    <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col">
+      <AuthHeading title="Crie uma nova senha" subtitle="Escolha uma senha que ainda não tenha usado nesta conta." />
+      <AuthField label="Nova senha" type="password" placeholder="Senha" autoComplete="new-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} invalid={password.length > 0 && missing.length > 0} className="rounded-full px-5" />
+      <div className="mt-2 text-[15px]">
+        {missing.length ? (
+          <>
+            <p className="font-semibold text-foreground/80">A senha deve conter</p>
+            <ul className="mt-1 space-y-0.5">
+              {missing.map((m) => <li key={m} className="flex items-center gap-2 text-foreground/80"><span className="w-1.5 h-1.5 rounded-full bg-foreground/70" />{m}</li>)}
+            </ul>
+          </>
+        ) : <p className="font-semibold text-success">A senha atende a todos os requisitos</p>}
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block pl-1">Nova senha</label>
-          <PasswordInput placeholder="Mínimo 6 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        <div>
-          <label className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1.5 block pl-1">Confirmar senha</label>
-          <PasswordInput placeholder="Repete a senha" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-        </div>
-        <Button type="submit" className="w-full" loading={loading} disabled={!valid}>
-          Guardar nova senha
-        </Button>
-      </form>
-    </div>
+      <div className="mt-4">
+        <AuthField label="Confirmar senha" type="password" placeholder="Repita a senha" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={mismatch ? 'As senhas não coincidem.' : undefined} className="rounded-full px-5" />
+      </div>
+      {error && <p className="mt-3 text-[14px] text-destructive" role="alert">{error}</p>}
+      <AuthButton type="submit" loading={loading} disabled={!valid} className="mt-5 rounded-full">Guardar nova senha</AuthButton>
+    </form>
   );
 }

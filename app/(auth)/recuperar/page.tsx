@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
-import { ForgotForm } from '@/components/auth/ForgotForm';
+'use client';
 
-export const metadata: Metadata = { title: 'Recuperar senha | Shopyump' };
+import { Route } from '@/lib/routes/recuperar';
+import { RoutePage } from '@/lib/route-compat';
 
-export default function ForgotPage() {
-  return <ForgotForm />;
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

@@ -30,6 +30,8 @@ function slugify(value: string) {
 export async function completeOnboarding(input: {
   nome: string;
   whatsapp: string;
+  /** Endereço escolhido no assistente (nome.shopyump.com). Se faltar, deriva-se do nome da loja. */
+  slug?: string;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -41,7 +43,7 @@ export async function completeOnboarding(input: {
   const { data: minhaLoja } = await supabase.from('lojas').select('id').eq('perfil_id', user.id).maybeSingle();
   if (minhaLoja) return { ok: true };
 
-  const slug = slugify(input.nome);
+  const slug = slugify(input.slug?.trim() || input.nome);
   if (!slug) return { ok: false, error: 'Nome da loja inválido.' };
   // O slug passa a ser o subdomínio (slug.shopyump.com): tem de ser um nome DNS válido e não reservado.
   if (!isValidSubdomain(slug)) return { ok: false, error: 'Nome da loja inválido. Usa letras, números e hífens (máx. 63 caracteres).' };

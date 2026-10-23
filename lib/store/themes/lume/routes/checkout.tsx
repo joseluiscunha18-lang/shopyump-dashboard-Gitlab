@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createFileRoute, Link } from "../router";
-import { ArrowLeft, MapPin, ShoppingBag } from "lucide-react";
+import { ArrowLeft, MapPin, ShoppingCart } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
@@ -61,7 +61,7 @@ function CheckoutPage() {
   if (!cart.length)
     return (
       <section className="mx-auto flex min-h-[520px] max-w-6xl flex-col items-center justify-center px-5 text-center">
-        <span className="grid size-14 place-items-center rounded-full bg-muted"><ShoppingBag /></span>
+        <span className="grid size-14 place-items-center rounded-full bg-muted"><ShoppingCart /></span>
         <h1 className="mt-4 text-xl font-bold">O carrinho está vazio</h1>
         <p className="mt-2 text-sm text-muted-foreground">Adicione um produto antes de finalizar a compra.</p>
         <Button asChild className="mt-5"><Link to="/">Ver produtos</Link></Button>

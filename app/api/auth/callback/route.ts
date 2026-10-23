@@ -3,27 +3,36 @@ import { createClient } from '@/lib/supabase/server';
 import { DASHBOARD_BASE_PATH } from '@/lib/domains';
 
 /**
- * Regresso do login com Google (OAuth/PKCE).
+ * Regresso do login com Google e do link de "recuperar senha" (PKCE).
  *
- * O Supabase devolve o utilizador com `?code=...`. Sem esta rota, o
- * middleware via um pedido sem sessão e mandava para /login, perdendo o
- * `code` — daí o "volta sempre ao login". Aqui o código é trocado por
- * sessão NO SERVIDOR (grava os cookies) e só depois vai para o painel.
+ * O Supabase devolve o utilizador com `?code=...`. O código é trocado por
+ * sessão NO SERVIDOR (grava os cookies) e só depois segue para o destino.
  *
- * URL final: https://shopyump.com/dashboard/api/auth/callback
- * (`/api` já é público no middleware, por isso nada mais a alterar.)
+ * `?next=` só aceita caminhos internos conhecidos (nunca um URL externo).
+ * URL a registar no Supabase (Redirect URLs):
+ *   https://shopyump.com/dashboard/api/auth/callback
  */
+const DESTINOS_LIMPOS = ['/nova-senha', '/onboarding', '/login'];
+
+function destinoSeguro(next: string | null): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) return '/';
+  const caminho = next.split('?')[0]!;
+  return DESTINOS_LIMPOS.includes(caminho) || caminho === '/' ? caminho : '/';
+}
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
-  // Caminho completo (com /dashboard) — em Route Handlers o redirect não junta o basePath sozinho.
-  const to = (path: string) => NextResponse.redirect(new URL(`${DASHBOARD_BASE_PATH}${path}`, request.url));
+  const next = destinoSeguro(request.nextUrl.searchParams.get('next'));
 
-  const login = () => NextResponse.redirect(new URL('/login', request.url)); // URL limpo
+  // Páginas "de antes de entrar" têm URL limpo (/login); o resto vive sob /dashboard.
+  const para = (path: string) =>
+    NextResponse.redirect(
+      new URL(DESTINOS_LIMPOS.includes(path) ? path : `${DASHBOARD_BASE_PATH}${path === '/' ? '' : path}`, request.url),
+    );
 
-  if (!code) return login();
+  if (!code) return para('/login');
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-  return error ? login() : to('/');
+  return error ? para('/login') : para(next);
 }

@@ -11,7 +11,7 @@ import {
   RefreshCw,
   ImagePlus,
 } from 'lucide-react';
-import { Sheet } from '@/components/ui/Sheet';
+import { Sheet } from '@/components/ui/ShopyumpSheet';
 import { cn } from '@/lib/cn';
 
 const MAX_FOTOS = 8;
@@ -1073,7 +1073,7 @@ export function PhotoUploader({
 
       {/* Grelha de imagens */}
       {photos.length > 0 && (
-        <div className="grid grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-3 gap-3">
           {photos.map((url, i) => {
             const dragging = dragIndex === i;
             return (
@@ -1084,7 +1084,8 @@ export function PhotoUploader({
                 onPointerMove={onPointerMove}
                 onPointerUp={() => onPointerUp(i)}
                 className={cn(
-                  'relative aspect-square touch-none select-none overflow-hidden rounded-md bg-[#F4F4F3] transition-all duration-150',
+                  'relative aspect-square touch-none select-none overflow-hidden rounded-[6px] bg-[#F4F4F3] transition-all duration-150',
+                  i === 0 && photos.length > 1 ? 'border-2 border-[#1C1917]' : 'border border-[#E4E2DF]',
                   dragging ? 'opacity-25 scale-95 ring-2 ring-[rgba(28,25,23,0.2)]' : 'opacity-100 scale-100',
                 )}
               >
@@ -1093,15 +1094,10 @@ export function PhotoUploader({
                   alt=""
                   fill
                   className="pointer-events-none object-cover"
-                  sizes="120px"
+                  sizes="160px"
                   unoptimized={url.startsWith('blob:')}
                 />
-                {i === 0 && (
-                  <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-[7px] bg-[rgba(28,25,23,0.82)] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white backdrop-blur-sm">
-                    <Star size={8} className="fill-white" /> Capa
-                  </span>
-                )}
-              </div>
+                              </div>
             );
           })}
 
@@ -1109,7 +1105,7 @@ export function PhotoUploader({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-md border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
+              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[6px] border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
             >
               <Plus size={20} strokeWidth={2} />
               <span className="text-[9px] font-bold uppercase tracking-[0.08em]">Adicionar</span>

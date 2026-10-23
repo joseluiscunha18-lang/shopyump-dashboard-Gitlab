@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
-import { Sheet } from '@/components/ui/Sheet';
+import { Sheet } from '@/components/ui/ShopyumpSheet';
 import { SuggestInput, ColorDot } from '@/components/produtos/SuggestInput';
 import { combinacoesRaizFilha, fundirVersoesPorValor, gerarVersoes } from '@/lib/variantes';
 import { resolverHexCor } from '@/lib/cores';

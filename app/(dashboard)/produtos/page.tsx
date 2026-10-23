@@ -1,34 +1,8 @@
-import type { Metadata } from 'next';
-import { getUserContext } from '@/lib/auth/getUserContext';
-import { getProdutosByLoja } from '@/lib/queries/produtos';
-import { getLojaMarcos } from '@/lib/queries/lojaMarcos';
-import { ProdutosPageBody } from '@/components/produtos/ProdutosPageBody';
+'use client';
 
-export const metadata: Metadata = { title: 'Produtos | Shopyump' };
+import { Route } from '@/lib/routes/_dashboard.produtos.index';
+import { RoutePage } from '@/lib/route-compat';
 
-// Sempre renderizada no pedido, nunca a partir de uma versão em cache da
-// rota. Isto é o que garante que a lista já vem correta mesmo quando se
-// chega aqui logo a seguir a publicar/editar um produto (router.refresh()
-// tem de encontrar sempre um render fresco, nunca uma versão antiga
-// reaproveitada) — sem isto, a página podia mostrar por instantes dados
-// de antes da publicação, antes de "corrigir" sozinha.
-export const dynamic = 'force-dynamic';
-
-export default async function ProdutosPage() {
-  const ctx = await getUserContext();
-  if (!ctx.loja) return null;
-
-  const [produtos, marcos] = await Promise.all([
-    getProdutosByLoja(ctx.loja.id),
-    getLojaMarcos(ctx.loja.id),
-  ]);
-
-  return (
-    <ProdutosPageBody
-      produtos={produtos}
-      lojaId={ctx.loja.id}
-      lojaSlug={ctx.loja.slug}
-      marcoPrimeiroProduto={marcos.primeiro_produto ?? null}
-    />
-  );
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

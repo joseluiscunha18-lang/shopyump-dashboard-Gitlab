@@ -1,16 +1,8 @@
-import type { Metadata } from 'next';
-import { SecurityForm } from '@/components/loja/SecurityForm';
+'use client';
 
-export const metadata: Metadata = { title: 'Segurança | Shopyump' };
+import { Route } from '@/lib/routes/_dashboard.seguranca';
+import { RoutePage } from '@/lib/route-compat';
 
-export default function SegurancaPage() {
-  return (
-    <div className="flex flex-col gap-6 pt-2">
-      <div>
-        <h2 className="text-lg font-black text-ink tracking-tight">Segurança</h2>
-        <p className="text-[12px] font-medium text-slate-400">Alterar a tua senha de acesso</p>
-      </div>
-      <SecurityForm />
-    </div>
-  );
+export default function Page() {
+  return <RoutePage route={Route} />;
 }

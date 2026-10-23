@@ -96,7 +96,7 @@ export function createLojaAdapter(
         .storage.from(BUCKETS.lojas)
         .list(init.lojaId, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
       if (error || !data) return [];
-      return data.filter((f) => MEDIA_FILE.test(f.name)).map((f) => mediaAsset(init.lojaId, f.name));
+      return data.filter((f: any) => MEDIA_FILE.test(f.name)).map((f: any) => mediaAsset(init.lojaId, f.name));
     },
     async uploadMedia(file, kind = "image") {
       const ext = MEDIA_EXT[file.type];

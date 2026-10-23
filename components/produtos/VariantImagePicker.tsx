@@ -3,8 +3,8 @@
 import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { Check, Loader2, Plus } from 'lucide-react';
-import { Sheet } from '@/components/ui/Sheet';
-import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/ShopyumpSheet';
+import { Button } from '@/components/ui/ShopyumpButton';
 import { uploadImage, BUCKETS } from '@/lib/storage';
 import { cn } from '@/lib/cn';
 
