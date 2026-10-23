@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Pedido } from '@/types/database';
 
@@ -15,6 +15,10 @@ type ChangeHandler = (event: 'INSERT' | 'UPDATE', pedido: Pedido) => void;
  */
 export function usePedidosRealtime(lojaId: string | null, onChange: ChangeHandler) {
   const handlerRef = useRef(onChange);
+  // Cada utilizador do hook precisa do SEU canal. Com o mesmo nome, o supabase-js devolve o canal já
+  // subscrito (ex.: o do DashboardState, sempre montado) e `.on('postgres_changes')` lança
+  // "cannot add postgres_changes callbacks ... after subscribe()" → cai no error.tsx.
+  const instancia = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   handlerRef.current = onChange;
 
   useEffect(() => {
@@ -22,7 +26,7 @@ export function usePedidosRealtime(lojaId: string | null, onChange: ChangeHandle
     const supabase = createClient();
 
     const channel = supabase
-      .channel(`pedidos-${lojaId}`)
+      .channel(`pedidos-${lojaId}-${instancia}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'pedidos', filter: `loja_id=eq.${lojaId}` },
@@ -37,5 +41,5 @@ export function usePedidosRealtime(lojaId: string | null, onChange: ChangeHandle
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [lojaId]);
+  }, [lojaId, instancia]);
 }
