@@ -85,6 +85,7 @@ export async function updateLoja(lojaId: string, patch: LojaUpdate): Promise<Act
   if (error) return { ok: false, error: error.message };
 
   revalidatePath('/loja');
+  revalidatePath('/loja/[slug]', 'page'); // loja pública mostra logo o novo WhatsApp/contactos
   revalidatePath('/', 'layout');
   return { ok: true };
 }
