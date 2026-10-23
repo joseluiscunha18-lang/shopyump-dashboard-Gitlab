@@ -7,6 +7,7 @@ import { useDashboardState } from '@/components/dashboard/DashboardState';
 import { SettingsPage, Section, SaveBar, ToggleRow, useDraft } from '@/components/settings/SettingsKit';
 import { Input, Textarea } from '@/components/ui/ShopyumpInput';
 import { Button } from '@/components/ui/ShopyumpButton';
+import { updateLoja } from '@/lib/mutations/loja';
 import { validateEmail, validateInternationalPhone, whatsappLink, normalizePhone } from '@/lib/settings/validators';
 
 export const Route = createFileRoute('/_dashboard/configuracoes/contactos')({
@@ -24,7 +25,7 @@ export const Route = createFileRoute('/_dashboard/configuracoes/contactos')({
 type Errors = Partial<Record<'whatsapp' | 'telefone' | 'email' | 'horario', string>>;
 
 function Page() {
-  const { contacts, setContacts } = useDashboardState();
+  const { contacts, setContacts, lojaId } = useDashboardState();
   const { draft, patch, dirty, save, reset } = useDraft(contacts, setContacts);
   const [errors, setErrors] = useState<Errors>({});
   const wa = whatsappLink(draft.whatsapp, draft.mensagemWhatsapp);
@@ -97,10 +98,14 @@ function Page() {
           </div>
         )}
       </Section>
-      <SaveBar dirty={dirty} onReset={() => { reset(); setErrors({}); }} onSave={() => {
+      <SaveBar dirty={dirty} onReset={() => { reset(); setErrors({}); }} onSave={async () => {
         const e = validate(); setErrors(e);
         if (Object.keys(e).length) return false;
-        save({ ...draft, whatsapp: draft.whatsapp ? normalizePhone(draft.whatsapp) : '', telefone: draft.telefone ? normalizePhone(draft.telefone) : '' });
+        const next = { ...draft, whatsapp: draft.whatsapp ? normalizePhone(draft.whatsapp) : '', telefone: draft.telefone ? normalizePhone(draft.telefone) : '' };
+        // O WhatsApp e o e-mail têm de ir para a base de dados: é daí que a loja pública lê o número que recebe os pedidos.
+        const r = await updateLoja(lojaId, { whatsapp: next.whatsapp || null, email: next.email.trim() || null });
+        if (!r.ok) throw new Error(r.error);
+        save(next);
       }} />
     </SettingsPage>
   );
