@@ -38,6 +38,7 @@ type StoreValue = {
   addToCart: (product: Product, quantity?: number, variant?: CartVariantSelection) => void;
   updateQuantity: (itemKey: string, quantity: number) => void;
   removeFromCart: (itemKey: string) => void;
+  clearCart: () => void;
   toggleFavourite: (id: string) => void;
   subtotal: number;
   cartCount: number;
@@ -157,10 +158,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
   const removeFromCart = (itemKey: string) =>
     setCart((current) => current.filter((item) => cartItemKey(item.product.id, item.variant?.chave) !== itemKey));
+  const clearCart = () => setCart([]);
   const toggleFavourite = (id: string) => setFavourites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
 
   const value = useMemo(() => ({
-    cart, favourites, cartOpen, setCartOpen, addToCart, updateQuantity, removeFromCart, toggleFavourite,
+    cart, favourites, cartOpen, setCartOpen, addToCart, updateQuantity, removeFromCart, clearCart, toggleFavourite,
     registerCartTarget, flyToCart,
     subtotal: cart.reduce((sum, item) => sum + (item.variant?.unitPrice ?? item.product.price) * item.quantity, 0),
     cartCount: cart.reduce((sum, item) => sum + item.quantity, 0),
