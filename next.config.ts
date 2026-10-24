@@ -47,6 +47,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: 'placehold.co' },
       { protocol: 'https', hostname: 'i.ibb.co' },
+      // Cloudflare R2 (fotos de produto novas)
+      { protocol: 'https', hostname: 'img.shopyump.com' },
     ],
   },
   // Por omissão, no Next 15 `staleTimes.dynamic` é 0 — o router.prefetch()

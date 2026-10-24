@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { LojaUpdate } from '@/types/database';
+import { limparImagensR2 } from '@/lib/r2/cleanup';
 import { isReservedSubdomain, isValidSubdomain } from '@/lib/domains';
 import { SOBRE_PADRAO, ENTREGA_PADRAO, TERMOS_PADRAO } from '@/lib/store/institutionalDefaults';
 
@@ -81,8 +82,17 @@ export async function completeOnboarding(input: {
 
 export async function updateLoja(lojaId: string, patch: LojaUpdate): Promise<ActionResult> {
   const supabase = await createClient();
+  // Trocar/remover o banner: guarda o URL anterior para o limpar do R2 depois (se já não for usado).
+  let bannerAnterior: string | null = null;
+  if ('banner_url' in patch) {
+    const { data } = await supabase.from('lojas').select('banner_url').eq('id', lojaId).maybeSingle();
+    bannerAnterior = (data?.banner_url as string | null) ?? null;
+  }
+
   const { error } = await supabase.from('lojas').update(patch).eq('id', lojaId);
   if (error) return { ok: false, error: error.message };
+
+  if (bannerAnterior && bannerAnterior !== patch.banner_url) await limparImagensR2(lojaId, [bannerAnterior]);
 
   revalidatePath('/loja');
   revalidatePath('/loja/[slug]', 'page'); // loja pública mostra logo o novo WhatsApp/contactos
