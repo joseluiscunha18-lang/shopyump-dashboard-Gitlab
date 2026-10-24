@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client';
  */
 import { BUCKETS } from '@/lib/storageBuckets';
 import { asset } from '@/lib/domains';
+import { optimizeImage } from '@/lib/imageOptimize';
 import { R2_MAX_BYTES, sniffImageType, type R2MediaKind } from '@/lib/r2/shared';
 export { BUCKETS };
 
@@ -26,12 +27,15 @@ type R2Result =
  * `disabled: true` = o R2 ainda não está ligado no servidor.
  */
 export async function uploadToR2(
-  file: File,
+  original: File,
   lojaId: string,
   area: 'produtos' | 'lojas',
   kind?: R2MediaKind
 ): Promise<R2Result> {
   try {
+    // Compressão inteligente (sem cortar, sem recomprimir o que já está bom; se falhar, usa o original).
+    const file = await optimizeImage(original, area);
+
     // O tipo vem dos primeiros bytes, não do nome nem do `file.type`.
     const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
     const type = sniffImageType(head) ?? 'application/octet-stream';
