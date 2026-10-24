@@ -6,6 +6,7 @@ import { settingsForPath } from "@/theme-editor/editor/core/resolve";
 import { DEFAULT_MENU_ITEMS, HEADING_SECTION, PAGE_TEXT, THEME_PAGE_ROUTE, UI_TEXT, type LumePageKey } from "@/theme-editor/themes/lume/page-text";
 import { sectionTypeOf } from "@/theme-editor/editor/core/resolve";
 import { BUCKETS } from "@/lib/storageBuckets";
+import { R2_MEDIA_KEY, buildPublicUrl, resolvePublicBase } from "@/lib/r2/shared";
 import { LUME_COLOR_VARS } from "./color-vars";
 import { bottomNavVars, isBottomNavTone } from "./bottom-nav-style";
 import { PHOTO_RADIUS_MAX, photoBorderColor } from "./photo-border";
@@ -167,8 +168,12 @@ const bool = (v: unknown): boolean => v === true;
 const MEDIA_PATH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(logo|banner|image)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
 function mediaUrl(ref: unknown): string | null {
   const id = ref && typeof ref === "object" ? (ref as { mediaId?: unknown }).mediaId : null;
+  if (typeof id !== "string") return null;
+  // Imagens novas (Cloudflare R2): `lojas/<loja>/<kind>-<uuid>.<ext>` → https://img.shopyump.com/...
+  if (R2_MEDIA_KEY.test(id)) return buildPublicUrl(resolvePublicBase(process.env.R2_PUBLIC_URL), id);
+  // Imagens antigas (Supabase): `<loja>/<kind>-<uuid>.<ext>`
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (typeof id !== "string" || !MEDIA_PATH.test(id) || !base) return null;
+  if (!MEDIA_PATH.test(id) || !base) return null;
   return `${base.replace(/\/$/, "")}/storage/v1/object/public/${BUCKETS.lojas}/${id}`;
 }
 
