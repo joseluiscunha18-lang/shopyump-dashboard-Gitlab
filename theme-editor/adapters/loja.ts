@@ -10,6 +10,8 @@ import { resolveEditorTheme } from "@/theme-editor/themes/registry";
 import { migrateLumeCustomization } from "@/theme-editor/themes/lume/migrate";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKETS } from "@/lib/storageBuckets";
+import { uploadToR2 } from "@/lib/storage";
+import { asset } from "@/lib/domains";
 import { mockPages } from "@/theme-editor/mocks/data";
 
 /**
@@ -92,15 +94,39 @@ export function createLojaAdapter(
       return current;
     },
     async listMedia() {
+      // Novas imagens (R2) primeiro, depois as antigas que ainda estão no Supabase.
+      let novas: MediaAsset[] = [];
+      try {
+        const r = await fetch(asset("/api/r2/list"), { credentials: "same-origin", cache: "no-store" });
+        if (r.ok) {
+          const j = (await r.json()) as { items?: { key: string; name: string; url: string }[] };
+          novas = (j.items ?? []).map((i) => ({
+            id: i.key, url: i.url, name: i.name, width: 0, height: 0, tags: [i.name.split("-")[0]],
+          }));
+        }
+      } catch {
+        /* sem R2 / sem rede: só as antigas */
+      }
       const { data, error } = await createClient()
         .storage.from(BUCKETS.lojas)
         .list(init.lojaId, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
-      if (error || !data) return [];
-      return data.filter((f: any) => MEDIA_FILE.test(f.name)).map((f: any) => mediaAsset(init.lojaId, f.name));
+      const antigas = error || !data
+        ? []
+        : data.filter((f: any) => MEDIA_FILE.test(f.name)).map((f: any) => mediaAsset(init.lojaId, f.name));
+      return [...novas, ...antigas];
     },
     async uploadMedia(file, kind = "image") {
       const ext = MEDIA_EXT[file.type];
       if (!ext) throw new Error("Formato não suportado. Use JPG, PNG ou WebP.");
+      // R2 (https://img.shopyump.com). O `id` guardado na personalização é a chave do objeto.
+      const r2 = await uploadToR2(file, init.lojaId, "lojas", kind as "logo" | "banner" | "image");
+      if (r2.ok) {
+        const dims = await measure(file);
+        return { id: r2.key, url: r2.url, name: r2.key.split("/").pop() ?? "", width: dims.w, height: dims.h, tags: [kind] };
+      }
+      if (!r2.disabled) throw new Error(r2.error);
+
+      // ── Transição: R2 ainda desligado → Supabase (comportamento antigo) ──
       const name = `${kind}-${crypto.randomUUID()}.${ext}`;
       const { error } = await createClient()
         .storage.from(BUCKETS.lojas)
