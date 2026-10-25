@@ -18,6 +18,13 @@ const slugify = (v: string) => v.toLowerCase().trim().normalize('NFD').replace(/
 /** Endereço utilizável: válido como subdomínio, não reservado e (confirmado na base de dados) não ocupado. */
 const isUsable = (s: string, taken: Set<string>) => s.length >= 2 && isValidSubdomain(s) && !isReservedSubdomain(s) && !taken.has(s);
 
+/** Nome próprio / apelido: aceita acentos, nomes compostos e várias palavras; exige pelo menos 2 letras. */
+const nameOk = (v: string) => v.replace(/[^\p{L}]/gu, '').length >= 2;
+const collapse = (v: string) => v.replace(/\s+/g, ' ').trim();
+/** Primeiro valor de texto não vazio entre as chaves indicadas (dados da conta). */
+const pick = (m: Record<string, unknown>, keys: string[]) =>
+  (keys.map((k) => m[k]).find((v) => typeof v === 'string' && v.trim()) as string | undefined)?.trim();
+
 const candidatos = (base: string) => [`${base}-shop`, `loja-${base}`, `${base}-store`, `${base}-24`, `${base}-27`, `${base}-mz`];
 
 function suggestions(base: string, taken: Set<string>): string[] {
@@ -39,22 +46,28 @@ const GOALS = [
 export function OnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
   // Endereços que a base de dados já tem ocupados (verificado enquanto escreve).
   const [taken, setTaken] = useState<Set<string>>(new Set());
   const [checking, setChecking] = useState(false);
 
-  // Se a conta veio do Google, já traz o nome: pré-preenche (só se estiver vazio).
+  // Pré-preenche só se a conta já trouxer nome próprio E apelido (ex.: Google). Nunca deduz do e-mail.
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => {
       const m = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
-      const n = [m.nome_completo, m.full_name, m.name].find((v) => typeof v === 'string' && v.trim()) as string | undefined;
-      if (n) setName((cur) => cur || n);
+      const f = pick(m, ['first_name', 'given_name', 'primeiro_nome']);
+      const l = pick(m, ['last_name', 'family_name', 'apelido']);
+      if (f && l) {
+        setFirstName((cur) => cur || f);
+        setLastName((cur) => cur || l);
+      }
     });
   }, []);
   const [whatsapp, setWhatsapp] = useState('');
-  const [nameTouched, setNameTouched] = useState(false);
+  const [firstTouched, setFirstTouched] = useState(false);
+  const [lastTouched, setLastTouched] = useState(false);
   const [country, setCountry] = useState<Country>(COUNTRIES[0]!);
   const [goals, setGoals] = useState<string[]>([]);
   const [shopName, setShopName] = useState('');
@@ -107,7 +120,10 @@ export function OnboardingWizard() {
     setError('');
     setLoading(true);
     // Nome da pessoa e objetivos ficam nos dados da conta (sem alterar tabelas).
-    await createClient().auth.updateUser({ data: { nome_completo: name.trim(), objetivos: goals } });
+    // first_name também alimenta a saudação do e-mail de boas-vindas.
+    const first = collapse(firstName);
+    const last = collapse(lastName);
+    await createClient().auth.updateUser({ data: { first_name: first, last_name: last, nome_completo: `${first} ${last}`, objetivos: goals } });
     const res = await completeOnboarding({
       nome: shopName.trim(),
       whatsapp: `+${country.dial}${whatsapp.replace(/\D/g, '')}`,
@@ -125,10 +141,10 @@ export function OnboardingWizard() {
     router.refresh();
   }
 
-  const nameParts = name.trim().split(/\s+/).filter(Boolean);
-  const fullNameOk = nameParts.length >= 2 && nameParts.every((p) => p.length >= 2);
+  const firstOk = nameOk(firstName);
+  const lastOk = nameOk(lastName);
   const canNext =
-    step === 1 ? fullNameOk && whatsapp.replace(/\D/g, '').length === 9 :
+    step === 1 ? firstOk && lastOk && whatsapp.replace(/\D/g, '').length === 9 :
     step === 2 ? goals.length > 0 : shopName.trim().length >= 3 && addressFree;
 
   return (
@@ -151,9 +167,18 @@ export function OnboardingWizard() {
           <>
             <AuthHeading title="Vamos começar!" subtitle="Primeiro, queremos conhecer um pouco sobre si." />
             <div className="flex flex-col gap-4">
-              <AuthField label="Nome completo" autoComplete="name" placeholder="Ana Machava" value={name} onChange={(e) => setName(e.target.value)}
-                onBlur={() => setNameTouched(true)}
-                error={nameTouched && name.trim().length > 0 && !fullNameOk ? 'Escreva o nome e o apelido.' : undefined} />
+              <div className="grid grid-cols-2 items-start gap-3">
+                <div className="min-w-0">
+                  <AuthField label="Nome próprio" autoComplete="given-name" autoCapitalize="words" placeholder="Ana" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                    onBlur={() => setFirstTouched(true)} className="px-3.5"
+                    error={firstTouched && firstName.trim().length > 0 && !firstOk ? 'Escreva o nome próprio.' : undefined} />
+                </div>
+                <div className="min-w-0">
+                  <AuthField label="Apelido" autoComplete="family-name" autoCapitalize="words" placeholder="Machava" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                    onBlur={() => setLastTouched(true)} className="px-3.5"
+                    error={lastTouched && lastName.trim().length > 0 && !lastOk ? 'Escreva o apelido.' : undefined} />
+                </div>
+              </div>
               <CountryPhoneField country={country} onCountry={setCountry} number={whatsapp} onNumber={setWhatsapp} />
             </div>
           </>

@@ -34,8 +34,8 @@ export const COUNTRIES: Country[] = [
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-export function CountryPhoneField({ country, onCountry, number, onNumber }: {
-  country: Country; onCountry: (c: Country) => void; number: string; onNumber: (v: string) => void;
+export function CountryPhoneField({ country, onCountry, number, onNumber, disabled = false }: {
+  country: Country; onCountry: (c: Country) => void; number: string; onNumber: (v: string) => void; disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -43,19 +43,25 @@ export function CountryPhoneField({ country, onCountry, number, onNumber }: {
     const t = norm(q.trim()).replace(/^\+/, '');
     return t ? COUNTRIES.filter((c) => norm(c.name).includes(t) || c.dial.startsWith(t)) : COUNTRIES;
   }, [q]);
+  const invalid = number.replace(/\D/g, '').length > 9;
 
   return (
     <div>
       <label className="mb-2 block text-[14px] font-medium text-foreground">Número de contacto</label>
-      <div className="flex h-12 items-stretch overflow-hidden rounded-xl border border-foreground/25 bg-card transition-colors focus-within:border-info">
-        <button type="button" onClick={() => setOpen(true)} className="flex shrink-0 items-center gap-1.5 border-r border-border px-3 text-[15px] text-foreground" aria-label="Escolher país">
+      {/* Caixa exterior sem fundo próprio: usa o fundo da página, tal como os outros campos (AuthField). */}
+      <div className={`flex h-12 items-stretch overflow-hidden rounded-xl border bg-transparent transition-colors ${invalid ? 'border-destructive focus-within:border-destructive' : 'border-foreground/25 focus-within:border-info'} ${disabled ? 'opacity-60' : ''}`}>
+        <button type="button" disabled={disabled} onClick={() => setOpen(true)} className="flex shrink-0 items-center gap-1.5 border-r border-border bg-transparent px-3 text-[15px] text-foreground" aria-label="Escolher país">
           <span>{country.flag}</span><span className="font-medium">+{country.dial}</span><ChevronDown size={14} className="text-muted-foreground" />
         </button>
-        <input type="tel" inputMode="numeric" placeholder="84 000 0000" value={number}
+        {/* Fundo transparente também no input interno (inline para não ser sobreposto por estilos globais)
+            e neutralização do fundo do preenchimento automático do navegador. */}
+        <input type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="84 000 0000" value={number}
+          disabled={disabled}
           onChange={(e) => onNumber(e.target.value.replace(/[^\d\s]/g, ''))}
-          className="min-w-0 flex-1 bg-transparent px-3 text-[15px] text-foreground outline-none placeholder:text-muted-foreground/60" />
+          style={{ backgroundColor: 'transparent' }}
+          className="min-w-0 flex-1 appearance-none bg-transparent px-3 text-[15px] text-foreground outline-none placeholder:text-muted-foreground/60 [&:-webkit-autofill]:[transition:background-color_600000s_0s]" />
       </div>
-      {number.replace(/\D/g, '').length > 9 && (
+      {invalid && (
         <p className="mt-1.5 text-[13px] text-destructive">Algo está errado: número inválido.</p>
       )}
 
