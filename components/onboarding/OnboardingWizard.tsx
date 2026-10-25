@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { completeOnboarding } from '@/lib/mutations/loja';
 import { getSlugsOcupados } from '@/lib/queries/loja';
@@ -27,10 +27,11 @@ const pick = (m: Record<string, unknown>, keys: string[]) =>
 
 const candidatos = (base: string) => [`${base}-shop`, `loja-${base}`, `${base}-store`, `${base}-24`, `${base}-27`, `${base}-mz`];
 
-function suggestions(base: string, taken: Set<string>): string[] {
+/** Só sugere alternativas já confirmadas na base de dados (verified) e livres. */
+function suggestions(base: string, taken: Set<string>, verified: Set<string>): string[] {
   const out: string[] = [];
   for (const c of candidatos(base)) {
-    if (isUsable(c, taken) && !out.includes(c)) out.push(c);
+    if (verified.has(c) && isUsable(c, taken) && !out.includes(c)) out.push(c);
     if (out.length === 3) break;
   }
   return out;
@@ -43,6 +44,15 @@ const GOALS = [
   { value: 'dropshipping', label: 'Fazer dropshipping', desc: 'Vender sem manter stock próprio.' },
 ];
 
+/** Etiqueta neutra mostrada enquanto a base de dados ainda não respondeu (nunca mostramos "Disponível" antes da resposta). */
+function CheckingBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[12px] font-medium text-muted-foreground">
+      <Loader2 size={12} className="animate-spin" />A verificar…
+    </span>
+  );
+}
+
 export function OnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -51,6 +61,8 @@ export function OnboardingWizard() {
   const [error, setError] = useState('');
   // Endereços que a base de dados já tem ocupados (verificado enquanto escreve).
   const [taken, setTaken] = useState<Set<string>>(new Set());
+  // Endereços cuja resposta da base de dados já chegou (livres ou ocupados). Só estes podem mostrar "Disponível".
+  const [verified, setVerified] = useState<Set<string>>(new Set());
   const [checking, setChecking] = useState(false);
 
   // Pré-preenche só se a conta já trouxer nome próprio E apelido (ex.: Google). Nunca deduz do e-mail.
@@ -76,36 +88,49 @@ export function OnboardingWizard() {
   const [loading, setLoading] = useState(false);
 
   const base = useMemo(() => slugify(shopName), [shopName]);
-  const baseFree = isUsable(base, taken);
-  const alts = useMemo(() => (base.length >= 2 && !baseFree ? suggestions(base, taken) : []), [base, baseFree, taken]);
+  const baseVerified = verified.has(base);
+  // "A verificar" enquanto a resposta para este nome ainda não chegou.
+  const baseChecking = base.length >= 2 && !baseVerified;
+  const baseFree = baseVerified && isUsable(base, taken);
+  const alts = useMemo(() => (baseVerified && !baseFree ? suggestions(base, taken, verified) : []), [base, baseVerified, baseFree, taken, verified]);
 
   // Confirma na base de dados que o endereço (e as alternativas) estão livres.
+  // Espera 350 ms depois de parar de escrever; respostas antigas são ignoradas (cancelado).
   useEffect(() => {
-    if (step !== 3 || base.length < 2) return;
+    if (step !== 3 || base.length < 2) {
+      setChecking(false);
+      return;
+    }
+    const lote = [base, ...candidatos(base)];
     let cancelado = false;
     setChecking(true);
     const t = setTimeout(async () => {
       try {
-        const ocupados = await getSlugsOcupados([base, ...candidatos(base)]);
-        if (!cancelado) setTaken((prev) => new Set([...prev, ...ocupados]));
+        const ocupados = await getSlugsOcupados(lote);
+        if (cancelado) return;
+        setTaken((prev) => new Set([...prev, ...ocupados]));
       } catch { /* sem rede: a verificação final acontece ao finalizar */ }
-      if (!cancelado) setChecking(false);
+      if (cancelado) return;
+      setVerified((prev) => new Set([...prev, ...lote]));
+      setChecking(false);
     }, 350);
     return () => { cancelado = true; clearTimeout(t); };
   }, [base, step]);
 
   // Endereço personalizado: confirma também o que foi escrito à mão.
   useEffect(() => {
-    if (!custom || chosen.length < 2 || taken.has(chosen)) return;
+    if (!custom || chosen.length < 2 || verified.has(chosen)) return;
     let cancelado = false;
     const t = setTimeout(async () => {
       try {
         const ocupados = await getSlugsOcupados([chosen]);
-        if (!cancelado && ocupados.length) setTaken((prev) => new Set([...prev, ...ocupados]));
+        if (cancelado) return;
+        if (ocupados.length) setTaken((prev) => new Set([...prev, ...ocupados]));
       } catch { /* idem */ }
+      if (!cancelado) setVerified((prev) => new Set([...prev, chosen]));
     }, 350);
     return () => { cancelado = true; clearTimeout(t); };
-  }, [custom, chosen, taken]);
+  }, [custom, chosen, verified]);
 
   // Quando o nome muda, propõe o endereço automaticamente (sem mexer no nome).
   useEffect(() => {
@@ -114,7 +139,8 @@ export function OnboardingWizard() {
   }, [base, baseFree, alts, custom]);
 
   const address = chosen;
-  const addressFree = isUsable(address, taken);
+  const addressVerified = verified.has(address);
+  const addressFree = addressVerified && isUsable(address, taken);
 
   async function finish() {
     setError('');
@@ -213,6 +239,16 @@ export function OnboardingWizard() {
               error={shopName.trim().length > 0 && shopName.trim().length < 3 ? "O nome deve ter pelo menos 3 letras." : undefined}
               onChange={(e) => { setShopName(e.target.value); setCustom(false); }} />
 
+            {base.length >= 2 && !custom && baseChecking && (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                <span className="truncate text-[15px]">
+                  <span className="font-semibold text-foreground">{base}</span>
+                  <span className="text-muted-foreground">.{DOMAIN}</span>
+                </span>
+                <CheckingBadge />
+              </div>
+            )}
+
             {base.length >= 2 && !custom && baseFree && (
               <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
                 <span className="truncate text-[15px]">
@@ -225,7 +261,7 @@ export function OnboardingWizard() {
               </div>
             )}
 
-            {base.length >= 2 && !baseFree && !custom && (
+            {base.length >= 2 && baseVerified && !baseFree && !custom && (
               <div className="mt-4" ref={(el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }}>
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
                   <span className="truncate text-[15px]">
@@ -270,9 +306,15 @@ export function OnboardingWizard() {
                   <span className="flex items-center pr-3 text-[15px] text-muted-foreground">.{DOMAIN}</span>
                 </div>
                 {chosen.length >= 2 && (
-                  <p className={cn('mt-2 text-[13px] font-medium', addressFree ? 'text-success' : 'text-destructive')}>
-                    {addressFree ? 'Disponível' : 'Este endereço já está a ser usado'}
-                  </p>
+                  addressVerified ? (
+                    <p className={cn('mt-2 text-[13px] font-medium', addressFree ? 'text-success' : 'text-destructive')}>
+                      {addressFree ? 'Disponível' : 'Este endereço já está a ser usado'}
+                    </p>
+                  ) : (
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+                      <Loader2 size={13} className="animate-spin" />A verificar…
+                    </p>
+                  )
                 )}
                 <button type="button" onClick={() => setCustom(false)} className="mt-2 text-[14px] font-medium text-info">
                   Ver sugestões
@@ -285,7 +327,7 @@ export function OnboardingWizard() {
 
       <div className="mt-8">
         {error && <p className="mb-3 text-[14px] text-destructive" role="alert">{error}</p>}
-        <AuthButton loading={loading} disabled={!canNext || (step === 3 && checking && !addressFree)} onClick={() => (step < LAST ? setStep(step + 1) : finish())}>
+        <AuthButton loading={loading} disabled={!canNext} onClick={() => (step < LAST ? setStep(step + 1) : finish())}>
           {step < LAST ? 'Continuar' : 'Finalizar'}
         </AuthButton>
       </div>

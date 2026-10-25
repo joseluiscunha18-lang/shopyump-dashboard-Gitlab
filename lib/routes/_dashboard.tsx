@@ -52,16 +52,38 @@ function DashboardBody() {
   const loja = lojaOuNula!; // DashboardLayout só renderiza isto quando há loja
   const storeUrl = getStoreUrl(loja.slug);
 
-  // E-mail de boas-vindas: a Edge Function só envia 1 vez por utilizador (tabela welcome_emails_sent).
-  // O sessionStorage evita chamá-la a cada carregamento; qualquer falha é ignorada e não afeta o dashboard.
+  // E-mail de boas-vindas: a Edge Function só envia 1 vez por utilizador (tabela welcome_emails_sent), por isso
+  // chamá-la mais do que uma vez é seguro. O "já tratado" fica guardado POR UTILIZADOR e só depois de a função
+  // responder com sucesso: se falhar (rede, sessão ainda a iniciar, erro no envio), tenta de novo na próxima entrada.
+  // (Antes a marca era global e gravada antes da chamada: uma falha ou outra conta no mesmo separador bloqueava o envio.)
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem("welcome-email-checked")) return;
-      sessionStorage.setItem("welcome-email-checked", "1");
-    } catch {
-      // sessionStorage indisponível: segue em frente, a função continua a ser idempotente.
-    }
-    createClient().functions.invoke("send-welcome-email").catch(() => {});
+    let cancelado = false;
+    (async () => {
+      const supabase = createClient();
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user?.id;
+      if (!uid || cancelado) return;
+      const chave = `welcome-email-ok:${uid}`;
+      try {
+        if (localStorage.getItem(chave)) return;
+      } catch {
+        // storage indisponível: segue em frente, a função continua a ser idempotente.
+      }
+      // invoke() NÃO rejeita em caso de erro: devolve { error }. Por isso verificamos o resultado.
+      const { data, error } = await supabase.functions.invoke("send-welcome-email");
+      if (error || !(data as { ok?: boolean } | null)?.ok) {
+        console.warn("[boas-vindas] não enviado, tentamos na próxima entrada", error?.message ?? data);
+        return;
+      }
+      try {
+        localStorage.setItem(chave, "1");
+      } catch {
+        // ignorado
+      }
+    })().catch(() => {});
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   return (
