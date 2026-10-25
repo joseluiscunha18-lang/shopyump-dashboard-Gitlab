@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Outlet, createFileRoute, redirect, useRouterState } from "@/lib/route-compat";
 import { getUserContext } from "@/lib/auth/getUserContext";
 import { terminarSessao } from "@/lib/auth/client";
 import { usesRefinedDashboard } from '@/lib/nav/dashboardDesign';
+import { createClient } from "@/lib/supabase/client";
 
 import { countPedidosPendentes } from "@/lib/queries/pedidos";
 import { getStoreUrl } from "@/lib/storeUrl";
@@ -49,6 +51,18 @@ function DashboardBody() {
   const { loja: lojaOuNula, pedidosPendentes } = Route.useLoaderData();
   const loja = lojaOuNula!; // DashboardLayout só renderiza isto quando há loja
   const storeUrl = getStoreUrl(loja.slug);
+
+  // E-mail de boas-vindas: a Edge Function só envia 1 vez por utilizador (tabela welcome_emails_sent).
+  // O sessionStorage evita chamá-la a cada carregamento; qualquer falha é ignorada e não afeta o dashboard.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("welcome-email-checked")) return;
+      sessionStorage.setItem("welcome-email-checked", "1");
+    } catch {
+      // sessionStorage indisponível: segue em frente, a função continua a ser idempotente.
+    }
+    createClient().functions.invoke("send-welcome-email").catch(() => {});
+  }, []);
 
   return (
     <MobileNavProvider>
