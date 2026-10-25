@@ -41,6 +41,11 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     if (metodo === 'google') return go('google');
     // Conta com senha (mesmo no ecrã de criar conta): segue para entrar com a senha.
     if (metodo === 'senha' || metodo === 'ambos') return go('password');
+    // Não existe conta com este e-mail: em vez de pedir uma senha que não existe, leva para criar conta.
+    if (metodo === 'nenhum') {
+      return go('create', mode === 'login' ? 'Ainda não existe uma conta com este e-mail. Crie a sua conta para continuar.' : '');
+    }
+    // Resposta desconhecida (sem ligação ou função SQL indisponível): comportamento anterior.
     go(mode === 'login' ? 'password' : 'create');
   }
 
@@ -66,21 +71,23 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     go('code');
   }
 
-  const title = mode === 'login' ? 'Entrar' : 'Crie sua conta';
-  const footer = mode === 'login'
+  // No ecrã de criar conta (mesmo vindo de /login) mostramos o texto de "Crie sua conta".
+  const creating = mode === 'register' || step === 'create';
+  const title = creating ? 'Crie sua conta' : 'Entrar';
+  const footer = !creating
     ? <>Não tem uma conta? <a href="/register" className="text-foreground underline underline-offset-4">Crie sua conta</a></>
     : <>Já tem uma conta? <a href="/login" className="text-foreground underline underline-offset-4">Entrar</a></>;
   const bottom = (
     <>
       <p className="mt-6 text-center text-[17px] text-muted-foreground">{footer}</p>
-      {mode === 'register' && (
+      {creating && (
         <p className="mt-6 pt-6 border-t border-border text-[13px] leading-relaxed text-muted-foreground">
           Ao se cadastrar, você concorda com nossos <a className="text-foreground underline underline-offset-2" href="#">Termos de Serviço</a> e nossa <a className="text-foreground underline underline-offset-2" href="#">Política de Privacidade</a>.
         </p>
       )}
     </>
   );
-  const subtitle = mode === 'login' ? 'Acesse sua loja e gerencie suas vendas.' : 'Comece a vender online em poucos minutos.';
+  const subtitle = !creating ? 'Acesse sua loja e gerencie suas vendas.' : 'Comece a vender online em poucos minutos.';
   const heading = (
     <div className="pt-0 pb-16">
       <h1 className="text-[34px] leading-[1.1] font-bold tracking-tight text-foreground">{title}</h1>
@@ -161,6 +168,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
         void submitCreate(e);
       }} noValidate className="flex-1 flex flex-col">
         {heading}
+        {notice && <p className="mb-4 -mt-10 text-[15px] leading-snug text-muted-foreground" role="status">{notice}</p>}
         {emailBox}
         <div className="mt-5">
           <AuthField label="Senha" type="password" placeholder="Senha" autoComplete="new-password" autoFocus value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} onBlur={() => password && setTouched(true)} className="rounded-full px-5" invalid={!!error || (password.length > 0 && missing.length > 0)} />
