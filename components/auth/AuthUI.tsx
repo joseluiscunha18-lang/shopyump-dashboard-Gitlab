@@ -22,7 +22,8 @@ export function AuthButton({ loading, variant = 'primary', className, children, 
       aria-busy={loading || undefined}
       className={cn(
         'w-full h-[56px] rounded-xl text-[18px] font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:active:scale-100',
-        loading ? 'cursor-wait' : variant === 'primary' ? 'disabled:cursor-not-allowed' : 'disabled:opacity-45',
+        // Botão principal desativado fica claramente apagado (não parece ativo); a carregar mantém-se preto.
+        loading ? 'cursor-wait' : variant === 'primary' ? 'disabled:cursor-not-allowed disabled:opacity-40' : 'disabled:opacity-45',
         variant === 'primary' && 'bg-foreground text-background',
         variant === 'outline' && 'bg-transparent text-foreground border border-foreground/25',
         variant === 'outline' && loading && 'bg-foreground/[0.06] border-foreground/30',
