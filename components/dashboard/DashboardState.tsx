@@ -7,7 +7,7 @@ import { defaultBusinessHours } from '@/lib/settings/model';
 import type { Pedido } from '@/types/database';
 import { getPedidosByLoja } from '@/lib/queries/pedidos';
 import { usePedidosRealtime } from '@/lib/realtime/usePedidosRealtime';
-import type { StoreStatus, StoreData, Contacts, Region, Delivery, Checkout, Payments } from '@/lib/settings/model';
+import { DEFAULT_PAYMENTS, type StoreStatus, type StoreData, type Contacts, type Region, type Delivery, type Checkout, type Payments } from '@/lib/settings/model';
 export type DashboardNotification = {id:number;tipo:'pedido'|'estado'|'stock'|'atencao'|'plataforma'|'boas_vindas'|'pagamento'|'entrega';titulo:string;texto:string;quando:string;lida:boolean;link?:'/pedidos'|'/produtos'|'/configuracoes'};
 /** Sem notificações simuladas: a lista começa vazia (as reais virão dos pedidos/estado da loja). */
 export const initialNotifications:DashboardNotification[] = [];
@@ -41,8 +41,8 @@ export type DashboardLanguage='pt'|'en';
 /** Conta pessoal simulada. `foto` é a fotografia pessoal (nunca o logótipo da loja). */
 export type DemoAccount={nome:string;email:string;telefone:string;avatar:string;foto:string|null;googleFoto:string|null;metodoAcesso:'password'|'google'};
 const buildAccount=(ctx:UserContext):DemoAccount=>({nome:ctx.nome??'',email:ctx.email??'',telefone:'',avatar:'initials',foto:ctx.foto,googleFoto:ctx.foto,metodoAcesso:ctx.metodoAcesso});
-export type DashboardInit={ctx:UserContext;loja:Loja};
-function useStateValue({ctx,loja:demoLoja}:DashboardInit){
+export type DashboardInit={ctx:UserContext;loja:Loja;pagamentos?:Payments|null};
+function useStateValue({ctx,loja:demoLoja,pagamentos}:DashboardInit){
  const [notifications,setNotifications]=useState(initialNotifications);
  const lojaId=demoLoja.id;
  const pedidosRef=useRef<Map<string,Pedido>>(new Map());
@@ -73,7 +73,7 @@ function useStateValue({ctx,loja:demoLoja}:DashboardInit){
  const [region,setRegion]=useState<Region>({pais:'MZ',idioma:'pt',moeda:'MZN',fuso:'Africa/Maputo'});
  const [delivery,setDelivery]=useState<Delivery>({domicilio:false,zonas:[],levantamento:false,localLevantamento:'',instrucoesLevantamento:''});
  const [checkout,setCheckout]=useState<Checkout>({whatsapp:Boolean(demoLoja.whatsapp)});
- const [payments,setPayments]=useState<Payments>({transferencia:false,banco:'',titular:'',conta:'',instrucoesTransferencia:'',dinheiroEntrega:false,instrucoesDinheiro:''});
+ const [payments,setPayments]=useState<Payments>(()=>pagamentos??{...DEFAULT_PAYMENTS});
  const [socials,setSocials]=useState<SocialLink[]>(()=>{const base:Record<string,string>={Instagram:'https://instagram.com/',Facebook:'https://facebook.com/',TikTok:'https://tiktok.com/@'};const rows:[string,string|null,boolean|null][]=[['Instagram',demoLoja.instagram,demoLoja.mostrar_instagram],['Facebook',demoLoja.facebook,demoLoja.mostrar_facebook],['TikTok',demoLoja.tiktok,demoLoja.mostrar_tiktok]];return rows.filter(r=>r[1]).map((r,i)=>({id:i+1,nome:r[0],url:/^https?:/.test(r[1]!)?r[1]!:base[r[0]]+r[1]!.replace('@',''),visivel:Boolean(r[2])}))});
  const [pages,setPages]=useState(()=>buildPages(demoLoja));
  const [storeStatus,setStoreStatus]=useState<StoreStatus>({ativa:true,eliminacaoEm:null,ativaAntesEliminacao:true});
