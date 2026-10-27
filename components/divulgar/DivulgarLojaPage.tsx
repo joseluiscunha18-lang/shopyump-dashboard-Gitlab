@@ -14,24 +14,38 @@ function displayUrl(url: string) {
   return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
+/** Regista a orientação "Partilha a tua loja" como concluída (idempotente). Só chamar depois de uma ação que resultou. */
+function registarPartilha(lojaId: string) {
+  marcarMarcoConcluido(lojaId, 'partilhar_loja').catch(() => {});
+}
+
 function useCopy(url: string, lojaId: string) {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   const copy = useCallback(async () => {
+    let ok = false;
     try {
       await navigator.clipboard.writeText(url);
+      ok = true;
     } catch {
+      // Fallback para navegadores sem Clipboard API: só conta se o execCommand disser que copiou.
       const t = document.createElement('textarea');
       t.value = url;
       document.body.appendChild(t);
       t.select();
-      document.execCommand('copy');
+      try { ok = document.execCommand('copy'); } catch { ok = false; }
       t.remove();
     }
+    if (!ok) {
+      setFailed(true);
+      window.setTimeout(() => setFailed(false), 3000);
+      return;
+    }
     setCopied(true);
-    marcarMarcoConcluido(lojaId, 'partilhar_loja').catch(() => {});
+    registarPartilha(lojaId);
     window.setTimeout(() => setCopied(false), 2000);
   }, [url, lojaId]);
-  return { copied, copy };
+  return { copied, failed, copy };
 }
 
 /* ---------------- Ilustrações ---------------- */
@@ -255,7 +269,7 @@ const GUIDES: Record<Platform, Guide> = {
 /* ---------------- Página ---------------- */
 
 export function DivulgarLojaPage({ lojaId, storeName, storeUrl }: { lojaId: string; storeName: string; storeUrl: string }) {
-  const { copied, copy } = useCopy(storeUrl, lojaId);
+  const { copied, failed, copy } = useCopy(storeUrl, lojaId);
   const [canShare, setCanShare] = useState(false);
   const [guide, setGuide] = useState<Platform | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
@@ -266,7 +280,7 @@ export function DivulgarLojaPage({ lojaId, storeName, storeUrl }: { lojaId: stri
     if (!canShare) return copy();
     try {
       await navigator.share({ title: storeName, url: storeUrl });
-      marcarMarcoConcluido(lojaId, 'partilhar_loja').catch(() => {});
+      registarPartilha(lojaId);
     } catch {
       /* partilha cancelada */
     }
@@ -303,7 +317,7 @@ export function DivulgarLojaPage({ lojaId, storeName, storeUrl }: { lojaId: stri
               {copied ? <Check size={16} className="text-primary" /> : <Copy size={16} />}
             </button>
           </div>
-          <p aria-live="polite" className="mt-1.5 h-4 text-xs text-primary">{copied ? 'Link copiado' : ''}</p>
+          <p aria-live="polite" className={`mt-1.5 h-4 text-xs ${failed ? 'text-destructive' : 'text-primary'}`}>{copied ? 'Link copiado' : failed ? 'Não foi possível copiar o link.' : ''}</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button onClick={copy}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? 'Copiado' : 'Copiar link'}</Button>
             <Button onClick={share} variant="primary">
@@ -379,13 +393,13 @@ export function DivulgarLojaPage({ lojaId, storeName, storeUrl }: { lojaId: stri
         </DialogContent>
       </Dialog>
 
-      <QrDialog open={qrOpen} onClose={() => setQrOpen(false)} storeName={storeName} storeUrl={storeUrl} />
+      <QrDialog open={qrOpen} onClose={() => setQrOpen(false)} storeName={storeName} storeUrl={storeUrl} onUsed={() => registarPartilha(lojaId)} />
     </div>
     </BrandCtx.Provider>
   );
 }
 
-function QrDialog({ open, onClose, storeName, storeUrl }: { open: boolean; onClose: () => void; storeName: string; storeUrl: string }) {
+function QrDialog({ open, onClose, storeName, storeUrl, onUsed }: { open: boolean; onClose: () => void; storeName: string; storeUrl: string; onUsed: () => void }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -399,6 +413,7 @@ function QrDialog({ open, onClose, storeName, storeUrl }: { open: boolean; onClo
     if (!dataUrl) return;
     const w = window.open('', '_blank', 'width=600,height=800');
     if (!w) return;
+    onUsed();
     const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
     w.document.write(`<!doctype html><html><head><title>${esc(storeName)}</title><style>body{font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:95vh;margin:0;text-align:center}h1{font-size:28px;margin:0 0 8px}p{color:#444;margin:4px 0}img{width:320px;height:320px;margin:24px 0}</style></head><body><h1>${esc(storeName)}</h1><p>Aponte a câmara do telemóvel para visitar a nossa loja</p><img src="${dataUrl}" alt="QR Code"/><p>${esc(displayUrl(storeUrl))}</p><script>window.onload=function(){window.print()}</script></body></html>`);
     w.document.close();
@@ -423,6 +438,7 @@ function QrDialog({ open, onClose, storeName, storeUrl }: { open: boolean; onClo
             href={dataUrl ?? undefined}
             download={fileName}
             aria-disabled={!dataUrl}
+            onClick={() => { if (dataUrl) onUsed(); }}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Download size={16} />Guardar

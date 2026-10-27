@@ -1,13 +1,14 @@
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@/lib/route-compat";
 
 import { getUserContext } from "@/lib/auth/getUserContext";
 import { getLojaMarcos } from "@/lib/queries/lojaMarcos";
 import { getPedidosByLoja } from "@/lib/queries/pedidos";
 import { getProdutosByLoja } from "@/lib/queries/produtos";
-import { DashboardGreeting } from "@/components/dashboard/DashboardGreeting";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { OnboardingSteps } from "@/components/dashboard/OnboardingSteps";
-import { ORDEM_MARCOS_ONBOARDING } from "@/types/database";
-import { getStoreUrl } from "@/lib/storeUrl";
+import { calcularOnboarding, type MarcosPorNome } from "@/lib/onboarding/orientacoes";
+import type { MarcoOnboarding } from "@/types/database";
 import { contarVisitas } from "@/lib/queries/visitas";
 import {
   STATUS_LABEL, atividadeRecente, intervalo, pedidosHome, pedidosNoPeriodo, tempoRelativo,
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_dashboard/dashboard")({
   head: () => ({ meta: [{ title: "Início | Shopyump" }, { name: "description", content: "Próximos passos, resumo e atividade recente da tua loja Shopyump." }, { property: "og:title", content: "Início | Shopyump" }, { property: "og:description", content: "Próximos passos, resumo e atividade recente da tua loja Shopyump." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   loader: async () => {
     const ctx = await getUserContext();
-    if (!ctx.loja) return { ctx, marcosRestantes: [], pedidos: [], produtos: [], visitas30d: 0 };
+    if (!ctx.loja) return { ctx, marcos: {} as MarcosPorNome, pedidos: [], produtos: [], visitas30d: 0 };
     const r30 = intervalo("30d");
     const [marcos, pedidos, produtos, visitas30d] = await Promise.all([
       getLojaMarcos(ctx.loja.id),
@@ -25,36 +26,44 @@ export const Route = createFileRoute("/_dashboard/dashboard")({
       getProdutosByLoja(ctx.loja.id),
       contarVisitas(ctx.loja.id, r30.inicio, r30.fim),
     ]);
-    const marcosRestantes = ORDEM_MARCOS_ONBOARDING.filter((m) => !marcos[m]?.concluido_em && !marcos[m]?.dispensado);
-    return { ctx, marcosRestantes, pedidos, produtos, visitas30d };
+    return { ctx, marcos: marcos as MarcosPorNome, pedidos, produtos, visitas30d };
   },
   component: DashboardHomePage,
 });
 
 
 function DashboardHomePage() {
-  const { ctx, marcosRestantes, pedidos, produtos, visitas30d } = Route.useLoaderData();
+  const { ctx, marcos, pedidos, produtos, visitas30d } = Route.useLoaderData();
+
+  // Fonte de verdade = base de dados (loader). `dispensadosAgora` só serve para o × ter efeito imediato
+  // (cartão some e o cabeçalho muda sem esperar); se a gravação falhar, o cartão volta. Ao voltar ao Início
+  // o loader lê de novo a base de dados.
+  const [dispensadosAgora, setDispensadosAgora] = useState<Set<MarcoOnboarding>>(new Set());
+
+  const onboarding = useMemo(() => {
+    const efetivos: MarcosPorNome = { ...marcos };
+    dispensadosAgora.forEach((m) => { efetivos[m] = { concluido_em: efetivos[m]?.concluido_em ?? null, dispensado: true }; });
+    return calcularOnboarding(efetivos);
+  }, [marcos, dispensadosAgora]);
+
   if (!ctx.loja) return <p className="pt-10 text-sm font-medium text-muted-foreground">Sem loja associada a esta conta.</p>;
 
   const bloco = pedidosHome(pedidos);
   const r30 = intervalo("30d");
   const atividade = atividadeRecente(produtos, pedidos, bloco?.lista.map((p) => p.id));
-  const fase = marcosRestantes.includes("primeiro_produto") ? "inicio" : marcosRestantes.length ? "em_progresso" : "completo";
-  // Fase 1: só o primeiro produto. Fase 2: os passos seguintes ainda por fazer.
-  const cartoes = fase === "inicio" ? ["primeiro_produto" as const] : marcosRestantes;
   return (
     <div className="flex flex-col gap-10 pt-10 pb-6">
-      <DashboardGreeting name={ctx.loja.nome} fase={fase} />
-
-      {fase !== "completo" && (
-        <OnboardingSteps
-          lojaId={ctx.loja.id}
-          storeUrl={ctx.loja.slug ? getStoreUrl(ctx.loja.slug) : null}
-          storeName={ctx.loja.nome}
-          marcos={cartoes}
-          heading={fase === "inicio" ? "Começa por aqui" : "Continua por aqui"}
-        />
-      )}
+      <div className="flex flex-col gap-6">
+        <DashboardHeader cabecalho={onboarding.cabecalho} />
+        {onboarding.fase !== "concluido" && (
+          <OnboardingSteps
+            lojaId={ctx.loja.id}
+            marcos={onboarding.cartoes}
+            onDispensar={(m) => setDispensadosAgora((prev) => new Set(prev).add(m))}
+            onDispensarFalhou={(m) => setDispensadosAgora((prev) => { const n = new Set(prev); n.delete(m); return n; })}
+          />
+        )}
+      </div>
 
       <section>
         <div className="mb-4 px-1">

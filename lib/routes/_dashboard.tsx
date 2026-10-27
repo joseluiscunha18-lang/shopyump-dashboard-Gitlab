@@ -6,6 +6,7 @@ import { usesRefinedDashboard } from '@/lib/nav/dashboardDesign';
 import { createClient } from "@/lib/supabase/client";
 
 import { countPedidosPendentes } from "@/lib/queries/pedidos";
+import { getPagamentos } from "@/lib/queries/pagamentos";
 import { getStoreUrl } from "@/lib/storeUrl";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { BottomNav } from "@/components/nav/BottomNav";
@@ -25,16 +26,17 @@ export const Route = createFileRoute("/_dashboard")({head: () => ({meta: [{"titl
     if (!ctx.userId) throw redirect({ to: "/login" });
     if (!ctx.loja) {
       // Conta de administrador sem loja: o middleware deixa-a passar, por isso não a mandamos para o onboarding (evita ciclo).
-      if (ctx.isAdmin) return { ctx, loja: null, pedidosPendentes: 0 };
+      if (ctx.isAdmin) return { ctx, loja: null, pedidosPendentes: 0, pagamentos: null };
       throw redirect({ to: "/onboarding" });
     }
-    return { ctx, loja: ctx.loja, pedidosPendentes: await countPedidosPendentes(ctx.loja.id) };
+    const [pedidosPendentes, pagamentos] = await Promise.all([countPedidosPendentes(ctx.loja.id), getPagamentos(ctx.loja.id)]);
+    return { ctx, loja: ctx.loja, pedidosPendentes, pagamentos };
   },
   component: DashboardLayout,
 });
 
 function DashboardLayout() {
-  const { ctx, loja } = Route.useLoaderData();
+  const { ctx, loja, pagamentos } = Route.useLoaderData();
   if (!loja) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
@@ -43,7 +45,7 @@ function DashboardLayout() {
       </div>
     );
   }
-  return <DashboardStateProvider init={{ ctx, loja }}><DashboardBody /></DashboardStateProvider>;
+  return <DashboardStateProvider init={{ ctx, loja, pagamentos }}><DashboardBody /></DashboardStateProvider>;
 }
 function DashboardBody() {
  const path=useRouterState({select:s=>s.location.pathname});

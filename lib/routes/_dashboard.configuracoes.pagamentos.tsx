@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useDashboardState } from '@/components/dashboard/DashboardState';
 import { SettingsPage, Section, SaveBar, ToggleRow, StatusBadge, useDraft } from '@/components/settings/SettingsKit';
 import { Input, Textarea } from '@/components/ui/ShopyumpInput';
+import { salvarPagamentos } from '@/lib/mutations/pagamentos';
 
 export const Route = createFileRoute('/_dashboard/configuracoes/pagamentos')({
   head: () => ({ meta: [
@@ -52,7 +53,7 @@ function Page() {
             onChange={(e) => patch({ instrucoesDinheiro: e.target.value })} />
         )}
       </Section>
-      <SaveBar dirty={dirty} onReset={() => { reset(); setErrors({}); }} onSave={() => {
+      <SaveBar dirty={dirty} onReset={() => { reset(); setErrors({}); }} onSave={async () => {
         const e: Record<string, string> = {};
         if (draft.transferencia) {
           if (!draft.banco.trim()) e.banco = 'Indica o banco.';
@@ -61,7 +62,11 @@ function Page() {
         }
         setErrors(e);
         if (Object.keys(e).length) return false;
-        save({ ...draft, dinheiroEntrega: draft.dinheiroEntrega && hasDelivery });
+        const value = { ...draft, dinheiroEntrega: draft.dinheiroEntrega && hasDelivery };
+        // Grava na base de dados ANTES de atualizar o ecrã: se falhar, o SaveBar mostra o erro e o rascunho mantém-se.
+        const r = await salvarPagamentos(value);
+        if (!r.ok) throw new Error(r.error);
+        save(value);
       }} />
     </SettingsPage>
   );

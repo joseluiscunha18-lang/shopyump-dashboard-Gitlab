@@ -1,22 +1,20 @@
 'use client';
 
-import { useState, memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
-import { dispensarMarco, marcarMarcoConcluido } from '@/lib/mutations/lojaMarcos';
+import { dispensarMarco } from '@/lib/mutations/lojaMarcos';
 import type { MarcoOnboarding } from '@/types/database';
 import { cn } from '@/lib/cn';
 import { asset } from '@/lib/domains';
 
 interface ItemConfig {
-  eyebrow: string;
   title: string;
   subtitle: string;
   ctaLabel: string;
-  href?: string;
-  onAction?: () => void;
+  href: string;
   image: string;
   contentWidth: string;
   imgRight: string;
@@ -32,18 +30,13 @@ const cta =
 
 const PAGAMENTOS_ICON = asset('/images/card-pagamentos-v2.png');
 
-function getItemConfig(
-  marco: MarcoOnboarding,
-  handleShare: () => void,
-  handlePagamentos: () => void,
-): ItemConfig {
+function getItemConfig(marco: MarcoOnboarding): ItemConfig {
   switch (marco) {
     case 'primeiro_produto':
       return {
-        eyebrow: 'Começa por aqui',
-        title: 'Adiciona o teu primeiro produto',
-        subtitle: 'Começa a construir o teu catálogo.',
-        ctaLabel: 'Criar produto',
+        title: 'Adiciona os teus produtos',
+        subtitle: 'Cria o teu catálogo e apresenta os produtos que tens para vender.',
+        ctaLabel: 'Adicionar produtos',
         href: '/produtos/novo',
         image: 'https://i.ibb.co/kg0TN94W/1-4.png',
         contentWidth: '58%',
@@ -52,9 +45,8 @@ function getItemConfig(
       };
     case 'personalizar_loja':
       return {
-        eyebrow: 'Personalização',
         title: 'Personaliza a tua loja',
-        subtitle: 'Adapta o visual à identidade do teu negócio.',
+        subtitle: 'Adapta o visual e as informações à identidade do teu negócio.',
         ctaLabel: 'Personalizar →',
         href: '/personalizar',
         image: asset('/images/card-personalizar-loja-v3.png'),
@@ -64,9 +56,8 @@ function getItemConfig(
       };
     case 'configurar_pagamentos':
       return {
-        eyebrow: 'Pagamentos',
         title: 'Configura os pagamentos',
-        subtitle: 'Define as opções de pagamento disponíveis para a tua loja.',
+        subtitle: 'Define as formas de pagamento disponíveis para os teus clientes.',
         ctaLabel: 'Configurar →',
         href: '/configuracoes/pagamentos',
         image: PAGAMENTOS_ICON,
@@ -76,9 +67,8 @@ function getItemConfig(
       };
     case 'partilhar_loja':
       return {
-        eyebrow: 'Divulgação',
-        title: 'Divulga a tua loja',
-        subtitle: 'Partilha o link e chega a mais clientes.',
+        title: 'Partilha a tua loja',
+        subtitle: 'Partilha o link da tua loja para que mais pessoas possam conhecer os teus produtos.',
         ctaLabel: 'Divulgar loja',
         href: '/divulgar',
         image: asset('/images/card-divulgacao-v2.png'),
@@ -133,11 +123,11 @@ const OnboardingCard = memo(function OnboardingCard({
           <p className="whitespace-nowrap text-[clamp(12.5px,3.8cqw,18px)] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
             {item.title}
           </p>
-          <p className="mt-1.5 max-w-[210px] text-[clamp(12.5px,3.8cqw,14.5px)] font-medium leading-[1.4] text-muted-foreground">
+          <p className="mt-1.5 max-w-[240px] text-[clamp(12.5px,3.8cqw,14.5px)] font-medium leading-[1.4] text-muted-foreground">
             {item.subtitle}
           </p>
         </div>
-        {item.href ? <span className={cta}>{item.ctaLabel}</span> : <button type="button" className={cta} onClick={item.onAction}>{item.ctaLabel}</button>}
+        <span className={cta}>{item.ctaLabel}</span>
       </div>
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -165,78 +155,50 @@ const OnboardingCard = memo(function OnboardingCard({
     </div>
   );
 
-  return item.href ? (
+  return (
     <Link href={item.href} className="block transition-transform active:scale-[0.99]">
       {content}
     </Link>
-  ) : (
-    <div className="block w-full text-left">
-      {content}
-    </div>
   );
 });
 
+/**
+ * Cartões de orientação. Mostra exatamente os `marcos` recebidos (a decisão de quais é de
+ * `calcularOnboarding`). O × dispensa o cartão: some já (otimista) e fica gravado na base de dados;
+ * se a gravação falhar, o cartão volta e o utilizador é avisado. Dispensar NÃO marca como concluído.
+ */
 export function OnboardingSteps({
   lojaId,
-  storeUrl,
-  storeName,
   marcos,
-  heading,
-  subtitle,
+  onDispensar,
+  onDispensarFalhou,
 }: {
   lojaId: string;
-  storeUrl: string | null;
-  storeName: string;
   marcos: MarcoOnboarding[];
-  heading: string;
-  subtitle?: string;
+  onDispensar: (m: MarcoOnboarding) => void;
+  onDispensarFalhou: (m: MarcoOnboarding) => void;
 }) {
   const { show } = useToast();
-  const [ocultosLocalmente, setOcultosLocalmente] = useState<Set<MarcoOnboarding>>(new Set());
 
-  const visiveis = marcos.filter((m) => !ocultosLocalmente.has(m));
-
-  const handleShare = useCallback(async () => {
-    if (!storeUrl) return;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: storeName, url: storeUrl });
-      } else {
-        await navigator.clipboard.writeText(storeUrl);
-        show('Link da loja copiado.');
+  const handleDismiss = useCallback(
+    async (marco: MarcoOnboarding) => {
+      onDispensar(marco);
+      const r = await dispensarMarco(lojaId, marco).catch(() => ({ ok: false as const }));
+      if (!r.ok) {
+        onDispensarFalhou(marco);
+        show('Não foi possível dispensar. Tenta novamente.', 'error');
       }
-      setOcultosLocalmente((prev) => new Set(prev).add('partilhar_loja'));
-      marcarMarcoConcluido(lojaId, 'partilhar_loja').catch(() => {});
-    } catch {
-      // usuário cancelou a partilha — não é um erro a comunicar
-    }
-  }, [lojaId, storeUrl, storeName, show]);
+    },
+    [lojaId, onDispensar, onDispensarFalhou, show],
+  );
 
-  const handlePagamentos = useCallback(() => {
-    show('A configuração de pagamentos chega em breve.');
-  }, [show]);
-
-  const handleDismiss = useCallback((marco: MarcoOnboarding) => {
-    dispensarMarco(lojaId, marco).catch(() => {});
-    setOcultosLocalmente((prev) => new Set(prev).add(marco));
-  }, [lojaId]);
-
-  if (visiveis.length === 0) return null;
+  if (marcos.length === 0) return null;
 
   return (
-    <div>
-      <h2 className="px-1 text-[19px] font-bold tracking-tight text-foreground">{heading}</h2>
-      {subtitle && <p className="mt-1 mb-4 px-1 text-[13px] font-medium text-muted-foreground">{subtitle}</p>}
-      <div className={cn('flex flex-col gap-4', !subtitle && 'mt-4')}>
-        {visiveis.map((marco) => (
-          <OnboardingCard
-            key={marco}
-            marco={marco}
-            item={getItemConfig(marco, handleShare, handlePagamentos)}
-            onDismiss={handleDismiss}
-          />
-        ))}
-      </div>
+    <div className="flex flex-col gap-4">
+      {marcos.map((marco) => (
+        <OnboardingCard key={marco} marco={marco} item={getItemConfig(marco)} onDismiss={handleDismiss} />
+      ))}
     </div>
   );
 }

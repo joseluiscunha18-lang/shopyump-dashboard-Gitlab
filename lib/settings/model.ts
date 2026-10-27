@@ -54,6 +54,48 @@ export type Payments = {
   instrucoesDinheiro: string;
 };
 
+export const DEFAULT_PAYMENTS: Payments = {
+  transferencia: false,
+  banco: '',
+  titular: '',
+  conta: '',
+  instrucoesTransferencia: '',
+  dinheiroEntrega: false,
+  instrucoesDinheiro: '',
+};
+
+const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+
+/** Lê o que veio da base de dados com tolerância (campos em falta ou de tipo errado caem nos valores por omissão). */
+export function normalizarPagamentos(raw: unknown): Payments {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  return {
+    transferencia: o.transferencia === true,
+    banco: str(o.banco, 80),
+    titular: str(o.titular, 120),
+    conta: str(o.conta, 60),
+    instrucoesTransferencia: str(o.instrucoesTransferencia, 500),
+    dinheiroEntrega: o.dinheiroEntrega === true,
+    instrucoesDinheiro: str(o.instrucoesDinheiro, 500),
+  };
+}
+
+/** Valida antes de gravar (o servidor nunca confia no que o browser envia). */
+export function validarPagamentos(raw: unknown): { ok: true; value: Payments } | { ok: false; error: string } {
+  if (!raw || typeof raw !== 'object') return { ok: false, error: 'Dados de pagamento inválidos.' };
+  const o = raw as Record<string, unknown>;
+  if (typeof o.transferencia !== 'boolean' || typeof o.dinheiroEntrega !== 'boolean') {
+    return { ok: false, error: 'Dados de pagamento inválidos.' };
+  }
+  const value = normalizarPagamentos(o);
+  if (value.transferencia) {
+    if (!value.banco) return { ok: false, error: 'Indica o banco.' };
+    if (!value.titular) return { ok: false, error: 'Indica o titular da conta.' };
+    if (!value.conta) return { ok: false, error: 'Indica o NIB ou número de conta.' };
+  }
+  return { ok: true, value };
+}
+
 export const CURRENCIES: { code: CurrencyCode; label: string; symbol: string }[] = [
   { code: 'MZN', label: 'Metical moçambicano', symbol: 'MT' },
   { code: 'ZAR', label: 'Rand sul-africano', symbol: 'R' },
