@@ -1,10 +1,12 @@
 'use client';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { ELEVATED_SURFACE } from '@/components/ui/Surfaces';
 import { useToast } from '@/components/ui/Toast';
+import { Button } from '@/components/ui/ShopyumpButton';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { dispensarMarco } from '@/lib/mutations/lojaMarcos';
 import type { MarcoOnboarding } from '@/types/database';
 import { cn } from '@/lib/cn';
@@ -164,8 +166,9 @@ const OnboardingCard = memo(function OnboardingCard({
 
 /**
  * Cartões de orientação. Mostra exatamente os `marcos` recebidos (a decisão de quais é de
- * `calcularOnboarding`). O × dispensa o cartão: some já (otimista) e fica gravado na base de dados;
- * se a gravação falhar, o cartão volta e o utilizador é avisado. Dispensar NÃO marca como concluído.
+ * `calcularOnboarding`). O × NÃO remove o cartão: abre um diálogo de confirmação. Só "Ocultar cartão"
+ * dispensa — o cartão some já (otimista) e fica gravado na base de dados; se a gravação falhar, o cartão
+ * volta e o utilizador é avisado. "Cancelar" não altera nada. Dispensar NUNCA marca como concluído.
  */
 export function OnboardingSteps({
   lojaId,
@@ -179,26 +182,47 @@ export function OnboardingSteps({
   onDispensarFalhou: (m: MarcoOnboarding) => void;
 }) {
   const { show } = useToast();
+  // Cartão a aguardar confirmação (null = diálogo fechado).
+  const [aConfirmar, setAConfirmar] = useState<MarcoOnboarding | null>(null);
 
-  const handleDismiss = useCallback(
-    async (marco: MarcoOnboarding) => {
-      onDispensar(marco);
-      const r = await dispensarMarco(lojaId, marco).catch(() => ({ ok: false as const }));
-      if (!r.ok) {
-        onDispensarFalhou(marco);
-        show('Não foi possível dispensar. Tenta novamente.', 'error');
-      }
-    },
-    [lojaId, onDispensar, onDispensarFalhou, show],
-  );
+  const pedirConfirmacao = useCallback((marco: MarcoOnboarding) => setAConfirmar(marco), []);
 
-  if (marcos.length === 0) return null;
+  const confirmarOcultar = useCallback(async () => {
+    const marco = aConfirmar;
+    if (!marco) return;
+    setAConfirmar(null); // fecha primeiro: evita duplo clique e repetição do pedido
+    onDispensar(marco);
+    const r = await dispensarMarco(lojaId, marco).catch(() => ({ ok: false as const }));
+    if (!r.ok) {
+      onDispensarFalhou(marco);
+      show('Não foi possível ocultar o cartão. Tenta novamente.', 'error');
+    }
+  }, [aConfirmar, lojaId, onDispensar, onDispensarFalhou, show]);
 
   return (
-    <div className="flex flex-col gap-4">
-      {marcos.map((marco) => (
-        <OnboardingCard key={marco} marco={marco} item={getItemConfig(marco)} onDismiss={handleDismiss} />
-      ))}
-    </div>
+    <>
+      {marcos.length > 0 && (
+        <div className="flex flex-col gap-4">
+          {marcos.map((marco) => (
+            <OnboardingCard key={marco} marco={marco} item={getItemConfig(marco)} onDismiss={pedirConfirmacao} />
+          ))}
+        </div>
+      )}
+
+      <Dialog open={aConfirmar !== null} onOpenChange={(aberto) => { if (!aberto) setAConfirmar(null); }}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Ocultar esta orientação?</DialogTitle>
+            <DialogDescription>
+              Queres remover este cartão da página inicial? Podes continuar a aceder a esta funcionalidade através do menu da loja.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={() => setAConfirmar(null)}>Cancelar</Button>
+            <Button variant="primary" onClick={confirmarOcultar}>Ocultar cartão</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
