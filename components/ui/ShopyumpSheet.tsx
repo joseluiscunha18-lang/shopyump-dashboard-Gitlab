@@ -60,11 +60,16 @@ export function Sheet({
   // a um valor de posição específico.
   const [dragging, setDragging] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+  // Instante em que a folha abriu. Um toque na foto que abre o sheet dispara
+  // depois um evento click que pode "cair" no fundo recém-montado e fechá-lo
+  // de imediato; ignoramos toques no fundo durante os primeiros instantes.
+  const openedAt = useRef(0);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (open) {
+      openedAt.current = performance.now();
       setVisible(true);
       setDragY(0);
       setDragging(false);
@@ -111,7 +116,13 @@ export function Sheet({
         open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       )}
     >
-      <div className="absolute inset-0 bg-black/55" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/55"
+        onClick={() => {
+          if (performance.now() - openedAt.current < 250) return;
+          onClose();
+        }}
+      />
       <div
         ref={sheetRef}
         onTransitionEnd={handleTransitionEnd}
