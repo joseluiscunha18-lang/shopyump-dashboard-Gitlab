@@ -6,16 +6,18 @@ import type { Loja } from '@/types/database';
 import { defaultBusinessHours } from '@/lib/settings/model';
 import type { Pedido } from '@/types/database';
 import { getPedidosByLoja } from '@/lib/queries/pedidos';
+import { getAlertasStock } from '@/lib/queries/stockAlertas';
+import { notificacaoBoasVindas, notificacoesStock, quandoRel, type AlertaStock } from '@/lib/notificacoes/gerar';
+import { useRouterState } from '@/lib/router-compat';
 import { usePedidosRealtime } from '@/lib/realtime/usePedidosRealtime';
 import { DEFAULT_PAYMENTS, type StoreStatus, type StoreData, type Contacts, type Region, type Delivery, type Checkout, type Payments } from '@/lib/settings/model';
 export type DashboardNotification = {id:number;tipo:'pedido'|'estado'|'stock'|'atencao'|'plataforma'|'boas_vindas'|'pagamento'|'entrega';titulo:string;texto:string;quando:string;lida:boolean;link?:'/pedidos'|'/produtos'|'/configuracoes'};
 /** Sem notificações simuladas: a lista começa vazia (as reais virão dos pedidos/estado da loja). */
 export const initialNotifications:DashboardNotification[] = [];
 
-/** Notificações reais: cada pedido NOVO (pendente) dos últimos 30 dias. */
+/** Notificações reais: pedidos novos (pendentes, últimos 30 dias), stock baixo/esgotado e boas-vindas (ver lib/notificacoes/gerar.ts). */
 const NOTIF_DIAS=30;
 const numId=(uuid:string)=>parseInt(uuid.replace(/-/g,'').slice(0,8),16);
-const quandoRel=(iso:string)=>{const m=Math.max(0,Math.round((Date.now()-new Date(iso).getTime())/60000));if(m<1)return 'agora mesmo';if(m<60)return 'há '+m+' min';const h=Math.round(m/60);if(h<24)return 'há '+h+' h';return 'há '+Math.round(h/24)+' dias'};
 function pedidosParaNotificacoes(pedidos:Pedido[],lidas:Set<number>,removidas:Set<number>):DashboardNotification[]{
  const limite=Date.now()-NOTIF_DIAS*86400000;
  return pedidos.filter(p=>p.status==='pendente'&&new Date(p.created_at).getTime()>=limite&&!removidas.has(numId(p.id)))
@@ -46,15 +48,26 @@ function useStateValue({ctx,loja:demoLoja,pagamentos}:DashboardInit){
  const [notifications,setNotifications]=useState(initialNotifications);
  const lojaId=demoLoja.id;
  const pedidosRef=useRef<Map<string,Pedido>>(new Map());
+ const stockRef=useRef<AlertaStock[]>([]);
+ const pathNotif=useRouterState({select:s=>s.location.pathname});
  const lidasRef=useRef<Set<number>>(new Set());
  const removidasRef=useRef<Set<number>>(new Set());
  const prontoRef=useRef(false);
  const visiveisRef=useRef<Set<number>>(new Set());
- const rebuild=()=>{const l=pedidosParaNotificacoes([...pedidosRef.current.values()],lidasRef.current,removidasRef.current);visiveisRef.current=new Set(l.map(n=>n.id));setNotifications(l)};
- // 1) carrega pedidos + estado «lida/eliminada» guardado neste dispositivo
+ // Ordem: pedidos (mais recentes primeiro) → avisos de stock → boas-vindas.
+ const rebuild=()=>{const l=[...pedidosParaNotificacoes([...pedidosRef.current.values()],lidasRef.current,removidasRef.current),...notificacoesStock(stockRef.current,lidasRef.current,removidasRef.current),...notificacaoBoasVindas(demoLoja,lidasRef.current,removidasRef.current)];visiveisRef.current=new Set(l.map(n=>n.id));setNotifications(l)};
+ // 1) carrega pedidos + stock + estado «lida/eliminada» guardado neste dispositivo.
+ // Se uma das consultas falhar, as outras notificações aparecem na mesma (boas-vindas nunca depende da rede).
  useEffect(()=>{let vivo=true;lidasRef.current=lerSet('shopyump.notif.lidas.'+lojaId);removidasRef.current=lerSet('shopyump.notif.removidas.'+lojaId);
-  getPedidosByLoja(lojaId,'pendente').then(l=>{if(!vivo)return;pedidosRef.current=new Map(l.map(p=>[p.id,p]));prontoRef.current=true;rebuild()}).catch(()=>{});
+  Promise.allSettled([getPedidosByLoja(lojaId,'pendente'),getAlertasStock(lojaId)]).then(([ped,stk])=>{if(!vivo)return;
+   if(ped.status==='fulfilled')pedidosRef.current=new Map(ped.value.map(p=>[p.id,p]));
+   if(stk.status==='fulfilled')stockRef.current=stk.value;
+   prontoRef.current=true;rebuild()});
   return()=>{vivo=false}},[lojaId]);
+ // 1b) o stock muda ao editar produtos: volta a verificar quando se navega no dashboard
+ useEffect(()=>{if(!prontoRef.current)return;let vivo=true;
+  getAlertasStock(lojaId).then(a=>{if(vivo){stockRef.current=a;rebuild()}}).catch(()=>{});
+  return()=>{vivo=false}},[pathNotif,lojaId]);
  // 2) novos pedidos (ex.: checkout por WhatsApp da loja) chegam em tempo real
  usePedidosRealtime(lojaId,(_ev,p)=>{if(p.status==='pendente')pedidosRef.current.set(p.id,p);else pedidosRef.current.delete(p.id);rebuild()});
  // 3) guarda o que o utilizador marcou como lido / eliminou
