@@ -92,11 +92,16 @@ function LumeThemeInterno() {
  * Parte "cliente" do tema. Recebe a personalização JÁ resolvida pelo servidor
  * (ver ./index.tsx) — `null` = sem personalização, visual original do Lume.
  */
-export function LumeThemeClient({ loja, produtos, personalizacao }: StoreThemeProps & { personalizacao: LumePersonalizacao | null }) {
+export function LumeThemeClient({
+  loja,
+  produtos,
+  produtoInicialId,
+  personalizacao,
+}: StoreThemeProps & { personalizacao: LumePersonalizacao | null }) {
   return (
     <LumeLojaProvider loja={loja} produtos={produtos}>
       <LumePersonalizacaoProvider value={personalizacao}>
-        <LumeRouterProvider>
+        <LumeRouterProvider initialProductId={produtoInicialId}>
           <LumeThemeInterno />
         </LumeRouterProvider>
       </LumePersonalizacaoProvider>
