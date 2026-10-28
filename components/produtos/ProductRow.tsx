@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Copy, EyeOff, Eye, Trash2, Share2 } from 'lucide-react';
+import { Pencil, Copy, EyeOff, Eye, Trash2, Share2, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
@@ -21,7 +21,7 @@ export function ProductRow({
   onToggleSelect,
 }: {
   produto: Produto;
-  /** Slug da loja — necessário para montar o link público do produto ("Partilhar produto"). */
+  /** Slug da loja — necessário para montar o link público do produto ("Ver na loja" / "Partilhar produto"). */
   lojaSlug?: string;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -60,11 +60,16 @@ export function ProductRow({
     });
   }
 
-  // Só produtos ativos (publicados e visíveis na loja) têm link público
-  // utilizável — rascunhos e inativos não aparecem na loja, por isso a
-  // ação nem é oferecida. Usa o `ativo` local (otimista) para o menu
-  // reagir logo a "Ativar"/"Inativar".
-  const partilhavel = ativo && !produto.rascunho && !!lojaSlug;
+  // Só produtos ativos (publicados e visíveis na loja) têm página pública
+  // — rascunhos e inativos dão 404 na loja, por isso "Ver na loja" e
+  // "Partilhar produto" nem são oferecidos. Usa o `ativo` local (otimista)
+  // para o menu reagir logo a "Ativar"/"Inativar".
+  const visivelNaLoja = ativo && !produto.rascunho && !!lojaSlug;
+
+  function handleVerNaLoja() {
+    if (!lojaSlug) return;
+    window.open(getProductUrl(lojaSlug, produto.id), '_blank', 'noopener,noreferrer');
+  }
 
   async function handlePartilhar() {
     if (!lojaSlug) return;
@@ -108,8 +113,14 @@ export function ProductRow({
       label: 'Editar',
       href: `/produtos/${produto.id}`,
     },
-    ...(partilhavel
+    ...(visivelNaLoja
       ? [
+          {
+            key: 'ver-na-loja',
+            icon: <ExternalLink size={16} strokeWidth={1.8} className="text-muted-foreground" />,
+            label: 'Ver na loja',
+            onClick: handleVerNaLoja,
+          },
           {
             key: 'partilhar',
             icon: <Share2 size={16} strokeWidth={1.8} className="text-muted-foreground" />,
