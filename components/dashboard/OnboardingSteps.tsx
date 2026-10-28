@@ -36,9 +36,9 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
   switch (marco) {
     case 'primeiro_produto':
       return {
-        title: 'Adiciona os teus produtos',
-        subtitle: 'Cria o teu catálogo e apresenta os produtos que tens para vender.',
-        ctaLabel: 'Adicionar produtos',
+        title: 'Adiciona produtos',
+        subtitle: 'Começa o teu catálogo.',
+        ctaLabel: 'Criar produto',
         href: '/produtos/novo',
         image: 'https://i.ibb.co/kg0TN94W/1-4.png',
         contentWidth: '58%',
@@ -47,9 +47,9 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
       };
     case 'personalizar_loja':
       return {
-        title: 'Personaliza a tua loja',
-        subtitle: 'Adapta o visual e as informações à identidade do teu negócio.',
-        ctaLabel: 'Personalizar →',
+        title: 'Personaliza a loja',
+        subtitle: 'Dá vida à tua marca.',
+        ctaLabel: 'Personalizar',
         href: '/personalizar',
         image: asset('/images/card-personalizar-loja-v3.png'),
         contentWidth: '52%',
@@ -58,9 +58,9 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
       };
     case 'configurar_pagamentos':
       return {
-        title: 'Configura os pagamentos',
-        subtitle: 'Define as formas de pagamento disponíveis para os teus clientes.',
-        ctaLabel: 'Configurar →',
+        title: 'Configura pagamentos',
+        subtitle: 'Recebe pagamentos com facilidade.',
+        ctaLabel: 'Configurar',
         href: '/configuracoes/pagamentos',
         image: PAGAMENTOS_ICON,
         contentWidth: '52%',
@@ -69,8 +69,8 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
       };
     case 'partilhar_loja':
       return {
-        title: 'Partilha a tua loja',
-        subtitle: 'Partilha o link da tua loja para que mais pessoas possam conhecer os teus produtos.',
+        title: 'Divulga a loja',
+        subtitle: 'Atrai mais clientes.',
         ctaLabel: 'Divulgar loja',
         href: '/divulgar',
         image: asset('/images/card-divulgacao-v2.png'),
