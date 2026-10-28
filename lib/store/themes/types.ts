@@ -14,6 +14,13 @@ import type { ProdutoPublico } from '@/lib/queries/produtosPublicos';
 export interface StoreThemeProps {
   loja: LojaPublica;
   produtos: ProdutoPublico[];
+  /**
+   * Quando definido, o tema abre diretamente na página deste produto
+   * (link partilhável `nome.shopyump.com/p/<id>`, ver
+   * app/loja/[slug]/p/[id]/page.tsx) em vez de na página inicial da loja.
+   * O produto tem de estar em `produtos`.
+   */
+  produtoInicialId?: string;
 }
 
 export type StoreThemeComponent = (props: StoreThemeProps) => React.ReactElement;
