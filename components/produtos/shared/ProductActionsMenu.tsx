@@ -78,11 +78,12 @@ export function ProductActionsMenu({ items, loading }: { items: ProductMenuItem[
     if (!open) {
       const rect = ref.current?.getBoundingClientRect();
       if (rect) {
-        // Estimativa da altura do dropdown (4 itens + separador + padding,
-        // ver classes abaixo) — o suficiente para decidir o lado sem
-        // precisar de medir o dropdown já renderizado. Mesmo critério de
-        // simplicidade do SuggestInput.tsx (abrirParaCima = rect.top > 180).
-        const alturaEstimada = 190;
+        // Estimativa da altura do dropdown (até 5 itens + separador +
+        // padding, ver classes abaixo — um item ≈ 42px) — o suficiente
+        // para decidir o lado sem precisar de medir o dropdown já
+        // renderizado. Mesmo critério de simplicidade do SuggestInput.tsx
+        // (abrirParaCima = rect.top > 180).
+        const alturaEstimada = 232;
         const espacoAbaixo = window.innerHeight - rect.bottom;
         const abrirParaCima = espacoAbaixo < alturaEstimada && rect.top > alturaEstimada;
         setPos({
