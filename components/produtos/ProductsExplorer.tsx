@@ -17,7 +17,7 @@ import type { Produto } from '@/types/database';
 
 const PAGE_SIZE = 10;
 
-export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
+export function ProductsExplorer({ produtos, lojaSlug }: { produtos: Produto[]; lojaSlug?: string }) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('todos');
   const [categoria, setCategoria] = useState('todas');
@@ -303,7 +303,13 @@ export function ProductsExplorer({ produtos }: { produtos: Produto[] }) {
                 />
               ))}
               {visible.map((p) => (
-                <ProductRow key={p.id} produto={p} selected={selectedIds.has(p.id)} onToggleSelect={toggleSelect} />
+                <ProductRow
+                  key={p.id}
+                  produto={p}
+                  lojaSlug={lojaSlug}
+                  selected={selectedIds.has(p.id)}
+                  onToggleSelect={toggleSelect}
+                />
               ))}
             </div>
 
