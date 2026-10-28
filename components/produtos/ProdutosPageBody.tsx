@@ -62,7 +62,7 @@ export function ProdutosPageBody({
       <header className="flex items-end justify-between gap-4"><div className="flex flex-col gap-1.5"><h1 className="text-[26px] font-bold tracking-tight text-foreground">Produtos</h1></div>{temAlgumaCoisa && <Link href="/produtos/novo" className="hidden shrink-0 lg:block"><Button variant="dark">Adicionar</Button></Link>}</header>
 
       {temAlgumaCoisa ? (
-        <ProductsExplorer produtos={produtos} />
+        <ProductsExplorer produtos={produtos} lojaSlug={lojaSlug} />
       ) : (
         <div className="relative w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs">
           <div className="flex flex-col items-center px-6 pt-6 pb-6 sm:pt-8 sm:pb-8">
