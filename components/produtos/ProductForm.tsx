@@ -18,6 +18,7 @@ import { useProductFormGuard } from '@/components/produtos/ProductFormGuardConte
 import { usePublishing } from '@/components/produtos/PublishingContext';
 import { createProduto, updateProduto } from '@/lib/mutations/produtos';
 import { uploadImage, BUCKETS } from '@/lib/storage';
+import { aindaLocal } from '@/lib/produtos/fotos';
 import { totalEstoque } from '@/lib/variantes';
 import { pesoParaKg, type UnidadePeso } from '@/lib/peso';
 import {
@@ -29,7 +30,7 @@ import {
 } from '@/lib/produtos/draft';
 import type { Produto, ProdutoMaisOpcoes } from '@/types/database';
 
-/* ── Seletor de moeda (só para este produto) ──────────────────────────────── */
+/* ── Seletor de moeda (só para este produto) ───────────────────────────────────────── */
 
 const MOEDAS = [
   { code: 'MZN', label: 'Metical moçambicano' },
@@ -84,7 +85,7 @@ function MoedaPicker({ moeda, onChange }: { moeda: Moeda; onChange: (m: Moeda) =
   );
 }
 
-/* ── Primitivos de layout ──────────────────────────────────────────────────── */
+/* ── Primitivos de layout ──────────────────────────────────────────────────────────── */
 
 /**
  * Superfície de secção — o único nível de "cartão" da página. Agrupa vários
@@ -122,7 +123,7 @@ function FormSection({
   );
 }
 
-/* ── Linha de controlo leve (Estoque / Peso) ───────────────────────────────
+/* ── Linha de controlo leve (Estoque / Peso) ───────────────────────────────────────
    Vive ydentro de uma FormSection — por isso nunca tem borda ou fundo
    próprios; é só um título + descrição + switch, com o campo condicional
    a aparecer por baixo. A secção-mãe já define os limites do grupo. */
@@ -158,7 +159,7 @@ function ConfigRow({
   );
 }
 
-/* ── Rótulo com tag "opcional" ─────────────────────────────────────────────── */
+/* ── Rótulo com tag "opcional" ──────────────────────────────────────────────────────────────── */
 
 function FieldLabel({ label, optional }: { label: string; optional?: boolean }) {
   return (
@@ -175,7 +176,7 @@ function FieldLabel({ label, optional }: { label: string; optional?: boolean }) 
   );
 }
 
-/* ── ProductForm ───────────────────────────────────────────────────────────── */
+/* ── ProductForm ──────────────────────────────────────────────────────────────────────────── */
 
 export function ProductForm({
   lojaId,
@@ -227,9 +228,10 @@ export function ProductForm({
   }, [pesoPadraoValor, pesoPadraoUnidade]);
 
   const [maisOpcoes, setMaisOpcoes] = useState<Omit<ProdutoMaisOpcoes, 'peso'>>(produto?.mais_opcoes ?? {});
+  const [eDigital, setEDigital] = useState<boolean>(!!produto?.mais_opcoes?.linkDownload);
   const [saving, setSaving]         = useState(false);
 
-  // ── Validação ao publicar ──────────────────────────────────────────────
+  // ── Validação ao publicar ─────────────────────────────────────────────────────────
   // Sem lista de erros antes de o lojista tentar — só depois de um "Publicar
   // produto" falhado é que os campos em falta ganham estado de erro visível.
   const [showErrors, setShowErrors] = useState(false);
@@ -267,7 +269,7 @@ export function ProductForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Registar callbacks no contexto para a TopBar os invocar ─────────────
+  // ── Registar callbacks no contexto para a TopBar os invocar ───────────────
   useEffect(() => {
     // "Guardar como rascunho" — só disponível no fluxo de criação.
     // Guarda o produto com ativo=false e rascunho=true, depois sai.
@@ -283,7 +285,7 @@ export function ProductForm({
         categoria:   categoria.trim() || '',
         descricao:   descricao.trim() || null,
         genero,
-        fotos:       fotos.filter((f) => !f.startsWith('blob:')), // exclui blobs não enviados
+        fotos:       fotos.filter((f) => !aindaLocal(f)), // exclui fotos locais ainda não enviadas
         variantes:   hasVariants
           ? {
               raiz:    variantes.raiz,
@@ -475,7 +477,7 @@ export function ProductForm({
         try {
           fotosFinais = await Promise.all(
             fotos.map(async (foto) => {
-              if (!foto.startsWith('blob:')) return foto;
+              if (!aindaLocal(foto)) return foto;
               const res  = await fetch(foto);
               const blob = await res.blob();
               const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
@@ -525,7 +527,7 @@ export function ProductForm({
       return;
     }
 
-    // ── Criação: publicação otimista ────────────────────────────────────
+    // ── Criação: publicação otimista ─────────────────────────────────────────────
     // Regista já o produto (com a foto ainda local, em blob:) — o upload +
     // insert seguem em segundo plano, fora do "await" que bloquearia a
     // navegação, e só comunicam o resultado via toast/PublishingContext,
@@ -535,8 +537,8 @@ export function ProductForm({
     //
     // A navegação em si, porém, é propositadamente segurada por
     // MIN_BOTAO_PUBLICAR_MS: sem isso o botão "Publicar produto" mal chega
-    // a mostrar o spinner antes de a página trocar, e o lojista nunca vê a
-    // confirmação de que o clique foi registado. Este atraso não bloqueia
+    // a mostrar o spinner antes de a página trocar, e o lojista nunca vê
+    // a confirmação de que o clique foi registado. Este atraso não bloqueia
     // o trabalho em fundo (que já começou), só a troca de ecrã.
     const tempId = crypto.randomUUID();
     const precoNum      = Number(preco) || 0;
@@ -567,7 +569,7 @@ export function ProductForm({
     setDirty(false);
 
     setTimeout(() => {
-      // Sem setSaving(false) aqui de propósito: se o resetássemos antes do
+      // Sem setSaving(false) aqui de propósito: se o resettássemos antes do
       // router.push, o botão voltava a "Publicar produto" por um instante
       // (a navegação não é instantânea) antes de a página trocar — o
       // lojista chegava a ver o CTA normal a piscar entre o processamento
@@ -590,7 +592,7 @@ export function ProductForm({
       try {
         fotosFinais = await Promise.all(
           fotos.map(async (foto) => {
-            if (!foto.startsWith('blob:')) return foto;
+            if (!aindaLocal(foto)) return foto;
             const res  = await fetch(foto);
             const blob = await res.blob();
             const file = new File([blob], `foto.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
@@ -652,44 +654,56 @@ export function ProductForm({
         </FormSection>
       </div>
 
-      <FormSection title="Informações básicas">
+      <FormSection title="Informações do produto">
         <div className="flex flex-col gap-1.5">
           <FieldLabel label="Nome do produto" />
           <Input
             ref={nomeInputRef}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            placeholder="Camisola de linho bege"
+            placeholder="Camisola de linho"
             error={showErrors && !nomeValido ? 'Campo obrigatório' : undefined}
           />
         </div>
-      </FormSection>
 
-      <FormSection title="Descrição" description="Conta aos clientes o que torna este produto especial.">
-        <Textarea
-          rows={5}
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          placeholder="Descreve o produto…"
-        />
-      </FormSection>
-
-      <FormSection title="Organização">
         <div ref={categoriaRef}>
           <CategoryPicker value={categoria} onChange={setCategoria} error={showErrors && !categoriaValida} />
         </div>
-      </FormSection>
 
-      <FormSection title="Produto digital" description="Opcional. O cliente recebe este link depois da compra.">
         <div className="flex flex-col gap-1.5">
-          <FieldLabel label="Link de download" optional />
-          <Input
-            type="url"
-            value={maisOpcoes.linkDownload ?? ''}
-            onChange={(e) => setMaisOpcoes({ ...maisOpcoes, linkDownload: e.target.value || null })}
-            placeholder="https://drive.google.com/…"
+          <FieldLabel label="Descrição" optional />
+          <Textarea
+            rows={5}
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder="Descreve o que torna este produto especial…"
           />
         </div>
+      </FormSection>
+
+      <FormSection>
+        <ConfigRow
+          title="Este produto é digital?"
+          description={eDigital ? 'O cliente recebe este link depois da compra.' : 'Ative para enviar um link de download.'}
+          checked={eDigital}
+          onToggle={(v) => {
+            setEDigital(v);
+            if (!v) setMaisOpcoes({ ...maisOpcoes, linkDownload: null });
+          }}
+          ariaLabel="Este produto é digital"
+        >
+          {eDigital && (
+            <div className="flex flex-col gap-1.5">
+              <FieldLabel label="Link de download" />
+              <Input
+                type="url"
+                value={maisOpcoes.linkDownload ?? ''}
+                onChange={(e) => setMaisOpcoes({ ...maisOpcoes, linkDownload: e.target.value || null })}
+                placeholder="https://drive.google.com/…"
+              />
+            </div>
+          )}
+        </ConfigRow>
       </FormSection>
 
       {/* ── 5. Preço ── */}
