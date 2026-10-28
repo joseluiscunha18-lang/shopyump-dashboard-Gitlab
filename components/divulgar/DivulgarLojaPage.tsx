@@ -194,6 +194,8 @@ interface Guide {
   note?: string;
   openLabel: string;
   openUrl: (storeUrl: string) => string;
+  /** true se o botão abre uma janela de partilha COM o link da loja (conta como partilha). Abrir só a rede não conta. */
+  contaComoPartilha: boolean;
 }
 
 const GUIDES: Record<Platform, Guide> = {
@@ -213,6 +215,7 @@ const GUIDES: Record<Platform, Guide> = {
     note: 'Os nomes e a localização das opções podem mudar com as atualizações do Instagram.',
     openLabel: 'Abrir Instagram',
     openUrl: () => 'https://www.instagram.com/accounts/edit/',
+    contaComoPartilha: false,
   },
   whatsapp: {
     name: 'WhatsApp Business',
@@ -229,6 +232,7 @@ const GUIDES: Record<Platform, Guide> = {
     note: 'Nada é enviado automaticamente — é sempre você que escolhe o contacto e envia.',
     openLabel: 'Abrir WhatsApp',
     openUrl: (u) => `https://api.whatsapp.com/send?text=${encodeURIComponent(u)}`,
+    contaComoPartilha: true,
   },
   facebook: {
     name: 'Facebook',
@@ -246,6 +250,7 @@ const GUIDES: Record<Platform, Guide> = {
     note: 'O botão abaixo abre a janela de partilha do Facebook; a publicação só é feita se a confirmar.',
     openLabel: 'Partilhar no Facebook',
     openUrl: (u) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}`,
+    contaComoPartilha: true,
   },
   tiktok: {
     name: 'TikTok',
@@ -263,6 +268,7 @@ const GUIDES: Record<Platform, Guide> = {
     note: 'A opção de adicionar um link depende do tipo de conta e dos requisitos do TikTok, que podem variar.',
     openLabel: 'Abrir TikTok',
     openUrl: () => 'https://www.tiktok.com/',
+    contaComoPartilha: false,
   },
 };
 
@@ -382,6 +388,7 @@ export function DivulgarLojaPage({ lojaId, storeName, storeUrl }: { lojaId: stri
                   href={active.openUrl(storeUrl)}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => { if (active.contaComoPartilha) registarPartilha(lojaId); }}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground hover:bg-muted"
                 >
                   <ExternalLink size={16} />{active.openLabel}
