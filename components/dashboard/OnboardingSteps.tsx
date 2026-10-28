@@ -138,13 +138,22 @@ const OnboardingCard = memo(function OnboardingCard({
         <span className={cta}>{item.ctaLabel}</span>
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={item.image}
-        alt=""
-        width={208}
-        height={176}
-        decoding="async"
+      {/*
+        Imagem decorativa como fundo CSS (NÃO uma tag <img>) — de propósito.
+        Com <img>, o Chrome Android mostra sempre no toque longo o menu
+        "Transferir imagem / Abrir imagem / Copiar imagem", e não há forma
+        garantida de o desativar por JavaScript (o listener de contextmenu
+        é pouco fiável no Android). Sem nenhum elemento de imagem real no
+        DOM, esse menu simplesmente não tem o que mostrar: nada para
+        transferir, copiar, abrir ou inspecionar.
+        `pointerEvents: 'none'` evita ainda qualquer interação própria
+        (toque longo, arrastar) nesta área — o card inteiro já é clicável
+        via <Link>, por isso a imagem não precisa de reagir a nada sozinha.
+      */}
+      <div
+        role="img"
+        aria-label=""
+        aria-hidden="true"
         style={{
           position: 'absolute',
           right: item.imgRight,
@@ -153,11 +162,16 @@ const OnboardingCard = memo(function OnboardingCard({
           width: item.imgWidth,
           maxWidth: item.imgMaxWidth,
           height: `calc(100% - ${item.imgTop} - ${item.imgBottom})`,
-          objectFit: 'contain',
-          objectPosition: item.imgAlign ?? 'right center',
           borderRadius: 14,
+          backgroundImage: `url(${item.image})`,
+          backgroundSize: 'contain',
+          backgroundPosition: item.imgAlign ?? 'right center',
+          backgroundRepeat: 'no-repeat',
           transform: item.imgScale ? `scale(${item.imgScale})` : undefined,
           transformOrigin: item.imgAlign ?? 'right center',
+          pointerEvents: 'none',
+          WebkitTouchCallout: 'none',
+          userSelect: 'none',
         }}
       />
     </div>
