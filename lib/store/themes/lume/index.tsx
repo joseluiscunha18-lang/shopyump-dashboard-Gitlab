@@ -11,7 +11,14 @@ import { buildLumePersonalizacao } from './lib/personalizacao';
  * do cliente da loja. Customização ausente ou inválida → `null` → o Lume
  * original, sem nenhuma alteração (a loja nunca parte por causa disto).
  */
-export function LumeTheme({ loja, produtos }: StoreThemeProps) {
+export function LumeTheme({ loja, produtos, produtoInicialId }: StoreThemeProps) {
   const personalizacao = buildLumePersonalizacao(loja.tema_personalizacao);
-  return <LumeThemeClient loja={loja} produtos={produtos} personalizacao={personalizacao} />;
+  return (
+    <LumeThemeClient
+      loja={loja}
+      produtos={produtos}
+      produtoInicialId={produtoInicialId}
+      personalizacao={personalizacao}
+    />
+  );
 }
