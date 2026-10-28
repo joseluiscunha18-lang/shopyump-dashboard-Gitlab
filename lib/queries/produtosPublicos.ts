@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createPublicClient } from '@/lib/supabase/publicClient';
 import type { ProdutoVariantes } from '@/types/database';
 
@@ -59,3 +60,27 @@ export async function getProdutosPublicos(
   if (error) throw error;
   return (data ?? []) as ProdutoPublico[];
 }
+
+/**
+ * Um produto público pelo ID (link partilhável `nome.shopyump.com/p/<id>`).
+ * Mesmas regras de visibilidade da loja: só `ativo` e não `rascunho`, e
+ * sempre dentro da loja indicada — um ID de outra loja devolve `null`.
+ *
+ * `cache()` deduplica a chamada entre `generateMetadata` e a página no
+ * mesmo pedido, como em getLojaPublicaBySlug.
+ */
+export const getProdutoPublico = cache(
+  async (lojaId: string, produtoId: string): Promise<ProdutoPublico | null> => {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from('produtos')
+      .select(PRODUTO_PUBLICO_COLUNAS)
+      .eq('id', produtoId)
+      .eq('loja_id', lojaId)
+      .eq('ativo', true)
+      .eq('rascunho', false)
+      .maybeSingle();
+    if (error) throw error;
+    return (data ?? null) as ProdutoPublico | null;
+  },
+);
