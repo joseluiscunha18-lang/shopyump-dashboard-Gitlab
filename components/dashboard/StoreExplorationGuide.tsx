@@ -50,7 +50,7 @@ function getItemConfig(marco: MarcoOnboarding, handleShare: () => void, handlePa
         subtitle: 'Comece a construir seu catálogo.',
         ctaLabel: 'Criar produto',
         href: '/produtos/novo',
-        image: 'https://i.ibb.co/kg0TN94W/1-4.png',
+        image: asset('/images/criar-produto.webp'),
         imageClassName: 'h-full w-full object-contain object-right',
         imageWrapperClassName: 'right-0 top-2 bottom-2 w-[42%] max-w-[176px]',
         contentWidthClassName: 'w-[68%]',
