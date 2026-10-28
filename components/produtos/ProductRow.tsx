@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Copy, EyeOff, Eye, Trash2 } from 'lucide-react';
+import { Pencil, Copy, EyeOff, Eye, Trash2, Share2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { toggleProdutoAtivo, deleteProduto, duplicateProduto } from '@/lib/mutations/produtos';
 import { segmentosCategoria } from '@/lib/caracteristicasPorCategoria';
+import { getProductUrl } from '@/lib/storeUrl';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ProductThumbnail } from '@/components/produtos/shared/ProductThumbnail';
@@ -15,10 +16,13 @@ import type { Produto } from '@/types/database';
 
 export function ProductRow({
   produto,
+  lojaSlug,
   selected = false,
   onToggleSelect,
 }: {
   produto: Produto;
+  /** Slug da loja — necessário para montar o link público do produto ("Partilhar produto"). */
+  lojaSlug?: string;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
 }) {
@@ -56,6 +60,36 @@ export function ProductRow({
     });
   }
 
+  // Só produtos ativos (publicados e visíveis na loja) têm link público
+  // utilizável — rascunhos e inativos não aparecem na loja, por isso a
+  // ação nem é oferecida. Usa o `ativo` local (otimista) para o menu
+  // reagir logo a "Ativar"/"Inativar".
+  const partilhavel = ativo && !produto.rascunho && !!lojaSlug;
+
+  async function handlePartilhar() {
+    if (!lojaSlug) return;
+    const url = getProductUrl(lojaSlug, produto.id);
+
+    // Mobile (e alguns browsers desktop): folha de partilha nativa, onde o
+    // WhatsApp já aparece. Se o utilizador cancelar, não há nada a fazer.
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: produto.nome, text: `Vê este produto: ${produto.nome}`, url });
+      } catch {
+        /* partilha cancelada */
+      }
+      return;
+    }
+
+    // Sem partilha nativa: copiar o link.
+    try {
+      await navigator.clipboard.writeText(url);
+      show('Link copiado.');
+    } catch {
+      show('Não foi possível copiar o link.', 'error');
+    }
+  }
+
   const emPromo = !!produto.preco_promo && produto.preco_promo > 0 && produto.preco_promo < produto.preco;
   const preco = emPromo ? (produto.preco_promo as number) : produto.preco;
   // `produto.categoria` guarda o caminho completo ("Moda › Calçados ›
@@ -74,6 +108,16 @@ export function ProductRow({
       label: 'Editar',
       href: `/produtos/${produto.id}`,
     },
+    ...(partilhavel
+      ? [
+          {
+            key: 'partilhar',
+            icon: <Share2 size={16} strokeWidth={1.8} className="text-muted-foreground" />,
+            label: 'Partilhar produto',
+            onClick: handlePartilhar,
+          },
+        ]
+      : []),
     {
       key: 'duplicar',
       icon: <Copy size={16} strokeWidth={1.8} className="text-muted-foreground" />,
