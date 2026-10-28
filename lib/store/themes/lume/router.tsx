@@ -66,7 +66,10 @@ export function LumeRouterProvider({
   children: ReactNode;
   initialProductId?: string;
 }) {
-  const [state, setState] = useState<RouterState>(() =>
+  // O tipo de retorno explícito é necessário: sem ele o TypeScript infere uma união
+  // ({ params: { productId: string } } | { params: { productId?: undefined } }) que
+  // não é atribuível a RouterState (Record<string, string>) e o build da Vercel falha.
+  const [state, setState] = useState<RouterState>((): RouterState =>
     initialProductId
       ? { pathname: '/produto/$productId', params: { productId: initialProductId }, search: {} }
       : { pathname: '/', params: {}, search: {} },
