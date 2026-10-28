@@ -107,7 +107,7 @@ export function ToggleRow({ label, description, checked, onChange, disabled }: {
         aria-label={label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={cn('relative mt-0.5 inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed', checked ? 'bg-primary' : 'bg-muted-foreground/30')}
+        className={cn('relative mt-0.5 inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed', checked ? 'bg-info' : 'bg-muted-foreground/30')}
       >
         <span className={cn('h-5 w-5 rounded-full bg-background shadow transition-transform', checked ? 'translate-x-[23px]' : 'translate-x-[3px]')} />
       </button>
