@@ -30,7 +30,7 @@ export function Switch({
         'transition-colors duration-200',
         track,
         checked
-          ? 'bg-[#111110]'
+          ? 'bg-info'
           : 'bg-[#D4D2CF]'
       )}
     >
