@@ -11,6 +11,7 @@ import { dispensarMarco } from '@/lib/mutations/lojaMarcos';
 import type { MarcoOnboarding } from '@/types/database';
 import { cn } from '@/lib/cn';
 import { asset } from '@/lib/domains';
+import { DESIGN_CARDS_IMG } from '@/lib/designCardsImg';
 
 interface ItemConfig {
   title: string;
@@ -25,6 +26,8 @@ interface ItemConfig {
   imgWidth: string;
   imgMaxWidth: string;
   imgScale?: number;
+  /** Alinhamento da imagem dentro da caixa (objectPosition / transformOrigin). Por omissão: 'right center'. */
+  imgAlign?: string;
 }
 
 const cta =
@@ -41,9 +44,11 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
         ctaLabel: 'Criar produto',
         href: '/produtos/novo',
         image: 'https://i.ibb.co/kg0TN94W/1-4.png',
-        contentWidth: '58%',
-        imgRight: '0px', imgTop: '8px', imgBottom: '8px',
-        imgWidth: '42%', imgMaxWidth: '176px',
+        contentWidth: '50%',
+        imgRight: '22px', imgTop: '0px', imgBottom: '0px',
+        imgWidth: '58%', imgMaxWidth: '300px',
+        imgScale: 1.12,
+        imgAlign: 'center',
       };
     case 'personalizar_loja':
       return {
@@ -51,10 +56,11 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
         subtitle: 'Dá vida à tua marca.',
         ctaLabel: 'Personalizar',
         href: '/personalizar',
-        image: asset('/images/card-personalizar-loja-v3.png'),
+        image: DESIGN_CARDS_IMG,
         contentWidth: '52%',
-        imgRight: '8px', imgTop: '12px', imgBottom: '12px',
-        imgWidth: '44.65%', imgMaxWidth: '209px',
+        imgRight: '14px', imgTop: '14px', imgBottom: '14px',
+        imgWidth: '46%', imgMaxWidth: '240px',
+        imgAlign: 'center',
       };
     case 'configurar_pagamentos':
       return {
@@ -148,10 +154,10 @@ const OnboardingCard = memo(function OnboardingCard({
           maxWidth: item.imgMaxWidth,
           height: `calc(100% - ${item.imgTop} - ${item.imgBottom})`,
           objectFit: 'contain',
-          objectPosition: 'right center',
+          objectPosition: item.imgAlign ?? 'right center',
           borderRadius: 14,
           transform: item.imgScale ? `scale(${item.imgScale})` : undefined,
-          transformOrigin: 'right center',
+          transformOrigin: item.imgAlign ?? 'right center',
         }}
       />
     </div>
