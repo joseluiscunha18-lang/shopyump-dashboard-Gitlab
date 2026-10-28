@@ -54,8 +54,23 @@ type LumeRouterValue = {
 
 const LumeRouterContext = createContext<LumeRouterValue | undefined>(undefined);
 
-export function LumeRouterProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<RouterState>({ pathname: '/', params: {}, search: {} });
+/**
+ * `initialProductId`: abre o tema diretamente na página deste produto (link
+ * partilhável `nome.shopyump.com/p/<id>`). Sem ele, começa na página inicial.
+ * "Voltar" a partir dele leva à página inicial da loja (histórico interno vazio).
+ */
+export function LumeRouterProvider({
+  children,
+  initialProductId,
+}: {
+  children: ReactNode;
+  initialProductId?: string;
+}) {
+  const [state, setState] = useState<RouterState>(() =>
+    initialProductId
+      ? { pathname: '/produto/$productId', params: { productId: initialProductId }, search: {} }
+      : { pathname: '/', params: {}, search: {} },
+  );
   // Pilha do histórico interno — como este router não usa a URL real do
   // browser (ver nota no topo do ficheiro), window.history.back() nunca
   // funcionaria: não há entradas correspondentes no histórico do browser.
