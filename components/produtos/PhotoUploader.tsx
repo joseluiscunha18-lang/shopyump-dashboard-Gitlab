@@ -5,18 +5,21 @@ import Image from 'next/image';
 import {
   Plus,
   Loader2,
-  Star,
-  Trash2,
+  ImageMinus,
   RotateCcw,
   RefreshCw,
   ImagePlus,
+  Crop,
+  Sparkles,
+  MoreHorizontal,
 } from 'lucide-react';
 import { Sheet } from '@/components/ui/ShopyumpSheet';
 import { cn } from '@/lib/cn';
+import { ImageLibrarySheet } from '@/components/produtos/ImageLibrarySheet';
 
 const MAX_FOTOS = 8;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────────────────
 
 type BgState = 'idle' | 'processing' | 'laser' | 'done' | 'error';
 interface EditState {
@@ -32,11 +35,11 @@ type CropTarget =
   | { type: 'existing'; index: number }
   | { type: 'new'; url: string; replaceIndex?: number };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────────────────────
 
 async function cropToSquare(
   src: string,
-  cropBox: { x: number; y: number; size: number },
+  cropBox: { x: number; y: number; size: number; mode?: 'fill' | 'fit' },
   naturalSize: { w: number; h: number },
   renderedSize: { w: number; h: number },
 ): Promise<string> {
@@ -44,16 +47,23 @@ async function cropToSquare(
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const scaleX = naturalSize.w / renderedSize.w;
-      const scaleY = naturalSize.h / renderedSize.h;
-      const sx = cropBox.x * scaleX;
-      const sy = cropBox.y * scaleY;
-      const sSize = cropBox.size * Math.min(scaleX, scaleY);
       const canvas = document.createElement('canvas');
       canvas.width = 1000;
       canvas.height = 1000;
       const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, 1000, 1000);
+      if (cropBox.mode === 'fit') {
+        // Fundo suave #F3F3F3 nas margens do modo "Imagem inteira".
+        ctx.fillStyle = '#F3F3F3';
+        ctx.fillRect(0, 0, 1000, 1000);
+        const k = Math.min(1000 / img.naturalWidth, 1000 / img.naturalHeight);
+        const w = img.naturalWidth * k;
+        const h = img.naturalHeight * k;
+        ctx.drawImage(img, (1000 - w) / 2, (1000 - h) / 2, w, h);
+      } else {
+        const scaleX = naturalSize.w / renderedSize.w;
+        const scaleY = naturalSize.h / renderedSize.h;
+        ctx.drawImage(img, cropBox.x * scaleX, cropBox.y * scaleY, cropBox.size * scaleX, cropBox.size * scaleY, 0, 0, 1000, 1000);
+      }
       resolve(canvas.toDataURL('image/png'));
     };
     img.onerror = reject;
@@ -70,7 +80,7 @@ function dataURLtoFile(dataUrl: string, filename: string): File {
   return new File([arr], filename, { type: mime });
 }
 
-// ─── Sparkle star ─────────────────────────────────────────────────────────────
+// ─── Sparkle star ────────────────────────────────────────────────────────────────────────
 
 function GoldSparkle({ className, delay }: { className: string; delay: string }) {
   return (
@@ -94,7 +104,7 @@ function GoldSparkle({ className, delay }: { className: string; delay: string })
   );
 }
 
-// ─── ImagePreviewWithBg ───────────────────────────────────────────────────────
+// ─── ImagePreviewWithBg ───────────────────────────────────────────────────────────────────
 
 function ImagePreviewWithBg({
   src,
@@ -166,17 +176,15 @@ function ImagePreviewWithBg({
   );
 }
 
-// ─── Cropper com alças de redimensionamento ───────────────────────────────────
-// Lógica: a imagem é exibida em tamanho fixo (nunca se move) dentro de um
-// container. A crop box quadrada arrasta-se dentro da imagem (a imagem é
-// o limite) e redimensiona-se apenas pelas 4 alças dos cantos.
+// ─── Cropper simples: Preenchida (arrastar + zoom) ou Imagem inteira ───────────
 
-type Handle = 'nw' | 'ne' | 'sw' | 'se';
+type FitMode = 'fill' | 'fit';
 
 interface CropBox {
   x: number; // posição relativa ao canto superior-esquerdo da imagem renderizada
   y: number;
   size: number;
+  mode?: FitMode;
 }
 
 function Cropper({
@@ -188,190 +196,77 @@ function Cropper({
     getCrop: () => { cropBox: CropBox; naturalSize: { w: number; h: number }; renderedSize: { w: number; h: number } },
   ) => void;
 }) {
-  const CONTAINER = 315; // px — quadrado fixo visível (+5%)
+  const C = 315;
+  const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
+  const [mode, setMode] = useState<FitMode>('fill');
+  const [zoom, setZoom] = useState(1);
+  const [off, setOff] = useState({ x: 0, y: 0 }); // deslocamento do centro (px)
+  const drag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [imgNatural, setImgNatural] = useState<{ w: number; h: number } | null>(null);
-  const [imgRendered, setImgRendered] = useState<{ w: number; h: number } | null>(null);
+  const base = nat ? (mode === 'fill' ? Math.max(C / nat.w, C / nat.h) : Math.min(C / nat.w, C / nat.h)) : 1;
+  const scale = base * (mode === 'fill' ? zoom : 1);
+  const rw = nat ? nat.w * scale : C;
+  const rh = nat ? nat.h * scale : C;
 
-  // Posição do canto sup-esq da imagem dentro do container — fixa após o load
-  // (a imagem é centrada e nunca se move).
-  const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
-  // Crop box: coordenadas relativas ao canto sup-esq da imagem renderizada
-  const [cropBox, setCropBox] = useState<CropBox>({ x: 0, y: 0, size: CONTAINER });
+  function clamp(o: { x: number; y: number }) {
+    const mx = Math.max(0, (rw - C) / 2);
+    const my = Math.max(0, (rh - C) / 2);
+    return { x: Math.min(mx, Math.max(-mx, o.x)), y: Math.min(my, Math.max(-my, o.y)) };
+  }
 
-  // refs de arrastos
-  const boxDragStart = useRef<{ px: number; py: number; bx: number; by: number } | null>(null);
-  const handleStart = useRef<{
-    handle: Handle;
-    px: number; py: number;
-    box: CropBox;
-  } | null>(null);
+  useEffect(() => { setOff((o) => clamp(o)); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, mode, nat]);
 
-  // Expõe função getter ao pai
+  const left = (C - rw) / 2 + off.x;
+  const top = (C - rh) / 2 + off.y;
+
   useEffect(() => {
-    if (!imgNatural || !imgRendered) return;
-    onReady(() => ({ cropBox, naturalSize: imgNatural, renderedSize: imgRendered }));
+    if (!nat) return;
+    onReady(() => ({
+      cropBox: mode === 'fill' ? { x: -left, y: -top, size: C, mode } : { x: 0, y: 0, size: C, mode },
+      naturalSize: nat,
+      renderedSize: { w: rw, h: rh },
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cropBox, imgNatural, imgRendered]);
+  }, [nat, mode, zoom, off]);
 
-  function onImgLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-    const img = e.currentTarget;
-    const nat = { w: img.naturalWidth, h: img.naturalHeight };
-    setImgNatural(nat);
-
-    // Fit da imagem inteira dentro de CONTAINER (contain), mantendo aspect.
-    // A imagem fica sempre visível por completo e fixa.
-    const scale = Math.min(CONTAINER / nat.w, CONTAINER / nat.h);
-    const rw = Math.round(nat.w * scale);
-    const rh = Math.round(nat.h * scale);
-    setImgRendered({ w: rw, h: rh });
-
-    // Centra a imagem no container — posição fixa, não muda mais.
-    const startX = (CONTAINER - rw) / 2;
-    const startY = (CONTAINER - rh) / 2;
-    setImgPos({ x: startX, y: startY });
-
-    // Crop box centrada, quadrado máximo que cabe na imagem.
-    const boxSize = Math.min(rw, rh);
-    const bx = (rw - boxSize) / 2;
-    const by = (rh - boxSize) / 2;
-    setCropBox({ x: bx, y: by, size: boxSize });
-  }
-
-  // ── Arrastar a crop box dentro da imagem (imagem fixa) ────────────────────
-
-  function onBoxDown(e: React.PointerEvent) {
-    if (handleStart.current) return;
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    boxDragStart.current = { px: e.clientX, py: e.clientY, bx: cropBox.x, by: cropBox.y };
-  }
-
-  function onBoxMove(e: React.PointerEvent) {
-    if (!boxDragStart.current || !imgRendered) return;
-    const dx = e.clientX - boxDragStart.current.px;
-    const dy = e.clientY - boxDragStart.current.py;
-
-    const maxX = imgRendered.w - cropBox.size;
-    const maxY = imgRendered.h - cropBox.size;
-
-    const newX = Math.min(Math.max(boxDragStart.current.bx + dx, 0), Math.max(maxX, 0));
-    const newY = Math.min(Math.max(boxDragStart.current.by + dy, 0), Math.max(maxY, 0));
-
-    setCropBox((prev) => ({ ...prev, x: newX, y: newY }));
-  }
-
-  function onBoxUp() {
-    boxDragStart.current = null;
-  }
-
-  // ── Handles de redimensionamento (só 4 cantos) ────────────────────────────
-
-  function onHandleDown(e: React.PointerEvent, handle: Handle) {
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    handleStart.current = { handle, px: e.clientX, py: e.clientY, box: { ...cropBox } };
-  }
-
-  function onHandleMove(e: React.PointerEvent) {
-    if (!handleStart.current || !imgRendered) return;
-    const { handle, px, py, box } = handleStart.current;
-    const dx = e.clientX - px;
-    const dy = e.clientY - py;
-
-    let { x, y, size } = box;
-    const MIN_SIZE = 80;
-
-    // Para manter 1:1 nos cantos, usa o delta máximo
-    if (handle === 'nw') {
-      const d = Math.min(dx, dy);
-      const newSize = Math.max(MIN_SIZE, size - d);
-      const diff = size - newSize;
-      x = box.x + diff;
-      y = box.y + diff;
-      size = newSize;
-    } else if (handle === 'ne') {
-      const d = -Math.min(-dx, dy);
-      const newSize = Math.max(MIN_SIZE, size + d);
-      y = box.y - (newSize - size);
-      size = newSize;
-    } else if (handle === 'sw') {
-      const d = Math.min(dx, -dy);
-      const newSize = Math.max(MIN_SIZE, size - d);
-      x = box.x + (size - newSize);
-      size = newSize;
-    } else if (handle === 'se') {
-      const delta = Math.max(dx, dy);
-      size = Math.max(MIN_SIZE, size + delta);
-    }
-
-    // Limita dentro da imagem renderizada (referencial próprio da imagem, começa em 0,0)
-    const imgRight = imgRendered.w;
-    const imgBottom = imgRendered.h;
-    x = Math.max(0, Math.min(x, imgRight - MIN_SIZE));
-    y = Math.max(0, Math.min(y, imgBottom - MIN_SIZE));
-    size = Math.min(size, imgRight - x, imgBottom - y, CONTAINER);
-
-    setCropBox({ x, y, size });
-  }
-
-  function onHandleUp() {
-    handleStart.current = null;
-  }
-
-  // Posição da crop box no ecrã (relativa ao container)
-  const cropScreen = {
-    left: (cropBox.x + imgPos.x),
-    top: (cropBox.y + imgPos.y),
-    size: cropBox.size,
-  };
-
-  const handles: { id: Handle; style: React.CSSProperties; cursor: string }[] = [
-    { id: 'nw', style: { top: -6, left: -6 }, cursor: 'nwse-resize' },
-    { id: 'ne', style: { top: -6, right: -6 }, cursor: 'nesw-resize' },
-    { id: 'sw', style: { bottom: -6, left: -6 }, cursor: 'nesw-resize' },
-    { id: 'se', style: { bottom: -6, right: -6 }, cursor: 'nwse-resize' },
-  ];
+  const seg = (m: FitMode, label: string) => (
+    <button
+      type="button"
+      onClick={() => { setMode(m); setZoom(1); setOff({ x: 0, y: 0 }); }}
+      className={cn(
+        'flex-1 rounded-md py-2 text-[12.5px] font-bold transition-colors',
+        mode === m ? 'bg-white text-foreground shadow-sm' : 'text-muted-foreground',
+      )}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <div
-      ref={containerRef}
-      className="relative overflow-hidden rounded-md bg-black/80 mx-auto touch-none select-none"
-      style={{ width: CONTAINER, height: CONTAINER }}
-    >
-      {/* Imagem fixa — nunca se move */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        draggable={false}
-        className="absolute pointer-events-none"
-        style={{
-          left: imgPos.x,
-          top: imgPos.y,
-          width: imgRendered?.w ?? 'auto',
-          height: imgRendered?.h ?? 'auto',
-          maxWidth: 'none',
-          opacity: 0.35, // área fora do crop aparece escurecida
-        }}
-        onLoad={onImgLoad}
-      />
+    <div className="flex flex-col items-center gap-4" style={{ width: C }}>
+      <div className="flex w-full rounded-lg bg-[#EFEEEC] p-1">
+        {seg('fill', 'Preenchida')}
+        {seg('fit', 'Imagem inteira')}
+      </div>
 
-      {/* Área de recorte — a imagem aparece aqui em plena opacidade.
-          Esta área é a que se arrasta (a imagem por trás está fixa). */}
       <div
-        className="absolute overflow-hidden touch-none"
-        style={{
-          left: cropScreen.left,
-          top: cropScreen.top,
-          width: cropScreen.size,
-          height: cropScreen.size,
-          cursor: 'move',
+        className={cn(
+          'relative overflow-hidden rounded-md border border-[#E4E2DF] bg-[#F3F3F3] touch-none select-none',
+          mode === 'fill' && 'cursor-grab active:cursor-grabbing',
+        )}
+        style={{ width: C, height: C }}
+        onPointerDown={(e) => {
+          if (mode !== 'fill') return;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          drag.current = { px: e.clientX, py: e.clientY, ox: off.x, oy: off.y };
         }}
-        onPointerDown={onBoxDown}
-        onPointerMove={(e) => { onBoxMove(e); onHandleMove(e); }}
-        onPointerUp={() => { onBoxUp(); onHandleUp(); }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          setOff(clamp({ x: drag.current.ox + e.clientX - drag.current.px, y: drag.current.oy + e.clientY - drag.current.py }));
+        }}
+        onPointerUp={() => { drag.current = null; }}
+        onPointerCancel={() => { drag.current = null; }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -379,101 +274,36 @@ function Cropper({
           alt=""
           draggable={false}
           className="absolute pointer-events-none"
-          style={{
-            left: imgPos.x - cropScreen.left,
-            top: imgPos.y - cropScreen.top,
-            width: imgRendered?.w ?? 'auto',
-            height: imgRendered?.h ?? 'auto',
-            maxWidth: 'none',
-          }}
-        />
-        {/* Grade de composição */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.15) 1px, transparent 1px)',
-            backgroundSize: `${cropScreen.size / 3}px ${cropScreen.size / 3}px`,
-          }}
+          style={{ left, top, width: rw, height: rh, maxWidth: 'none', opacity: nat ? 1 : 0 }}
+          onLoad={(e) => setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
         />
       </div>
 
-      {/* Borda da crop box + alças (só cantos) */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          left: cropScreen.left,
-          top: cropScreen.top,
-          width: cropScreen.size,
-          height: cropScreen.size,
-          border: '2px solid rgba(255,255,255,0.9)',
-          borderRadius: 4,
-          boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
-        }}
-      >
-        {/* Cantos decorativos brancos (L-shapes) */}
-        {(['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'] as const).map((pos) => (
-          <div
-            key={pos}
-            className={cn('absolute w-6 h-6 pointer-events-none', pos)}
-            style={{
-              borderTop: pos.includes('top') ? '3px solid white' : undefined,
-              borderBottom: pos.includes('bottom') ? '3px solid white' : undefined,
-              borderLeft: pos.includes('left') ? '3px solid white' : undefined,
-              borderRight: pos.includes('right') ? '3px solid white' : undefined,
-              borderRadius:
-                pos === 'top-0 left-0' ? '3px 0 0 0' :
-                pos === 'top-0 right-0' ? '0 3px 0 0' :
-                pos === 'bottom-0 left-0' ? '0 0 0 3px' : '0 0 3px 0',
-            }}
+      {mode === 'fill' ? (
+        <div className="flex w-full items-center gap-3">
+          <span className="text-[11px] font-bold text-muted-foreground">Zoom</span>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.01}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="flex-1 accent-[#1A1714]"
+            aria-label="Zoom"
           />
-        ))}
-
-        {/* Alças de redimensionamento — só os 4 cantos (pointer-events: all) */}
-        {handles.map(({ id, style, cursor }) => (
-          <div
-            key={id}
-            className="absolute pointer-events-auto z-20"
-            style={{
-              ...style,
-              width: 20,
-              height: 20,
-              cursor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onPointerDown={(e) => onHandleDown(e, id)}
-            onPointerMove={onHandleMove}
-            onPointerUp={onHandleUp}
-          >
-            <div
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                background: 'white',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-              }}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Hint de instrução */}
-      <div className="absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none">
-        <span
-          className="text-[10px] font-semibold text-white/70 bg-black/30 rounded-full px-3 py-1"
-          style={{ backdropFilter: 'blur(4px)' }}
-        >
-          Arraste dentro da área · Use os cantos para ajustar
-        </span>
-      </div>
+        </div>
+      ) : (
+        <p className="text-[11px] font-medium text-muted-foreground">A imagem aparece completa, com margens cinza-claro.</p>
+      )}
+      {mode === 'fill' && (
+        <p className="-mt-2 text-[11px] font-medium text-muted-foreground">Arraste a imagem para posicionar</p>
+      )}
     </div>
   );
 }
 
-// ─── CropAndEditSheet ─────────────────────────────────────────────────────────
+// ─── CropAndEditSheet ─────────────────────────────────────────────────────────────────────
 
 function CropAndEditSheet({
   open,
@@ -551,7 +381,7 @@ function CropAndEditSheet({
       open={open}
       onClose={onClose}
       title={busy ? 'A remover fundo' : 'Posicionar imagem'}
-      subtitle={busy ? undefined : 'Arraste e ajuste o enquadramento'}
+      subtitle={busy ? undefined : 'Escolha como a imagem aparece'}
       closeButton
       heightVh={92}
     >
@@ -594,25 +424,6 @@ function CropAndEditSheet({
           )}
         </div>
 
-        {/* Remover fundo */}
-        {!bgDone && !bgError && (
-          <button
-            type="button"
-            onClick={onBgRemove}
-            disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-md border border-[#D4D2CF] bg-white py-3.5 text-[13px] font-bold text-ink shadow-sm active:scale-[0.98] transition-transform disabled:opacity-40 disabled:pointer-events-none"
-          >
-            {busy ? (
-              <Loader2 size={15} className="animate-spin text-[#8A8681]" />
-            ) : (
-              <svg className="w-4 h-4 text-[#8A8681]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-            )}
-            Remover fundo
-          </button>
-        )}
-
         {bgDone && (
           <button
             type="button"
@@ -654,122 +465,49 @@ function CropAndEditSheet({
   );
 }
 
-// ─── ImageActionSheet ─────────────────────────────────────────────────────────
+// ─── ImageActionSheet ───────────────────────────────────────────────────────────────────────
+// Menu compacto: só escolhe a ação. A pré-visualização aparece apenas no
+// editor (ajustar / remover fundo).
 
 function ImageActionSheet({
   open,
   onClose,
-  isCover,
-  editState,
   onEdit,
-  onMakeCover,
   onRemove,
   onBgRemove,
-  onBgUndo,
 }: {
   open: boolean;
   onClose: () => void;
-  isCover: boolean;
-  editState: EditState | null;
   onEdit: () => void;
-  onMakeCover: () => void;
   onRemove: () => void;
   onBgRemove: () => void;
-  onBgUndo: () => void;
 }) {
-  if (!editState) return null;
-  const { bgState, bgRemoved } = editState;
-  const bgDone = bgState === 'done';
-  const bgError = bgState === 'error';
-
+  const item =
+    'flex w-full items-center gap-3.5 px-1.5 py-3 text-left rounded-lg active:bg-muted/60 transition-colors';
+  const tile = 'grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#F4F4F3]';
   return (
-    <Sheet open={open} onClose={onClose} title="Editar imagem" closeButton>
-      <div className="flex flex-col gap-3 pb-6">
-        <button
-          type="button"
-          onClick={onEdit}
-          className="mx-auto w-full max-w-[200px] active:scale-[0.98] transition-transform"
-        >
-          <ImagePreviewWithBg
-            src={editState.original}
-            bgRemovedSrc={bgRemoved}
-            bgState={bgState}
-          />
+    <Sheet open={open} onClose={onClose} title="Opções da imagem" closeButton>
+      <div className="flex flex-col pb-5">
+        <button type="button" onClick={onEdit} className={item}>
+          <span className={tile}><Crop size={18} strokeWidth={1.75} className="text-foreground" /></span>
+          <span className="text-[14px] font-semibold text-foreground">Ajustar imagem</span>
         </button>
-
-        <div className="h-px bg-[#F4F4F3] my-1" />
-
-        <button
-          type="button"
-          onClick={onEdit}
-          className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
-        >
-          <svg className="w-4 h-4 text-[#8A8681] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-          </svg>
-          Ajustar enquadramento
+        <button type="button" onClick={onBgRemove} className={item}>
+          <span className={tile}><Sparkles size={18} strokeWidth={1.75} className="text-foreground" /></span>
+          <span className="text-[14px] font-semibold text-foreground">Remover fundo</span>
         </button>
-
-        {!bgDone && !bgError && (
-          <button
-            type="button"
-            onClick={onBgRemove}
-            className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
-          >
-            <svg className="w-4 h-4 text-[#8A8681] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
-            Remover fundo
-          </button>
-        )}
-
-        {bgDone && (
-          <button
-            type="button"
-            onClick={onBgUndo}
-            className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
-          >
-            <RotateCcw size={16} className="text-[#8A8681]" />
-            Desfazer remoção
-          </button>
-        )}
-
-        {bgError && (
-          <button
-            type="button"
-            onClick={onBgRemove}
-            className="flex items-center gap-3 rounded-md bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
-          >
-            <RefreshCw size={16} />
-            Tentar novamente
-          </button>
-        )}
-
-        {!isCover && (
-          <button
-            type="button"
-            onClick={onMakeCover}
-            className="flex items-center gap-3 rounded-md bg-[#F4F4F3] px-4 py-3.5 text-left text-[13px] font-bold text-ink active:scale-[0.98] transition-transform"
-          >
-            <Star size={16} className="text-[#8A8681]" />
-            Tornar imagem de capa
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onRemove}
-          className="flex items-center gap-3 rounded-md bg-red-50 px-4 py-3.5 text-left text-[13px] font-bold text-red-500 active:scale-[0.98] transition-transform"
-        >
-          <Trash2 size={16} />
-          Remover imagem
+        <button type="button" onClick={onRemove} className={item}>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/10 ring-1 ring-destructive/15">
+            <ImageMinus size={18} strokeWidth={1.75} className="text-destructive" />
+          </span>
+          <span className="text-[14px] font-semibold text-destructive">Remover imagem</span>
         </button>
       </div>
     </Sheet>
   );
 }
 
-// ─── PhotoUploader (principal) ────────────────────────────────────────────────
+// ─── PhotoUploader (principal) ──────────────────────────────────────────────────────────────────────
 
 export function PhotoUploader({
   photos,
@@ -796,7 +534,12 @@ export function PhotoUploader({
   const [pendingQueue, setPendingQueue] = useState<string[]>([]);
   const [actionIndex, setActionIndex] = useState<number | null>(null);
   const [editStates, setEditStates] = useState<Record<string, EditState>>({});
+  // Mapa url-de-exibição → url ORIGINAL limpa (nunca recortada). Garante que
+  // voltar a ajustar uma foto recorte sempre a original, sem arrastar as
+  // margens já gravadas no blob anterior.
+  const pristineRef = useRef<Record<string, string>>({});
 
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const swapInputRef = useRef<HTMLInputElement>(null);
 
@@ -809,7 +552,7 @@ export function PhotoUploader({
     setPendingQueue(rest);
   }, [cropTarget, pendingQueue]);
 
-  // ── Upload ──────────────────────────────────────────────────────────────────
+  // ── Upload ─────────────────────────────────────────────────────────────────────────────────────
 
   function handleFiles(files: FileList | null, replaceIndex?: number) {
     if (!files || files.length === 0) return;
@@ -835,7 +578,7 @@ export function PhotoUploader({
     if (swapInputRef.current) swapInputRef.current.value = '';
   }
 
-  // ── Drag-to-reorder ──────────────────────────────────────────────────────────
+  // ── Drag-to-reorder ─────────────────────────────────────────────────────────────────────────────
 
   const DRAG_PX = 5;
 
@@ -884,20 +627,22 @@ export function PhotoUploader({
     }
   }
 
-  // ── EditState ────────────────────────────────────────────────────────────────
+  // ── EditState ────────────────────────────────────────────────────────────────────────────────
 
   function getEditState(url: string): EditState {
-    return editStates[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' };
+    const key = pristineRef.current[url] ?? url;
+    return editStates[key] ?? { original: key, current: url, bgRemoved: null, bgState: 'idle' };
   }
 
   function patchEditState(url: string, patch: Partial<EditState>) {
+    const key = pristineRef.current[url] ?? url;
     setEditStates((prev) => ({
       ...prev,
-      [url]: { ...(prev[url] ?? { original: url, current: url, bgRemoved: null, bgState: 'idle' as BgState }), ...patch },
+      [key]: { ...(prev[key] ?? { original: key, current: url, bgRemoved: null, bgState: 'idle' as BgState }), ...patch },
     }));
   }
 
-  // ── BG removal ────────────────────────────────────────────────────────────────
+  // ── BG removal ───────────────────────────────────────────────────────────────────────────────────
 
   async function handleBgRemove(url: string) {
     patchEditState(url, { bgState: 'processing' });
@@ -906,8 +651,8 @@ export function PhotoUploader({
       await new Promise<void>((res) => setTimeout(res, 2500));
       patchEditState(url, { bgState: 'laser', bgRemoved: resultUrl });
       await new Promise<void>((res) => setTimeout(res, 2000));
+      // Só substitui no produto quando o utilizador toca em "Usar imagem".
       patchEditState(url, { bgState: 'done', current: resultUrl });
-      onChange(photos.map((u) => (u === url ? resultUrl : u)));
     } catch {
       patchEditState(url, { bgState: 'error' });
     }
@@ -916,7 +661,6 @@ export function PhotoUploader({
   function handleBgUndo(url: string) {
     const state = getEditState(url);
     patchEditState(url, { bgState: 'idle', current: state.original });
-    onChange(photos.map((u) => (u === state.bgRemoved ? state.original : u)));
   }
 
   // ── Crop confirm — fecha instantaneamente, gera novo blob cropado ───────────
@@ -938,7 +682,9 @@ export function PhotoUploader({
     (async () => {
       try {
         const { cropBox, naturalSize, renderedSize } = getCrop();
-        const croppedDataUrl = await cropToSquare(state.current, cropBox, naturalSize, renderedSize);
+        // Recorta SEMPRE a partir da original limpa — nunca do blob já
+        // recortado, para as margens antigas não reaparecerem.
+        const croppedDataUrl = await cropToSquare(state.original, cropBox, naturalSize, renderedSize);
         // Converte para blob URL para manter a pré-visualização
         const res = await fetch(croppedDataUrl);
         const blob = await res.blob();
@@ -956,13 +702,31 @@ export function PhotoUploader({
           onChange([...orderRef.current, blobUrl]);
         }
 
+        // A chave do estado continua a ser a ORIGINAL limpa: voltar a
+        // ajustar recorta sempre a partir dela, nunca do blob recortado.
         setEditStates((prev) => {
-          const existing = prev[sourceUrl] ?? { original: sourceUrl, current: sourceUrl, bgRemoved: null, bgState: 'idle' as BgState };
+          const existing = prev[state.original] ?? { original: state.original, current: sourceUrl, bgRemoved: null, bgState: 'idle' as BgState };
           const updated = { ...prev };
-          delete updated[sourceUrl];
-          updated[blobUrl] = { ...existing, original: blobUrl, current: blobUrl };
+          updated[state.original] = { ...existing, current: blobUrl };
           return updated;
         });
+        pristineRef.current[blobUrl] = state.original;
+        if (target.type === 'existing' && sourceUrl !== state.original) {
+          delete pristineRef.current[sourceUrl];
+        }
+        if (target.type === 'new' && target.replaceIndex !== undefined) {
+          const antiga = orderRef.current[target.replaceIndex];
+          if (antiga) {
+            const chaveAntiga = pristineRef.current[antiga] ?? antiga;
+            delete pristineRef.current[antiga];
+            setEditStates((prev) => {
+              if (!(chaveAntiga in prev)) return prev;
+              const updated = { ...prev };
+              delete updated[chaveAntiga];
+              return updated;
+            });
+          }
+        }
       } catch (err) {
         // Antes, a foto já estava no array mesmo antes do recorte terminar,
         // por isso uma falha aqui não a fazia desaparecer. Agora que só
@@ -994,11 +758,17 @@ export function PhotoUploader({
         return updated;
       });
       URL.revokeObjectURL(url);
+    } else if (cropTarget?.type === 'existing') {
+      // Cancelar não aplica nada: mantém a foto como está, sem resultado de fundo.
+      const url = photos[cropTarget.index];
+      if (url) {
+        patchEditState(url, { bgState: 'idle', bgRemoved: null });
+      }
     }
     setCropTarget(null);
   }
 
-  // ── Acções ───────────────────────────────────────────────────────────────────
+  // ── Acções ───────────────────────────────────────────────────────────────────────────────────
 
   function handleRemove(index: number) {
     onChange(photos.filter((_, i) => i !== index));
@@ -1014,7 +784,7 @@ export function PhotoUploader({
     setActionIndex(null);
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────────────────────────────
 
   const cropSrcUrl =
     cropTarget?.type === 'existing' ? photos[cropTarget.index] : cropTarget?.url ?? null;
@@ -1030,12 +800,12 @@ export function PhotoUploader({
         <>
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => setLibraryOpen(true)}
             className={cn(
               'group relative w-full overflow-hidden rounded-xl border border-dashed transition-all duration-150 active:scale-[0.985]',
               error
                 ? 'border-red-200 bg-red-50/60'
-                : 'border-[#C8C5C1] bg-white hover:border-[#A8A5A1] hover:bg-[#FAFAF9]'
+                : 'border-[#D4D2CF] bg-[#FCFCFB] hover:border-[#A8A5A1] hover:bg-[#F8F8F7]'
             )}
           >
             <span className="relative flex flex-row items-center justify-center gap-4 py-7 px-5">
@@ -1052,7 +822,7 @@ export function PhotoUploader({
                   'text-[13px] font-bold leading-tight',
                   error ? 'text-red-600' : 'text-[#3F3F46]'
                 )}>
-                  Toque para carregar imagem
+                  Adicionar imagem
                 </span>
                 <span className={cn(
                   'text-[11px] font-medium',
@@ -1078,11 +848,12 @@ export function PhotoUploader({
             const dragging = dragIndex === i;
             return (
               <div
-                key={url + i}
+                key={url}
                 data-photo-index={i}
                 onPointerDown={(e) => onPointerDown(e, i)}
                 onPointerMove={onPointerMove}
                 onPointerUp={() => onPointerUp(i)}
+                onClick={(e) => e.stopPropagation()}
                 className={cn(
                   'relative aspect-square touch-none select-none overflow-hidden rounded-[6px] bg-[#F4F4F3] transition-all duration-150',
                   i === 0 && photos.length > 1 ? 'border-2 border-[#1C1917]' : 'border border-[#E4E2DF]',
@@ -1097,14 +868,27 @@ export function PhotoUploader({
                   sizes="160px"
                   unoptimized={url.startsWith('blob:')}
                 />
-                              </div>
+                <button
+                  type="button"
+                  aria-label="Opções da imagem"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerUp={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActionIndex(i);
+                  }}
+                  className="absolute right-1 top-1 z-10 grid h-6 w-6 place-items-center rounded-full bg-foreground/60 text-background backdrop-blur-sm active:scale-95"
+                >
+                  <MoreHorizontal size={14} strokeWidth={2.5} />
+                </button>
+              </div>
             );
           })}
 
           {photos.length < MAX_FOTOS && (
             <button
               type="button"
-              onClick={() => inputRef.current?.click()}
+              onClick={() => setLibraryOpen(true)}
               className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[6px] border-[1.5px] border-dashed border-[#B8B5B1] text-[#71717A] transition-all duration-150 hover:border-[#6B7280] hover:text-[#52525B] active:bg-[#F4F4F3]"
             >
               <Plus size={20} strokeWidth={2} />
@@ -1141,6 +925,16 @@ export function PhotoUploader({
         </p>
       )}
 
+      <ImageLibrarySheet
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        lojaId={lojaId ?? ''}
+        existing={photos}
+        onConfirm={(urls) => {
+          onChange([...orderRef.current, ...urls].slice(0, MAX_FOTOS));
+          setLibraryOpen(false);
+        }}
+      />
       <input
         ref={inputRef}
         type="file"
@@ -1160,34 +954,35 @@ export function PhotoUploader({
       {cropSrcUrl && cropEditState && (
         <CropAndEditSheet
           open={cropTarget !== null}
-          src={cropEditState.current}
+          src={cropEditState.original}
           editState={cropEditState}
           onClose={handleCropCancel}
           onConfirm={(getCrop) => cropTarget && handleCropConfirm(cropTarget, getCrop)}
-          onBgRemove={() => handleBgRemove(cropEditState.original)}
-          onBgUndo={() => handleBgUndo(cropEditState.original)}
+          onBgRemove={() => {
+            if (!cropSrcUrl) return;
+            handleBgRemove(cropSrcUrl);
+          }}
+          onBgUndo={() => {
+            if (!cropSrcUrl) return;
+            handleBgUndo(cropSrcUrl);
+          }}
         />
       )}
 
       <ImageActionSheet
         open={actionIndex !== null}
         onClose={() => setActionIndex(null)}
-        isCover={actionIndex === 0}
-        editState={actionEditState}
         onEdit={() => {
           if (actionIndex !== null) setCropTarget({ type: 'existing', index: actionIndex });
           setActionIndex(null);
         }}
-        onMakeCover={() => actionIndex !== null && handleMakeCover(actionIndex)}
         onRemove={() => actionIndex !== null && handleRemove(actionIndex)}
         onBgRemove={() => {
           if (!actionPhoto || actionIndex === null) return;
-          const st = getEditState(actionPhoto);
-          handleBgRemove(st.original);
+          handleBgRemove(actionPhoto);
           setActionIndex(null);
           setCropTarget({ type: 'existing', index: actionIndex });
         }}
-        onBgUndo={() => actionPhoto && handleBgUndo(getEditState(actionPhoto).original)}
       />
     </div>
   );
