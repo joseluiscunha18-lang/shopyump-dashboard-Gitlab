@@ -49,7 +49,7 @@ const EASE = 'cubic-bezier(0.22,1,0.36,1)';
  *    agora. O card deve continuar visível (regra 2 do fluxo), mas SEM
  *    repetir a animação de entrada — nasce já aberto.
  *
- * Fechar (X) ou clicar "Ver minha loja" chama `dispensarMarco` para
+ * Fechar (X) ou clicar "Ver produto na loja" chama `dispensarMarco` para
  * gravar o marco 'primeiro_produto' como dispensado na base de dados —
  * só assim o card fica mesmo fechado para sempre (regras 3 e 4), em vez
  * de voltar a aparecer no próximo carregamento da página. A base de
@@ -121,7 +121,7 @@ export function ProductCelebrationBanner({
   }, [celebration?.tempId]);
 
   // Grava a dispensa do marco 'primeiro_produto' na base de dados —
-  // chamado tanto pelo "X" como por "Ver minha loja" (regras 3 e 4: ambos
+  // chamado tanto pelo "X" como por "Ver produto na loja" (regras 3 e 4: ambos
   // fecham para sempre). Fire-and-forget de propósito: a UI já fecha
   // localmente de imediato (via `fechar()`/`dismissedLocally`); se este
   // pedido falhar silenciosamente por perda de rede, o pior cenário é o
@@ -163,7 +163,10 @@ export function ProductCelebrationBanner({
       }}
       className={CTA_PRIMARIO}
     >
-      Ver minha loja
+      {/* Só promete "produto" quando o link já aponta para a página do
+          produto (produtoId conhecido). Enquanto o insert ainda decorre, o
+          link é o da loja — por isso o rótulo também é o da loja. */}
+      {produtoId ? 'Ver produto na loja' : 'Ver minha loja'}
       <ArrowRight size={12} strokeWidth={2.25} className="opacity-40 transition-transform group-hover:translate-x-0.5" />
     </a>
   ) : (
@@ -238,10 +241,10 @@ export function ProductCelebrationBanner({
                   era antes) tirava largura da descrição sem necessidade,
                   fazendo "visitantes" cair para uma 3ª linha à toa. */}
               <p className="pr-8 text-[13.5px] font-bold leading-tight text-zinc-900 sm:pr-0">
-                Seu primeiro produto está no ar
+                O teu primeiro produto está no ar!
               </p>
               <p className="mt-0.5 text-[12px] font-medium leading-snug text-zinc-500">
-                Sua loja já está pronta para receber visitantes.
+                A tua loja já pode receber visitantes. Vê como o teu produto aparece na loja.
               </p>
 
               {/* CTA — versão mobile, dentro da coluna de texto (ver acima).
