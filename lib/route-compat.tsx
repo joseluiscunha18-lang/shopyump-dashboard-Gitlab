@@ -117,6 +117,37 @@ function pageTitle(head: RouteConfig<unknown>['head']): string | undefined {
   }
 }
 
+/**
+ * Esqueleto mostrado enquanto beforeLoad/loader correm. Antes, a página ficava
+ * em branco até a rede responder, o que dava a sensação de a app "travar" a cada
+ * troca de rota. Só aparece depois de um instante curto (SKELETON_DELAY_MS):
+ * em carregamentos rápidos nunca chega a ver-se, o que evita um flash de
+ * esqueleto seguido imediatamente do conteúdo real.
+ */
+const SKELETON_DELAY_MS = 120;
+
+function RouteSkeleton() {
+  const [visivel, setVisivel] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setVisivel(true), SKELETON_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visivel) return null;
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="A carregar"
+      className="flex w-full animate-pulse flex-col gap-4"
+    >
+      <div className="h-7 w-48 rounded-lg bg-muted" />
+      <div className="h-24 w-full rounded-2xl bg-muted" />
+      <div className="h-24 w-full rounded-2xl bg-muted" />
+      <div className="h-24 w-2/3 rounded-2xl bg-muted" />
+    </div>
+  );
+}
+
 type RouteState = { ready: boolean; value?: unknown; notFound?: boolean };
 
 export function RoutePage({ route, children }: { route: CompatRoute<any>; children?: ReactNode }) {
@@ -166,7 +197,7 @@ export function RoutePage({ route, children }: { route: CompatRoute<any>; childr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramsKey, searchKey]);
 
-  if (!state.ready) return null;
+  if (!state.ready) return <RouteSkeleton />;
   if (state.notFound) return <>{config.notFoundComponent?.() ?? null}</>;
   const Component = config.component;
   return (
