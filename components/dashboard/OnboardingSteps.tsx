@@ -129,7 +129,7 @@ const OnboardingCard = memo(function OnboardingCard({
         style={{ width: item.contentWidth }}
       >
         <div>
-          <p className="whitespace-nowrap text-[clamp(12.5px,3.8cqw,18px)] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
+          <p className="whitespace-nowrap text-[clamp(13px,4cqw,20px)] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
             {item.title}
           </p>
           <p className="mt-1 max-w-[260px] text-[clamp(12.5px,3.8cqw,14.5px)] font-medium leading-[1.35] text-muted-foreground">
