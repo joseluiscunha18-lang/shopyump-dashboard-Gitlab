@@ -39,12 +39,12 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
   switch (marco) {
     case 'primeiro_produto':
       return {
-        title: 'Adiciona produtos',
-        subtitle: 'Começa o teu catálogo.',
+        title: 'Adiciona os teus produtos',
+        subtitle: 'Cria o teu catálogo e prepara os teus produtos para vender.',
         ctaLabel: 'Criar produto',
         href: '/produtos/novo',
         image: asset('/images/criar-produto.webp'),
-        contentWidth: '50%',
+        contentWidth: '54%',
         imgRight: '22px', imgTop: '0px', imgBottom: '0px',
         imgWidth: '58%', imgMaxWidth: '300px',
         imgScale: 1.12,
@@ -52,8 +52,8 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
       };
     case 'personalizar_loja':
       return {
-        title: 'Personaliza a loja',
-        subtitle: 'Dá vida à tua marca.',
+        title: 'Personaliza a tua loja',
+        subtitle: 'Adapta o visual e as informações à identidade do teu negócio.',
         ctaLabel: 'Personalizar',
         href: '/personalizar',
         image: DESIGN_CARDS_IMG,
@@ -65,7 +65,7 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
     case 'configurar_pagamentos':
       return {
         title: 'Configura pagamentos',
-        subtitle: 'Recebe pagamentos com facilidade.',
+        subtitle: 'Define as formas de pagamento disponíveis para os teus clientes.',
         ctaLabel: 'Configurar',
         href: '/configuracoes/pagamentos',
         image: PAGAMENTOS_ICON,
@@ -75,8 +75,8 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
       };
     case 'partilhar_loja':
       return {
-        title: 'Divulga a loja',
-        subtitle: 'Atrai mais clientes.',
+        title: 'Divulga a tua loja',
+        subtitle: 'Partilha o link da tua loja para chegar a mais clientes.',
         ctaLabel: 'Divulgar loja',
         href: '/divulgar',
         image: asset('/images/card-divulgacao-v2.png'),
@@ -125,14 +125,14 @@ const OnboardingCard = memo(function OnboardingCard({
       </button>
 
       <div
-        className="relative z-10 flex h-full min-h-[160px] flex-col items-start"
+        className="relative z-10 flex h-full min-h-[160px] flex-col items-start justify-center gap-3"
         style={{ width: item.contentWidth }}
       >
-        <div className="my-auto pt-2 pb-4">
-          <p className="whitespace-nowrap text-[clamp(12.5px,3.8cqw,18px)] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
+        <div>
+          <p className="whitespace-nowrap text-[clamp(12.5px,3.8cqw,18px)] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
             {item.title}
           </p>
-          <p className="mt-1.5 max-w-[240px] text-[clamp(12.5px,3.8cqw,14.5px)] font-medium leading-[1.4] text-muted-foreground">
+          <p className="mt-1 max-w-[260px] text-[clamp(12.5px,3.8cqw,14.5px)] font-medium leading-[1.35] text-muted-foreground">
             {item.subtitle}
           </p>
         </div>
