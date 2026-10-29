@@ -140,21 +140,22 @@ const OnboardingCard = memo(function OnboardingCard({
       </div>
 
       {/*
-        Imagem decorativa como fundo CSS (NÃO uma tag <img>) — de propósito.
-        Com <img>, o Chrome Android mostra sempre no toque longo o menu
-        "Transferir imagem / Abrir imagem / Copiar imagem", e não há forma
-        garantida de o desativar por JavaScript (o listener de contextmenu
-        é pouco fiável no Android). Sem nenhum elemento de imagem real no
-        DOM, esse menu simplesmente não tem o que mostrar: nada para
-        transferir, copiar, abrir ou inspecionar.
-        `pointerEvents: 'none'` evita ainda qualquer interação própria
-        (toque longo, arrastar) nesta área — o card inteiro já é clicável
-        via <Link>, por isso a imagem não precisa de reagir a nada sozinha.
+        Imagem decorativa como fundo CSS (NÃO uma tag <img>) — de propósito,
+        e com bloqueio explícito do menu de toque longo / clique direito.
+        O Chrome Android consegue detetar imagens de fundo CSS no toque
+        longo mesmo com pointerEvents:none (essa deteção corre a um nível
+        mais baixo que os eventos normais), por isso o bloqueio real tem de
+        ser feito apanhando o evento `contextmenu` (o mesmo do clique
+        direito no desktop — o toque longo no Android dispara-o também) e
+        chamando preventDefault(). O clique continua a chegar ao <Link> à
+        volta, porque não fazemos stopPropagation.
       */}
       <div
         role="img"
         aria-label=""
         aria-hidden="true"
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
         style={{
           position: 'absolute',
           right: item.imgRight,
@@ -170,8 +171,8 @@ const OnboardingCard = memo(function OnboardingCard({
           backgroundRepeat: 'no-repeat',
           transform: item.imgScale ? `scale(${item.imgScale})` : undefined,
           transformOrigin: item.imgAlign ?? 'right center',
-          pointerEvents: 'none',
           WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
           userSelect: 'none',
         }}
       />
