@@ -58,8 +58,8 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
         href: '/personalizar',
         image: DESIGN_CARDS_IMG,
         contentWidth: '52%',
-        imgRight: '14px', imgTop: '14px', imgBottom: '14px',
-        imgWidth: '46%', imgMaxWidth: '240px',
+        imgRight: '16px', imgTop: '14px', imgBottom: '14px',
+        imgWidth: '40%', imgMaxWidth: '200px',
         imgAlign: 'center',
       };
     case 'configurar_pagamentos':
