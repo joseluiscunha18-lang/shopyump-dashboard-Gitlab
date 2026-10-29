@@ -81,8 +81,9 @@ function getItemConfig(marco: MarcoOnboarding): ItemConfig {
         href: '/divulgar',
         image: asset('/images/card-divulgacao-v2.png'),
         contentWidth: '54%',
-        imgRight: '24px', imgTop: '16px', imgBottom: '4px',
-        imgWidth: '38%', imgMaxWidth: '152px',
+        imgRight: '18px', imgTop: '8px', imgBottom: '8px',
+        imgWidth: '48%', imgMaxWidth: '220px',
+        imgAlign: 'center',
       };
   }
 }
