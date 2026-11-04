@@ -9,6 +9,9 @@ import { cn } from '@/lib/cn';
 // Os campos têm no mínimo 16px de propósito: abaixo disso o Safari/iOS faz zoom ao tocar no campo.
 // Altura de campos e botões: 52px (iguais entre si).
 
+/** Sombra interior dos campos (dentro da caixa, não fora). Ajustar aqui muda todos os campos. */
+export const FIELD_INNER_SHADOW = 'shadow-[inset_0_2px_4px_rgba(0,0,0,0.08)]';
+
 export function AuthHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: ReactNode }) {
   return (
     <div className="mb-7">
@@ -66,6 +69,7 @@ export const AuthField = forwardRef<HTMLInputElement, FieldProps>(({ label, hint
           type={isPw && show ? 'text' : type}
           className={cn(
             'w-full h-[52px] rounded-xl border focus:border-[1.25px] bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55',
+            FIELD_INNER_SHADOW,
             bad ? 'border-destructive focus:border-destructive' : 'border-foreground/25 focus:border-info',
             isPw && 'pr-12',
             className,
