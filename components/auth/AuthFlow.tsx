@@ -100,7 +100,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
       <div className="flex-1 flex flex-col">
         {heading}
         <form onSubmit={submitEmail} className="space-y-4" noValidate>
-          <AuthField label="E-mail" type="email" inputMode="email" autoComplete="email" placeholder="nome@exemplo.com" value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
+          <AuthField label="E-mail" type="email" inputMode="email" autoComplete="email" placeholder="E-mail" value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
           <AuthButton type="submit" loading={loading} disabled={!email} className="rounded-full">Continuar</AuthButton>
         </form>
         <Divider label="ou" />

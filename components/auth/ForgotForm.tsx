@@ -61,7 +61,7 @@ export function ForgotForm() {
         <AuthField label="E-mail" type="email" inputMode="email" autoComplete="email" autoFocus value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
       ) : (
         <>
-          <span className="block mb-2 text-[17px] font-semibold text-foreground">E-mail</span>
+          <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
           <div className="h-[58px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center">
             <span className="truncate text-[16px] text-foreground/75">{email}</span>
           </div>
@@ -72,7 +72,7 @@ export function ForgotForm() {
         </>
       )}
       <AuthButton type="submit" loading={loading} disabled={!email} className="mt-5 rounded-full">Enviar link de redefinição</AuthButton>
-      <p className="mt-6 text-center text-[17px] text-muted-foreground">
+      <p className="mt-6 text-center text-[15px] text-muted-foreground">
         Lembrou-se da senha? <a href="/login" className="text-foreground underline underline-offset-4">Entrar</a>
       </p>
     </form>
