@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { MailCheck } from 'lucide-react';
 import { enviarLinkRecuperacao } from '@/lib/auth/client';
-import { AuthButton, AuthField, AuthHeading, BackButton, FIELD_INNER_SHADOW } from './AuthUI';
+import { AuthButton, AuthField, AuthHeading, BackButton, FIELD_BORDER, FIELD_INNER_SHADOW } from './AuthUI';
 
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -64,7 +64,7 @@ export function ForgotForm() {
       ) : (
         <>
           <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
-          <div className={`h-[52px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center ${FIELD_INNER_SHADOW}`}>
+          <div className={`h-[52px] rounded-full ${FIELD_BORDER} bg-transparent px-5 flex items-center ${FIELD_INNER_SHADOW}`}>
             <span className="truncate text-[16px] text-foreground/75">{email}</span>
           </div>
           <div className="mt-2 flex items-start justify-between gap-3 text-[14px]">

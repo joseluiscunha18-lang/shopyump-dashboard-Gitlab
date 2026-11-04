@@ -5,12 +5,18 @@ import { ArrowLeft, Eye, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 // Escala de texto dos ecrãs de autenticação (mantém tudo coerente):
-//   28px título · 16px campos e botões · 15px subtítulos, rótulos e rodapés · 14px notas e erros · 13px legal.
+//   28px título · 16px campos e botões · 15px subtítulos, rótulos, rodapés e "ou" · 14px notas e erros · 13px legal.
 // Os campos têm no mínimo 16px de propósito: abaixo disso o Safari/iOS faz zoom ao tocar no campo.
 // Altura de campos e botões: 52px (iguais entre si).
 
 /** Sombra interior dos campos (dentro da caixa, não fora). Ajustar aqui muda todos os campos. */
-export const FIELD_INNER_SHADOW = 'shadow-[inset_0_2px_4px_rgba(0,0,0,0.08)]';
+export const FIELD_INNER_SHADOW = 'shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]';
+
+/**
+ * Borda fina e bem definida: 0.5px (nos ecrãs de alta densidade, como os telemóveis, desenha 1 pixel físico;
+ * em ecrãs normais arredonda para 1px) com mais contraste do que antes (45% em vez de 25%).
+ */
+export const FIELD_BORDER = 'border-[0.5px] border-foreground/45';
 
 export function AuthHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: ReactNode }) {
   return (
@@ -33,8 +39,8 @@ export function AuthButton({ loading, variant = 'primary', className, children, 
         // Botão principal desativado fica claramente apagado (não parece ativo); a carregar mantém-se preto.
         loading ? 'cursor-wait' : variant === 'primary' ? 'disabled:cursor-not-allowed disabled:opacity-40' : 'disabled:opacity-45',
         variant === 'primary' && 'bg-foreground text-background',
-        variant === 'outline' && 'bg-transparent text-foreground border border-foreground/25',
-        variant === 'outline' && loading && 'bg-foreground/[0.06] border-foreground/30',
+        variant === 'outline' && `bg-transparent text-foreground ${FIELD_BORDER}`,
+        variant === 'outline' && loading && 'bg-foreground/[0.06]',
         variant === 'ghost' && 'h-11 text-muted-foreground',
         className,
       )}
@@ -68,9 +74,10 @@ export const AuthField = forwardRef<HTMLInputElement, FieldProps>(({ label, hint
           ref={ref}
           type={isPw && show ? 'text' : type}
           className={cn(
-            'w-full h-[52px] rounded-xl border focus:border-[1.25px] bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55',
+            'w-full h-[52px] rounded-xl bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55',
             FIELD_INNER_SHADOW,
-            bad ? 'border-destructive focus:border-destructive' : 'border-foreground/25 focus:border-info',
+            // Com erro a borda fica um pouco mais grossa (1px) para se ver bem; em foco também (1px, azul).
+            bad ? 'border-[1px] border-destructive' : `${FIELD_BORDER} focus:border-[1px] focus:border-info`,
             isPw && 'pr-12',
             className,
           )}
@@ -100,7 +107,7 @@ export function Divider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 my-5">
       <div className="h-px flex-1 bg-border" />
-      <span className="text-[12px] text-muted-foreground">{label}</span>
+      <span className="text-[15px] font-medium text-muted-foreground">{label}</span>
       <div className="h-px flex-1 bg-border" />
     </div>
   );

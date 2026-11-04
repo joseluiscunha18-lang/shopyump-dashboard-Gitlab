@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { confirmarCodigo, criarConta, entrarComSenha, metodoDaConta, reenviarCodigo } from '@/lib/auth/client';
-import { AuthButton, AuthField, AuthHeading, BackButton, Divider, FIELD_INNER_SHADOW } from './AuthUI';
+import { AuthButton, AuthField, AuthHeading, BackButton, Divider, FIELD_BORDER, FIELD_INNER_SHADOW } from './AuthUI';
 import { GoogleAuthButton } from './GoogleAuthButton';
 
 type Step = 'email' | 'google' | 'password' | 'create' | 'code';
@@ -116,7 +116,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const emailBox = (
     <>
       <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
-      <div className={`h-[52px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center justify-between gap-3 ${FIELD_INNER_SHADOW}`}>
+      <div className={`h-[52px] rounded-full ${FIELD_BORDER} bg-transparent px-5 flex items-center justify-between gap-3 ${FIELD_INNER_SHADOW}`}>
         <span className="truncate text-[16px] text-foreground/75">{email}</span>
         <button type="button" onClick={() => go('email')} className="text-[15px] font-medium text-foreground underline underline-offset-4">Editar</button>
       </div>
@@ -254,7 +254,7 @@ export function CodeStep({ email, notice, onBack, onDone }: { email: string; not
             readOnly={loading}
             onChange={(e) => set(i, e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Backspace' && !d && i > 0) refs.current[i - 1]?.focus(); }}
-            className="w-full min-w-0 h-[60px] rounded-xl border border-foreground/25 bg-transparent text-center text-[22px] font-bold text-foreground outline-none transition-colors focus:border-info disabled:opacity-60"
+            className={`w-full min-w-0 h-[60px] rounded-xl ${FIELD_BORDER} bg-transparent text-center text-[22px] font-bold text-foreground outline-none transition-colors focus:border-[1px] focus:border-info disabled:opacity-60`}
           />
         ))}
       </div>
