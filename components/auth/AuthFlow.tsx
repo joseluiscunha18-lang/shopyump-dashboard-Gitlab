@@ -90,7 +90,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const subtitle = !creating ? 'Acesse sua loja e gerencie suas vendas.' : 'Comece a vender online em poucos minutos.';
   const heading = (
     <div className="pt-0 pb-16">
-      <h1 className="text-[34px] leading-[1.1] font-bold tracking-tight text-foreground">{title}</h1>
+      <h1 className="text-[30px] leading-[1.1] font-bold tracking-tight text-foreground">{title}</h1>
       <p className="mt-2 text-[16px] leading-snug text-muted-foreground">{subtitle}</p>
     </div>
   );
@@ -121,7 +121,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   );
   const loginHeading = (
     <div className="pt-0 pb-16">
-      <h1 className="text-[34px] leading-[1.1] font-bold tracking-tight text-foreground">Entrar</h1>
+      <h1 className="text-[30px] leading-[1.1] font-bold tracking-tight text-foreground">Entrar</h1>
       <p className="mt-2 text-[16px] leading-snug text-muted-foreground">Acesse sua loja e gerencie suas vendas.</p>
     </div>
   );
