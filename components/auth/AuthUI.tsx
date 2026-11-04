@@ -7,7 +7,9 @@ import { cn } from '@/lib/cn';
 // Escala de texto dos ecrãs de autenticação (mantém tudo coerente):
 //   28px título · 16px campos e botões · 15px subtítulos, rótulos, rodapés e "ou" · 14px notas e erros · 13px legal.
 // Os campos têm no mínimo 16px de propósito: abaixo disso o Safari/iOS faz zoom ao tocar no campo.
-// Altura de campos e botões: 52px (iguais entre si).
+
+/** Altura de campos e botões (iguais entre si). Ajustar aqui muda todos. */
+export const FIELD_HEIGHT = 'h-[50px]';
 
 /** Sombra interior dos campos (dentro da caixa, não fora). Ajustar aqui muda todos os campos. */
 export const FIELD_INNER_SHADOW = 'shadow-[inset_0_2px_4px_rgba(0,0,0,0.07)]';
@@ -35,7 +37,7 @@ export function AuthButton({ loading, variant = 'primary', className, children, 
       disabled={rest.disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'w-full h-[52px] rounded-xl text-[16px] font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:active:scale-100',
+        `w-full ${FIELD_HEIGHT} rounded-xl text-[16px] font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:active:scale-100`,
         // Botão principal desativado fica claramente apagado (não parece ativo); a carregar mantém-se preto.
         loading ? 'cursor-wait' : variant === 'primary' ? 'disabled:cursor-not-allowed disabled:opacity-40' : 'disabled:opacity-45',
         variant === 'primary' && 'bg-foreground text-background',
@@ -74,7 +76,7 @@ export const AuthField = forwardRef<HTMLInputElement, FieldProps>(({ label, hint
           ref={ref}
           type={isPw && show ? 'text' : type}
           className={cn(
-            'w-full h-[52px] rounded-xl bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55',
+            `w-full ${FIELD_HEIGHT} rounded-xl bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55`,
             FIELD_INNER_SHADOW,
             // Com erro a borda fica um pouco mais grossa (1px) para se ver bem; em foco também (1px, azul).
             bad ? 'border-[1px] border-destructive' : `${FIELD_BORDER} focus:border-[1px] focus:border-info`,

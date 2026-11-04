@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { confirmarCodigo, criarConta, entrarComSenha, metodoDaConta, reenviarCodigo } from '@/lib/auth/client';
-import { AuthButton, AuthField, AuthHeading, BackButton, Divider, FIELD_BORDER, FIELD_INNER_SHADOW } from './AuthUI';
+import { AuthButton, AuthField, AuthHeading, BackButton, Divider, FIELD_BORDER, FIELD_HEIGHT, FIELD_INNER_SHADOW } from './AuthUI';
 import { GoogleAuthButton } from './GoogleAuthButton';
 
 type Step = 'email' | 'google' | 'password' | 'create' | 'code';
@@ -116,7 +116,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const emailBox = (
     <>
       <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
-      <div className={`h-[52px] rounded-full ${FIELD_BORDER} bg-transparent px-5 flex items-center justify-between gap-3 ${FIELD_INNER_SHADOW}`}>
+      <div className={`${FIELD_HEIGHT} rounded-full ${FIELD_BORDER} bg-transparent px-5 flex items-center justify-between gap-3 ${FIELD_INNER_SHADOW}`}>
         <span className="truncate text-[16px] text-foreground/75">{email}</span>
         <button type="button" onClick={() => go('email')} className="text-[15px] font-medium text-foreground underline underline-offset-4">Editar</button>
       </div>
@@ -264,7 +264,7 @@ export function CodeStep({ email, notice, onBack, onDone }: { email: string; not
         disabled={!complete || loading}
         onClick={() => void confirmar()}
         aria-busy={loading}
-        className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-foreground text-[16px] font-semibold text-background transition-opacity disabled:opacity-50"
+        className={`mt-6 flex ${FIELD_HEIGHT} w-full items-center justify-center gap-2 rounded-xl bg-foreground text-[16px] font-semibold text-background transition-opacity disabled:opacity-50`}
       >
         {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-background/40 border-t-background" aria-hidden />}
         {loading ? 'A verificar…' : 'Confirmar código'}
