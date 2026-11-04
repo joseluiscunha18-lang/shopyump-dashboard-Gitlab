@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 // Escala de texto dos ecrãs de autenticação (mantém tudo coerente):
 //   28px título · 16px campos e botões · 15px subtítulos, rótulos e rodapés · 14px notas e erros · 13px legal.
 // Os campos têm no mínimo 16px de propósito: abaixo disso o Safari/iOS faz zoom ao tocar no campo.
+// Altura de campos e botões: 52px (iguais entre si).
 
 export function AuthHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: ReactNode }) {
   return (
@@ -25,7 +26,7 @@ export function AuthButton({ loading, variant = 'primary', className, children, 
       disabled={rest.disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'w-full h-[56px] rounded-xl text-[16px] font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:active:scale-100',
+        'w-full h-[52px] rounded-xl text-[16px] font-semibold flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:active:scale-100',
         // Botão principal desativado fica claramente apagado (não parece ativo); a carregar mantém-se preto.
         loading ? 'cursor-wait' : variant === 'primary' ? 'disabled:cursor-not-allowed disabled:opacity-40' : 'disabled:opacity-45',
         variant === 'primary' && 'bg-foreground text-background',
@@ -64,7 +65,7 @@ export const AuthField = forwardRef<HTMLInputElement, FieldProps>(({ label, hint
           ref={ref}
           type={isPw && show ? 'text' : type}
           className={cn(
-            'w-full h-[58px] rounded-xl border focus:border-[1.25px] bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55',
+            'w-full h-[52px] rounded-xl border focus:border-[1.25px] bg-transparent px-4 text-[16px] text-foreground outline-none transition-colors placeholder:text-foreground/55',
             bad ? 'border-destructive focus:border-destructive' : 'border-foreground/25 focus:border-info',
             isPw && 'pr-12',
             className,

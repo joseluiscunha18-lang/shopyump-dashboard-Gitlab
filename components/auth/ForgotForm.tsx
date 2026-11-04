@@ -23,6 +23,8 @@ export function ForgotForm() {
 
   async function send(e?: React.FormEvent) {
     e?.preventDefault();
+    // O botão fica sempre ativo (preto); a validação acontece ao clicar.
+    if (!email.trim()) return setError('Introduza o seu e-mail.');
     if (!emailOk(email)) return setError('Introduza um e-mail válido.');
     setLoading(true);
     const r = await enviarLinkRecuperacao(email);
@@ -62,7 +64,7 @@ export function ForgotForm() {
       ) : (
         <>
           <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
-          <div className="h-[58px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center">
+          <div className="h-[52px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center">
             <span className="truncate text-[16px] text-foreground/75">{email}</span>
           </div>
           <div className="mt-2 flex items-start justify-between gap-3 text-[14px]">
@@ -71,7 +73,7 @@ export function ForgotForm() {
           </div>
         </>
       )}
-      <AuthButton type="submit" loading={loading} disabled={!email} className="mt-5 rounded-full">Enviar link de redefinição</AuthButton>
+      <AuthButton type="submit" loading={loading} className="mt-5 rounded-full">Enviar link de redefinição</AuthButton>
       <p className="mt-6 text-center text-[15px] text-muted-foreground">
         Lembrou-se da senha? <a href="/login" className="text-foreground underline underline-offset-4">Entrar</a>
       </p>

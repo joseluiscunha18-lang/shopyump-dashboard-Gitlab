@@ -26,6 +26,8 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
+    // O botão fica sempre ativo (preto); a validação acontece ao clicar.
+    if (!email.trim()) return setError('Introduza o seu e-mail.');
     if (!emailOk(email)) return setError('Introduz um e-mail válido.');
     setPassword(''); setTouched(false);
     sessionStorage.setItem('shopyump-auth-email', email.trim());
@@ -51,6 +53,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
 
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
+    if (!password) return setError('Introduza a sua senha.');
     setLoading(true);
     const r = await entrarComSenha(email, password);
     if (!r.ok) { setLoading(false); return setError(r.error); }
@@ -101,7 +104,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
         {heading}
         <form onSubmit={submitEmail} className="space-y-4" noValidate>
           <AuthField label="E-mail" type="email" inputMode="email" autoComplete="email" placeholder="E-mail" value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
-          <AuthButton type="submit" loading={loading} disabled={!email} className="rounded-full">Continuar</AuthButton>
+          <AuthButton type="submit" loading={loading} className="rounded-full">Continuar</AuthButton>
         </form>
         <Divider label="ou" />
         <GoogleAuthButton />
@@ -113,7 +116,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const emailBox = (
     <>
       <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
-      <div className="h-[58px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center justify-between gap-3">
+      <div className="h-[52px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center justify-between gap-3">
         <span className="truncate text-[16px] text-foreground/75">{email}</span>
         <button type="button" onClick={() => go('email')} className="text-[15px] font-medium text-foreground underline underline-offset-4">Editar</button>
       </div>
@@ -146,7 +149,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
         {emailBox}
         <div className="mt-5 space-y-5">
           <AuthField label="Senha" type="password" placeholder="Senha" autoComplete="current-password" autoFocus value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} error={error} className="rounded-full px-5" />
-          <AuthButton type="submit" loading={loading} disabled={!password} className="rounded-full">Entrar</AuthButton>
+          <AuthButton type="submit" loading={loading} className="rounded-full">Entrar</AuthButton>
           <a href="/forgot-password" className="block text-center text-[14px] font-semibold text-foreground underline underline-offset-4 py-1">Esqueceu a senha?</a>
         </div>
         {bottom}
@@ -184,7 +187,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
             {error && <p className="mt-2 text-destructive">{error}</p>}
           </div>
         </div>
-        <AuthButton type="submit" loading={loading} disabled={missing.length > 0} className="mt-4 rounded-full">Crie sua conta</AuthButton>
+        <AuthButton type="submit" loading={loading} className="mt-4 rounded-full">Crie sua conta</AuthButton>
         {bottom}
       </form>
     );
@@ -261,7 +264,7 @@ export function CodeStep({ email, notice, onBack, onDone }: { email: string; not
         disabled={!complete || loading}
         onClick={() => void confirmar()}
         aria-busy={loading}
-        className="mt-6 flex h-[56px] w-full items-center justify-center gap-2 rounded-xl bg-foreground text-[16px] font-semibold text-background transition-opacity disabled:opacity-50"
+        className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-foreground text-[16px] font-semibold text-background transition-opacity disabled:opacity-50"
       >
         {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-background/40 border-t-background" aria-hidden />}
         {loading ? 'A verificar…' : 'Confirmar código'}
