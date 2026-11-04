@@ -10,7 +10,7 @@ import { cn } from '@/lib/cn';
 // Altura de campos e botões: 52px (iguais entre si).
 
 /** Sombra interior dos campos (dentro da caixa, não fora). Ajustar aqui muda todos os campos. */
-export const FIELD_INNER_SHADOW = 'shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)]';
+export const FIELD_INNER_SHADOW = 'shadow-[inset_0_2px_4px_rgba(0,0,0,0.07)]';
 
 /**
  * Borda fina e bem definida: 0.5px (nos ecrãs de alta densidade, como os telemóveis, desenha 1 pixel físico;
