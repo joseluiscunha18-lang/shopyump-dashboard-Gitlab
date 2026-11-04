@@ -79,7 +79,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     : <>Já tem uma conta? <a href="/login" className="text-foreground underline underline-offset-4">Entrar</a></>;
   const bottom = (
     <>
-      <p className="mt-6 text-center text-[17px] text-muted-foreground">{footer}</p>
+      <p className="mt-6 text-center text-[15px] text-muted-foreground">{footer}</p>
       {creating && (
         <p className="mt-6 pt-6 border-t border-border text-[13px] leading-relaxed text-muted-foreground">
           Ao se cadastrar, você concorda com nossos <a className="text-foreground underline underline-offset-2" href="#">Termos de Serviço</a> e nossa <a className="text-foreground underline underline-offset-2" href="#">Política de Privacidade</a>.
@@ -91,7 +91,7 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const heading = (
     <div className="pt-0 pb-16">
       <h1 className="text-[28px] leading-[1.1] font-bold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-2 text-[16px] leading-snug text-muted-foreground">{subtitle}</p>
+      <p className="mt-2 text-[15px] leading-snug text-muted-foreground">{subtitle}</p>
     </div>
   );
 
@@ -112,17 +112,17 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
 
   const emailBox = (
     <>
-      <span className="block mb-2 text-[17px] font-semibold text-foreground">E-mail</span>
+      <span className="block mb-2 text-[15px] font-semibold text-foreground">E-mail</span>
       <div className="h-[58px] rounded-full border border-foreground/25 bg-transparent px-5 flex items-center justify-between gap-3">
         <span className="truncate text-[16px] text-foreground/75">{email}</span>
-        <button type="button" onClick={() => go('email')} className="text-[17px] font-medium text-foreground underline underline-offset-4">Editar</button>
+        <button type="button" onClick={() => go('email')} className="text-[15px] font-medium text-foreground underline underline-offset-4">Editar</button>
       </div>
     </>
   );
   const loginHeading = (
     <div className="pt-0 pb-16">
       <h1 className="text-[28px] leading-[1.1] font-bold tracking-tight text-foreground">Entrar</h1>
-      <p className="mt-2 text-[16px] leading-snug text-muted-foreground">Acesse sua loja e gerencie suas vendas.</p>
+      <p className="mt-2 text-[15px] leading-snug text-muted-foreground">Acesse sua loja e gerencie suas vendas.</p>
     </div>
   );
 
@@ -168,11 +168,11 @@ export function AuthFlow({ mode = 'login' }: { mode?: 'login' | 'register' }) {
         void submitCreate(e);
       }} noValidate className="flex-1 flex flex-col">
         {heading}
-        {notice && <p className="mb-4 -mt-10 text-[15px] leading-snug text-muted-foreground" role="status">{notice}</p>}
+        {notice && <p className="mb-4 -mt-10 text-[14px] leading-snug text-muted-foreground" role="status">{notice}</p>}
         {emailBox}
         <div className="mt-5">
           <AuthField label="Senha" type="password" placeholder="Senha" autoComplete="new-password" autoFocus value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} onBlur={() => password && setTouched(true)} className="rounded-full px-5" invalid={!!error || (password.length > 0 && missing.length > 0)} />
-          <div id="pw-rules" className="mt-2 text-[17px]">
+          <div id="pw-rules" className="mt-2 text-[15px]">
             {missing.length ? (
               <>
                 <p className="font-semibold text-foreground/80">A senha deve conter</p>
@@ -261,7 +261,7 @@ export function CodeStep({ email, notice, onBack, onDone }: { email: string; not
         disabled={!complete || loading}
         onClick={() => void confirmar()}
         aria-busy={loading}
-        className="mt-6 flex h-[56px] w-full items-center justify-center gap-2 rounded-xl bg-foreground text-[17px] font-semibold text-background transition-opacity disabled:opacity-50"
+        className="mt-6 flex h-[56px] w-full items-center justify-center gap-2 rounded-xl bg-foreground text-[16px] font-semibold text-background transition-opacity disabled:opacity-50"
       >
         {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-background/40 border-t-background" aria-hidden />}
         {loading ? 'A verificar…' : 'Confirmar código'}
