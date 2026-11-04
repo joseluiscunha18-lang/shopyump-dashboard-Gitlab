@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
+import { ACESSO_COOKIE, acessoAtivo, iguais, tokenEsperado } from '@/lib/acesso';
 
 const AUTH_PATHS = ['/login', '/register', '/verify', '/forgot-password', '/reset-password'];
 const ONBOARDING_PATH = '/onboarding';
@@ -39,7 +40,7 @@ const HAS_LOJA_COOKIE = 'sy_has_loja';
  * como slug de loja.
  *
  * Nota: isto torna "temas" um slug reservado — uma loja não pode ter
- * `slug: 'temas'} (o onboarding/edição de slug deve bloquear isso).
+ * `slug: 'temas'` (o onboarding/edição de slug deve bloquear isso).
  */
 function isPublicStorePath(pathname: string): boolean {
   if (!pathname.startsWith('/loja/')) return false;
@@ -51,6 +52,18 @@ export async function middleware(request: NextRequest) {
 
   if (isPublicStorePath(pathname)) {
     return NextResponse.next();
+  }
+
+  // BLOQUEIO DE ACESSO (site em desenvolvimento) — ver lib/acesso.ts.
+  // Sem o cookie de acesso, tudo redireciona para /login, onde a janela "Acesso restrito" pede a senha.
+  // O próprio /login passa direto (sem lógica de sessão) para não haver ciclos de redirecionamento.
+  // A loja pública (acima) e as rotas /api e /manifest ficam de fora.
+  if (acessoAtivo() && !pathname.startsWith('/api') && !pathname.startsWith('/manifest')) {
+    const atual = request.cookies.get(ACESSO_COOKIE)?.value ?? '';
+    if (!iguais(atual, await tokenEsperado())) {
+      if (pathname === '/login') return NextResponse.next();
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   const { supabaseResponse, user, supabase } = await updateSession(request);

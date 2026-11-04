@@ -1,6 +1,7 @@
 import { createFileRoute } from '@/lib/route-compat';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { AuthFlow } from '@/components/auth/AuthFlow';
+import { AcessoGate } from '@/components/auth/AcessoGate';
 
 export const Route = createFileRoute('/login')({
   ssr: false,
@@ -12,5 +13,10 @@ export const Route = createFileRoute('/login')({
     { property: 'og:type', content: 'website' },
     { name: 'twitter:card', content: 'summary' },
   ] }),
-  component: () => <AuthShell><AuthFlow /></AuthShell>,
+  component: () => (
+    <AuthShell>
+      <AuthFlow />
+      <AcessoGate />
+    </AuthShell>
+  ),
 });
