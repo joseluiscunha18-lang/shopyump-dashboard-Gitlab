@@ -6,7 +6,7 @@ import { Link,useNavigate,useRouterState } from '@/lib/router-compat';
 import { ChevronLeft,MoreVertical,FileText,Trash2,Copy,ExternalLink } from 'lucide-react';
 import { duplicateProduto,deleteProduto } from '@/lib/mutations/produtos';
 import { NotificationsQuickPanel } from '@/components/dashboard/Notifications';
-import { MenuIcon as Menu,BellIcon as Bell,UserIcon as User,ShieldIcon as ShieldCheck,SlidersIcon as SlidersHorizontal,LogOutIcon as LogOut } from './NavigationIcons';
+import { MenuIcon as Menu,BellIcon as Bell,AccountUserIcon as User,AccountShieldIcon as ShieldCheck,AccountSlidersIcon as SlidersHorizontal,AccountLogOutIcon as LogOut } from './NavigationIcons';
 import { Button } from '@/components/ui/ShopyumpButton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
