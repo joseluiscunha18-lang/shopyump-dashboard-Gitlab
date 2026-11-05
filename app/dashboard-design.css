@@ -169,3 +169,12 @@
 
 /* Rounded top corners on bottom nav */
 .dashboard-shell.dashboard-refined .bottom-primary { border-radius: 24px 24px 0 0; }
+
+/* Menu de perfil (.account-panel):
+   - no telemóvel fica na MESMA posição do painel de notificações (fixo, 74px abaixo do topo,
+     ou seja, por baixo do cabeçalho) em vez de se sobrepor a ele; mantém a largura própria, alinhado à direita;
+   - ícones no estilo das Configurações da loja (Lucide, contorno, sem preenchimento, traço 1.75). */
+@media (max-width: 767px) {
+  .dashboard-shell.dashboard-refined .menu-panel.account-panel { position: fixed; left: auto; right: 12px; top: calc(env(safe-area-inset-top) + 74px); }
+}
+.dashboard-shell.dashboard-refined .menu-panel.account-panel :is(.nav-line, .menu-action) svg { width: 18px; height: 18px; flex-shrink: 0; }
