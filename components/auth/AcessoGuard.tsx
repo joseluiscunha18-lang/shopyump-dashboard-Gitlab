@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
+import { DASHBOARD_BASE_PATH } from '@/lib/domains';
 
 /** Intervalo mínimo entre verificações (poupa pedidos ao voltar à janela várias vezes seguidas). */
 const INTERVALO_MS = 60_000;
+
+// O painel vive em /dashboard (basePath); o fetch() não junta o prefixo sozinho.
+const API_ACESSO = `${DASHBOARD_BASE_PATH}/api/acesso`;
 
 /**
  * Obriga a senha de acesso também a quem já está DENTRO do painel.
@@ -23,11 +27,11 @@ export function AcessoGuard() {
       if (!forcar && agora - ultima < INTERVALO_MS) return;
       ultima = agora;
       try {
-        const r = await fetch('/api/acesso', { cache: 'no-store' });
+        const r = await fetch(API_ACESSO, { cache: 'no-store' });
         const d = (await r.json()) as { ativo: boolean; liberado: boolean };
         if (d.ativo && !d.liberado) window.location.assign('/login');
       } catch {
-        /* sem ligação: não faz nada */
+        /* sem ligação ou resposta inválida: não faz nada */
       }
     }
 

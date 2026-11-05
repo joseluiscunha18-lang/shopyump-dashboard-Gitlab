@@ -2,14 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
+import { DASHBOARD_BASE_PATH } from '@/lib/domains';
 import { AuthButton, AuthField } from './AuthUI';
 
 type Estado = 'a-verificar' | 'bloqueado' | 'liberado';
 
+// O painel vive em /dashboard (basePath). O fetch() não junta o prefixo sozinho, ao contrário
+// de <Link> e router.push — sem isto o pedido ia para /api/acesso (que não existe) e dava 404.
+const API_ACESSO = `${DASHBOARD_BASE_PATH}/api/acesso`;
+
 /**
- * Janela de acesso restrito, por cima do login, enquanto o site está em desenvolvimento.
- * A verificação real é feita no servidor (middleware + /api/acesso): esta janela só recolhe a senha.
- * Enquanto verifica, tapa o ecrã por completo para o formulário de login nunca ficar exposto.
+ * Janela de acesso restrito, por cima das páginas de autenticação (login, registo, recuperação...),
+ * enquanto o site está em desenvolvimento. Vive dentro do AuthShell, por isso aparece em todas elas.
+ * A verificação real é feita no servidor (/api/acesso): esta janela só recolhe a senha.
+ * Enquanto verifica, tapa o ecrã por completo para o formulário nunca ficar exposto.
  */
 export function AcessoGate() {
   const [estado, setEstado] = useState<Estado>('a-verificar');
@@ -19,7 +25,7 @@ export function AcessoGate() {
 
   useEffect(() => {
     let cancelado = false;
-    fetch('/api/acesso', { cache: 'no-store' })
+    fetch(API_ACESSO, { cache: 'no-store' })
       .then((r) => r.json())
       .then((d: { ativo: boolean; liberado: boolean }) => {
         if (!cancelado) setEstado(!d.ativo || d.liberado ? 'liberado' : 'bloqueado');
@@ -35,7 +41,7 @@ export function AcessoGate() {
     setLoading(true);
     setErro('');
     try {
-      const r = await fetch('/api/acesso', {
+      const r = await fetch(API_ACESSO, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senha }),

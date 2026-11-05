@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AcessoGate } from './AcessoGate';
 
 /** Shared frame for login, registo, recuperação e onboarding — same tokens & type as the dashboard. */
 export function AuthShell({ children, hideBrand }: { children: ReactNode; hideBrand?: boolean }) {
@@ -8,6 +9,8 @@ export function AuthShell({ children, hideBrand }: { children: ReactNode; hideBr
         {!hideBrand && <div className="mb-14 sm:mb-10 text-[17px] font-black tracking-tight text-foreground">Shopyump</div>}
         <div className="flex-1 flex flex-col">{children}</div>
       </div>
+      {/* Bloqueio de acesso (site em desenvolvimento): aparece em todas as páginas de autenticação. */}
+      <AcessoGate />
     </div>
   );
 }
