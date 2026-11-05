@@ -12,9 +12,18 @@ export type AuthResult = { ok: true } | { ok: false; error: string; /** Limite d
 
 function traduzir(message: string | undefined, code?: string): string {
   const m = (message ?? '').toLowerCase();
-  // Registo público desativado no Supabase (Authentication → "Allow new users to sign up" desligado).
+  // Registo público bloqueado. Dois caminhos possíveis:
+  //  - opção do Supabase "Allow new users to sign up" desligada → code 'signup_disabled';
+  //  - trigger `bloquear_registo_publico` (supabase/bloquear_registo_publico.sql) a recusar um
+  //    e-mail que não está em `registo_permitidos` → o Supabase devolve "Database error saving new user".
   // Vem antes das regras genéricas abaixo para não cair em "invalid"/"Não foi possível concluir".
-  if (code === 'signup_disabled' || m.includes('signups not allowed') || m.includes('signup is disabled') || m.includes('signups are disabled')) {
+  if (
+    code === 'signup_disabled' ||
+    m.includes('signups not allowed') ||
+    m.includes('signup is disabled') ||
+    m.includes('signups are disabled') ||
+    m.includes('database error saving new user')
+  ) {
     return 'O registo está indisponível: o Shopyump está em desenvolvimento.';
   }
   if (code === 'invalid_credentials' || m.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
