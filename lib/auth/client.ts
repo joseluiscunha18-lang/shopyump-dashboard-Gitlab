@@ -12,6 +12,11 @@ export type AuthResult = { ok: true } | { ok: false; error: string; /** Limite d
 
 function traduzir(message: string | undefined, code?: string): string {
   const m = (message ?? '').toLowerCase();
+  // Registo público desativado no Supabase (Authentication → "Allow new users to sign up" desligado).
+  // Vem antes das regras genéricas abaixo para não cair em "invalid"/"Não foi possível concluir".
+  if (code === 'signup_disabled' || m.includes('signups not allowed') || m.includes('signup is disabled') || m.includes('signups are disabled')) {
+    return 'O registo está indisponível: o Shopyump está em desenvolvimento.';
+  }
   if (code === 'invalid_credentials' || m.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
   if (code === 'email_not_confirmed' || m.includes('email not confirmed')) return 'Confirme o seu e-mail antes de entrar.';
   if (code === 'user_already_exists' || m.includes('already registered') || m.includes('already been registered')) return 'Já existe uma conta com este e-mail.';
