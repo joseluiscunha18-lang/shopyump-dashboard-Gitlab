@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@/lib/route-compat';
-import { Storefront, ChatCircleText, At, Translate, Truck, ShoppingCart, Wallet, FileText, CaretRight, Power } from '@phosphor-icons/react';
+import { Store, MessageSquareText, AtSign, Languages, Truck, ShoppingCart, Wallet, FileText, ChevronRight, Power } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useDashboardState } from '@/components/dashboard/DashboardState';
 import { SettingsPage } from '@/components/settings/SettingsKit';
@@ -26,19 +26,19 @@ function Page() {
   const activePayments = [payments.transferencia && 'Transferência', payments.dinheiroEntrega && 'Dinheiro na entrega'].filter(Boolean);
   const groups: { title: string; items: Item[] }[] = [
     { title: 'Informações da loja', items: [
-      { to: '/configuracoes/dados', label: 'Informações gerais', detail: [store.nome, store.cidade].filter(Boolean).join(' · '), icon: <Storefront size={22} /> },
-      { to: '/configuracoes/contactos', label: 'Canais de contacto', detail: contacts.whatsapp ? 'WhatsApp configurado' : 'Sem WhatsApp', icon: <ChatCircleText size={22} /> },
-      { to: '/configuracoes/redes-sociais', label: 'Redes sociais', detail: socials.length ? `${socials.length} ligaç${socials.length > 1 ? 'ões' : 'ão'}` : 'Nenhuma ligação', icon: <At size={22} /> },
-      { to: '/configuracoes/regiao', label: 'Idioma e moeda', detail: `Português · ${currency} · ${region.fuso}`, icon: <Translate size={22} /> },
+      { to: '/configuracoes/dados', label: 'Informações gerais', detail: [store.nome, store.cidade].filter(Boolean).join(' · '), icon: <Store size={20} strokeWidth={1.75} /> },
+      { to: '/configuracoes/contactos', label: 'Canais de contacto', detail: contacts.whatsapp ? 'WhatsApp configurado' : 'Sem WhatsApp', icon: <MessageSquareText size={20} strokeWidth={1.75} /> },
+      { to: '/configuracoes/redes-sociais', label: 'Redes sociais', detail: socials.length ? `${socials.length} ligaç${socials.length > 1 ? 'ões' : 'ão'}` : 'Nenhuma ligação', icon: <AtSign size={20} strokeWidth={1.75} /> },
+      { to: '/configuracoes/regiao', label: 'Idioma e moeda', detail: `Português · ${currency} · ${region.fuso}`, icon: <Languages size={20} strokeWidth={1.75} /> },
     ] },
     { title: 'Vendas e operações', items: [
-      { to: '/configuracoes/entrega', label: 'Entrega', detail: delivery.domicilio || delivery.levantamento ? [delivery.domicilio && `${delivery.zonas.length} zona(s)`, delivery.levantamento && 'Levantamento'].filter(Boolean).join(' · ') : 'Por configurar', icon: <Truck size={22} /> },
-      { to: '/configuracoes/finalizacao', label: 'Finalização da compra', detail: checkout.whatsapp ? 'Encomendas pelo WhatsApp' : 'Por configurar', icon: <ShoppingCart size={22} /> },
-      { to: '/configuracoes/pagamentos', label: 'Métodos de pagamento', detail: activePayments.length ? activePayments.join(' · ') : 'Nenhum ativo', icon: <Wallet size={22} /> },
+      { to: '/configuracoes/entrega', label: 'Entrega', detail: delivery.domicilio || delivery.levantamento ? [delivery.domicilio && `${delivery.zonas.length} zona(s)`, delivery.levantamento && 'Levantamento'].filter(Boolean).join(' · ') : 'Por configurar', icon: <Truck size={20} strokeWidth={1.75} /> },
+      { to: '/configuracoes/finalizacao', label: 'Finalização da compra', detail: checkout.whatsapp ? 'Encomendas pelo WhatsApp' : 'Por configurar', icon: <ShoppingCart size={20} strokeWidth={1.75} /> },
+      { to: '/configuracoes/pagamentos', label: 'Métodos de pagamento', detail: activePayments.length ? activePayments.join(' · ') : 'Nenhum ativo', icon: <Wallet size={20} strokeWidth={1.75} /> },
     ] },
     { title: 'Gestão da loja', items: [
-      { to: '/configuracoes/politicas', label: 'Páginas e políticas', detail: `${published} de ${pages.length} publicadas`, icon: <FileText size={22} /> },
-      { to: '/configuracoes/estado', label: 'Estado da loja', icon: <Power size={22} /> },
+      { to: '/configuracoes/politicas', label: 'Páginas e políticas', detail: `${published} de ${pages.length} publicadas`, icon: <FileText size={20} strokeWidth={1.75} /> },
+      { to: '/configuracoes/estado', label: 'Estado da loja', icon: <Power size={20} strokeWidth={1.75} /> },
     ] },
   ];
   return (
@@ -52,7 +52,7 @@ function Page() {
                 <span className="flex size-6 shrink-0 items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground" aria-hidden>{i.icon}</span>
                 <span className="flex min-h-14 flex-1 items-center gap-3 pr-4">
                   <span className="flex-1 text-[15px] font-medium text-foreground">{i.label}</span>
-                  <CaretRight size={16} className="text-muted-foreground/50" aria-hidden />
+                  <ChevronRight size={16} className="text-muted-foreground/50" aria-hidden />
                 </span>
               </Link>
             ))}
