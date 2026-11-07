@@ -11,6 +11,7 @@ import { useStore } from "../components/store/store-context";
 import { useAuth } from "../components/store/auth-context";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { criarPedidoPublico, codigoPedido } from "@/lib/mutations/pedidosPublicos";
+import { trackWhatsappClick } from "@/lib/analytics/track";
 import { formatPrice } from "../lib/store-data";
 
 export const Route = createFileRoute("/checkout")({
@@ -94,6 +95,8 @@ function CheckoutPage() {
     clearCart();
     setDone({ code, url });
     setSubmitting(false);
+    // Analytics: window.open não é um clique em <a>, por isso sinaliza-se aqui (ver lib/analytics/track.ts).
+    trackWhatsappClick();
     // Se o navegador bloquear o novo separador, segue na mesma janela.
     const w = window.open(url, "_blank", "noopener,noreferrer");
     if (!w) window.location.href = url;
