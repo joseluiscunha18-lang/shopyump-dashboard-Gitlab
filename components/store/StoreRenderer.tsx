@@ -1,6 +1,7 @@
 import { resolveStoreTheme } from '@/lib/store/themes/registry';
 import type { LojaPublica } from '@/lib/queries/lojaPublica';
 import type { ProdutoPublico } from '@/lib/queries/produtosPublicos';
+import { StoreAnalytics } from './StoreAnalytics';
 
 /**
  * Ponto único de renderização da loja — a peça que junta "quais dados"
@@ -13,6 +14,9 @@ import type { ProdutoPublico } from '@/lib/queries/produtosPublicos';
  * amanhã pelo preview do painel (Personalizar loja / catálogo de temas) —
  * é por isto que ele não sabe nada sobre Supabase, sessão, ou onde os
  * dados vieram: só recebe loja e produtos já prontos.
+ *
+ * `StoreAnalytics` só faz alguma coisa em nome.shopyump.com (ver lib/analytics/track.ts),
+ * por isso não interfere com previews no painel.
  */
 export function StoreRenderer({
   themeId,
@@ -27,5 +31,10 @@ export function StoreRenderer({
   produtoInicialId?: string;
 }) {
   const { Component: Theme } = resolveStoreTheme(themeId);
-  return <Theme loja={loja} produtos={produtos} produtoInicialId={produtoInicialId} />;
+  return (
+    <>
+      <StoreAnalytics />
+      <Theme loja={loja} produtos={produtos} produtoInicialId={produtoInicialId} />
+    </>
+  );
 }
