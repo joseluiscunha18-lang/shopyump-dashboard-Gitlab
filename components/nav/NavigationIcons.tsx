@@ -1,4 +1,4 @@
-import { House, Bell, Pencil, Store, Palette, type LucideProps, type LucideIcon } from 'lucide-react';
+import { House, Bell, Pencil, Store, Palette, Sparkles, type LucideProps, type LucideIcon } from 'lucide-react';
 
 /** Black outline with a white interior. */
 function outlined(Icon: LucideIcon) {
@@ -46,3 +46,5 @@ export const UserIcon = silhouette('M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 21a9 
 export const ShieldIcon = silhouette('M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1.2 13.4-3.3-3.3 1.4-1.4 1.9 1.9 4.4-4.4 1.4 1.4-5.8 5.8Z');
 export const SlidersIcon = silhouette('M4 6a1 1 0 0 1 1-1h7.2a3 3 0 0 1 5.6 0H19a1 1 0 1 1 0 2h-1.2a3 3 0 0 1-5.6 0H5a1 1 0 0 1-1-1Zm0 12a1 1 0 0 1 1-1h1.2a3 3 0 0 1 5.6 0H19a1 1 0 1 1 0 2h-7.2a3 3 0 0 1-5.6 0H5a1 1 0 0 1-1-1Z');
 export const LogOutIcon = silhouette('M5 3h7a2 2 0 0 1 2 2v3h-2V5H5v14h7v-3h2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm11.3 4.3L21 12l-4.7 4.7-1.4-1.4 2.3-2.3H9v-2h8.2l-2.3-2.3 1.4-1.4Z');
+/** Assistente (IA): estrelas/sparkles, mesmo estilo de contorno usado em Bell/Store/Pencil/Palette. */
+export const AssistantIcon = outlined(Sparkles);
