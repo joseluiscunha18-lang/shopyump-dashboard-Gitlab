@@ -14,6 +14,7 @@ import { useProductGallery, useProductSelection } from "../lib/use-product-selec
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
 import { getRecommendations, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
+import { trackProductView } from "@/lib/analytics/track";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
@@ -67,6 +68,10 @@ function ProductPage() {
   // foto dessa cor, e fazer swipe para a foto de outra cor atualiza a cor.
   // Mesmo hook que o editor usa.
   const { galeria, aoMudarFoto } = useProductGallery(product, selection);
+  // Regista "produto visto" para o resumo de analytics desta visita (ver lib/analytics/track.ts).
+  useEffect(() => {
+    trackProductView(product.id);
+  }, [product.id]);
   useEffect(() => {
     if (awaitingAuth && alertActive) {
       setAwaitingAuth(false);

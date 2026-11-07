@@ -1,0 +1,13 @@
+name = "shopyump-router"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Analytics Engine — o dataset "shopyump_events" é criado sozinho na primeira escrita,
+# não é preciso criar nada à mão. Ver https://developers.cloudflare.com/analytics/analytics-engine/
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "shopyump_events"
+
+# SY_SALT é um segredo (não vai aqui). Definir com:
+#   wrangler secret put SY_SALT
+# (qualquer string aleatória longa serve — só é usada para o hash diário do visitor_id)

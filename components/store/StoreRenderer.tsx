@@ -1,6 +1,7 @@
 import { resolveStoreTheme } from '@/lib/store/themes/registry';
 import type { LojaPublica } from '@/lib/queries/lojaPublica';
 import type { ProdutoPublico } from '@/lib/queries/produtosPublicos';
+import { AnalyticsInit } from '@/components/store/AnalyticsInit';
 
 /**
  * Ponto único de renderização da loja — a peça que junta "quais dados"
@@ -27,5 +28,10 @@ export function StoreRenderer({
   produtoInicialId?: string;
 }) {
   const { Component: Theme } = resolveStoreTheme(themeId);
-  return <Theme loja={loja} produtos={produtos} produtoInicialId={produtoInicialId} />;
+  return (
+    <>
+      <AnalyticsInit lojaId={loja.id} />
+      <Theme loja={loja} produtos={produtos} produtoInicialId={produtoInicialId} />
+    </>
+  );
 }

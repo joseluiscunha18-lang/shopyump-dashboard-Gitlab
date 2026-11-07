@@ -10,6 +10,7 @@ import { ProductCard } from "../components/store/product-card";
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
 import type { LumePersonalizacao } from "../lib/personalizacao";
+import { trackWhatsappClick } from "@/lib/analytics/track";
 import { categorySlug, type Product, type Category } from "../lib/store-data";
 
 export const Route = createFileRoute("/")({
@@ -158,7 +159,7 @@ function PreFooter({ whatsappUrl }: { whatsappUrl: string | null }) {
             <p data-sy="whats-text" className="mt-1 text-sm text-muted-foreground">{p?.text.whatsText ?? "Fale diretamente connosco."}</p>
           </div>
           <Button asChild variant="whatsapp" size="lg" className="shrink-0 rounded-full px-5">
-            <a data-sy="whats-button" href={href} target="_blank" rel="noreferrer">
+            <a data-sy="whats-button" href={href} target="_blank" rel="noreferrer" onClick={trackWhatsappClick}>
               <MessageCircle className="size-4" aria-hidden="true" />
               {p?.text.whatsButton ?? "Falar no WhatsApp"}
             </a>

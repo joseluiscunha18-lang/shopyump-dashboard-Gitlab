@@ -6,6 +6,7 @@ import { THEME_PAGE_ROUTE } from '@/theme-editor/themes/lume/page-text';
 import { categorySlug } from '../../lib/store-data';
 import type { LumeLink } from '../../lib/personalizacao';
 import { useLumeLoja } from './lume-loja-context';
+import { trackWhatsappClick } from '@/lib/analytics/track';
 
 /**
  * Link de um botão personalizado no editor (já validado no servidor).
@@ -19,7 +20,7 @@ export function SmartLink({ link, children, ...rest }: { link: LumeLink } & Anch
     const n = contactos.whatsapp?.replace(/\D/g, '');
     if (!n) return null;
     const text = link.message ? `?text=${encodeURIComponent(link.message)}` : '';
-    return <a href={`https://wa.me/${n}${text}`} target="_blank" rel="noreferrer" {...rest}>{children}</a>;
+    return <a href={`https://wa.me/${n}${text}`} target="_blank" rel="noreferrer" onClick={trackWhatsappClick} {...rest}>{children}</a>;
   }
   if (link.kind === 'category') return <Link to="/produtos" search={{ categoria: categorySlug(link.value) }} {...rest}>{children}</Link>;
   const route = THEME_PAGE_ROUTE[link.value];
