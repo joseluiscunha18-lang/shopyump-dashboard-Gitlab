@@ -465,3 +465,9 @@
 .account-avatar-img { position:relative; transition:opacity .2s; }
 @keyframes avatar-skeleton-shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
 @media (prefers-reduced-motion:reduce) { .avatar-skeleton { animation:none; } }
+
+/* Assistente (IA): "..." a piscar enquanto a resposta está a processar. */
+@keyframes assistente-bolinha {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
