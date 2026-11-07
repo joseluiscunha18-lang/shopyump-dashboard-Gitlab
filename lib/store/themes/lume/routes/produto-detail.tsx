@@ -14,6 +14,7 @@ import { useProductGallery, useProductSelection } from "../lib/use-product-selec
 import { useLumeLoja } from "../components/store/lume-loja-context";
 import { useLumePersonalizacao } from "../components/store/lume-personalizacao-context";
 import { getRecommendations, shouldShowRecommendations } from "@/lib/store/shared/storefront-logic";
+import { trackProductView } from "@/lib/analytics/track";
 
 export const Route = createFileRoute("/produto/$productId")({
   loader: ({ params }) => {
@@ -58,6 +59,11 @@ function ProductPage() {
   const liked = favourites.includes(product.id);
   const recommendations = getRecommendations(produtosContexto, product.id);
   const alertActive = restockAlerts.includes(product.id);
+
+  // Analytics: acumula o produto visto em memória (não envia nada aqui) — ver lib/analytics/track.ts.
+  useEffect(() => {
+    trackProductView(product.id);
+  }, [product.id]);
 
   // Variante escolhida, quantidade, preço, stock e "pode comprar?" — o MESMO hook
   // que o editor usa no preview (theme-editor/themes/lume/Renderer.tsx).
