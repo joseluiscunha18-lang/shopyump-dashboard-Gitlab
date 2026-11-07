@@ -1,0 +1,22 @@
+# Configuração do Worker shopyump-router (opcional — só se fores fazer deploy com o wrangler).
+#
+# O Worker foi criado no painel da Cloudflare. Podes continuar a colar o index.js lá
+# (Workers & Pages → shopyump-router → Edit code) e adicionar os bindings no painel
+# (Settings → Bindings) — ver README.md desta pasta.
+#
+# ATENÇÃO ao usar `wrangler deploy`: este ficheiro NÃO define rotas/domínios. Confirma
+# antes (`wrangler deploy --dry-run`) que não vai remover as rotas atuais do painel.
+
+name = "shopyump-router"
+main = "index.js"
+compatibility_date = "2025-01-01"
+
+[[analytics_engine_datasets]]
+binding = "PAGE_VIEWS"
+dataset = "shopyump_page_views"
+
+[[analytics_engine_datasets]]
+binding = "VISIT_SUMMARY"
+dataset = "shopyump_visit_summary"
+
+# Segredo (não vai neste ficheiro):  wrangler secret put ANALYTICS_SALT
